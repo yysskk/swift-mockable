@@ -14,7 +14,7 @@ public struct MockableMacro: PeerMacro {
         }
 
         let protocolName = protocolDecl.name.text
-        let mockClassName = "Mock\(protocolName)"
+        let mockClassName = "\(protocolName)Mock"
 
         let members = protocolDecl.memberBlock.members
         let generator = MockGenerator(
