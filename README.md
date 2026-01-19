@@ -1,15 +1,8 @@
 # swift-mockable
 
-A Swift macro that generates mock classes from protocols for testing.
-
-## Requirements
-
-- Swift 6.2+
-- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+A Swift Macro that generates mock classes from protocols for testing.
 
 ## Installation
-
-### Swift Package Manager
 
 Add the following to your `Package.swift`:
 
@@ -30,8 +23,6 @@ Then add `Mockable` to your target dependencies:
 
 ## Usage
 
-Apply `@Mockable` to any protocol to generate a mock class:
-
 ```swift
 import Mockable
 
@@ -42,25 +33,18 @@ protocol UserService {
     var currentUser: User? { get }
     var isLoggedIn: Bool { get set }
 }
-```
 
-This generates a `MockUserService` class with:
-
-### Method Mocking
-
-For each method, the mock provides:
-
-- `<method>CallCount`: Number of times the method was called
-- `<method>CallArgs`: Array of arguments from each call
-- `<method>Handler`: Closure to define the mock behavior
-
-```swift
+// In tests
 let mock = MockUserService()
 
-// Configure the handler
+// Configure handlers
 mock.fetchUserHandler = { id in
     User(id: id, name: "Test User")
 }
+
+// Set properties
+mock._currentUser = User(id: 1, name: "Current")
+mock.isLoggedIn = true
 
 // Use in tests
 let user = try await mock.fetchUser(id: 42)
@@ -70,22 +54,7 @@ let user = try await mock.fetchUser(id: 42)
 #expect(mock.fetchUserCallArgs.first == 42)
 ```
 
-### Property Mocking
-
-For get-only properties, use the backing storage:
-
-```swift
-mock._currentUser = User(id: 1, name: "Current")
-print(mock.currentUser) // User(id: 1, name: "Current")
-```
-
-For get/set properties, assign directly:
-
-```swift
-mock.isLoggedIn = true
-```
-
-### Void Methods
+### Void methods
 
 Void methods don't require a handler to be set:
 
@@ -97,7 +66,7 @@ mock.saveUserHandler = { user in
 try await mock.saveUser(user) // Works even without handler
 ```
 
-### Methods with Return Values
+### Methods with return values
 
 Methods with return values require a handler, otherwise they will crash with `fatalError`:
 
@@ -108,14 +77,23 @@ mock.fetchUserHandler = { id in
 }
 ```
 
+## Features
+
+- Generates mock classes wrapped in `#if DEBUG`
+- Call count tracking (`<method>CallCount`)
+- Call arguments recording (`<method>CallArgs`)
+- Configurable handlers with `@Sendable` support (`<method>Handler`)
+- Supports `async` and `throws` methods
+- Supports get-only and get/set properties
+- Supports optional properties
+
 ## Generated Code Example
 
-For the `UserService` protocol above, the following mock class is generated (wrapped in `#if DEBUG`):
+For the `UserService` protocol above, the following mock class is generated:
 
 ```swift
 #if DEBUG
 public class MockUserService: UserService {
-    // fetchUser
     public var fetchUserCallCount: Int = 0
     public var fetchUserCallArgs: [Int] = []
     public var fetchUserHandler: (@Sendable (Int) async throws -> User)?
@@ -129,7 +107,6 @@ public class MockUserService: UserService {
         return try await handler(id)
     }
 
-    // saveUser
     public var saveUserCallCount: Int = 0
     public var saveUserCallArgs: [User] = []
     public var saveUserHandler: (@Sendable (User) async throws -> Void)?
@@ -142,18 +119,21 @@ public class MockUserService: UserService {
         }
     }
 
-    // currentUser (get-only)
     public var _currentUser: User?
     public var currentUser: User? {
         _currentUser
     }
 
-    // isLoggedIn (get/set)
     public var isLoggedIn: Bool!
 }
 #endif
 ```
 
+## Requirements
+
+- Swift 6.2+
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+
 ## License
 
-MIT License
+MIT
