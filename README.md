@@ -35,7 +35,7 @@ protocol UserService {
 }
 
 // In tests
-let mock = MockUserService()
+let mock = UserServiceMock()
 
 // Configure handlers
 mock.fetchUserHandler = { id in
@@ -93,7 +93,7 @@ For the `UserService` protocol above, the following mock class is generated:
 
 ```swift
 #if DEBUG
-public class MockUserService: UserService {
+public class UserServiceMock: UserService {
     public var fetchUserCallCount: Int = 0
     public var fetchUserCallArgs: [Int] = []
     public var fetchUserHandler: (@Sendable (Int) async throws -> User)?
