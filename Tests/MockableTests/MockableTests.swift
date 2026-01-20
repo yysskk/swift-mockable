@@ -25,7 +25,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockUserService: UserService {
+            public class UserServiceMock: UserService {
                 public var fetchUserCallCount: Int = 0
                 public var fetchUserCallArgs: [Int] = []
                 public var fetchUserHandler: (@Sendable (Int) -> String)?
@@ -59,7 +59,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockDataService: DataService {
+            public class DataServiceMock: DataService {
                 public var loadDataCallCount: Int = 0
                 public var loadDataCallArgs: [String] = []
                 public var loadDataHandler: (@Sendable (String) async throws -> Data)?
@@ -93,7 +93,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockCalculator: Calculator {
+            public class CalculatorMock: Calculator {
                 public var addCallCount: Int = 0
                 public var addCallArgs: [(a: Int, b: Int)] = []
                 public var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)?
@@ -127,7 +127,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockLogger: Logger {
+            public class LoggerMock: Logger {
                 public var logCallCount: Int = 0
                 public var logCallArgs: [String] = []
                 public var logHandler: (@Sendable (String) -> Void)?
@@ -160,7 +160,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockUserProvider: UserProvider {
+            public class UserProviderMock: UserProvider {
                 public var _currentUser: String?
                 public var currentUser: String {
                     _currentUser!
@@ -187,7 +187,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockSettings: Settings {
+            public class SettingsMock: Settings {
                 public var theme: String!
             }
             #endif
@@ -211,7 +211,7 @@ struct MockableMacroTests {
             }
             #if DEBUG
 
-            public class MockCache: Cache {
+            public class CacheMock: Cache {
                 public var lastValue: String? = nil
             }
             #endif
