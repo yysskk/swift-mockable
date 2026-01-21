@@ -21,6 +21,17 @@ Then add `Mockable` to your target dependencies:
 )
 ```
 
+## Features
+
+- Generates mock classes wrapped in `#if DEBUG`
+- Call count tracking (`<method>CallCount`)
+- Call arguments recording (`<method>CallArgs`)
+- Configurable handlers with `@Sendable` support (`<method>Handler`)
+- Supports `async` and `throws` methods
+- Supports get-only and get/set properties
+- Supports optional properties
+- Supports generic methods (with type erasure to `Any`)
+
 ## Usage
 
 ```swift
@@ -77,15 +88,42 @@ mock.fetchUserHandler = { id in
 }
 ```
 
-## Features
+### Generic methods
 
-- Generates mock classes wrapped in `#if DEBUG`
-- Call count tracking (`<method>CallCount`)
-- Call arguments recording (`<method>CallArgs`)
-- Configurable handlers with `@Sendable` support (`<method>Handler`)
-- Supports `async` and `throws` methods
-- Supports get-only and get/set properties
-- Supports optional properties
+Generic methods are supported with type erasure. Parameters and return types containing generic type parameters are erased to `Any`:
+
+```swift
+@Mockable
+protocol Storage {
+    func get<T>(_ key: UserDefaultsKey<T>) -> T
+    func set<T>(_ value: T, forKey key: UserDefaultsKey<T>)
+}
+
+// In tests
+let mock = StorageMock()
+
+mock.getHandler = { key in
+    return "stored value"  // Returns Any, cast to T at call site
+}
+
+mock.setHandler = { value, key in
+    // value and key are Any
+}
+
+let result: String = mock.get(UserDefaultsKey<String>("name"))
+```
+
+**Note:** For non-generic methods with concrete generic types (e.g., `UserDefaultsKey<Int>`), full type information is preserved:
+
+```swift
+@Mockable
+protocol UserDefaultsClient {
+    func integer(forKey key: UserDefaultsKey<Int>) -> Int
+}
+
+// Generated mock preserves the concrete type
+// mock.integerCallArgs: [UserDefaultsKey<Int>]
+```
 
 ## Generated Code Example
 
