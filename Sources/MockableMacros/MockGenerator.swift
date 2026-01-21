@@ -438,7 +438,7 @@ struct MockGenerator {
 
             if isGetOnly {
                 // Generate backing storage
-                let storageProperty = generateStorageProperty(varName: varName, varType: varType)
+                let storageProperty = generateGetOnlyStorageProperty(varName: varName, varType: varType)
                 members.append(MemberBlockItemSyntax(decl: storageProperty))
 
                 // Generate computed property
@@ -449,13 +449,13 @@ struct MockGenerator {
                 )
                 members.append(MemberBlockItemSyntax(decl: computedProperty))
             } else {
-                // Generate simple stored property
-                let storedProperty = generateStoredProperty(
+                // Generate stored property (possibly with backing storage for non-optional types)
+                let storedPropertyMembers = generateStoredProperty(
                     varDecl: varDecl,
                     varName: varName,
                     varType: varType
                 )
-                members.append(MemberBlockItemSyntax(decl: storedProperty))
+                members.append(contentsOf: storedPropertyMembers)
             }
         }
 
@@ -477,7 +477,7 @@ struct MockGenerator {
         }
     }
 
-    private func generateStorageProperty(varName: String, varType: TypeSyntax) -> VariableDeclSyntax {
+    private func generateGetOnlyStorageProperty(varName: String, varType: TypeSyntax) -> VariableDeclSyntax {
         let isOptional = varType.is(OptionalTypeSyntax.self) ||
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
 
@@ -485,10 +485,10 @@ struct MockGenerator {
         let initializer: InitializerClauseSyntax?
 
         if isOptional {
-            storageType = varType
+            storageType = varType.trimmed
             initializer = InitializerClauseSyntax(value: NilLiteralExprSyntax())
         } else {
-            storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType))
+            storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
             initializer = InitializerClauseSyntax(value: NilLiteralExprSyntax())
         }
 
@@ -530,7 +530,7 @@ struct MockGenerator {
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
                     pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: varType),
+                    typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .getter(CodeBlockItemListSyntax([
                             CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: getterBody)))
@@ -545,34 +545,82 @@ struct MockGenerator {
         varDecl: VariableDeclSyntax,
         varName: String,
         varType: TypeSyntax
-    ) -> VariableDeclSyntax {
+    ) -> [MemberBlockItemSyntax] {
         let isOptional = varType.is(OptionalTypeSyntax.self) ||
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
 
-        var initializer: InitializerClauseSyntax?
         if isOptional {
-            initializer = InitializerClauseSyntax(value: NilLiteralExprSyntax())
-        }
-
-        let storageType: TypeSyntax
-        if isOptional {
-            storageType = varType
+            // For optional types, generate a simple stored property
+            let storedProperty = VariableDeclSyntax(
+                modifiers: DeclModifierListSyntax([
+                    DeclModifierSyntax(name: .keyword(.public))
+                ]),
+                bindingSpecifier: .keyword(.var),
+                bindings: PatternBindingListSyntax([
+                    PatternBindingSyntax(
+                        pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
+                        typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
+                        initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                    )
+                ])
+            )
+            return [MemberBlockItemSyntax(decl: storedProperty)]
         } else {
-            storageType = TypeSyntax(ImplicitlyUnwrappedOptionalTypeSyntax(wrappedType: varType))
-        }
+            // For non-optional get-set properties, generate backing storage + computed property
+            // to ensure protocol conformance
+            let backingProperty = VariableDeclSyntax(
+                modifiers: DeclModifierListSyntax([
+                    DeclModifierSyntax(name: .keyword(.public))
+                ]),
+                bindingSpecifier: .keyword(.var),
+                bindings: PatternBindingListSyntax([
+                    PatternBindingSyntax(
+                        pattern: IdentifierPatternSyntax(identifier: .identifier("_\(varName)")),
+                        typeAnnotation: TypeAnnotationSyntax(
+                            type: TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
+                        ),
+                        initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                    )
+                ])
+            )
 
-        return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: storageType),
-                    initializer: initializer
-                )
-            ])
-        )
+            let computedProperty = VariableDeclSyntax(
+                modifiers: DeclModifierListSyntax([
+                    DeclModifierSyntax(name: .keyword(.public))
+                ]),
+                bindingSpecifier: .keyword(.var),
+                bindings: PatternBindingListSyntax([
+                    PatternBindingSyntax(
+                        pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
+                        typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
+                        accessorBlock: AccessorBlockSyntax(
+                            accessors: .accessors(AccessorDeclListSyntax([
+                                AccessorDeclSyntax(
+                                    accessorSpecifier: .keyword(.get),
+                                    body: CodeBlockSyntax(
+                                        statements: CodeBlockItemListSyntax([
+                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName)!")))
+                                        ])
+                                    )
+                                ),
+                                AccessorDeclSyntax(
+                                    accessorSpecifier: .keyword(.set),
+                                    body: CodeBlockSyntax(
+                                        statements: CodeBlockItemListSyntax([
+                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName) = newValue")))
+                                        ])
+                                    )
+                                )
+                            ]))
+                        )
+                    )
+                ])
+            )
+
+            return [
+                MemberBlockItemSyntax(decl: backingProperty),
+                MemberBlockItemSyntax(decl: computedProperty)
+            ]
+        }
     }
 }
