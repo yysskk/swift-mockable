@@ -188,7 +188,15 @@ struct MockableMacroTests {
             #if DEBUG
 
             public class SettingsMock: Settings {
-                public var theme: String!
+                public var _theme: String? = nil
+                public var theme: String {
+                    get {
+                        _theme!
+                    }
+                    set {
+                        _theme = newValue
+                    }
+                }
             }
             #endif
             """,
