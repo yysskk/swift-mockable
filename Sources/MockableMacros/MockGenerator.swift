@@ -50,13 +50,18 @@ struct MockGenerator {
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
         let isThrows = funcDecl.signature.effectSpecifiers?.throwsClause != nil
+        let genericParamNames = extractGenericParameterNames(from: funcDecl)
 
         // Generate call count property
         let callCountProperty = generateCallCountProperty(funcName: funcName)
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         // Generate call arguments storage
-        let callArgsProperty = generateCallArgsProperty(funcName: funcName, parameters: parameters)
+        let callArgsProperty = generateCallArgsProperty(
+            funcName: funcName,
+            parameters: parameters,
+            genericParamNames: genericParamNames
+        )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
         // Generate handler property
@@ -65,15 +70,23 @@ struct MockGenerator {
             parameters: parameters,
             returnType: returnType,
             isAsync: isAsync,
-            isThrows: isThrows
+            isThrows: isThrows,
+            genericParamNames: genericParamNames
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
         // Generate the mock function implementation
-        let mockFunction = generateMockFunction(funcDecl)
+        let mockFunction = generateMockFunction(funcDecl, genericParamNames: genericParamNames)
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
         return members
+    }
+
+    private func extractGenericParameterNames(from funcDecl: FunctionDeclSyntax) -> Set<String> {
+        guard let genericClause = funcDecl.genericParameterClause else {
+            return []
+        }
+        return Set(genericClause.parameters.map { $0.name.text })
     }
 
     private func generateCallCountProperty(funcName: String) -> VariableDeclSyntax {
@@ -94,9 +107,10 @@ struct MockGenerator {
 
     private func generateCallArgsProperty(
         funcName: String,
-        parameters: FunctionParameterListSyntax
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
-        let tupleType = buildParameterTupleType(parameters: parameters)
+        let tupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
@@ -117,21 +131,25 @@ struct MockGenerator {
         )
     }
 
-    private func buildParameterTupleType(parameters: FunctionParameterListSyntax) -> TypeSyntax {
+    private func buildParameterTupleType(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String> = []
+    ) -> TypeSyntax {
         if parameters.isEmpty {
             return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax([])))
         }
 
         if parameters.count == 1, let param = parameters.first {
-            return param.type
+            return eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
         }
 
         let tupleElements = parameters.enumerated().map { index, param -> TupleTypeElementSyntax in
             let isLast = index == parameters.count - 1
+            let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
             return TupleTypeElementSyntax(
                 firstName: param.secondName ?? param.firstName,
                 colon: .colonToken(),
-                type: param.type,
+                type: erasedType,
                 trailingComma: isLast ? nil : .commaToken()
             )
         }
@@ -139,15 +157,73 @@ struct MockGenerator {
         return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax(tupleElements)))
     }
 
+    private func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {
+        if genericParamNames.isEmpty {
+            return type
+        }
+
+        // Check if type itself is a generic parameter
+        if let identifierType = type.as(IdentifierTypeSyntax.self) {
+            if genericParamNames.contains(identifierType.name.text) {
+                return TypeSyntax(stringLiteral: "Any")
+            }
+            // Check for generic arguments like UserDefaultsKey<T>
+            if let genericArgs = identifierType.genericArgumentClause {
+                let hasGenericParam = genericArgs.arguments.contains { arg in
+                    switch arg.argument {
+                    case .type(let typeSyntax):
+                        if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
+                            return genericParamNames.contains(innerIdent.name.text)
+                        }
+                        return false
+                    case .expr:
+                        return false
+                    }
+                }
+                if hasGenericParam {
+                    return TypeSyntax(stringLiteral: "Any")
+                }
+            }
+        }
+
+        // Handle optional types
+        if let optionalType = type.as(OptionalTypeSyntax.self) {
+            let erasedWrapped = eraseGenericTypes(in: optionalType.wrappedType, genericParamNames: genericParamNames)
+            if erasedWrapped.description != optionalType.wrappedType.description {
+                return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+            }
+        }
+
+        // Handle implicitly unwrapped optional types
+        if let implicitOptional = type.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
+            let erasedWrapped = eraseGenericTypes(in: implicitOptional.wrappedType, genericParamNames: genericParamNames)
+            if erasedWrapped.description != implicitOptional.wrappedType.description {
+                return TypeSyntax(ImplicitlyUnwrappedOptionalTypeSyntax(wrappedType: erasedWrapped))
+            }
+        }
+
+        // Handle array types
+        if let arrayType = type.as(ArrayTypeSyntax.self) {
+            let erasedElement = eraseGenericTypes(in: arrayType.element, genericParamNames: genericParamNames)
+            if erasedElement.description != arrayType.element.description {
+                return TypeSyntax(ArrayTypeSyntax(element: erasedElement))
+            }
+        }
+
+        return type
+    }
+
     private func generateHandlerProperty(
         funcName: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
-        isThrows: Bool
+        isThrows: Bool,
+        genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
-        let paramTupleType = buildParameterTupleType(parameters: parameters)
-        let returnTypeStr = returnType?.description ?? "Void"
+        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+        let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
+        let returnTypeStr = erasedReturnType?.description ?? "Void"
 
         var closureType = "(\(paramTupleType.description))"
         if isAsync {
@@ -175,12 +251,13 @@ struct MockGenerator {
         )
     }
 
-    private func generateMockFunction(_ funcDecl: FunctionDeclSyntax) -> FunctionDeclSyntax {
+    private func generateMockFunction(_ funcDecl: FunctionDeclSyntax, genericParamNames: Set<String>) -> FunctionDeclSyntax {
         let funcName = funcDecl.name.text
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
         let isThrows = funcDecl.signature.effectSpecifiers?.throwsClause != nil
+        let hasGenericReturn = returnType.map { typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
 
         // Build function body
         var statements: [CodeBlockItemSyntax] = []
@@ -214,7 +291,8 @@ struct MockGenerator {
             parameters: parameters,
             returnType: returnType,
             isAsync: isAsync,
-            isThrows: isThrows
+            isThrows: isThrows,
+            hasGenericReturn: hasGenericReturn
         )
         statements.append(handlerCallExpr)
 
@@ -229,9 +307,43 @@ struct MockGenerator {
                 DeclModifierSyntax(name: .keyword(.public))
             ]),
             name: funcDecl.name,
+            genericParameterClause: funcDecl.genericParameterClause,
             signature: funcDecl.signature,
+            genericWhereClause: funcDecl.genericWhereClause,
             body: body
         )
+    }
+
+    private func typeContainsGeneric(_ type: TypeSyntax, genericParamNames: Set<String>) -> Bool {
+        if genericParamNames.isEmpty {
+            return false
+        }
+
+        if let identifierType = type.as(IdentifierTypeSyntax.self) {
+            if genericParamNames.contains(identifierType.name.text) {
+                return true
+            }
+            if let genericArgs = identifierType.genericArgumentClause {
+                return genericArgs.arguments.contains { arg in
+                    switch arg.argument {
+                    case .type(let typeSyntax):
+                        return typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
+                    case .expr:
+                        return false
+                    }
+                }
+            }
+        }
+
+        if let optionalType = type.as(OptionalTypeSyntax.self) {
+            return typeContainsGeneric(optionalType.wrappedType, genericParamNames: genericParamNames)
+        }
+
+        if let arrayType = type.as(ArrayTypeSyntax.self) {
+            return typeContainsGeneric(arrayType.element, genericParamNames: genericParamNames)
+        }
+
+        return false
     }
 
     private func buildArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
@@ -263,7 +375,8 @@ struct MockGenerator {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
-        isThrows: Bool
+        isThrows: Bool,
+        hasGenericReturn: Bool = false
     ) -> CodeBlockItemSyntax {
         let argsExpr = buildArgsExpression(parameters: parameters)
 
@@ -288,11 +401,13 @@ struct MockGenerator {
         let hasReturnValue = returnType != nil && returnType?.description != "Void"
 
         if hasReturnValue {
+            let returnTypeStr = returnType?.description ?? "Void"
+            let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
                 guard let handler = \(funcName)Handler else {
                     fatalError("\\(Self.self).\(funcName)Handler is not set")
                 }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))
+                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))\(castSuffix)
                 """)))
         } else {
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
