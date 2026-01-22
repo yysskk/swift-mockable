@@ -124,7 +124,7 @@ struct MockGenerator {
                 storageMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // Handler
-                let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames, forHandler: true)
+                let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
                 let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
                 let returnTypeStr = erasedReturnType?.description ?? "Void"
 
@@ -383,7 +383,7 @@ struct MockGenerator {
         isThrows: Bool,
         genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
-        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames, forHandler: true)
+        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
@@ -496,7 +496,7 @@ struct MockGenerator {
         isThrows: Bool,
         genericParamNames: Set<String>
     ) -> String {
-        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames, forHandler: true)
+        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
@@ -559,13 +559,8 @@ struct MockGenerator {
     private func buildParameterTupleType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String> = [],
-        forHandler: Bool = false
     ) -> TypeSyntax {
         if parameters.isEmpty {
-            // For handler closures, return Void so the closure can be written as { true } instead of { _ in true }
-            if forHandler {
-                return TypeSyntax(IdentifierTypeSyntax(name: .identifier("Void")))
-            }
             return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax([])))
         }
 
@@ -651,7 +646,7 @@ struct MockGenerator {
         isThrows: Bool,
         genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
-        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames, forHandler: true)
+        let paramTupleType = buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
@@ -810,24 +805,6 @@ struct MockGenerator {
     ) -> CodeBlockItemSyntax {
         let argsExpr = buildArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
-
-        var handlerCall: ExprSyntax = ExprSyntax(FunctionCallExprSyntax(
-            calledExpression: ForceUnwrapExprSyntax(
-                expression: DeclReferenceExprSyntax(baseName: .identifier("\(funcName)Handler"))
-            ),
-            leftParen: .leftParenToken(),
-            arguments: parameters.isEmpty ? LabeledExprListSyntax([]) : LabeledExprListSyntax([
-                LabeledExprSyntax(expression: argsExpr)
-            ]),
-            rightParen: .rightParenToken()
-        ))
-
-        if isThrows {
-            handlerCall = ExprSyntax(TryExprSyntax(expression: handlerCall))
-        }
-        if isAsync {
-            handlerCall = ExprSyntax(AwaitExprSyntax(expression: handlerCall))
-        }
 
         let hasReturnValue = returnType != nil && returnType?.description != "Void"
 
