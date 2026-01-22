@@ -1,3 +1,8 @@
+// Re-export Mutex for Sendable mock support (macOS 15.0+/iOS 18.0+)
+#if canImport(Synchronization)
+@_exported import Synchronization
+#endif
+
 /// A macro that generates a mock class for a protocol.
 ///
 /// When applied to a protocol, this macro generates a `<ProtocolName>Mock` class

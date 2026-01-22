@@ -31,6 +31,7 @@ Then add `Mockable` to your target dependencies:
 - Supports get-only and get/set properties
 - Supports optional properties
 - Supports generic methods (with type erasure to `Any`)
+- Supports `Sendable` protocols with thread-safe mock generation using `Mutex`
 
 ## Usage
 
@@ -125,6 +126,37 @@ protocol UserDefaultsClient {
 // mock.integerCallArgs: [UserDefaultsKey<Int>]
 ```
 
+### Sendable protocols
+
+Protocols that inherit from `Sendable` or have the `@Sendable` attribute generate thread-safe mocks using `Mutex`:
+
+```swift
+@Mockable
+protocol KeychainClient: Sendable {
+    func save(_ data: Data, forKey key: String) throws
+    func load(forKey key: String) throws -> Data?
+}
+
+// Generated mock is thread-safe and can be used from multiple tasks
+let mock = KeychainClientMock()
+mock.loadHandler = { @Sendable key in
+    "test data".data(using: .utf8)
+}
+
+// Safe to use concurrently
+await withTaskGroup(of: Void.self) { group in
+    for _ in 0..<100 {
+        group.addTask {
+            _ = try? mock.load(forKey: "key")
+        }
+    }
+}
+
+#expect(mock.loadCallCount == 100)
+```
+
+**Note:** Sendable mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
+
 ## Generated Code Example
 
 For the `UserService` protocol above, the following mock class is generated:
@@ -171,6 +203,7 @@ public class UserServiceMock: UserService {
 
 - Swift 6.2+
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+- For `Sendable` protocol support: macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+
 
 ## License
 
