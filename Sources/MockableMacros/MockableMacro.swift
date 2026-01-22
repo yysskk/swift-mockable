@@ -16,11 +16,24 @@ public struct MockableMacro: PeerMacro {
         let protocolName = protocolDecl.name.text
         let mockClassName = "\(protocolName)Mock"
 
+        // Check if the protocol inherits from Sendable or has @Sendable attribute
+        let isSendable = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
+            inherited.type.trimmedDescription == "Sendable"
+        } ?? false
+
+        let hasSendableAttribute = protocolDecl.attributes.contains { attr in
+            if case .attribute(let attributeSyntax) = attr {
+                return attributeSyntax.attributeName.trimmedDescription == "Sendable"
+            }
+            return false
+        }
+
         let members = protocolDecl.memberBlock.members
         let generator = MockGenerator(
             protocolName: protocolName,
             mockClassName: mockClassName,
-            members: members
+            members: members,
+            isSendable: isSendable || hasSendableAttribute
         )
 
         let mockClass = try generator.generate()

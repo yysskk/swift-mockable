@@ -1,3 +1,6 @@
+// Re-export Mutex for Sendable mock support
+@_exported import Synchronization
+
 /// A macro that generates a mock class for a protocol.
 ///
 /// When applied to a protocol, this macro generates a `<ProtocolName>Mock` class
