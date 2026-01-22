@@ -1,5 +1,7 @@
-// Re-export Mutex for Sendable mock support
+// Re-export Mutex for Sendable mock support (macOS 15.0+/iOS 18.0+)
+#if canImport(Synchronization)
 @_exported import Synchronization
+#endif
 
 /// A macro that generates a mock class for a protocol.
 ///
