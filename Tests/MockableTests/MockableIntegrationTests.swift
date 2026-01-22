@@ -34,6 +34,17 @@ protocol GenericService {
     func set<T>(_ value: T, forKey key: String)
 }
 
+@Mockable
+protocol EventHandlerService {
+    func subscribe(eventHandler: @escaping (String) -> Void)
+    func onEvent(callback: @escaping @Sendable (Int) -> Void)
+}
+
+@Mockable
+protocol SendableEventService: Sendable {
+    func register(eventCallback: @escaping @Sendable (String) -> Void) async
+}
+
 // MARK: - Integration Tests
 
 @Suite("Mockable Integration Tests")
@@ -209,6 +220,58 @@ struct MockableIntegrationTests {
         let result = useService(mock)
 
         #expect(result == "from mock")
+    }
+
+    @Test("Method with @escaping closure parameter")
+    func escapingClosureParameter() {
+        let mock = EventHandlerServiceMock()
+        nonisolated(unsafe) var receivedValue: String?
+
+        mock.subscribeHandler = { @Sendable eventHandler in
+            eventHandler("test event")
+        }
+
+        mock.subscribe { value in
+            receivedValue = value
+        }
+
+        #expect(mock.subscribeCallCount == 1)
+        #expect(receivedValue == "test event")
+    }
+
+    @Test("Method with @escaping @Sendable closure parameter")
+    func escapingSendableClosureParameter() {
+        let mock = EventHandlerServiceMock()
+        nonisolated(unsafe) var receivedValue: Int?
+
+        mock.onEventHandler = { @Sendable callback in
+            callback(42)
+        }
+
+        mock.onEvent { value in
+            receivedValue = value
+        }
+
+        #expect(mock.onEventCallCount == 1)
+        #expect(receivedValue == 42)
+    }
+
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+    @Test("Sendable protocol with @escaping @Sendable closure parameter")
+    func sendableProtocolEscapingClosure() async {
+        let mock = SendableEventServiceMock()
+        nonisolated(unsafe) var receivedValue: String?
+
+        mock.registerHandler = { @Sendable eventCallback in
+            eventCallback("registered")
+        }
+
+        await mock.register { value in
+            receivedValue = value
+        }
+
+        #expect(mock.registerCallCount == 1)
+        #expect(receivedValue == "registered")
     }
 }
 

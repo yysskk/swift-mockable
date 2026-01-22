@@ -32,10 +32,10 @@ struct MockableMacroTests {
                 public func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArgs.append(id)
-                    guard let handler = fetchUserHandler else {
+                    guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
-                    return handler(id)
+                    return _handler(id)
                 }
             }
             #endif
@@ -66,10 +66,10 @@ struct MockableMacroTests {
                 public func loadData(from url: String) async throws -> Data {
                     loadDataCallCount += 1
                     loadDataCallArgs.append(url)
-                    guard let handler = loadDataHandler else {
+                    guard let _handler = loadDataHandler else {
                         fatalError("\\(Self.self).loadDataHandler is not set")
                     }
-                    return try await handler(url)
+                    return try await _handler(url)
                 }
             }
             #endif
@@ -100,10 +100,10 @@ struct MockableMacroTests {
                 public func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArgs.append((a: a, b: b))
-                    guard let handler = addHandler else {
+                    guard let _handler = addHandler else {
                         fatalError("\\(Self.self).addHandler is not set")
                     }
-                    return handler((a: a, b: b))
+                    return _handler((a: a, b: b))
                 }
             }
             #endif
@@ -134,8 +134,8 @@ struct MockableMacroTests {
                 public func log(message: String) {
                     logCallCount += 1
                     logCallArgs.append(message)
-                    if let handler = logHandler {
-                        handler(message)
+                    if let _handler = logHandler {
+                        _handler(message)
                     }
                 }
             }
@@ -267,10 +267,10 @@ struct MockableMacroTests {
                 public func get<T>(_ key: String) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
-                    guard let handler = getHandler else {
+                    guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
-                    return handler(key) as! T
+                    return _handler(key) as! T
                 }
             }
             #endif
@@ -301,8 +301,8 @@ struct MockableMacroTests {
                 public func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
                     saveCallArgs.append((value: value, key: key))
-                    if let handler = saveHandler {
-                        handler((value: value, key: key))
+                    if let _handler = saveHandler {
+                        _handler((value: value, key: key))
                     }
                 }
             }
@@ -336,10 +336,10 @@ struct MockableMacroTests {
                 public func get<T>(_ key: UserDefaultsKey<T>) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
-                    guard let handler = getHandler else {
+                    guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
-                    return handler(key) as! T
+                    return _handler(key) as! T
                 }
                 public var setCallCount: Int = 0
                 public var setCallArgs: [(value: Any, key: Any)] = []
@@ -347,8 +347,8 @@ struct MockableMacroTests {
                 public func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
                     setCallArgs.append((value: value, key: key))
-                    if let handler = setHandler {
-                        handler((value: value, key: key))
+                    if let _handler = setHandler {
+                        _handler((value: value, key: key))
                     }
                 }
             }
@@ -382,10 +382,10 @@ struct MockableMacroTests {
                 public func integer(forKey key: UserDefaultsKey<Int>) -> Int {
                     integerCallCount += 1
                     integerCallArgs.append(key)
-                    guard let handler = integerHandler else {
+                    guard let _handler = integerHandler else {
                         fatalError("\\(Self.self).integerHandler is not set")
                     }
-                    return handler(key)
+                    return _handler(key)
                 }
                 public var setIntegerCallCount: Int = 0
                 public var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
@@ -393,8 +393,8 @@ struct MockableMacroTests {
                 public func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
                     setIntegerCallArgs.append((value: value, key: key))
-                    if let handler = setIntegerHandler {
-                        handler((value: value, key: key))
+                    if let _handler = setIntegerHandler {
+                        _handler((value: value, key: key))
                     }
                 }
             }
@@ -467,13 +467,13 @@ struct MockableMacroTests {
                     }
                 }
                 public func save(_ data: Data, forKey key: String) throws {
-                    let handler = _storage.withLock { storage -> (@Sendable ((data: Data, key: String)) throws -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable ((data: Data, key: String)) throws -> Void)? in
                         storage.saveCallCount += 1
                         storage.saveCallArgs.append((data: data, key: key))
                         return storage.saveHandler
                     }
-                    if let handler {
-                        try handler((data: data, key: key))
+                    if let _handler {
+                        try _handler((data: data, key: key))
                     }
                 }
                 public var loadCallCount: Int {
@@ -501,15 +501,15 @@ struct MockableMacroTests {
                     }
                 }
                 public func load(forKey key: String) throws -> Data? {
-                    let handler = _storage.withLock { storage -> (@Sendable (String) throws -> Data?)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Data?)? in
                         storage.loadCallCount += 1
                         storage.loadCallArgs.append(key)
                         return storage.loadHandler
                     }
-                    guard let handler else {
+                    guard let _handler else {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
-                    return try handler(key)
+                    return try _handler(key)
                 }
                 public var deleteCallCount: Int {
                     get {
@@ -536,13 +536,13 @@ struct MockableMacroTests {
                     }
                 }
                 public func delete(forKey key: String) throws {
-                    let handler = _storage.withLock { storage -> (@Sendable (String) throws -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Void)? in
                         storage.deleteCallCount += 1
                         storage.deleteCallArgs.append(key)
                         return storage.deleteHandler
                     }
-                    if let handler {
-                        try handler(key)
+                    if let _handler {
+                        try _handler(key)
                     }
                 }
                 public var existsCallCount: Int {
@@ -570,15 +570,15 @@ struct MockableMacroTests {
                     }
                 }
                 public func exists(forKey key: String) -> Bool {
-                    let handler = _storage.withLock { storage -> (@Sendable (String) -> Bool)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Bool)? in
                         storage.existsCallCount += 1
                         storage.existsCallArgs.append(key)
                         return storage.existsHandler
                     }
-                    guard let handler else {
+                    guard let _handler else {
                         fatalError("\\(Self.self).existsHandler is not set")
                     }
-                    return handler(key)
+                    return _handler(key)
                 }
             }
             #endif
@@ -637,13 +637,143 @@ struct MockableMacroTests {
                     }
                 }
                 public func log(message: String) {
-                    let handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
                         storage.logCallCount += 1
                         storage.logCallArgs.append(message)
                         return storage.logHandler
                     }
-                    if let handler {
-                        handler(message)
+                    if let _handler {
+                        _handler(message)
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Protocol with @escaping closure parameter")
+    func escapingClosureParameter() {
+        assertMacroExpansion(
+            """
+            @Mockable
+            protocol EventHandler {
+                func subscribe(handler: @escaping (String) -> Void)
+            }
+            """,
+            expandedSource: """
+            protocol EventHandler {
+                func subscribe(handler: @escaping (String) -> Void)
+            }
+            #if DEBUG
+
+            public class EventHandlerMock: EventHandler {
+                public var subscribeCallCount: Int = 0
+                public var subscribeCallArgs: [(String) -> Void] = []
+                public var subscribeHandler: (@Sendable ((String) -> Void) -> Void)?
+                public func subscribe(handler: @escaping (String) -> Void) {
+                    subscribeCallCount += 1
+                    subscribeCallArgs.append(handler)
+                    if let _handler = subscribeHandler {
+                        _handler(handler)
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Protocol with @escaping @Sendable closure parameter")
+    func escapingSendableClosureParameter() {
+        assertMacroExpansion(
+            """
+            @Mockable
+            protocol EventHandler {
+                func onEvent(callback: @escaping @Sendable (Int) -> Void)
+            }
+            """,
+            expandedSource: """
+            protocol EventHandler {
+                func onEvent(callback: @escaping @Sendable (Int) -> Void)
+            }
+            #if DEBUG
+
+            public class EventHandlerMock: EventHandler {
+                public var onEventCallCount: Int = 0
+                public var onEventCallArgs: [@Sendable (Int) -> Void] = []
+                public var onEventHandler: (@Sendable (@Sendable (Int) -> Void) -> Void)?
+                public func onEvent(callback: @escaping @Sendable (Int) -> Void) {
+                    onEventCallCount += 1
+                    onEventCallArgs.append(callback)
+                    if let _handler = onEventHandler {
+                        _handler(callback)
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Sendable protocol with @escaping @Sendable closure parameter")
+    func sendableProtocolWithEscapingClosure() {
+        assertMacroExpansion(
+            """
+            @Mockable
+            protocol EventService: Sendable {
+                func register(handler: @escaping @Sendable (String) -> Void) async
+            }
+            """,
+            expandedSource: """
+            protocol EventService: Sendable {
+                func register(handler: @escaping @Sendable (String) -> Void) async
+            }
+            #if DEBUG
+
+            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+            public final class EventServiceMock: EventService, Sendable {
+                private struct Storage {
+                    var registerCallCount: Int = 0
+                    var registerCallArgs: [@Sendable (String) -> Void] = []
+                    var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
+                }
+                private let _storage = Mutex<Storage>(Storage())
+                public var registerCallCount: Int {
+                    get {
+                        _storage.withLock { $0.registerCallCount }
+                    }
+                    set {
+                        _storage.withLock { $0.registerCallCount = newValue }
+                    }
+                }
+                public var registerCallArgs: [@Sendable (String) -> Void] {
+                    get {
+                        _storage.withLock { $0.registerCallArgs }
+                    }
+                    set {
+                        _storage.withLock { $0.registerCallArgs = newValue }
+                    }
+                }
+                public var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
+                    get {
+                        _storage.withLock { $0.registerHandler }
+                    }
+                    set {
+                        _storage.withLock { $0.registerHandler = newValue }
+                    }
+                }
+                public func register(handler: @escaping @Sendable (String) -> Void) async {
+                    let _handler = _storage.withLock { storage -> (@Sendable (@Sendable (String) -> Void) async -> Void)? in
+                        storage.registerCallCount += 1
+                        storage.registerCallArgs.append(handler)
+                        return storage.registerHandler
+                    }
+                    if let _handler {
+                        await _handler(handler)
                     }
                 }
             }
