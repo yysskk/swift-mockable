@@ -60,7 +60,7 @@ struct MockableIntegrationTests {
         let mock = SimpleServiceMock()
         nonisolated(unsafe) var handlerCalled = false
 
-        mock.doSomethingHandler = { @Sendable (_: ()) -> Void in
+        mock.doSomethingHandler = {
             handlerCalled = true
         }
 
@@ -73,9 +73,7 @@ struct MockableIntegrationTests {
     func returnValueMethod() {
         let mock = SimpleServiceMock()
 
-        mock.getValueHandler = { @Sendable (_: ()) -> String in
-            "test value"
-        }
+        mock.getValueHandler = { "test value" }
 
         let result = mock.getValue()
 
@@ -206,7 +204,7 @@ struct MockableIntegrationTests {
         }
 
         let mock = SimpleServiceMock()
-        mock.getValueHandler = { @Sendable (_: ()) -> String in "from mock" }
+        mock.getValueHandler = { "from mock" }
 
         let result = useService(mock)
 

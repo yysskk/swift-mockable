@@ -128,7 +128,7 @@ struct MockGenerator {
                 let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
                 let returnTypeStr = erasedReturnType?.description ?? "Void"
 
-                var closureType = "(\(paramTupleType.description))"
+                var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
                 if isAsync { closureType += " async" }
                 if isThrows { closureType += " throws" }
                 closureType += " -> \(returnTypeStr)"
@@ -387,7 +387,7 @@ struct MockGenerator {
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
-        var closureType = "(\(paramTupleType.description))"
+        var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
         if isAsync { closureType += " async" }
         if isThrows { closureType += " throws" }
         closureType += " -> \(returnTypeStr)"
@@ -438,6 +438,7 @@ struct MockGenerator {
 
         let argsExpr = buildArgsExpression(parameters: parameters)
         let hasReturnValue = returnType != nil && returnType?.description != "Void"
+        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
         // Build the function body using withLock for thread safety
         let bodyCode: String
@@ -453,7 +454,7 @@ struct MockGenerator {
                 guard let handler else {
                     fatalError("\\(Self.self).\(funcName)Handler is not set")
                 }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))\(castSuffix)
+                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))\(castSuffix)
                 """
         } else {
             bodyCode = """
@@ -463,7 +464,7 @@ struct MockGenerator {
                     return storage.\(funcName)Handler
                 }
                 if let handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))
+                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))
                 }
                 """
         }
@@ -499,7 +500,7 @@ struct MockGenerator {
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
-        var closureType = "(\(paramTupleType.description))"
+        var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
         if isAsync { closureType += " async" }
         if isThrows { closureType += " throws" }
         closureType += " -> \(returnTypeStr)"
@@ -557,7 +558,7 @@ struct MockGenerator {
 
     private func buildParameterTupleType(
         parameters: FunctionParameterListSyntax,
-        genericParamNames: Set<String> = []
+        genericParamNames: Set<String> = [],
     ) -> TypeSyntax {
         if parameters.isEmpty {
             return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax([])))
@@ -649,7 +650,7 @@ struct MockGenerator {
         let erasedReturnType = returnType.map { eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let returnTypeStr = erasedReturnType?.description ?? "Void"
 
-        var closureType = "(\(paramTupleType.description))"
+        var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
         if isAsync {
             closureType += " async"
         }
@@ -803,24 +804,7 @@ struct MockGenerator {
         hasGenericReturn: Bool = false
     ) -> CodeBlockItemSyntax {
         let argsExpr = buildArgsExpression(parameters: parameters)
-
-        var handlerCall: ExprSyntax = ExprSyntax(FunctionCallExprSyntax(
-            calledExpression: ForceUnwrapExprSyntax(
-                expression: DeclReferenceExprSyntax(baseName: .identifier("\(funcName)Handler"))
-            ),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: argsExpr)
-            ]),
-            rightParen: .rightParenToken()
-        ))
-
-        if isThrows {
-            handlerCall = ExprSyntax(TryExprSyntax(expression: handlerCall))
-        }
-        if isAsync {
-            handlerCall = ExprSyntax(AwaitExprSyntax(expression: handlerCall))
-        }
+        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
         let hasReturnValue = returnType != nil && returnType?.description != "Void"
 
@@ -831,12 +815,12 @@ struct MockGenerator {
                 guard let handler = \(funcName)Handler else {
                     fatalError("\\(Self.self).\(funcName)Handler is not set")
                 }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))\(castSuffix)
+                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))\(castSuffix)
                 """)))
         } else {
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
                 if let handler = \(funcName)Handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(argsExpr))
+                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))
                 }
                 """)))
         }
