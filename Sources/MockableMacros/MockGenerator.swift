@@ -446,25 +446,25 @@ struct MockGenerator {
             let returnTypeStr = returnType?.description ?? "Void"
             let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             bodyCode = """
-                let handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
+                let _handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
                     storage.\(funcName)CallCount += 1
                     storage.\(funcName)CallArgs.append(\(argsExpr))
                     return storage.\(funcName)Handler
                 }
-                guard let handler else {
+                guard let _handler else {
                     fatalError("\\(Self.self).\(funcName)Handler is not set")
                 }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))\(castSuffix)
+                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)
                 """
         } else {
             bodyCode = """
-                let handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
+                let _handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
                     storage.\(funcName)CallCount += 1
                     storage.\(funcName)CallArgs.append(\(argsExpr))
                     return storage.\(funcName)Handler
                 }
-                if let handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))
+                if let _handler {
+                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
                 }
                 """
         }
@@ -583,6 +583,24 @@ struct MockGenerator {
     }
 
     private func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {
+        // Handle attributed types FIRST (e.g., @escaping @Sendable (Event) -> Void)
+        // This must be checked before the genericParamNames.isEmpty early return
+        // because we need to strip @escaping even when there are no generic parameters
+        if let attributedType = type.as(AttributedTypeSyntax.self) {
+            let filteredAttributes = stripEscapingAttribute(from: attributedType.attributes)
+            let processedBaseType = eraseGenericTypes(in: attributedType.baseType, genericParamNames: genericParamNames)
+
+            if filteredAttributes.isEmpty && attributedType.specifiers.isEmpty {
+                return processedBaseType
+            }
+
+            return TypeSyntax(AttributedTypeSyntax(
+                specifiers: attributedType.specifiers,
+                attributes: filteredAttributes,
+                baseType: processedBaseType
+            ))
+        }
+
         if genericParamNames.isEmpty {
             return type
         }
@@ -635,7 +653,53 @@ struct MockGenerator {
             }
         }
 
+        // Handle function types (closures) - recursively process parameter types and return type
+        if let funcType = type.as(FunctionTypeSyntax.self) {
+            let processedParameters = TupleTypeElementListSyntax(
+                funcType.parameters.map { param in
+                    TupleTypeElementSyntax(
+                        firstName: param.firstName,
+                        secondName: param.secondName,
+                        colon: param.colon,
+                        type: eraseGenericTypes(in: param.type, genericParamNames: genericParamNames),
+                        ellipsis: param.ellipsis,
+                        trailingComma: param.trailingComma
+                    )
+                }
+            )
+
+            let processedReturnType = eraseGenericTypes(
+                in: funcType.returnClause.type,
+                genericParamNames: genericParamNames
+            )
+
+            return TypeSyntax(FunctionTypeSyntax(
+                leftParen: funcType.leftParen,
+                parameters: processedParameters,
+                rightParen: funcType.rightParen,
+                effectSpecifiers: funcType.effectSpecifiers,
+                returnClause: ReturnClauseSyntax(
+                    arrow: funcType.returnClause.arrow,
+                    type: processedReturnType
+                )
+            ))
+        }
+
         return type
+    }
+
+    /// Strips the @escaping attribute from an AttributeListSyntax.
+    /// @escaping is only valid in function parameter position, not in property types.
+    private func stripEscapingAttribute(from attributes: AttributeListSyntax) -> AttributeListSyntax {
+        let filteredAttributes = attributes.filter { element in
+            switch element {
+            case .attribute(let attr):
+                return attr.attributeName.trimmedDescription != "escaping"
+            case .ifConfigDecl:
+                return true
+            }
+        }
+        return filteredAttributes
     }
 
     private func generateHandlerProperty(
@@ -812,15 +876,15 @@ struct MockGenerator {
             let returnTypeStr = returnType?.description ?? "Void"
             let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-                guard let handler = \(funcName)Handler else {
+                guard let _handler = \(funcName)Handler else {
                     fatalError("\\(Self.self).\(funcName)Handler is not set")
                 }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))\(castSuffix)
+                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)
                 """)))
         } else {
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-                if let handler = \(funcName)Handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")handler(\(handlerCallArgs))
+                if let _handler = \(funcName)Handler {
+                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
                 }
                 """)))
         }
