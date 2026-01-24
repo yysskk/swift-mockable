@@ -990,6 +990,64 @@ struct MockableMacroTests {
         )
     }
 
+    @Test("Actor protocol with property")
+    func actorProtocolWithProperty() {
+        assertMacroExpansion(
+            """
+            @Mockable
+            protocol ConfigProvider: Actor {
+                var apiKey: String { get }
+                var timeout: Int { get set }
+            }
+            """,
+            expandedSource: """
+            protocol ConfigProvider: Actor {
+                var apiKey: String { get }
+                var timeout: Int { get set }
+            }
+            #if DEBUG
+
+            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+            public actor ConfigProviderMock: ConfigProvider {
+                private struct Storage {
+                    var _apiKey: String? = nil
+                    var _timeout: Int? = nil
+                }
+                private let _storage = Mutex<Storage>(Storage())
+                public nonisolated var _apiKey: String? {
+                    get {
+                        _storage.withLock { $0._apiKey }
+                    }
+                    set {
+                        _storage.withLock { $0._apiKey = newValue }
+                    }
+                }
+                public var apiKey: String {
+                    _storage.withLock { $0._apiKey! }
+                }
+                public nonisolated var _timeout: Int? {
+                    get {
+                        _storage.withLock { $0._timeout }
+                    }
+                    set {
+                        _storage.withLock { $0._timeout = newValue }
+                    }
+                }
+                public var timeout: Int {
+                    get {
+                        _storage.withLock { $0._timeout! }
+                    }
+                    set {
+                        _storage.withLock { $0._timeout = newValue }
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Actor protocol with async throws method")
     func actorProtocolWithAsyncThrows() {
         assertMacroExpansion(
