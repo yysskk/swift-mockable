@@ -83,7 +83,8 @@ struct MockGenerator {
         var attributes: [AttributeListSyntax.Element] = []
         if isSendable {
             // Add @available attribute for Mutex which requires macOS 15.0+
-            let availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
+            var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
+            availableAttribute.trailingTrivia = .newline
             attributes.append(.attribute(availableAttribute))
         }
 
@@ -137,7 +138,8 @@ struct MockGenerator {
 
         // Build attributes - add @available for Mutex
         var attributes: [AttributeListSyntax.Element] = []
-        let availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
+        var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
+        availableAttribute.trailingTrivia = .newline
         attributes.append(.attribute(availableAttribute))
 
         return ActorDeclSyntax(
@@ -510,39 +512,49 @@ struct MockGenerator {
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
         // Build the function body using withLock for thread safety
-        let bodyCode: String
+        let closureType = buildClosureType(
+            parameters: parameters,
+            returnType: returnType,
+            isAsync: isAsync,
+            isThrows: isThrows,
+            genericParamNames: genericParamNames
+        )
+
+        var statements: [CodeBlockItemSyntax] = []
+
+        // withLock statement to get handler
+        let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
+let _handler = _storage.withLock { storage -> (@Sendable \(closureType))? in
+    storage.\(funcName)CallCount += 1
+    storage.\(funcName)CallArgs.append(\(argsExpr))
+    return storage.\(funcName)Handler
+}
+""")))
+        statements.append(withLockStmt)
+
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
             let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
-            bodyCode = """
-                let _handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
-                    storage.\(funcName)CallCount += 1
-                    storage.\(funcName)CallArgs.append(\(argsExpr))
-                    return storage.\(funcName)Handler
-                }
-                guard let _handler else {
-                    fatalError("\\(Self.self).\(funcName)Handler is not set")
-                }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)
-                """
+            let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+guard let _handler else {
+    fatalError("\\(Self.self).\(funcName)Handler is not set")
+}
+""")))
+            statements.append(guardStmt)
+            let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)")))
+            statements.append(returnStmt)
         } else {
-            bodyCode = """
-                let _handler = _storage.withLock { storage -> (@Sendable \(buildClosureType(parameters: parameters, returnType: returnType, isAsync: isAsync, isThrows: isThrows, genericParamNames: genericParamNames)))? in
-                    storage.\(funcName)CallCount += 1
-                    storage.\(funcName)CallArgs.append(\(argsExpr))
-                    return storage.\(funcName)Handler
-                }
-                if let _handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
-                }
-                """
+            let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let _handler {
+\(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
+}
+""")))
+            statements.append(ifStmt)
         }
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax([
-                CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: bodyCode)))
-            ]),
+            statements: CodeBlockItemListSyntax(statements),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
@@ -642,9 +654,9 @@ struct MockGenerator {
             let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
             return TupleTypeElementSyntax(
                 firstName: param.secondName ?? param.firstName,
-                colon: .colonToken(),
+                colon: .colonToken(trailingTrivia: .space),
                 type: erasedType,
-                trailingComma: isLast ? nil : .commaToken()
+                trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
             )
         }
 
@@ -844,7 +856,7 @@ struct MockGenerator {
         statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(appendExpr))))
 
         // Call handler if set
-        let handlerCallExpr = buildHandlerCallExpression(
+        let handlerCallStmts = buildHandlerCallStatements(
             funcName: funcName,
             parameters: parameters,
             returnType: returnType,
@@ -852,7 +864,7 @@ struct MockGenerator {
             isThrows: isThrows,
             hasGenericReturn: hasGenericReturn
         )
-        statements.append(handlerCallExpr)
+        statements.append(contentsOf: handlerCallStmts)
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
@@ -919,23 +931,23 @@ struct MockGenerator {
             let isLast = index == parameters.count - 1
             return LabeledExprSyntax(
                 label: param.secondName ?? param.firstName,
-                colon: .colonToken(),
+                colon: .colonToken(trailingTrivia: .space),
                 expression: DeclReferenceExprSyntax(baseName: .identifier(paramName)),
-                trailingComma: isLast ? nil : .commaToken()
+                trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
             )
         }
 
         return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax(tupleElements)))
     }
 
-    private func buildHandlerCallExpression(
+    private func buildHandlerCallStatements(
         funcName: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
         isThrows: Bool,
         hasGenericReturn: Bool = false
-    ) -> CodeBlockItemSyntax {
+    ) -> [CodeBlockItemSyntax] {
         let argsExpr = buildArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
@@ -944,18 +956,20 @@ struct MockGenerator {
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
             let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
-            return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-                guard let _handler = \(funcName)Handler else {
-                    fatalError("\\(Self.self).\(funcName)Handler is not set")
-                }
-                return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)
-                """)))
+            let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+guard let _handler = \(funcName)Handler else {
+    fatalError("\\(Self.self).\(funcName)Handler is not set")
+}
+""")))
+            let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)")))
+            return [guardStmt, returnStmt]
         } else {
-            return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-                if let _handler = \(funcName)Handler {
-                    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
-                }
-                """)))
+            let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let _handler = \(funcName)Handler {
+    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
+}
+""")))
+            return [ifStmt]
         }
     }
 

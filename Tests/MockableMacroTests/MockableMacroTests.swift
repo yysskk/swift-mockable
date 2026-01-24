@@ -12,7 +12,7 @@ let testMacros: [String: Macro.Type] = [
 struct MockableMacroTests {
     @Test("Simple protocol with single method")
     func simpleProtocolWithMethod() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol UserService {
@@ -23,12 +23,12 @@ struct MockableMacroTests {
             protocol UserService {
                 func fetchUser(id: Int) -> String
             }
-            #if DEBUG
 
+            #if DEBUG
             public class UserServiceMock: UserService {
                 public var fetchUserCallCount: Int = 0
                 public var fetchUserCallArgs: [Int] = []
-                public var fetchUserHandler: (@Sendable (Int) -> String)?
+                public var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 public func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArgs.append(id)
@@ -46,7 +46,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with async throws method")
     func asyncThrowsMethod() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol DataService {
@@ -57,12 +57,12 @@ struct MockableMacroTests {
             protocol DataService {
                 func loadData(from url: String) async throws -> Data
             }
-            #if DEBUG
 
+            #if DEBUG
             public class DataServiceMock: DataService {
                 public var loadDataCallCount: Int = 0
                 public var loadDataCallArgs: [String] = []
-                public var loadDataHandler: (@Sendable (String) async throws -> Data)?
+                public var loadDataHandler: (@Sendable (String) async throws -> Data)? = nil
                 public func loadData(from url: String) async throws -> Data {
                     loadDataCallCount += 1
                     loadDataCallArgs.append(url)
@@ -80,7 +80,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with multiple parameters")
     func multipleParameters() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Calculator {
@@ -91,12 +91,12 @@ struct MockableMacroTests {
             protocol Calculator {
                 func add(a: Int, b: Int) -> Int
             }
-            #if DEBUG
 
+            #if DEBUG
             public class CalculatorMock: Calculator {
                 public var addCallCount: Int = 0
                 public var addCallArgs: [(a: Int, b: Int)] = []
-                public var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)?
+                public var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)? = nil
                 public func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArgs.append((a: a, b: b))
@@ -114,7 +114,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with void method")
     func voidMethod() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Logger {
@@ -125,12 +125,12 @@ struct MockableMacroTests {
             protocol Logger {
                 func log(message: String)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class LoggerMock: Logger {
                 public var logCallCount: Int = 0
                 public var logCallArgs: [String] = []
-                public var logHandler: (@Sendable (String) -> Void)?
+                public var logHandler: (@Sendable (String) -> Void)? = nil
                 public func log(message: String) {
                     logCallCount += 1
                     logCallArgs.append(message)
@@ -147,7 +147,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with get-only property")
     func getOnlyProperty() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol UserProvider {
@@ -158,10 +158,10 @@ struct MockableMacroTests {
             protocol UserProvider {
                 var currentUser: String { get }
             }
-            #if DEBUG
 
+            #if DEBUG
             public class UserProviderMock: UserProvider {
-                public var _currentUser: String?
+                public var _currentUser: String? = nil
                 public var currentUser: String {
                     _currentUser!
                 }
@@ -174,7 +174,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with get-set property")
     func getSetProperty() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Settings {
@@ -185,8 +185,8 @@ struct MockableMacroTests {
             protocol Settings {
                 var theme: String { get set }
             }
-            #if DEBUG
 
+            #if DEBUG
             public class SettingsMock: Settings {
                 public var _theme: String? = nil
                 public var theme: String {
@@ -206,7 +206,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with optional property")
     func optionalProperty() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Cache {
@@ -217,8 +217,8 @@ struct MockableMacroTests {
             protocol Cache {
                 var lastValue: String? { get set }
             }
-            #if DEBUG
 
+            #if DEBUG
             public class CacheMock: Cache {
                 public var lastValue: String? = nil
             }
@@ -230,7 +230,7 @@ struct MockableMacroTests {
 
     @Test("Non-protocol declaration should fail")
     func nonProtocolFails() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             class MyClass {}
@@ -247,7 +247,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with generic method returning generic type")
     func genericMethodWithReturn() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Cache {
@@ -258,12 +258,12 @@ struct MockableMacroTests {
             protocol Cache {
                 func get<T>(_ key: String) -> T
             }
-            #if DEBUG
 
+            #if DEBUG
             public class CacheMock: Cache {
                 public var getCallCount: Int = 0
                 public var getCallArgs: [String] = []
-                public var getHandler: (@Sendable (String) -> Any)?
+                public var getHandler: (@Sendable (String) -> Any)? = nil
                 public func get<T>(_ key: String) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
@@ -281,7 +281,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with generic method with generic parameter type")
     func genericMethodWithGenericParameter() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol Storage {
@@ -292,12 +292,12 @@ struct MockableMacroTests {
             protocol Storage {
                 func save<T>(_ value: T, forKey key: String)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class StorageMock: Storage {
                 public var saveCallCount: Int = 0
                 public var saveCallArgs: [(value: Any, key: String)] = []
-                public var saveHandler: (@Sendable ((value: Any, key: String)) -> Void)?
+                public var saveHandler: (@Sendable ((value: Any, key: String)) -> Void)? = nil
                 public func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
                     saveCallArgs.append((value: value, key: key))
@@ -314,7 +314,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with generic method using wrapper type like UserDefaultsKey<T>")
     func genericMethodWithWrapperType() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol UserDefaultsClient {
@@ -327,12 +327,12 @@ struct MockableMacroTests {
                 func get<T>(_ key: UserDefaultsKey<T>) -> T
                 func set<T>(_ value: T, forKey key: UserDefaultsKey<T>)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class UserDefaultsClientMock: UserDefaultsClient {
                 public var getCallCount: Int = 0
                 public var getCallArgs: [Any] = []
-                public var getHandler: (@Sendable (Any) -> Any)?
+                public var getHandler: (@Sendable (Any) -> Any)? = nil
                 public func get<T>(_ key: UserDefaultsKey<T>) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
@@ -343,7 +343,7 @@ struct MockableMacroTests {
                 }
                 public var setCallCount: Int = 0
                 public var setCallArgs: [(value: Any, key: Any)] = []
-                public var setHandler: (@Sendable ((value: Any, key: Any)) -> Void)?
+                public var setHandler: (@Sendable ((value: Any, key: Any)) -> Void)? = nil
                 public func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
                     setCallArgs.append((value: value, key: key))
@@ -360,7 +360,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with concrete generic type parameters (non-generic method)")
     func concreteGenericTypeParameters() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol UserDefaultsClient {
@@ -373,12 +373,12 @@ struct MockableMacroTests {
                 func integer(forKey key: UserDefaultsKey<Int>) -> Int
                 func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class UserDefaultsClientMock: UserDefaultsClient {
                 public var integerCallCount: Int = 0
                 public var integerCallArgs: [UserDefaultsKey<Int>] = []
-                public var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)?
+                public var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)? = nil
                 public func integer(forKey key: UserDefaultsKey<Int>) -> Int {
                     integerCallCount += 1
                     integerCallArgs.append(key)
@@ -389,7 +389,7 @@ struct MockableMacroTests {
                 }
                 public var setIntegerCallCount: Int = 0
                 public var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
-                public var setIntegerHandler: (@Sendable ((value: Int, key: UserDefaultsKey<Int>)) -> Void)?
+                public var setIntegerHandler: (@Sendable ((value: Int, key: UserDefaultsKey<Int>)) -> Void)? = nil
                 public func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
                     setIntegerCallArgs.append((value: value, key: key))
@@ -406,7 +406,7 @@ struct MockableMacroTests {
 
     @Test("Sendable protocol generates thread-safe mock with Mutex")
     func sendableProtocol() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             public protocol KeychainClientProtocol: Sendable {
@@ -423,8 +423,8 @@ struct MockableMacroTests {
                 func delete(forKey key: String) throws
                 func exists(forKey key: String) -> Bool
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class KeychainClientProtocolMock: KeychainClientProtocol, Sendable {
                 private struct Storage {
@@ -444,26 +444,38 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public var saveCallCount: Int {
                     get {
-                        _storage.withLock { $0.saveCallCount }
+                        _storage.withLock {
+                            $0.saveCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveCallCount = newValue }
+                        _storage.withLock {
+                            $0.saveCallCount = newValue
+                        }
                     }
                 }
                 public var saveCallArgs: [(data: Data, key: String)] {
                     get {
-                        _storage.withLock { $0.saveCallArgs }
+                        _storage.withLock {
+                            $0.saveCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveCallArgs = newValue }
+                        _storage.withLock {
+                            $0.saveCallArgs = newValue
+                        }
                     }
                 }
                 public var saveHandler: (@Sendable ((data: Data, key: String)) throws -> Void)? {
                     get {
-                        _storage.withLock { $0.saveHandler }
+                        _storage.withLock {
+                            $0.saveHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveHandler = newValue }
+                        _storage.withLock {
+                            $0.saveHandler = newValue
+                        }
                     }
                 }
                 public func save(_ data: Data, forKey key: String) throws {
@@ -478,26 +490,38 @@ struct MockableMacroTests {
                 }
                 public var loadCallCount: Int {
                     get {
-                        _storage.withLock { $0.loadCallCount }
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadCallCount = newValue }
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
                     }
                 }
                 public var loadCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.loadCallArgs }
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadCallArgs = newValue }
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
                     }
                 }
                 public var loadHandler: (@Sendable (String) throws -> Data?)? {
                     get {
-                        _storage.withLock { $0.loadHandler }
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadHandler = newValue }
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
                     }
                 }
                 public func load(forKey key: String) throws -> Data? {
@@ -513,26 +537,38 @@ struct MockableMacroTests {
                 }
                 public var deleteCallCount: Int {
                     get {
-                        _storage.withLock { $0.deleteCallCount }
+                        _storage.withLock {
+                            $0.deleteCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.deleteCallCount = newValue }
+                        _storage.withLock {
+                            $0.deleteCallCount = newValue
+                        }
                     }
                 }
                 public var deleteCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.deleteCallArgs }
+                        _storage.withLock {
+                            $0.deleteCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.deleteCallArgs = newValue }
+                        _storage.withLock {
+                            $0.deleteCallArgs = newValue
+                        }
                     }
                 }
                 public var deleteHandler: (@Sendable (String) throws -> Void)? {
                     get {
-                        _storage.withLock { $0.deleteHandler }
+                        _storage.withLock {
+                            $0.deleteHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.deleteHandler = newValue }
+                        _storage.withLock {
+                            $0.deleteHandler = newValue
+                        }
                     }
                 }
                 public func delete(forKey key: String) throws {
@@ -547,26 +583,38 @@ struct MockableMacroTests {
                 }
                 public var existsCallCount: Int {
                     get {
-                        _storage.withLock { $0.existsCallCount }
+                        _storage.withLock {
+                            $0.existsCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.existsCallCount = newValue }
+                        _storage.withLock {
+                            $0.existsCallCount = newValue
+                        }
                     }
                 }
                 public var existsCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.existsCallArgs }
+                        _storage.withLock {
+                            $0.existsCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.existsCallArgs = newValue }
+                        _storage.withLock {
+                            $0.existsCallArgs = newValue
+                        }
                     }
                 }
                 public var existsHandler: (@Sendable (String) -> Bool)? {
                     get {
-                        _storage.withLock { $0.existsHandler }
+                        _storage.withLock {
+                            $0.existsHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.existsHandler = newValue }
+                        _storage.withLock {
+                            $0.existsHandler = newValue
+                        }
                     }
                 }
                 public func exists(forKey key: String) -> Bool {
@@ -589,7 +637,7 @@ struct MockableMacroTests {
 
     @Test("Sendable protocol with @Sendable attribute")
     func sendableProtocolWithAttribute() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             @Sendable
@@ -602,8 +650,8 @@ struct MockableMacroTests {
             protocol Logger {
                 func log(message: String)
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class LoggerMock: Logger, Sendable {
                 private struct Storage {
@@ -614,26 +662,38 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public var logCallCount: Int {
                     get {
-                        _storage.withLock { $0.logCallCount }
+                        _storage.withLock {
+                            $0.logCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.logCallCount = newValue }
+                        _storage.withLock {
+                            $0.logCallCount = newValue
+                        }
                     }
                 }
                 public var logCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.logCallArgs }
+                        _storage.withLock {
+                            $0.logCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.logCallArgs = newValue }
+                        _storage.withLock {
+                            $0.logCallArgs = newValue
+                        }
                     }
                 }
                 public var logHandler: (@Sendable (String) -> Void)? {
                     get {
-                        _storage.withLock { $0.logHandler }
+                        _storage.withLock {
+                            $0.logHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.logHandler = newValue }
+                        _storage.withLock {
+                            $0.logHandler = newValue
+                        }
                     }
                 }
                 public func log(message: String) {
@@ -655,7 +715,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with @escaping closure parameter")
     func escapingClosureParameter() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol EventHandler {
@@ -666,12 +726,12 @@ struct MockableMacroTests {
             protocol EventHandler {
                 func subscribe(handler: @escaping (String) -> Void)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class EventHandlerMock: EventHandler {
                 public var subscribeCallCount: Int = 0
                 public var subscribeCallArgs: [(String) -> Void] = []
-                public var subscribeHandler: (@Sendable ((String) -> Void) -> Void)?
+                public var subscribeHandler: (@Sendable ((String) -> Void) -> Void)? = nil
                 public func subscribe(handler: @escaping (String) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArgs.append(handler)
@@ -688,7 +748,7 @@ struct MockableMacroTests {
 
     @Test("Protocol with @escaping @Sendable closure parameter")
     func escapingSendableClosureParameter() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol EventHandler {
@@ -699,12 +759,12 @@ struct MockableMacroTests {
             protocol EventHandler {
                 func onEvent(callback: @escaping @Sendable (Int) -> Void)
             }
-            #if DEBUG
 
+            #if DEBUG
             public class EventHandlerMock: EventHandler {
                 public var onEventCallCount: Int = 0
                 public var onEventCallArgs: [@Sendable (Int) -> Void] = []
-                public var onEventHandler: (@Sendable (@Sendable (Int) -> Void) -> Void)?
+                public var onEventHandler: (@Sendable (@Sendable (Int) -> Void) -> Void)? = nil
                 public func onEvent(callback: @escaping @Sendable (Int) -> Void) {
                     onEventCallCount += 1
                     onEventCallArgs.append(callback)
@@ -721,7 +781,7 @@ struct MockableMacroTests {
 
     @Test("Sendable protocol with @escaping @Sendable closure parameter")
     func sendableProtocolWithEscapingClosure() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol EventService: Sendable {
@@ -732,8 +792,8 @@ struct MockableMacroTests {
             protocol EventService: Sendable {
                 func register(handler: @escaping @Sendable (String) -> Void) async
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class EventServiceMock: EventService, Sendable {
                 private struct Storage {
@@ -744,26 +804,38 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public var registerCallCount: Int {
                     get {
-                        _storage.withLock { $0.registerCallCount }
+                        _storage.withLock {
+                            $0.registerCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.registerCallCount = newValue }
+                        _storage.withLock {
+                            $0.registerCallCount = newValue
+                        }
                     }
                 }
                 public var registerCallArgs: [@Sendable (String) -> Void] {
                     get {
-                        _storage.withLock { $0.registerCallArgs }
+                        _storage.withLock {
+                            $0.registerCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.registerCallArgs = newValue }
+                        _storage.withLock {
+                            $0.registerCallArgs = newValue
+                        }
                     }
                 }
                 public var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
                     get {
-                        _storage.withLock { $0.registerHandler }
+                        _storage.withLock {
+                            $0.registerHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.registerHandler = newValue }
+                        _storage.withLock {
+                            $0.registerHandler = newValue
+                        }
                     }
                 }
                 public func register(handler: @escaping @Sendable (String) -> Void) async {
@@ -785,7 +857,7 @@ struct MockableMacroTests {
 
     @Test("Sendable protocol with property")
     func sendableProtocolWithProperty() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol ConfigProvider: Sendable {
@@ -798,8 +870,8 @@ struct MockableMacroTests {
                 var apiKey: String { get }
                 var timeout: Int { get set }
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class ConfigProviderMock: ConfigProvider, Sendable {
                 private struct Storage {
@@ -809,21 +881,31 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public var _apiKey: String? {
                     get {
-                        _storage.withLock { $0._apiKey }
+                        _storage.withLock {
+                            $0._apiKey
+                        }
                     }
                     set {
-                        _storage.withLock { $0._apiKey = newValue }
+                        _storage.withLock {
+                            $0._apiKey = newValue
+                        }
                     }
                 }
                 public var apiKey: String {
-                    _storage.withLock { $0._apiKey! }
+                    _storage.withLock {
+                        $0._apiKey!
+                    }
                 }
                 public var timeout: Int {
                     get {
-                        _storage.withLock { $0._timeout! }
+                        _storage.withLock {
+                            $0._timeout!
+                        }
                     }
                     set {
-                        _storage.withLock { $0._timeout = newValue }
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
                     }
                 }
             }
@@ -835,7 +917,7 @@ struct MockableMacroTests {
 
     @Test("Actor protocol generates actor mock")
     func actorProtocol() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol UserProfileStore: Actor {
@@ -852,8 +934,8 @@ struct MockableMacroTests {
                 func profile(for key: String) -> String?
                 func reset()
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor UserProfileStoreMock: UserProfileStore {
                 private struct Storage {
@@ -871,37 +953,55 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public nonisolated var _profiles: [String: String]? {
                     get {
-                        _storage.withLock { $0._profiles }
+                        _storage.withLock {
+                            $0._profiles
+                        }
                     }
                     set {
-                        _storage.withLock { $0._profiles = newValue }
+                        _storage.withLock {
+                            $0._profiles = newValue
+                        }
                     }
                 }
                 public var profiles: [String: String] {
-                    _storage.withLock { $0._profiles! }
+                    _storage.withLock {
+                        $0._profiles!
+                    }
                 }
                 public nonisolated var updateProfileCallCount: Int {
                     get {
-                        _storage.withLock { $0.updateProfileCallCount }
+                        _storage.withLock {
+                            $0.updateProfileCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.updateProfileCallCount = newValue }
+                        _storage.withLock {
+                            $0.updateProfileCallCount = newValue
+                        }
                     }
                 }
                 public nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
                     get {
-                        _storage.withLock { $0.updateProfileCallArgs }
+                        _storage.withLock {
+                            $0.updateProfileCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.updateProfileCallArgs = newValue }
+                        _storage.withLock {
+                            $0.updateProfileCallArgs = newValue
+                        }
                     }
                 }
                 public nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
                     get {
-                        _storage.withLock { $0.updateProfileHandler }
+                        _storage.withLock {
+                            $0.updateProfileHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.updateProfileHandler = newValue }
+                        _storage.withLock {
+                            $0.updateProfileHandler = newValue
+                        }
                     }
                 }
                 public func updateProfile(_ profile: String, for key: String) {
@@ -916,26 +1016,38 @@ struct MockableMacroTests {
                 }
                 public nonisolated var profileCallCount: Int {
                     get {
-                        _storage.withLock { $0.profileCallCount }
+                        _storage.withLock {
+                            $0.profileCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.profileCallCount = newValue }
+                        _storage.withLock {
+                            $0.profileCallCount = newValue
+                        }
                     }
                 }
                 public nonisolated var profileCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.profileCallArgs }
+                        _storage.withLock {
+                            $0.profileCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.profileCallArgs = newValue }
+                        _storage.withLock {
+                            $0.profileCallArgs = newValue
+                        }
                     }
                 }
                 public nonisolated var profileHandler: (@Sendable (String) -> String?)? {
                     get {
-                        _storage.withLock { $0.profileHandler }
+                        _storage.withLock {
+                            $0.profileHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.profileHandler = newValue }
+                        _storage.withLock {
+                            $0.profileHandler = newValue
+                        }
                     }
                 }
                 public func profile(for key: String) -> String? {
@@ -951,26 +1063,38 @@ struct MockableMacroTests {
                 }
                 public nonisolated var resetCallCount: Int {
                     get {
-                        _storage.withLock { $0.resetCallCount }
+                        _storage.withLock {
+                            $0.resetCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.resetCallCount = newValue }
+                        _storage.withLock {
+                            $0.resetCallCount = newValue
+                        }
                     }
                 }
                 public nonisolated var resetCallArgs: [()] {
                     get {
-                        _storage.withLock { $0.resetCallArgs }
+                        _storage.withLock {
+                            $0.resetCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.resetCallArgs = newValue }
+                        _storage.withLock {
+                            $0.resetCallArgs = newValue
+                        }
                     }
                 }
                 public nonisolated var resetHandler: (@Sendable () -> Void)? {
                     get {
-                        _storage.withLock { $0.resetHandler }
+                        _storage.withLock {
+                            $0.resetHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.resetHandler = newValue }
+                        _storage.withLock {
+                            $0.resetHandler = newValue
+                        }
                     }
                 }
                 public func reset() {
@@ -992,7 +1116,7 @@ struct MockableMacroTests {
 
     @Test("Actor protocol with property")
     func actorProtocolWithProperty() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol ConfigProvider: Actor {
@@ -1005,8 +1129,8 @@ struct MockableMacroTests {
                 var apiKey: String { get }
                 var timeout: Int { get set }
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor ConfigProviderMock: ConfigProvider {
                 private struct Storage {
@@ -1016,29 +1140,43 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public nonisolated var _apiKey: String? {
                     get {
-                        _storage.withLock { $0._apiKey }
+                        _storage.withLock {
+                            $0._apiKey
+                        }
                     }
                     set {
-                        _storage.withLock { $0._apiKey = newValue }
+                        _storage.withLock {
+                            $0._apiKey = newValue
+                        }
                     }
                 }
                 public var apiKey: String {
-                    _storage.withLock { $0._apiKey! }
+                    _storage.withLock {
+                        $0._apiKey!
+                    }
                 }
                 public nonisolated var _timeout: Int? {
                     get {
-                        _storage.withLock { $0._timeout }
+                        _storage.withLock {
+                            $0._timeout
+                        }
                     }
                     set {
-                        _storage.withLock { $0._timeout = newValue }
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
                     }
                 }
                 public var timeout: Int {
                     get {
-                        _storage.withLock { $0._timeout! }
+                        _storage.withLock {
+                            $0._timeout!
+                        }
                     }
                     set {
-                        _storage.withLock { $0._timeout = newValue }
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
                     }
                 }
             }
@@ -1050,7 +1188,7 @@ struct MockableMacroTests {
 
     @Test("Actor protocol with async throws method")
     func actorProtocolWithAsyncThrows() {
-        assertMacroExpansion(
+        assertMacroExpansionForTesting(
             """
             @Mockable
             protocol DataStore: Actor {
@@ -1063,8 +1201,8 @@ struct MockableMacroTests {
                 func save(_ data: String) async throws
                 func load() async throws -> String
             }
-            #if DEBUG
 
+            #if DEBUG
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor DataStoreMock: DataStore {
                 private struct Storage {
@@ -1078,26 +1216,38 @@ struct MockableMacroTests {
                 private let _storage = Mutex<Storage>(Storage())
                 public nonisolated var saveCallCount: Int {
                     get {
-                        _storage.withLock { $0.saveCallCount }
+                        _storage.withLock {
+                            $0.saveCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveCallCount = newValue }
+                        _storage.withLock {
+                            $0.saveCallCount = newValue
+                        }
                     }
                 }
                 public nonisolated var saveCallArgs: [String] {
                     get {
-                        _storage.withLock { $0.saveCallArgs }
+                        _storage.withLock {
+                            $0.saveCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveCallArgs = newValue }
+                        _storage.withLock {
+                            $0.saveCallArgs = newValue
+                        }
                     }
                 }
                 public nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
                     get {
-                        _storage.withLock { $0.saveHandler }
+                        _storage.withLock {
+                            $0.saveHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.saveHandler = newValue }
+                        _storage.withLock {
+                            $0.saveHandler = newValue
+                        }
                     }
                 }
                 public func save(_ data: String) async throws {
@@ -1112,26 +1262,38 @@ struct MockableMacroTests {
                 }
                 public nonisolated var loadCallCount: Int {
                     get {
-                        _storage.withLock { $0.loadCallCount }
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadCallCount = newValue }
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
                     }
                 }
                 public nonisolated var loadCallArgs: [()] {
                     get {
-                        _storage.withLock { $0.loadCallArgs }
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadCallArgs = newValue }
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
                     }
                 }
                 public nonisolated var loadHandler: (@Sendable () async throws -> String)? {
                     get {
-                        _storage.withLock { $0.loadHandler }
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
                     }
                     set {
-                        _storage.withLock { $0.loadHandler = newValue }
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
                     }
                 }
                 public func load() async throws -> String {
