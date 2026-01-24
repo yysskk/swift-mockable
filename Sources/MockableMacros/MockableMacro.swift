@@ -28,12 +28,18 @@ public struct MockableMacro: PeerMacro {
             return false
         }
 
+        // Check if the protocol inherits from Actor
+        let isActor = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
+            inherited.type.trimmedDescription == "Actor"
+        } ?? false
+
         let members = protocolDecl.memberBlock.members
         let generator = MockGenerator(
             protocolName: protocolName,
             mockClassName: mockClassName,
             members: members,
-            isSendable: isSendable || hasSendableAttribute
+            isSendable: isSendable || hasSendableAttribute,
+            isActor: isActor
         )
 
         let mockClass = try generator.generate()

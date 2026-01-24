@@ -32,6 +32,7 @@ Then add `Mockable` to your target dependencies:
 - Supports optional properties
 - Supports generic methods (with type erasure to `Any`)
 - Supports `Sendable` protocols with thread-safe mock generation using `Mutex`
+- Supports `Actor` protocols with actor mock generation
 
 ## Usage
 
@@ -157,6 +158,44 @@ await withTaskGroup(of: Void.self) { group in
 
 **Note:** Sendable mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
 
+### Actor protocols
+
+Protocols that inherit from `Actor` generate actor mocks with thread-safe access using `Mutex`:
+
+```swift
+@Mockable
+protocol UserProfileStore: Actor {
+    var profiles: [String: String] { get }
+    func updateProfile(_ profile: String, for key: String)
+    func profile(for key: String) -> String?
+    func reset()
+}
+
+// Generated mock is an actor and can be used safely from multiple tasks
+let mock = UserProfileStoreMock()
+mock._profiles = ["key1": "profile1"]
+mock.profileHandler = { key in
+    key == "existing" ? "Found" : nil
+}
+
+// Access actor properties and methods
+let profiles = await mock.profiles
+let result = await mock.profile(for: "existing")
+
+// Verify calls
+#expect(mock.profileCallCount == 1)
+```
+
+Actor mocks support:
+- Async methods with `async throws`
+- Get-only and get-set properties
+- Concurrent access from multiple tasks
+- Implicit `Sendable` conformance (all actors are Sendable)
+- `nonisolated` helper properties (`CallCount`, `CallArgs`, `Handler`) for easy test verification without `await`
+- `nonisolated` backing properties (`_propertyName`) for easy test setup without `await`
+
+**Note:** Actor mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
+
 ## Generated Code Example
 
 For the `UserService` protocol above, the following mock class is generated:
@@ -203,7 +242,7 @@ public class UserServiceMock: UserService {
 
 - Swift 6.2+
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
-- For `Sendable` protocol support: macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+
+- For `Sendable` and `Actor` protocol support: macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+
 
 ## License
 
