@@ -181,4 +181,119 @@ struct SendableIntegrationTests {
         #expect(mock.apiKey == "initial")
         #expect(mock.timeout >= 0 && mock.timeout < 50)
     }
+
+    // MARK: - resetMock Tests for Sendable Mocks
+
+    @Test("Sendable mock resetMock resets call count and args")
+    func sendableMockResetMockResetsMethodTracking() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableServiceMock()
+        mock.logHandler = { @Sendable _ in }
+
+        mock.log(message: "first")
+        mock.log(message: "second")
+
+        #expect(mock.logCallCount == 2)
+        #expect(mock.logCallArgs == ["first", "second"])
+
+        mock.resetMock()
+
+        #expect(mock.logCallCount == 0)
+        #expect(mock.logCallArgs == [])
+        #expect(mock.logHandler == nil)
+    }
+
+    @Test("Sendable mock resetMock resets async method tracking")
+    func sendableMockResetMockResetsAsyncMethod() async throws {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableServiceMock()
+        mock.performTaskHandler = { @Sendable id in "result \(id)" }
+
+        _ = try await mock.performTask(id: 1)
+        _ = try await mock.performTask(id: 2)
+
+        #expect(mock.performTaskCallCount == 2)
+        #expect(mock.performTaskCallArgs == [1, 2])
+
+        mock.resetMock()
+
+        #expect(mock.performTaskCallCount == 0)
+        #expect(mock.performTaskCallArgs == [])
+        #expect(mock.performTaskHandler == nil)
+    }
+
+    @Test("Sendable mock resetMock resets all handlers")
+    func sendableMockResetMockResetsHandlers() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableServiceMock()
+        mock.performTaskHandler = { @Sendable _ in "result" }
+        mock.logHandler = { @Sendable _ in }
+
+        #expect(mock.performTaskHandler != nil)
+        #expect(mock.logHandler != nil)
+
+        mock.resetMock()
+
+        #expect(mock.performTaskHandler == nil)
+        #expect(mock.logHandler == nil)
+    }
+
+    @Test("Sendable config provider resetMock resets properties")
+    func sendableConfigProviderResetMockResetsProperties() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableConfigProviderMock()
+        mock._apiKey = "secret"
+        mock.timeout = 30
+        mock.optionalEndpoint = "https://example.com"
+
+        mock.resetMock()
+
+        #expect(mock._apiKey == nil)
+        // timeout's backing storage is reset inside _storage (not externally accessible)
+        #expect(mock.optionalEndpoint == nil)
+    }
+
+    @Test("Sendable mock resetMock allows reuse")
+    func sendableMockResetMockAllowsReuse() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableServiceMock()
+        mock.logHandler = { @Sendable _ in }
+
+        mock.log(message: "first session")
+        #expect(mock.logCallCount == 1)
+
+        mock.resetMock()
+
+        mock.logHandler = { @Sendable _ in }
+        mock.log(message: "second session")
+        mock.log(message: "second session again")
+
+        #expect(mock.logCallCount == 2)
+        #expect(mock.logCallArgs == ["second session", "second session again"])
+    }
+
+    @Test("Sendable mock resetMock is thread-safe")
+    func sendableMockResetMockIsThreadSafe() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableServiceMock()
+        mock.logHandler = { @Sendable _ in }
+
+        // Concurrent access with resets
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<50 {
+                group.addTask {
+                    mock.log(message: "message \(i)")
+                }
+            }
+            for _ in 0..<10 {
+                group.addTask {
+                    mock.resetMock()
+                }
+            }
+        }
+
+        // Just verify no crashes occurred
+        // The exact state is non-deterministic due to concurrent resets
+        #expect(mock.logCallCount >= 0)
+    }
 }

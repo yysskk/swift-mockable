@@ -274,4 +274,152 @@ struct ActorIntegrationTests {
         let count = mock.resetCallCount
         #expect(count == 1)
     }
+
+    // MARK: - resetMock Tests for Actor Mocks
+
+    @Test("Actor mock resetMock resets method call tracking")
+    func actorMockResetMockResetsMethodTracking() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = UserProfileStoreMock()
+        mock.updateProfileHandler = { _ in }
+        mock.profileHandler = { _ in nil }
+        mock.resetHandler = {}
+
+        await mock.updateProfile("profile1", for: "key1")
+        await mock.updateProfile("profile2", for: "key2")
+        _ = await mock.profile(for: "key1")
+        await mock.reset()
+
+        #expect(mock.updateProfileCallCount == 2)
+        #expect(mock.profileCallCount == 1)
+        #expect(mock.resetCallCount == 1)
+
+        mock.resetMock()
+
+        #expect(mock.updateProfileCallCount == 0)
+        #expect(mock.updateProfileCallArgs.isEmpty)
+        #expect(mock.updateProfileHandler == nil)
+        #expect(mock.profileCallCount == 0)
+        #expect(mock.profileCallArgs.isEmpty)
+        #expect(mock.profileHandler == nil)
+        #expect(mock.resetCallCount == 0)
+        #expect(mock.resetCallArgs.isEmpty)
+        #expect(mock.resetHandler == nil)
+    }
+
+    @Test("Actor mock resetMock resets properties")
+    func actorMockResetMockResetsProperties() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = UserProfileStoreMock()
+        mock._profiles = ["key1": "profile1", "key2": "profile2"]
+
+        let profiles = await mock.profiles
+        #expect(profiles.count == 2)
+
+        mock.resetMock()
+
+        #expect(mock._profiles == nil)
+    }
+
+    @Test("Actor mock resetMock allows reuse")
+    func actorMockResetMockAllowsReuse() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = UserProfileStoreMock()
+        mock.updateProfileHandler = { _ in }
+
+        await mock.updateProfile("first", for: "key")
+        #expect(mock.updateProfileCallCount == 1)
+
+        mock.resetMock()
+
+        mock.updateProfileHandler = { _ in }
+        await mock.updateProfile("second", for: "key")
+        await mock.updateProfile("third", for: "key")
+
+        #expect(mock.updateProfileCallCount == 2)
+        #expect(mock.updateProfileCallArgs.count == 2)
+        #expect(mock.updateProfileCallArgs[0].profile == "second")
+        #expect(mock.updateProfileCallArgs[1].profile == "third")
+    }
+
+    @Test("Async actor mock resetMock resets async method tracking")
+    func asyncActorMockResetMockResetsAsyncMethod() async throws {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = AsyncDataStoreMock()
+        mock.saveHandler = { _ in }
+        mock.loadHandler = { "data" }
+        mock.deleteHandler = { _ in }
+
+        try await mock.save("test")
+        _ = try await mock.load()
+        await mock.delete(id: 1)
+
+        #expect(mock.saveCallCount == 1)
+        #expect(mock.loadCallCount == 1)
+        #expect(mock.deleteCallCount == 1)
+
+        mock.resetMock()
+
+        #expect(mock.saveCallCount == 0)
+        #expect(mock.saveCallArgs == [])
+        #expect(mock.saveHandler == nil)
+        #expect(mock.loadCallCount == 0)
+        #expect(mock.loadCallArgs.isEmpty)
+        #expect(mock.loadHandler == nil)
+        #expect(mock.deleteCallCount == 0)
+        #expect(mock.deleteCallArgs.isEmpty)
+        #expect(mock.deleteHandler == nil)
+    }
+
+    @Test("Actor config provider resetMock resets all properties")
+    func actorConfigProviderResetMockResetsProperties() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = ActorConfigProviderMock()
+        mock._apiKey = "secret"
+        mock._timeout = 30
+        mock._optionalEndpoint = "https://example.com"
+
+        mock.resetMock()
+
+        #expect(mock._apiKey == nil)
+        #expect(mock._timeout == nil)
+        #expect(mock._optionalEndpoint == nil)
+    }
+
+    @Test("Actor mock resetMock is nonisolated")
+    func actorMockResetMockIsNonisolated() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = UserProfileStoreMock()
+        mock.updateProfileHandler = { _ in }
+
+        await mock.updateProfile("test", for: "key")
+
+        // resetMock can be called without await because it's nonisolated
+        mock.resetMock()
+
+        #expect(mock.updateProfileCallCount == 0)
+    }
+
+    @Test("Actor mock resetMock is thread-safe with concurrent access")
+    func actorMockResetMockIsThreadSafe() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = UserProfileStoreMock()
+        mock.updateProfileHandler = { _ in }
+
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<50 {
+                group.addTask {
+                    await mock.updateProfile("profile\(i)", for: "key\(i)")
+                }
+            }
+            for _ in 0..<10 {
+                group.addTask {
+                    mock.resetMock()
+                }
+            }
+        }
+
+        // Just verify no crashes occurred
+        #expect(mock.updateProfileCallCount >= 0)
+    }
 }

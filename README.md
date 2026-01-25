@@ -33,6 +33,7 @@ Then add `Mockable` to your target dependencies:
 - Supports generic methods (with type erasure to `Any`)
 - Supports `Sendable` protocols with thread-safe mock generation using `Mutex`
 - Supports `Actor` protocols with actor mock generation
+- `resetMock()` method to reset all tracking state for test reuse
 
 ## Usage
 
@@ -65,6 +66,10 @@ let user = try await mock.fetchUser(id: 42)
 // Verify calls
 #expect(mock.fetchUserCallCount == 1)
 #expect(mock.fetchUserCallArgs.first == 42)
+
+// Reset mock for reuse in another test case
+mock.resetMock()
+#expect(mock.fetchUserCallCount == 0)
 ```
 
 ### Void methods
@@ -193,6 +198,7 @@ Actor mocks support:
 - Implicit `Sendable` conformance (all actors are Sendable)
 - `nonisolated` helper properties (`CallCount`, `CallArgs`, `Handler`) for easy test verification without `await`
 - `nonisolated` backing properties (`_propertyName`) for easy test setup without `await`
+- `nonisolated func resetMock()` for easy mock reset without `await`
 
 **Note:** Actor mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
 
@@ -233,7 +239,22 @@ public class UserServiceMock: UserService {
         _currentUser
     }
 
-    public var isLoggedIn: Bool!
+    public var _isLoggedIn: Bool?
+    public var isLoggedIn: Bool {
+        get { _isLoggedIn! }
+        set { _isLoggedIn = newValue }
+    }
+
+    public func resetMock() {
+        fetchUserCallCount = 0
+        fetchUserCallArgs = []
+        fetchUserHandler = nil
+        saveUserCallCount = 0
+        saveUserCallArgs = []
+        saveUserHandler = nil
+        _currentUser = nil
+        _isLoggedIn = nil
+    }
 }
 #endif
 ```
