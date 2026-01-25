@@ -39,6 +39,10 @@ struct MockGenerator {
             }
         }
 
+        // Generate reset method
+        let resetMethod = generateResetMethod()
+        classMembers.append(MemberBlockItemSyntax(decl: resetMethod))
+
         let memberBlock = MemberBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
             members: MemberBlockItemListSyntax(classMembers),
@@ -105,6 +109,10 @@ struct MockGenerator {
                 actorMembers.append(contentsOf: varMembers)
             }
         }
+
+        // Generate reset method
+        let resetMethod = generateResetMethod()
+        actorMembers.append(MemberBlockItemSyntax(decl: resetMethod))
 
         let memberBlock = MemberBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),

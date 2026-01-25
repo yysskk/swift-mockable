@@ -37,6 +37,11 @@ struct MockableMacroTests {
                     }
                     return _handler(id)
                 }
+                public func resetMock() {
+                    fetchUserCallCount = 0
+                    fetchUserCallArgs = []
+                    fetchUserHandler = nil
+                }
             }
             #endif
             """,
@@ -70,6 +75,11 @@ struct MockableMacroTests {
                         fatalError("\\(Self.self).loadDataHandler is not set")
                     }
                     return try await _handler(url)
+                }
+                public func resetMock() {
+                    loadDataCallCount = 0
+                    loadDataCallArgs = []
+                    loadDataHandler = nil
                 }
             }
             #endif
@@ -105,6 +115,11 @@ struct MockableMacroTests {
                     }
                     return _handler((a: a, b: b))
                 }
+                public func resetMock() {
+                    addCallCount = 0
+                    addCallArgs = []
+                    addHandler = nil
+                }
             }
             #endif
             """,
@@ -138,6 +153,11 @@ struct MockableMacroTests {
                         _handler(message)
                     }
                 }
+                public func resetMock() {
+                    logCallCount = 0
+                    logCallArgs = []
+                    logHandler = nil
+                }
             }
             #endif
             """,
@@ -164,6 +184,9 @@ struct MockableMacroTests {
                 public var _currentUser: String? = nil
                 public var currentUser: String {
                     _currentUser!
+                }
+                public func resetMock() {
+                    _currentUser = nil
                 }
             }
             #endif
@@ -197,6 +220,9 @@ struct MockableMacroTests {
                         _theme = newValue
                     }
                 }
+                public func resetMock() {
+                    _theme = nil
+                }
             }
             #endif
             """,
@@ -221,6 +247,9 @@ struct MockableMacroTests {
             #if DEBUG
             public class CacheMock: Cache {
                 public var lastValue: String? = nil
+                public func resetMock() {
+                    lastValue = nil
+                }
             }
             #endif
             """,
@@ -272,6 +301,11 @@ struct MockableMacroTests {
                     }
                     return _handler(key) as! T
                 }
+                public func resetMock() {
+                    getCallCount = 0
+                    getCallArgs = []
+                    getHandler = nil
+                }
             }
             #endif
             """,
@@ -304,6 +338,11 @@ struct MockableMacroTests {
                     if let _handler = saveHandler {
                         _handler((value: value, key: key))
                     }
+                }
+                public func resetMock() {
+                    saveCallCount = 0
+                    saveCallArgs = []
+                    saveHandler = nil
                 }
             }
             #endif
@@ -351,6 +390,14 @@ struct MockableMacroTests {
                         _handler((value: value, key: key))
                     }
                 }
+                public func resetMock() {
+                    getCallCount = 0
+                    getCallArgs = []
+                    getHandler = nil
+                    setCallCount = 0
+                    setCallArgs = []
+                    setHandler = nil
+                }
             }
             #endif
             """,
@@ -396,6 +443,14 @@ struct MockableMacroTests {
                     if let _handler = setIntegerHandler {
                         _handler((value: value, key: key))
                     }
+                }
+                public func resetMock() {
+                    integerCallCount = 0
+                    integerCallArgs = []
+                    integerHandler = nil
+                    setIntegerCallCount = 0
+                    setIntegerCallArgs = []
+                    setIntegerHandler = nil
                 }
             }
             #endif
@@ -628,6 +683,22 @@ struct MockableMacroTests {
                     }
                     return _handler(key)
                 }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.saveCallCount = 0
+                        storage.saveCallArgs = []
+                        storage.saveHandler = nil
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                        storage.deleteCallCount = 0
+                        storage.deleteCallArgs = []
+                        storage.deleteHandler = nil
+                        storage.existsCallCount = 0
+                        storage.existsCallArgs = []
+                        storage.existsHandler = nil
+                    }
+                }
             }
             #endif
             """,
@@ -706,6 +777,13 @@ struct MockableMacroTests {
                         _handler(message)
                     }
                 }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.logCallCount = 0
+                        storage.logCallArgs = []
+                        storage.logHandler = nil
+                    }
+                }
             }
             #endif
             """,
@@ -739,6 +817,11 @@ struct MockableMacroTests {
                         _handler(handler)
                     }
                 }
+                public func resetMock() {
+                    subscribeCallCount = 0
+                    subscribeCallArgs = []
+                    subscribeHandler = nil
+                }
             }
             #endif
             """,
@@ -771,6 +854,11 @@ struct MockableMacroTests {
                     if let _handler = onEventHandler {
                         _handler(callback)
                     }
+                }
+                public func resetMock() {
+                    onEventCallCount = 0
+                    onEventCallArgs = []
+                    onEventHandler = nil
                 }
             }
             #endif
@@ -848,6 +936,13 @@ struct MockableMacroTests {
                         await _handler(handler)
                     }
                 }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.registerCallCount = 0
+                        storage.registerCallArgs = []
+                        storage.registerHandler = nil
+                    }
+                }
             }
             #endif
             """,
@@ -906,6 +1001,12 @@ struct MockableMacroTests {
                         _storage.withLock {
                             $0._timeout = newValue
                         }
+                    }
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage._apiKey = nil
+                        storage._timeout = nil
                     }
                 }
             }
@@ -1107,6 +1208,20 @@ struct MockableMacroTests {
                         _handler()
                     }
                 }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage._profiles = nil
+                        storage.updateProfileCallCount = 0
+                        storage.updateProfileCallArgs = []
+                        storage.updateProfileHandler = nil
+                        storage.profileCallCount = 0
+                        storage.profileCallArgs = []
+                        storage.profileHandler = nil
+                        storage.resetCallCount = 0
+                        storage.resetCallArgs = []
+                        storage.resetHandler = nil
+                    }
+                }
             }
             #endif
             """,
@@ -1177,6 +1292,12 @@ struct MockableMacroTests {
                         _storage.withLock {
                             $0._timeout = newValue
                         }
+                    }
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage._apiKey = nil
+                        storage._timeout = nil
                     }
                 }
             }
@@ -1306,6 +1427,16 @@ struct MockableMacroTests {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
                     return try await _handler()
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.saveCallCount = 0
+                        storage.saveCallArgs = []
+                        storage.saveHandler = nil
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                    }
                 }
             }
             #endif
