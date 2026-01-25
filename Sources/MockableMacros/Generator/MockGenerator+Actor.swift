@@ -193,8 +193,7 @@ extension MockGenerator {
             let varName = identifier.identifier.text
             let varType = typeAnnotation.type
 
-            // Check if it's a get-only property
-            let isGetOnly = isGetOnlyProperty(binding: binding)
+            let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
             // Use Mutex-based pattern with nonisolated computed properties for actor
             // Always generate backing property for both get-only and get-set properties

@@ -17,8 +17,7 @@ extension MockGenerator {
             let varName = identifier.identifier.text
             let varType = typeAnnotation.type
 
-            // Check if it's a get-only property
-            let isGetOnly = isGetOnlyProperty(binding: binding)
+            let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
             if isSendable {
                 // For Sendable protocols, generate computed properties that access the Mutex
@@ -65,7 +64,7 @@ extension MockGenerator {
         return members
     }
 
-    func isGetOnlyProperty(binding: PatternBindingSyntax) -> Bool {
+    static func isGetOnlyProperty(binding: PatternBindingSyntax) -> Bool {
         guard let accessorBlock = binding.accessorBlock else {
             return false
         }
