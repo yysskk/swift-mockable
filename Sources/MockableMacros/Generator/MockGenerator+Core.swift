@@ -5,6 +5,7 @@ struct MockGenerator {
     let protocolName: String
     let mockClassName: String
     let members: MemberBlockItemListSyntax
+    let associatedTypes: [AssociatedTypeDeclSyntax]
     let isSendable: Bool
     let isActor: Bool
 
@@ -18,6 +19,12 @@ struct MockGenerator {
 
     private func generateClassMock() throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
+
+        // Generate typealiases for associated types
+        for associatedType in associatedTypes {
+            let typealiasDecl = generateTypeAlias(for: associatedType)
+            classMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
+        }
 
         // For Sendable protocols, add a Mutex for thread-safe storage
         if isSendable {
@@ -91,6 +98,12 @@ struct MockGenerator {
 
     private func generateActorMock() throws -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
+
+        // Generate typealiases for associated types
+        for associatedType in associatedTypes {
+            let typealiasDecl = generateTypeAlias(for: associatedType)
+            actorMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
+        }
 
         // Add Storage struct and Mutex for thread-safe access (same as Sendable pattern)
         let storageStruct = generateStorageStruct()
