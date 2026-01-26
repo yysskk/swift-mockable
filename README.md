@@ -33,6 +33,7 @@ Then add `Mockable` to your target dependencies:
 - Supports generic methods (with type erasure to `Any`)
 - Supports `Sendable` protocols with thread-safe mock generation using `Mutex`
 - Supports `Actor` protocols with actor mock generation
+- Supports subscript declarations (get-only and get-set)
 - `resetMock()` method to reset all tracking state for test reuse
 
 ## Usage
