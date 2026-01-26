@@ -102,13 +102,14 @@ extension MockGenerator {
                 let returnType = subscriptDecl.returnClause.type
                 let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+                let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // SubscriptCallCount
                 let callCountDecl = VariableDeclSyntax(
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallCount")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallCount")),
                             typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                             initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                         )
@@ -122,7 +123,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallArgs")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallArgs")),
                             typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                             initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                         )
@@ -144,7 +145,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptHandler")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)Handler")),
                             typeAnnotation: TypeAnnotationSyntax(
                                 type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                             ),
@@ -167,7 +168,7 @@ extension MockGenerator {
                         bindingSpecifier: .keyword(.var),
                         bindings: PatternBindingListSyntax([
                             PatternBindingSyntax(
-                                pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptSetHandler")),
+                                pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)SetHandler")),
                                 typeAnnotation: TypeAnnotationSyntax(
                                     type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(setClosureType))"))
                                 ),

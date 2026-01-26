@@ -49,19 +49,20 @@ extension MockGenerator {
                 }
             } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+                let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // Reset subscript call count
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptCallCount = 0"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallCount = 0"))))
 
                 // Reset subscript call args
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptCallArgs = []"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallArgs = []"))))
 
                 // Reset subscript handler
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptHandler = nil"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)Handler = nil"))))
 
                 // Reset subscript set handler if not get-only
                 if !isGetOnly {
-                    statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptSetHandler = nil"))))
+                    statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)SetHandler = nil"))))
                 }
             }
         }
@@ -113,19 +114,20 @@ extension MockGenerator {
                 }
             } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+                let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // Reset subscript call count
-                resetStatements.append("storage.subscriptCallCount = 0")
+                resetStatements.append("storage.subscript\(suffix)CallCount = 0")
 
                 // Reset subscript call args
-                resetStatements.append("storage.subscriptCallArgs = []")
+                resetStatements.append("storage.subscript\(suffix)CallArgs = []")
 
                 // Reset subscript handler
-                resetStatements.append("storage.subscriptHandler = nil")
+                resetStatements.append("storage.subscript\(suffix)Handler = nil")
 
                 // Reset subscript set handler if not get-only
                 if !isGetOnly {
-                    resetStatements.append("storage.subscriptSetHandler = nil")
+                    resetStatements.append("storage.subscript\(suffix)SetHandler = nil")
                 }
             }
         }

@@ -11,15 +11,17 @@ extension MockGenerator {
         let returnType = subscriptDecl.returnClause.type
         let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
         if isSendable {
             // For Sendable protocols, generate computed properties that access the Mutex
-            let callCountProperty = generateSendableSubscriptCallCountProperty()
+            let callCountProperty = generateSendableSubscriptCallCountProperty(suffix: suffix)
             members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
             let callArgsProperty = generateSendableSubscriptCallArgsProperty(
                 parameters: parameters,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -27,7 +29,8 @@ extension MockGenerator {
                 parameters: parameters,
                 returnType: returnType,
                 isGetOnly: isGetOnly,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -35,7 +38,8 @@ extension MockGenerator {
                 let setHandlerProperty = generateSendableSubscriptSetHandlerProperty(
                     parameters: parameters,
                     returnType: returnType,
-                    genericParamNames: genericParamNames
+                    genericParamNames: genericParamNames,
+                    suffix: suffix
                 )
                 members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
             }
@@ -43,18 +47,20 @@ extension MockGenerator {
             let mockSubscript = generateSendableMockSubscript(
                 subscriptDecl,
                 isGetOnly: isGetOnly,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: mockSubscript))
         } else {
             // Generate call count property
-            let callCountProperty = generateSubscriptCallCountProperty()
+            let callCountProperty = generateSubscriptCallCountProperty(suffix: suffix)
             members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
             // Generate call arguments storage
             let callArgsProperty = generateSubscriptCallArgsProperty(
                 parameters: parameters,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -63,7 +69,8 @@ extension MockGenerator {
                 parameters: parameters,
                 returnType: returnType,
                 isGetOnly: isGetOnly,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -72,7 +79,8 @@ extension MockGenerator {
                 let setHandlerProperty = generateSubscriptSetHandlerProperty(
                     parameters: parameters,
                     returnType: returnType,
-                    genericParamNames: genericParamNames
+                    genericParamNames: genericParamNames,
+                    suffix: suffix
                 )
                 members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
             }
@@ -81,7 +89,8 @@ extension MockGenerator {
             let mockSubscript = generateMockSubscript(
                 subscriptDecl,
                 isGetOnly: isGetOnly,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: mockSubscript))
         }
@@ -96,14 +105,16 @@ extension MockGenerator {
         let returnType = subscriptDecl.returnClause.type
         let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
         // Use Mutex-based pattern with nonisolated computed properties for actor
-        let callCountProperty = generateActorSubscriptCallCountProperty()
+        let callCountProperty = generateActorSubscriptCallCountProperty(suffix: suffix)
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let callArgsProperty = generateActorSubscriptCallArgsProperty(
             parameters: parameters,
-            genericParamNames: genericParamNames
+            genericParamNames: genericParamNames,
+            suffix: suffix
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -111,7 +122,8 @@ extension MockGenerator {
             parameters: parameters,
             returnType: returnType,
             isGetOnly: isGetOnly,
-            genericParamNames: genericParamNames
+            genericParamNames: genericParamNames,
+            suffix: suffix
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -119,7 +131,8 @@ extension MockGenerator {
             let setHandlerProperty = generateActorSubscriptSetHandlerProperty(
                 parameters: parameters,
                 returnType: returnType,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                suffix: suffix
             )
             members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
         }
@@ -127,7 +140,8 @@ extension MockGenerator {
         let mockSubscript = generateActorMockSubscript(
             subscriptDecl,
             isGetOnly: isGetOnly,
-            genericParamNames: genericParamNames
+            genericParamNames: genericParamNames,
+            suffix: suffix
         )
         members.append(MemberBlockItemSyntax(decl: mockSubscript))
 
@@ -160,9 +174,60 @@ extension MockGenerator {
         return Set(genericClause.parameters.map { $0.name.text })
     }
 
+    // MARK: - Helper to generate unique subscript identifier suffix
+
+    /// Generates a unique suffix based on parameter types to distinguish overloaded subscripts.
+    /// Example: `subscript(index: Int)` -> "Int", `subscript(row: Int, column: Int)` -> "IntInt"
+    static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax) -> String {
+        let parameters = subscriptDecl.parameterClause.parameters
+        if parameters.isEmpty {
+            return ""
+        }
+
+        let typeNames = parameters.map { param -> String in
+            // Get the base type name, stripping generics and optionals for simplicity
+            let typeName = param.type.trimmedDescription
+            return sanitizeTypeName(typeName)
+        }
+
+        return typeNames.joined()
+    }
+
+    /// Sanitizes a type name for use in an identifier.
+    /// Removes special characters and converts to PascalCase.
+    private static func sanitizeTypeName(_ typeName: String) -> String {
+        var result = typeName
+
+        // Handle optional types
+        if result.hasSuffix("?") {
+            result = String(result.dropLast()) + "Optional"
+        }
+
+        // Handle array types
+        if result.hasPrefix("[") && result.hasSuffix("]") {
+            let inner = String(result.dropFirst().dropLast())
+            result = sanitizeTypeName(inner) + "Array"
+        }
+
+        // Handle generic types like Dictionary<K, V>
+        if let angleBracketIndex = result.firstIndex(of: "<") {
+            result = String(result[..<angleBracketIndex])
+        }
+
+        // Remove any remaining special characters
+        result = result.filter { $0.isLetter || $0.isNumber }
+
+        // Ensure first letter is uppercase
+        if let first = result.first {
+            result = first.uppercased() + result.dropFirst()
+        }
+
+        return result
+    }
+
     // MARK: - Regular Mock Properties
 
-    private func generateSubscriptCallCountProperty() -> VariableDeclSyntax {
+    private func generateSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.public))
@@ -170,7 +235,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallCount")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallCount")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                     initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                 )
@@ -180,7 +245,8 @@ extension MockGenerator {
 
     private func generateSubscriptCallArgsProperty(
         parameters: FunctionParameterListSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
@@ -191,7 +257,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallArgs")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallArgs")),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: ArrayTypeSyntax(element: tupleType)
                     ),
@@ -207,7 +273,8 @@ extension MockGenerator {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -225,7 +292,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)Handler")),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                     ),
@@ -238,7 +305,8 @@ extension MockGenerator {
     private func generateSubscriptSetHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -262,7 +330,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptSetHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)SetHandler")),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                     ),
@@ -275,7 +343,8 @@ extension MockGenerator {
     private func generateMockSubscript(
         _ subscriptDecl: SubscriptDeclSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> SubscriptDeclSyntax {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
@@ -286,7 +355,7 @@ extension MockGenerator {
 
         // Increment call count
         let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("subscriptCallCount")),
+            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallCount")),
             operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
             rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
         )
@@ -296,7 +365,7 @@ extension MockGenerator {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("subscriptCallArgs")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallArgs")),
                 name: .identifier("append")
             ),
             leftParen: .leftParenToken(),
@@ -311,7 +380,8 @@ extension MockGenerator {
         let handlerCallStmts = buildSubscriptHandlerCallStatements(
             parameters: parameters,
             returnType: returnType,
-            hasGenericReturn: hasGenericReturn
+            hasGenericReturn: hasGenericReturn,
+            suffix: suffix
         )
         getterStatements.append(contentsOf: handlerCallStmts)
 
@@ -327,7 +397,7 @@ extension MockGenerator {
         } else {
             // Build setter body
             var setterStatements: [CodeBlockItemSyntax] = []
-            let setterHandlerCall = buildSubscriptSetHandlerCallStatement(parameters: parameters)
+            let setterHandlerCall = buildSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)
             setterStatements.append(setterHandlerCall)
 
             let setterBody = CodeBlockSyntax(
@@ -363,7 +433,8 @@ extension MockGenerator {
     private func buildSubscriptHandlerCallStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        hasGenericReturn: Bool
+        hasGenericReturn: Bool,
+        suffix: String
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
@@ -371,15 +442,15 @@ extension MockGenerator {
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = subscriptHandler else {
-    fatalError("\\(Self.self).subscriptHandler is not set")
+guard let _handler = subscript\(suffix)Handler else {
+    fatalError("\\(Self.self).subscript\(suffix)Handler is not set")
 }
 """)))
         let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
         return [guardStmt, returnStmt]
     }
 
-    private func buildSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax) -> CodeBlockItemSyntax {
+    private func buildSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax, suffix: String) -> CodeBlockItemSyntax {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
@@ -389,7 +460,7 @@ guard let _handler = subscriptHandler else {
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = subscriptSetHandler {
+if let _handler = subscript\(suffix)SetHandler {
     _handler(\(handlerCallArgs))
 }
 """)))
@@ -397,7 +468,7 @@ if let _handler = subscriptSetHandler {
 
     // MARK: - Sendable Mock Properties
 
-    private func generateSendableSubscriptCallCountProperty() -> VariableDeclSyntax {
+    private func generateSendableSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.public))
@@ -405,7 +476,7 @@ if let _handler = subscriptSetHandler {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallCount")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallCount")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -413,7 +484,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallCount }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallCount }")))
                                     ])
                                 )
                             ),
@@ -421,7 +492,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallCount = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallCount = newValue }")))
                                     ])
                                 )
                             )
@@ -434,7 +505,8 @@ if let _handler = subscriptSetHandler {
 
     private func generateSendableSubscriptCallArgsProperty(
         parameters: FunctionParameterListSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
@@ -445,7 +517,7 @@ if let _handler = subscriptSetHandler {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallArgs")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallArgs")),
                     typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -453,7 +525,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallArgs }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallArgs }")))
                                     ])
                                 )
                             ),
@@ -461,7 +533,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallArgs = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallArgs = newValue }")))
                                     ])
                                 )
                             )
@@ -476,7 +548,8 @@ if let _handler = subscriptSetHandler {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -495,7 +568,7 @@ if let _handler = subscriptSetHandler {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)Handler")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: handlerType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -503,7 +576,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptHandler }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)Handler }")))
                                     ])
                                 )
                             ),
@@ -511,7 +584,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptHandler = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)Handler = newValue }")))
                                     ])
                                 )
                             )
@@ -525,7 +598,8 @@ if let _handler = subscriptSetHandler {
     private func generateSendableSubscriptSetHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -549,7 +623,7 @@ if let _handler = subscriptSetHandler {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptSetHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)SetHandler")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: handlerType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -557,7 +631,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptSetHandler }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)SetHandler }")))
                                     ])
                                 )
                             ),
@@ -565,7 +639,7 @@ if let _handler = subscriptSetHandler {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptSetHandler = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)SetHandler = newValue }")))
                                     ])
                                 )
                             )
@@ -579,7 +653,8 @@ if let _handler = subscriptSetHandler {
     private func generateSendableMockSubscript(
         _ subscriptDecl: SubscriptDeclSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> SubscriptDeclSyntax {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
@@ -592,8 +667,8 @@ if let _handler = subscriptSetHandler {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
 _storage.withLock { storage in
-    storage.subscriptCallCount += 1
-    storage.subscriptCallArgs.append(\(argsExpr))
+    storage.subscript\(suffix)CallCount += 1
+    storage.subscript\(suffix)CallArgs.append(\(argsExpr))
 }
 """)))
         getterStatements.append(recordCallStmt)
@@ -602,7 +677,8 @@ _storage.withLock { storage in
         let handlerCallStmts = buildSendableSubscriptHandlerCallStatements(
             parameters: parameters,
             returnType: returnType,
-            hasGenericReturn: hasGenericReturn
+            hasGenericReturn: hasGenericReturn,
+            suffix: suffix
         )
         getterStatements.append(contentsOf: handlerCallStmts)
 
@@ -618,7 +694,7 @@ _storage.withLock { storage in
         } else {
             // Build setter body
             var setterStatements: [CodeBlockItemSyntax] = []
-            let setterHandlerCall = buildSendableSubscriptSetHandlerCallStatement(parameters: parameters)
+            let setterHandlerCall = buildSendableSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)
             setterStatements.append(setterHandlerCall)
 
             let setterBody = CodeBlockSyntax(
@@ -654,7 +730,8 @@ _storage.withLock { storage in
     private func buildSendableSubscriptHandlerCallStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        hasGenericReturn: Bool
+        hasGenericReturn: Bool,
+        suffix: String
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
@@ -662,15 +739,15 @@ _storage.withLock { storage in
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = _storage.withLock({ $0.subscriptHandler }) else {
-    fatalError("\\(Self.self).subscriptHandler is not set")
+guard let _handler = _storage.withLock({ $0.subscript\(suffix)Handler }) else {
+    fatalError("\\(Self.self).subscript\(suffix)Handler is not set")
 }
 """)))
         let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
         return [guardStmt, returnStmt]
     }
 
-    private func buildSendableSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax) -> CodeBlockItemSyntax {
+    private func buildSendableSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax, suffix: String) -> CodeBlockItemSyntax {
         let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
@@ -680,7 +757,7 @@ guard let _handler = _storage.withLock({ $0.subscriptHandler }) else {
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
+if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
     _handler(\(handlerCallArgs))
 }
 """)))
@@ -688,7 +765,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
 
     // MARK: - Actor Mock Properties
 
-    private func generateActorSubscriptCallCountProperty() -> VariableDeclSyntax {
+    private func generateActorSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.public)),
@@ -697,7 +774,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallCount")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallCount")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -705,7 +782,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallCount }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallCount }")))
                                     ])
                                 )
                             ),
@@ -713,7 +790,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallCount = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallCount = newValue }")))
                                     ])
                                 )
                             )
@@ -726,7 +803,8 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
 
     private func generateActorSubscriptCallArgsProperty(
         parameters: FunctionParameterListSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
@@ -738,7 +816,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallArgs")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallArgs")),
                     typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -746,7 +824,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallArgs }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallArgs }")))
                                     ])
                                 )
                             ),
@@ -754,7 +832,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptCallArgs = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)CallArgs = newValue }")))
                                     ])
                                 )
                             )
@@ -769,7 +847,8 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -789,7 +868,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)Handler")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: handlerType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -797,7 +876,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptHandler }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)Handler }")))
                                     ])
                                 )
                             ),
@@ -805,7 +884,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptHandler = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)Handler = newValue }")))
                                     ])
                                 )
                             )
@@ -819,7 +898,8 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
     private func generateActorSubscriptSetHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> VariableDeclSyntax {
         let paramTupleType = Self.buildParameterTupleType(
             parameters: parameters,
@@ -844,7 +924,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptSetHandler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)SetHandler")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: handlerType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -852,7 +932,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptSetHandler }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)SetHandler }")))
                                     ])
                                 )
                             ),
@@ -860,7 +940,7 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscriptSetHandler = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.subscript\(suffix)SetHandler = newValue }")))
                                     ])
                                 )
                             )
@@ -874,10 +954,11 @@ if let _handler = _storage.withLock({ $0.subscriptSetHandler }) {
     private func generateActorMockSubscript(
         _ subscriptDecl: SubscriptDeclSyntax,
         isGetOnly: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        suffix: String
     ) -> SubscriptDeclSyntax {
         // Actor subscripts use the same Sendable pattern
-        return generateSendableMockSubscript(subscriptDecl, isGetOnly: isGetOnly, genericParamNames: genericParamNames)
+        return generateSendableMockSubscript(subscriptDecl, isGetOnly: isGetOnly, genericParamNames: genericParamNames, suffix: suffix)
     }
 
     // MARK: - Helper to build args expression for subscripts
