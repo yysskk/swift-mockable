@@ -16,6 +16,8 @@ body:
       label: Code Sample
       description: Minimal code that reproduces the issue.
       render: swift
+    validations:
+      required: false
 
   - type: input
     id: version
@@ -23,3 +25,5 @@ body:
       label: Version
       description: swift-mockable version
       placeholder: e.g., 0.1.0
+    validations:
+      required: true

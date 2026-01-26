@@ -16,3 +16,5 @@ body:
       label: Example
       description: How would this feature be used?
       render: swift
+    validations:
+      required: false
