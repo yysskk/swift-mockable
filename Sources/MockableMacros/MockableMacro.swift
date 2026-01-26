@@ -34,10 +34,20 @@ public struct MockableMacro: PeerMacro {
         } ?? false
 
         let members = protocolDecl.memberBlock.members
+
+        // Extract associated type declarations
+        var associatedTypes: [AssociatedTypeDeclSyntax] = []
+        for member in members {
+            if let associatedTypeDecl = member.decl.as(AssociatedTypeDeclSyntax.self) {
+                associatedTypes.append(associatedTypeDecl)
+            }
+        }
+
         let generator = MockGenerator(
             protocolName: protocolName,
             mockClassName: mockClassName,
             members: members,
+            associatedTypes: associatedTypes,
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor
         )
