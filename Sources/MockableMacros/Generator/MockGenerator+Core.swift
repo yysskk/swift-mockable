@@ -43,6 +43,9 @@ struct MockGenerator {
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateVariableMock(varDecl)
                 classMembers.append(contentsOf: varMembers)
+            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                let subscriptMembers = generateSubscriptMock(subscriptDecl)
+                classMembers.append(contentsOf: subscriptMembers)
             }
         }
 
@@ -120,6 +123,9 @@ struct MockGenerator {
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateActorVariableMock(varDecl)
                 actorMembers.append(contentsOf: varMembers)
+            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                let subscriptMembers = generateActorSubscriptMock(subscriptDecl)
+                actorMembers.append(contentsOf: subscriptMembers)
             }
         }
 

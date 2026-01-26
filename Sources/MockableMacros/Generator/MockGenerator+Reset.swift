@@ -47,6 +47,22 @@ extension MockGenerator {
                         statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName) = nil"))))
                     }
                 }
+            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+
+                // Reset subscript call count
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptCallCount = 0"))))
+
+                // Reset subscript call args
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptCallArgs = []"))))
+
+                // Reset subscript handler
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptHandler = nil"))))
+
+                // Reset subscript set handler if not get-only
+                if !isGetOnly {
+                    statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscriptSetHandler = nil"))))
+                }
             }
         }
 
@@ -94,6 +110,22 @@ extension MockGenerator {
 
                     // Reset variable backing storage
                     resetStatements.append("storage._\(varName) = nil")
+                }
+            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+
+                // Reset subscript call count
+                resetStatements.append("storage.subscriptCallCount = 0")
+
+                // Reset subscript call args
+                resetStatements.append("storage.subscriptCallArgs = []")
+
+                // Reset subscript handler
+                resetStatements.append("storage.subscriptHandler = nil")
+
+                // Reset subscript set handler if not get-only
+                if !isGetOnly {
+                    resetStatements.append("storage.subscriptSetHandler = nil")
                 }
             }
         }

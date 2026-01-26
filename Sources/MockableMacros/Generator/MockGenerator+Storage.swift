@@ -97,6 +97,86 @@ extension MockGenerator {
                     )
                     storageMembers.append(MemberBlockItemSyntax(decl: storageProp))
                 }
+            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                let parameters = subscriptDecl.parameterClause.parameters
+                let returnType = subscriptDecl.returnClause.type
+                let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
+                let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+
+                // SubscriptCallCount
+                let callCountDecl = VariableDeclSyntax(
+                    bindingSpecifier: .keyword(.var),
+                    bindings: PatternBindingListSyntax([
+                        PatternBindingSyntax(
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallCount")),
+                            typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
+                            initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
+                        )
+                    ])
+                )
+                storageMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
+
+                // SubscriptCallArgs
+                let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+                let callArgsDecl = VariableDeclSyntax(
+                    bindingSpecifier: .keyword(.var),
+                    bindings: PatternBindingListSyntax([
+                        PatternBindingSyntax(
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptCallArgs")),
+                            typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
+                            initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
+                        )
+                    ])
+                )
+                storageMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
+
+                // SubscriptHandler (getter)
+                let paramTupleType = Self.buildParameterTupleType(
+                    parameters: parameters,
+                    genericParamNames: genericParamNames
+                )
+                let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
+                let returnTypeStr = erasedReturnType.description
+
+                let closureType = parameters.isEmpty ? "() -> \(returnTypeStr)" : "(\(paramTupleType.description)) -> \(returnTypeStr)"
+
+                let handlerDecl = VariableDeclSyntax(
+                    bindingSpecifier: .keyword(.var),
+                    bindings: PatternBindingListSyntax([
+                        PatternBindingSyntax(
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptHandler")),
+                            typeAnnotation: TypeAnnotationSyntax(
+                                type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
+                            ),
+                            initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                        )
+                    ])
+                )
+                storageMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
+
+                // SubscriptSetHandler (setter) - only if not get-only
+                if !isGetOnly {
+                    let setClosureType: String
+                    if parameters.isEmpty {
+                        setClosureType = "(\(returnTypeStr)) -> Void"
+                    } else {
+                        setClosureType = "(\(paramTupleType.description), \(returnTypeStr)) -> Void"
+                    }
+
+                    let setHandlerDecl = VariableDeclSyntax(
+                        bindingSpecifier: .keyword(.var),
+                        bindings: PatternBindingListSyntax([
+                            PatternBindingSyntax(
+                                pattern: IdentifierPatternSyntax(identifier: .identifier("subscriptSetHandler")),
+                                typeAnnotation: TypeAnnotationSyntax(
+                                    type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(setClosureType))"))
+                                ),
+                                initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                            )
+                        ])
+                    )
+                    storageMembers.append(MemberBlockItemSyntax(decl: setHandlerDecl))
+                }
             }
         }
 
