@@ -28,7 +28,6 @@ extension MockGenerator {
             let handlerProperty = generateSendableSubscriptHandlerProperty(
                 parameters: parameters,
                 returnType: returnType,
-                isGetOnly: isGetOnly,
                 genericParamNames: genericParamNames,
                 suffix: suffix
             )
@@ -68,7 +67,6 @@ extension MockGenerator {
             let handlerProperty = generateSubscriptHandlerProperty(
                 parameters: parameters,
                 returnType: returnType,
-                isGetOnly: isGetOnly,
                 genericParamNames: genericParamNames,
                 suffix: suffix
             )
@@ -121,7 +119,6 @@ extension MockGenerator {
         let handlerProperty = generateActorSubscriptHandlerProperty(
             parameters: parameters,
             returnType: returnType,
-            isGetOnly: isGetOnly,
             genericParamNames: genericParamNames,
             suffix: suffix
         )
@@ -194,24 +191,38 @@ extension MockGenerator {
     }
 
     /// Sanitizes a type name for use in an identifier.
-    /// Removes special characters and converts to PascalCase.
+    /// Handles special characters, generics, optionals, and arrays.
     private static func sanitizeTypeName(_ typeName: String) -> String {
         var result = typeName
 
         // Handle optional types
         if result.hasSuffix("?") {
-            result = String(result.dropLast()) + "Optional"
+            result = sanitizeTypeName(String(result.dropLast())) + "Optional"
+            return result
         }
 
-        // Handle array types
+        // Handle implicitly unwrapped optionals
+        if result.hasSuffix("!") {
+            result = sanitizeTypeName(String(result.dropLast())) + "ImplicitlyUnwrapped"
+            return result
+        }
+
+        // Handle array types [T]
         if result.hasPrefix("[") && result.hasSuffix("]") {
             let inner = String(result.dropFirst().dropLast())
             result = sanitizeTypeName(inner) + "Array"
+            return result
         }
 
-        // Handle generic types like Dictionary<K, V>
-        if let angleBracketIndex = result.firstIndex(of: "<") {
-            result = String(result[..<angleBracketIndex])
+        // Handle generic types like Dictionary<K, V> or Array<T>
+        if let openAngleIndex = result.firstIndex(of: "<"),
+           let closeAngleIndex = result.lastIndex(of: ">") {
+            let baseName = String(result[..<openAngleIndex])
+            let genericArgsStr = String(result[result.index(after: openAngleIndex)..<closeAngleIndex])
+            // Split generic arguments by comma, handling nested generics
+            let genericArgs = splitGenericArguments(genericArgsStr)
+            let sanitizedArgs = genericArgs.map { sanitizeTypeName($0.trimmingCharacters(in: .whitespaces)) }
+            result = baseName + sanitizedArgs.joined()
         }
 
         // Remove any remaining special characters
@@ -220,6 +231,35 @@ extension MockGenerator {
         // Ensure first letter is uppercase
         if let first = result.first {
             result = first.uppercased() + result.dropFirst()
+        }
+
+        return result
+    }
+
+    /// Splits generic arguments by comma, handling nested generics.
+    /// E.g., "String, Dictionary<Int, String>" -> ["String", "Dictionary<Int, String>"]
+    private static func splitGenericArguments(_ args: String) -> [String] {
+        var result: [String] = []
+        var current = ""
+        var depth = 0
+
+        for char in args {
+            if char == "<" {
+                depth += 1
+                current.append(char)
+            } else if char == ">" {
+                depth -= 1
+                current.append(char)
+            } else if char == "," && depth == 0 {
+                result.append(current)
+                current = ""
+            } else {
+                current.append(char)
+            }
+        }
+
+        if !current.isEmpty {
+            result.append(current)
         }
 
         return result
@@ -272,7 +312,6 @@ extension MockGenerator {
     private func generateSubscriptHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        isGetOnly: Bool,
         genericParamNames: Set<String>,
         suffix: String
     ) -> VariableDeclSyntax {
@@ -362,7 +401,7 @@ extension MockGenerator {
         getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
 
         // Record call arguments
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallArgs")),
@@ -436,7 +475,7 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         suffix: String
     ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
         let returnTypeStr = returnType.description
@@ -451,7 +490,7 @@ guard let _handler = subscript\(suffix)Handler else {
     }
 
     private func buildSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax, suffix: String) -> CodeBlockItemSyntax {
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
             handlerCallArgs = "newValue"
@@ -547,7 +586,6 @@ if let _handler = subscript\(suffix)SetHandler {
     private func generateSendableSubscriptHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        isGetOnly: Bool,
         genericParamNames: Set<String>,
         suffix: String
     ) -> VariableDeclSyntax {
@@ -664,7 +702,7 @@ if let _handler = subscript\(suffix)SetHandler {
         var getterStatements: [CodeBlockItemSyntax] = []
 
         // Increment call count and record args using withLock
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
 _storage.withLock { storage in
     storage.subscript\(suffix)CallCount += 1
@@ -733,22 +771,24 @@ _storage.withLock { storage in
         hasGenericReturn: Bool,
         suffix: String
     ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
 
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+
+        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = _storage.withLock { $0.subscript\(suffix)Handler }")))
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = _storage.withLock({ $0.subscript\(suffix)Handler }) else {
+guard let _handler else {
     fatalError("\\(Self.self).subscript\(suffix)Handler is not set")
 }
 """)))
         let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
-        return [guardStmt, returnStmt]
+        return [getHandlerStmt, guardStmt, returnStmt]
     }
 
     private func buildSendableSubscriptSetHandlerCallStatement(parameters: FunctionParameterListSyntax, suffix: String) -> CodeBlockItemSyntax {
-        let argsExpr = Self.buildSubscriptArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
             handlerCallArgs = "newValue"
@@ -846,7 +886,6 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
     private func generateActorSubscriptHandlerProperty(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        isGetOnly: Bool,
         genericParamNames: Set<String>,
         suffix: String
     ) -> VariableDeclSyntax {
@@ -961,29 +1000,4 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
         return generateSendableMockSubscript(subscriptDecl, isGetOnly: isGetOnly, genericParamNames: genericParamNames, suffix: suffix)
     }
 
-    // MARK: - Helper to build args expression for subscripts
-
-    static func buildSubscriptArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
-        if parameters.isEmpty {
-            return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax([])))
-        }
-
-        if parameters.count == 1, let param = parameters.first {
-            let paramName = (param.secondName ?? param.firstName).text
-            return ExprSyntax(DeclReferenceExprSyntax(baseName: .identifier(paramName)))
-        }
-
-        let tupleElements = parameters.enumerated().map { index, param -> LabeledExprSyntax in
-            let paramName = (param.secondName ?? param.firstName).text
-            let isLast = index == parameters.count - 1
-            return LabeledExprSyntax(
-                label: param.secondName ?? param.firstName,
-                colon: .colonToken(trailingTrivia: .space),
-                expression: DeclReferenceExprSyntax(baseName: .identifier(paramName)),
-                trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
-            )
-        }
-
-        return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax(tupleElements)))
-    }
 }
