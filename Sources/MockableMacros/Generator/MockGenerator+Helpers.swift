@@ -45,12 +45,12 @@ extension MockGenerator {
             let filteredAttributes = stripEscapingAttribute(from: attributedType.attributes)
             let processedBaseType = eraseGenericTypes(in: attributedType.baseType, genericParamNames: genericParamNames)
 
-            if filteredAttributes.isEmpty && attributedType.specifiers.isEmpty {
+            if filteredAttributes.isEmpty && !attributedType.hasSpecifiers {
                 return processedBaseType
             }
 
-            return TypeSyntax(AttributedTypeSyntax(
-                specifiers: attributedType.specifiers,
+            return TypeSyntax(AttributedTypeSyntax.makeAttributedType(
+                from: attributedType,
                 attributes: filteredAttributes,
                 baseType: processedBaseType
             ))
@@ -67,16 +67,11 @@ extension MockGenerator {
             }
             // Check for generic arguments like UserDefaultsKey<T>
             if let genericArgs = identifierType.genericArgumentClause {
-                let hasGenericParam = genericArgs.arguments.contains { arg in
-                    switch arg.argument {
-                    case .type(let typeSyntax):
-                        if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
-                            return genericParamNames.contains(innerIdent.name.text)
-                        }
-                        return false
-                    case .expr:
-                        return false
+                let hasGenericParam = genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
+                    if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
+                        return genericParamNames.contains(innerIdent.name.text)
                     }
+                    return false
                 }
                 if hasGenericParam {
                     return TypeSyntax(stringLiteral: "Any")
@@ -167,13 +162,8 @@ extension MockGenerator {
                 return true
             }
             if let genericArgs = identifierType.genericArgumentClause {
-                return genericArgs.arguments.contains { arg in
-                    switch arg.argument {
-                    case .type(let typeSyntax):
-                        return typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
-                    case .expr:
-                        return false
-                    }
+                return genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
+                    typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
                 }
             }
         }

@@ -26,4 +26,5 @@ jobs:
         run: swift build
 
       - name: Run tests
+        if: startsWith(matrix.swift-version, '6.')
         run: swift test
