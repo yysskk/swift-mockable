@@ -11,13 +11,87 @@ struct MockGenerator {
 
     func generate() throws -> DeclSyntax {
         if isActor {
-            return DeclSyntax(try generateActorMock())
+            return DeclSyntax(try generateActorMockWithBackwardCompatibility())
+        } else if isSendable {
+            return DeclSyntax(try generateSendableClassMockWithBackwardCompatibility())
         } else {
             return DeclSyntax(try generateClassMock())
         }
     }
 
-    private func generateClassMock() throws -> ClassDeclSyntax {
+    private func generateSendableClassMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
+        // iOS 18+ version with Mutex
+        let iOS18PlusMock = try generateClassMock(useLegacyLock: false)
+        // iOS 17- version with LegacyLock
+        let legacyMock = try generateClassMock(useLegacyLock: true)
+
+        let canImportCondition = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax([
+                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("Synchronization")))
+            ]),
+            rightParen: .rightParenToken()
+        )
+
+        let ifClause = IfConfigClauseSyntax(
+            poundKeyword: .poundIfToken(),
+            condition: canImportCondition,
+            elements: .decls(MemberBlockItemListSyntax([
+                MemberBlockItemSyntax(decl: DeclSyntax(iOS18PlusMock))
+            ]))
+        )
+
+        let elseClause = IfConfigClauseSyntax(
+            poundKeyword: .poundElseToken(),
+            condition: nil as ExprSyntax?,
+            elements: .decls(MemberBlockItemListSyntax([
+                MemberBlockItemSyntax(decl: DeclSyntax(legacyMock))
+            ]))
+        )
+
+        return IfConfigDeclSyntax(
+            clauses: IfConfigClauseListSyntax([ifClause, elseClause])
+        )
+    }
+
+    private func generateActorMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
+        // iOS 18+ version with Mutex
+        let iOS18PlusMock = try generateActorMock(useLegacyLock: false)
+        // iOS 17- version with LegacyLock
+        let legacyMock = try generateActorMock(useLegacyLock: true)
+
+        let canImportCondition = FunctionCallExprSyntax(
+            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
+            leftParen: .leftParenToken(),
+            arguments: LabeledExprListSyntax([
+                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("Synchronization")))
+            ]),
+            rightParen: .rightParenToken()
+        )
+
+        let ifClause = IfConfigClauseSyntax(
+            poundKeyword: .poundIfToken(),
+            condition: canImportCondition,
+            elements: .decls(MemberBlockItemListSyntax([
+                MemberBlockItemSyntax(decl: DeclSyntax(iOS18PlusMock))
+            ]))
+        )
+
+        let elseClause = IfConfigClauseSyntax(
+            poundKeyword: .poundElseToken(),
+            condition: nil as ExprSyntax?,
+            elements: .decls(MemberBlockItemListSyntax([
+                MemberBlockItemSyntax(decl: DeclSyntax(legacyMock))
+            ]))
+        )
+
+        return IfConfigDeclSyntax(
+            clauses: IfConfigClauseListSyntax([ifClause, elseClause])
+        )
+    }
+
+    private func generateClassMock(useLegacyLock: Bool = false) throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
 
         // Generate typealiases for associated types
@@ -26,12 +100,12 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
         }
 
-        // For Sendable protocols, add a Mutex for thread-safe storage
+        // For Sendable protocols, add a lock for thread-safe storage
         if isSendable {
             let storageStruct = generateStorageStruct()
             classMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-            let mutexProperty = generateMutexProperty()
+            let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
@@ -81,8 +155,8 @@ struct MockGenerator {
 
         // Build attributes
         var attributes: [AttributeListSyntax.Element] = []
-        if isSendable {
-            // Add @available attribute for Mutex which requires macOS 15.0+
+        // Only add @available attribute for Mutex (iOS 18+), not for LegacyLock
+        if isSendable && !useLegacyLock {
             var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
             availableAttribute.trailingTrivia = .newline
             attributes.append(.attribute(availableAttribute))
@@ -99,7 +173,7 @@ struct MockGenerator {
         )
     }
 
-    private func generateActorMock() throws -> ActorDeclSyntax {
+    private func generateActorMock(useLegacyLock: Bool = false) throws -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
 
         // Generate typealiases for associated types
@@ -108,11 +182,11 @@ struct MockGenerator {
             actorMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
         }
 
-        // Add Storage struct and Mutex for thread-safe access (same as Sendable pattern)
+        // Add Storage struct and lock for thread-safe access (same as Sendable pattern)
         let storageStruct = generateStorageStruct()
         actorMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-        let mutexProperty = generateMutexProperty()
+        let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
 
         // Generate members for each protocol requirement using Sendable pattern
@@ -149,11 +223,13 @@ struct MockGenerator {
             DeclModifierSyntax(name: .keyword(.public))
         ]
 
-        // Build attributes - add @available for Mutex
+        // Build attributes - only add @available for Mutex (iOS 18+), not for LegacyLock
         var attributes: [AttributeListSyntax.Element] = []
-        var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
-        availableAttribute.trailingTrivia = .newline
-        attributes.append(.attribute(availableAttribute))
+        if !useLegacyLock {
+            var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
+            availableAttribute.trailingTrivia = .newline
+            attributes.append(.attribute(availableAttribute))
+        }
 
         return ActorDeclSyntax(
             attributes: AttributeListSyntax(attributes),

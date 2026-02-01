@@ -480,6 +480,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class KeychainClientProtocolMock: KeychainClientProtocol, Sendable {
                 private struct Storage {
@@ -700,6 +701,227 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class KeychainClientProtocolMock: KeychainClientProtocol, Sendable {
+                private struct Storage {
+                    var saveCallCount: Int = 0
+                    var saveCallArgs: [(data: Data, key: String)] = []
+                    var saveHandler: (@Sendable ((data: Data, key: String)) throws -> Void)? = nil
+                    var loadCallCount: Int = 0
+                    var loadCallArgs: [String] = []
+                    var loadHandler: (@Sendable (String) throws -> Data?)? = nil
+                    var deleteCallCount: Int = 0
+                    var deleteCallArgs: [String] = []
+                    var deleteHandler: (@Sendable (String) throws -> Void)? = nil
+                    var existsCallCount: Int = 0
+                    var existsCallArgs: [String] = []
+                    var existsHandler: (@Sendable (String) -> Bool)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var saveCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.saveCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveCallCount = newValue
+                        }
+                    }
+                }
+                public var saveCallArgs: [(data: Data, key: String)] {
+                    get {
+                        _storage.withLock {
+                            $0.saveCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveCallArgs = newValue
+                        }
+                    }
+                }
+                public var saveHandler: (@Sendable ((data: Data, key: String)) throws -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.saveHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveHandler = newValue
+                        }
+                    }
+                }
+                public func save(_ data: Data, forKey key: String) throws {
+                    let _handler = _storage.withLock { storage -> (@Sendable ((data: Data, key: String)) throws -> Void)? in
+                        storage.saveCallCount += 1
+                        storage.saveCallArgs.append((data: data, key: key))
+                        return storage.saveHandler
+                    }
+                    if let _handler {
+                        try _handler((data: data, key: key))
+                    }
+                }
+                public var loadCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
+                    }
+                }
+                public var loadCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
+                    }
+                }
+                public var loadHandler: (@Sendable (String) throws -> Data?)? {
+                    get {
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
+                    }
+                }
+                public func load(forKey key: String) throws -> Data? {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Data?)? in
+                        storage.loadCallCount += 1
+                        storage.loadCallArgs.append(key)
+                        return storage.loadHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).loadHandler is not set")
+                    }
+                    return try _handler(key)
+                }
+                public var deleteCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.deleteCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.deleteCallCount = newValue
+                        }
+                    }
+                }
+                public var deleteCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.deleteCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.deleteCallArgs = newValue
+                        }
+                    }
+                }
+                public var deleteHandler: (@Sendable (String) throws -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.deleteHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.deleteHandler = newValue
+                        }
+                    }
+                }
+                public func delete(forKey key: String) throws {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Void)? in
+                        storage.deleteCallCount += 1
+                        storage.deleteCallArgs.append(key)
+                        return storage.deleteHandler
+                    }
+                    if let _handler {
+                        try _handler(key)
+                    }
+                }
+                public var existsCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.existsCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.existsCallCount = newValue
+                        }
+                    }
+                }
+                public var existsCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.existsCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.existsCallArgs = newValue
+                        }
+                    }
+                }
+                public var existsHandler: (@Sendable (String) -> Bool)? {
+                    get {
+                        _storage.withLock {
+                            $0.existsHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.existsHandler = newValue
+                        }
+                    }
+                }
+                public func exists(forKey key: String) -> Bool {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Bool)? in
+                        storage.existsCallCount += 1
+                        storage.existsCallArgs.append(key)
+                        return storage.existsHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).existsHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.saveCallCount = 0
+                        storage.saveCallArgs = []
+                        storage.saveHandler = nil
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                        storage.deleteCallCount = 0
+                        storage.deleteCallArgs = []
+                        storage.deleteHandler = nil
+                        storage.existsCallCount = 0
+                        storage.existsCallArgs = []
+                        storage.existsHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -723,6 +945,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class LoggerMock: Logger, Sendable {
                 private struct Storage {
@@ -785,6 +1008,69 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class LoggerMock: Logger, Sendable {
+                private struct Storage {
+                    var logCallCount: Int = 0
+                    var logCallArgs: [String] = []
+                    var logHandler: (@Sendable (String) -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var logCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.logCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.logCallCount = newValue
+                        }
+                    }
+                }
+                public var logCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.logCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.logCallArgs = newValue
+                        }
+                    }
+                }
+                public var logHandler: (@Sendable (String) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.logHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.logHandler = newValue
+                        }
+                    }
+                }
+                public func log(message: String) {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
+                        storage.logCallCount += 1
+                        storage.logCallArgs.append(message)
+                        return storage.logHandler
+                    }
+                    if let _handler {
+                        _handler(message)
+                    }
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.logCallCount = 0
+                        storage.logCallArgs = []
+                        storage.logHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -882,6 +1168,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class EventServiceMock: EventService, Sendable {
                 private struct Storage {
@@ -944,6 +1231,69 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class EventServiceMock: EventService, Sendable {
+                private struct Storage {
+                    var registerCallCount: Int = 0
+                    var registerCallArgs: [@Sendable (String) -> Void] = []
+                    var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var registerCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.registerCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.registerCallCount = newValue
+                        }
+                    }
+                }
+                public var registerCallArgs: [@Sendable (String) -> Void] {
+                    get {
+                        _storage.withLock {
+                            $0.registerCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.registerCallArgs = newValue
+                        }
+                    }
+                }
+                public var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.registerHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.registerHandler = newValue
+                        }
+                    }
+                }
+                public func register(handler: @escaping @Sendable (String) -> Void) async {
+                    let _handler = _storage.withLock { storage -> (@Sendable (@Sendable (String) -> Void) async -> Void)? in
+                        storage.registerCallCount += 1
+                        storage.registerCallArgs.append(handler)
+                        return storage.registerHandler
+                    }
+                    if let _handler {
+                        await _handler(handler)
+                    }
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.registerCallCount = 0
+                        storage.registerCallArgs = []
+                        storage.registerHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -967,6 +1317,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class ConfigProviderMock: ConfigProvider, Sendable {
                 private struct Storage {
@@ -1010,6 +1361,50 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class ConfigProviderMock: ConfigProvider, Sendable {
+                private struct Storage {
+                    var _apiKey: String? = nil
+                    var _timeout: Int? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var _apiKey: String? {
+                    get {
+                        _storage.withLock {
+                            $0._apiKey
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._apiKey = newValue
+                        }
+                    }
+                }
+                public var apiKey: String {
+                    _storage.withLock {
+                        $0._apiKey!
+                    }
+                }
+                public var timeout: Int {
+                    get {
+                        _storage.withLock {
+                            $0._timeout!
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
+                    }
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage._apiKey = nil
+                        storage._timeout = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -1037,6 +1432,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor UserProfileStoreMock: UserProfileStore {
                 private struct Storage {
@@ -1223,6 +1619,193 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor UserProfileStoreMock: UserProfileStore {
+                private struct Storage {
+                    var _profiles: [String: String]? = nil
+                    var updateProfileCallCount: Int = 0
+                    var updateProfileCallArgs: [(profile: String, key: String)] = []
+                    var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? = nil
+                    var profileCallCount: Int = 0
+                    var profileCallArgs: [String] = []
+                    var profileHandler: (@Sendable (String) -> String?)? = nil
+                    var resetCallCount: Int = 0
+                    var resetCallArgs: [()] = []
+                    var resetHandler: (@Sendable () -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var _profiles: [String: String]? {
+                    get {
+                        _storage.withLock {
+                            $0._profiles
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._profiles = newValue
+                        }
+                    }
+                }
+                public var profiles: [String: String] {
+                    _storage.withLock {
+                        $0._profiles!
+                    }
+                }
+                public nonisolated var updateProfileCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.updateProfileCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.updateProfileCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
+                    get {
+                        _storage.withLock {
+                            $0.updateProfileCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.updateProfileCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.updateProfileHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.updateProfileHandler = newValue
+                        }
+                    }
+                }
+                public func updateProfile(_ profile: String, for key: String) {
+                    let _handler = _storage.withLock { storage -> (@Sendable ((profile: String, key: String)) -> Void)? in
+                        storage.updateProfileCallCount += 1
+                        storage.updateProfileCallArgs.append((profile: profile, key: key))
+                        return storage.updateProfileHandler
+                    }
+                    if let _handler {
+                        _handler((profile: profile, key: key))
+                    }
+                }
+                public nonisolated var profileCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.profileCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.profileCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var profileCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.profileCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.profileCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var profileHandler: (@Sendable (String) -> String?)? {
+                    get {
+                        _storage.withLock {
+                            $0.profileHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.profileHandler = newValue
+                        }
+                    }
+                }
+                public func profile(for key: String) -> String? {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> String?)? in
+                        storage.profileCallCount += 1
+                        storage.profileCallArgs.append(key)
+                        return storage.profileHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).profileHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public nonisolated var resetCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.resetCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.resetCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var resetCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.resetCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.resetCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var resetHandler: (@Sendable () -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.resetHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.resetHandler = newValue
+                        }
+                    }
+                }
+                public func reset() {
+                    let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
+                        storage.resetCallCount += 1
+                        storage.resetCallArgs.append(())
+                        return storage.resetHandler
+                    }
+                    if let _handler {
+                        _handler()
+                    }
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage._profiles = nil
+                        storage.updateProfileCallCount = 0
+                        storage.updateProfileCallArgs = []
+                        storage.updateProfileHandler = nil
+                        storage.profileCallCount = 0
+                        storage.profileCallArgs = []
+                        storage.profileHandler = nil
+                        storage.resetCallCount = 0
+                        storage.resetCallArgs = []
+                        storage.resetHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -1246,6 +1829,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor ConfigProviderMock: ConfigProvider {
                 private struct Storage {
@@ -1301,6 +1885,62 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor ConfigProviderMock: ConfigProvider {
+                private struct Storage {
+                    var _apiKey: String? = nil
+                    var _timeout: Int? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var _apiKey: String? {
+                    get {
+                        _storage.withLock {
+                            $0._apiKey
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._apiKey = newValue
+                        }
+                    }
+                }
+                public var apiKey: String {
+                    _storage.withLock {
+                        $0._apiKey!
+                    }
+                }
+                public nonisolated var _timeout: Int? {
+                    get {
+                        _storage.withLock {
+                            $0._timeout
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
+                    }
+                }
+                public var timeout: Int {
+                    get {
+                        _storage.withLock {
+                            $0._timeout!
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
+                    }
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage._apiKey = nil
+                        storage._timeout = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -1324,6 +1964,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor DataStoreMock: DataStore {
                 private struct Storage {
@@ -1439,6 +2080,122 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor DataStoreMock: DataStore {
+                private struct Storage {
+                    var saveCallCount: Int = 0
+                    var saveCallArgs: [String] = []
+                    var saveHandler: (@Sendable (String) async throws -> Void)? = nil
+                    var loadCallCount: Int = 0
+                    var loadCallArgs: [()] = []
+                    var loadHandler: (@Sendable () async throws -> String)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var saveCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.saveCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var saveCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.saveCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.saveHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.saveHandler = newValue
+                        }
+                    }
+                }
+                public func save(_ data: String) async throws {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) async throws -> Void)? in
+                        storage.saveCallCount += 1
+                        storage.saveCallArgs.append(data)
+                        return storage.saveHandler
+                    }
+                    if let _handler {
+                        try await _handler(data)
+                    }
+                }
+                public nonisolated var loadCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var loadCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var loadHandler: (@Sendable () async throws -> String)? {
+                    get {
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
+                    }
+                }
+                public func load() async throws -> String {
+                    let _handler = _storage.withLock { storage -> (@Sendable () async throws -> String)? in
+                        storage.loadCallCount += 1
+                        storage.loadCallArgs.append(())
+                        return storage.loadHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).loadHandler is not set")
+                    }
+                    return try await _handler()
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.saveCallCount = 0
+                        storage.saveCallArgs = []
+                        storage.saveHandler = nil
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -1622,6 +2379,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class AsyncStoreMock: AsyncStore, Sendable {
                 public typealias Item = String
@@ -1686,6 +2444,71 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class AsyncStoreMock: AsyncStore, Sendable {
+                public typealias Item = String
+                private struct Storage {
+                    var fetchCallCount: Int = 0
+                    var fetchCallArgs: [()] = []
+                    var fetchHandler: (@Sendable () async -> Item)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var fetchCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.fetchCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.fetchCallCount = newValue
+                        }
+                    }
+                }
+                public var fetchCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.fetchCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.fetchCallArgs = newValue
+                        }
+                    }
+                }
+                public var fetchHandler: (@Sendable () async -> Item)? {
+                    get {
+                        _storage.withLock {
+                            $0.fetchHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.fetchHandler = newValue
+                        }
+                    }
+                }
+                public func fetch() async -> Item {
+                    let _handler = _storage.withLock { storage -> (@Sendable () async -> Item)? in
+                        storage.fetchCallCount += 1
+                        storage.fetchCallArgs.append(())
+                        return storage.fetchHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).fetchHandler is not set")
+                    }
+                    return await _handler()
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.fetchCallCount = 0
+                        storage.fetchCallArgs = []
+                        storage.fetchHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -1711,6 +2534,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor CacheActorMock: CacheActor {
                 public typealias Value = Data
@@ -1827,6 +2651,123 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor CacheActorMock: CacheActor {
+                public typealias Value = Data
+                private struct Storage {
+                    var getCallCount: Int = 0
+                    var getCallArgs: [String] = []
+                    var getHandler: (@Sendable (String) -> Value?)? = nil
+                    var setCallCount: Int = 0
+                    var setCallArgs: [(key: String, value: Value)] = []
+                    var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var getCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.getCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var getCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.getCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var getHandler: (@Sendable (String) -> Value?)? {
+                    get {
+                        _storage.withLock {
+                            $0.getHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getHandler = newValue
+                        }
+                    }
+                }
+                public func get(key: String) -> Value? {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Value?)? in
+                        storage.getCallCount += 1
+                        storage.getCallArgs.append(key)
+                        return storage.getHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).getHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public nonisolated var setCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.setCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.setCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var setCallArgs: [(key: String, value: Value)] {
+                    get {
+                        _storage.withLock {
+                            $0.setCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.setCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.setHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.setHandler = newValue
+                        }
+                    }
+                }
+                public func set(key: String, value: Value) {
+                    let _handler = _storage.withLock { storage -> (@Sendable ((key: String, value: Value)) -> Void)? in
+                        storage.setCallCount += 1
+                        storage.setCallArgs.append((key: key, value: value))
+                        return storage.setHandler
+                    }
+                    if let _handler {
+                        _handler((key: key, value: value))
+                    }
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.getCallCount = 0
+                        storage.getCallArgs = []
+                        storage.getHandler = nil
+                        storage.setCallCount = 0
+                        storage.setCallArgs = []
+                        storage.setHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -2114,6 +3055,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
                 public typealias Key = Any
@@ -2179,6 +3121,72 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
+                public typealias Key = Any
+                public typealias Value = Any
+                private struct Storage {
+                    var getCallCount: Int = 0
+                    var getCallArgs: [Key] = []
+                    var getHandler: (@Sendable (Key) -> Value?)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var getCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.getCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getCallCount = newValue
+                        }
+                    }
+                }
+                public var getCallArgs: [Key] {
+                    get {
+                        _storage.withLock {
+                            $0.getCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getCallArgs = newValue
+                        }
+                    }
+                }
+                public var getHandler: (@Sendable (Key) -> Value?)? {
+                    get {
+                        _storage.withLock {
+                            $0.getHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.getHandler = newValue
+                        }
+                    }
+                }
+                public func get(key: Key) -> Value? {
+                    let _handler = _storage.withLock { storage -> (@Sendable (Key) -> Value?)? in
+                        storage.getCallCount += 1
+                        storage.getCallArgs.append(key)
+                        return storage.getHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).getHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.getCallCount = 0
+                        storage.getCallArgs = []
+                        storage.getHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -2442,6 +3450,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class SendableCacheMock: SendableCache, Sendable {
                 private struct Storage {
@@ -2507,6 +3516,72 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class SendableCacheMock: SendableCache, Sendable {
+                private struct Storage {
+                    var subscriptStringCallCount: Int = 0
+                    var subscriptStringCallArgs: [String] = []
+                    var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var subscriptStringCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringCallCount = newValue
+                        }
+                    }
+                }
+                public var subscriptStringCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringCallArgs = newValue
+                        }
+                    }
+                }
+                public var subscriptStringHandler: (@Sendable (String) -> Int )? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringHandler = newValue
+                        }
+                    }
+                }
+                public subscript(key: String) -> Int {
+                    _storage.withLock { storage in
+                        storage.subscriptStringCallCount += 1
+                        storage.subscriptStringCallArgs.append(key)
+                    }
+                    let _handler = _storage.withLock {
+                        $0.subscriptStringHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).subscriptStringHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.subscriptStringCallCount = 0
+                        storage.subscriptStringCallArgs = []
+                        storage.subscriptStringHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -2528,6 +3603,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public final class SendableStorageMock: SendableStorage, Sendable {
                 private struct Storage {
@@ -2615,6 +3691,94 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public final class SendableStorageMock: SendableStorage, Sendable {
+                private struct Storage {
+                    var subscriptIntCallCount: Int = 0
+                    var subscriptIntCallArgs: [Int] = []
+                    var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
+                    var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public var subscriptIntCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntCallCount = newValue
+                        }
+                    }
+                }
+                public var subscriptIntCallArgs: [Int] {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntCallArgs = newValue
+                        }
+                    }
+                }
+                public var subscriptIntHandler: (@Sendable (Int) -> String )? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntHandler = newValue
+                        }
+                    }
+                }
+                public var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntSetHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntSetHandler = newValue
+                        }
+                    }
+                }
+                public subscript(index: Int) -> String {
+                    get {
+                        _storage.withLock { storage in
+                            storage.subscriptIntCallCount += 1
+                            storage.subscriptIntCallArgs.append(index)
+                        }
+                        let _handler = _storage.withLock {
+                            $0.subscriptIntHandler
+                        }
+                        guard let _handler else {
+                            fatalError("\\(Self.self).subscriptIntHandler is not set")
+                        }
+                        return _handler(index)
+                    }
+                    set {
+                        if let _handler = _storage.withLock({ $0.subscriptIntSetHandler
+                            }) {
+                            _handler(index, newValue)
+                        }
+                    }
+                }
+                public func resetMock() {
+                    _storage.withLock { storage in
+                        storage.subscriptIntCallCount = 0
+                        storage.subscriptIntCallArgs = []
+                        storage.subscriptIntHandler = nil
+                        storage.subscriptIntSetHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -2636,6 +3800,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor ActorCacheMock: ActorCache {
                 private struct Storage {
@@ -2701,6 +3866,72 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor ActorCacheMock: ActorCache {
+                private struct Storage {
+                    var subscriptStringCallCount: Int = 0
+                    var subscriptStringCallArgs: [String] = []
+                    var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var subscriptStringCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var subscriptStringCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var subscriptStringHandler: (@Sendable (String) -> Int )? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptStringHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptStringHandler = newValue
+                        }
+                    }
+                }
+                public subscript(key: String) -> Int {
+                    _storage.withLock { storage in
+                        storage.subscriptStringCallCount += 1
+                        storage.subscriptStringCallArgs.append(key)
+                    }
+                    let _handler = _storage.withLock {
+                        $0.subscriptStringHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).subscriptStringHandler is not set")
+                    }
+                    return _handler(key)
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.subscriptStringCallCount = 0
+                        storage.subscriptStringCallArgs = []
+                        storage.subscriptStringHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
@@ -2722,6 +3953,7 @@ struct MockableMacroTests {
             }
 
             #if DEBUG
+            #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             public actor ActorStorageMock: ActorStorage {
                 private struct Storage {
@@ -2809,6 +4041,94 @@ struct MockableMacroTests {
                     }
                 }
             }
+            #else
+            public actor ActorStorageMock: ActorStorage {
+                private struct Storage {
+                    var subscriptIntCallCount: Int = 0
+                    var subscriptIntCallArgs: [Int] = []
+                    var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
+                    var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                public nonisolated var subscriptIntCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntCallCount = newValue
+                        }
+                    }
+                }
+                public nonisolated var subscriptIntCallArgs: [Int] {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntCallArgs = newValue
+                        }
+                    }
+                }
+                public nonisolated var subscriptIntHandler: (@Sendable (Int) -> String )? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntHandler = newValue
+                        }
+                    }
+                }
+                public nonisolated var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.subscriptIntSetHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.subscriptIntSetHandler = newValue
+                        }
+                    }
+                }
+                public subscript(index: Int) -> String {
+                    get {
+                        _storage.withLock { storage in
+                            storage.subscriptIntCallCount += 1
+                            storage.subscriptIntCallArgs.append(index)
+                        }
+                        let _handler = _storage.withLock {
+                            $0.subscriptIntHandler
+                        }
+                        guard let _handler else {
+                            fatalError("\\(Self.self).subscriptIntHandler is not set")
+                        }
+                        return _handler(index)
+                    }
+                    set {
+                        if let _handler = _storage.withLock({ $0.subscriptIntSetHandler
+                            }) {
+                            _handler(index, newValue)
+                        }
+                    }
+                }
+                public nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.subscriptIntCallCount = 0
+                        storage.subscriptIntCallArgs = []
+                        storage.subscriptIntHandler = nil
+                        storage.subscriptIntSetHandler = nil
+                    }
+                }
+            }
+            #endif
             #endif
             """,
             macros: testMacros
