@@ -194,8 +194,9 @@ extension MockGenerator {
         )
     }
 
-    func generateMutexProperty() -> VariableDeclSyntax {
-        VariableDeclSyntax(
+    func generateMutexProperty(useLegacyLock: Bool = false) -> VariableDeclSyntax {
+        let lockType = useLegacyLock ? "LegacyLock" : "Mutex"
+        return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.private))
             ]),
@@ -207,7 +208,7 @@ extension MockGenerator {
                     initializer: InitializerClauseSyntax(
                         value: FunctionCallExprSyntax(
                             calledExpression: GenericSpecializationExprSyntax(
-                                expression: DeclReferenceExprSyntax(baseName: .identifier("Mutex")),
+                                expression: DeclReferenceExprSyntax(baseName: .identifier(lockType)),
                                 genericArgumentClause: GenericArgumentClauseSyntax(
                                     arguments: GenericArgumentListSyntax([
                                         makeGenericArgument(type: TypeSyntax(stringLiteral: "Storage"))

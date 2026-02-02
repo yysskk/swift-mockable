@@ -31,8 +31,9 @@ Then add `Mockable` to your target dependencies:
 - Supports get-only and get/set properties
 - Supports optional properties
 - Supports generic methods (with type erasure to `Any`)
-- Supports `Sendable` protocols with thread-safe mock generation using `Mutex`
+- Supports `Sendable` protocols with thread-safe mock generation
 - Supports `Actor` protocols with actor mock generation
+- Backward compatible: iOS 18+ uses `Mutex`, iOS 17 and earlier uses `LegacyLock`
 - Supports subscript declarations (get-only and get-set)
 - `resetMock()` method to reset all tracking state for test reuse
 
@@ -162,7 +163,11 @@ await withTaskGroup(of: Void.self) { group in
 #expect(mock.loadCallCount == 100)
 ```
 
-**Note:** Sendable mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
+**Platform Support:** Sendable mocks automatically use the appropriate lock implementation:
+- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Uses `Mutex` from the `Synchronization` module (generated with `@available` attribute)
+- **iOS 17 and earlier**: Uses `LegacyLock` (NSLock-based) for backward compatibility
+
+The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
 
 ### Actor protocols
 
@@ -201,7 +206,11 @@ Actor mocks support:
 - `nonisolated` backing properties (`_propertyName`) for easy test setup without `await`
 - `nonisolated func resetMock()` for easy mock reset without `await`
 
-**Note:** Actor mocks require macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+ due to `Mutex` availability. The generated mock includes `@available` attribute automatically.
+**Platform Support:** Actor mocks automatically use the appropriate lock implementation:
+- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Uses `Mutex` from the `Synchronization` module (generated with `@available` attribute)
+- **iOS 17 and earlier**: Uses `LegacyLock` (NSLock-based) for backward compatibility
+
+The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
 
 ## Generated Code Example
 
@@ -264,7 +273,9 @@ public class UserServiceMock: UserService {
 
 - Swift 5.9, 5.10, and 6.2+ are supported
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
-- For `Sendable` and `Actor` protocol support: macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+
+- `Sendable` and `Actor` protocol mocks work on all supported platforms (iOS 13+, etc.)
+  - iOS 18.0+ / macOS 15.0+: Uses `Mutex` for optimal performance
+  - iOS 17 and earlier: Uses `LegacyLock` (NSLock-based) for compatibility
 
 ## License
 
