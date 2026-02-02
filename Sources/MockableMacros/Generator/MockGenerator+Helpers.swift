@@ -1,9 +1,79 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
+// MARK: - Conditional Compilation Support
+
+/// Represents a protocol member that may be wrapped in conditional compilation (e.g., #if DEBUG)
+struct ConditionalMember {
+    let decl: DeclSyntax
+    let condition: ExprSyntax?  // nil means unconditional
+
+    var isConditional: Bool {
+        condition != nil
+    }
+}
+
 // MARK: - Helper Methods
 
 extension MockGenerator {
+    /// Extracts all members from the protocol, including those inside #if blocks.
+    /// Returns an array of ConditionalMember, where each member knows its condition (if any).
+    func extractConditionalMembers() -> [ConditionalMember] {
+        var result: [ConditionalMember] = []
+
+        for member in members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                // Handle #if blocks
+                for clause in ifConfigDecl.clauses {
+                    guard let elements = clause.elements else { continue }
+
+                    // Only handle #if clauses (not #else or #elseif for now)
+                    // The condition is available for #if clauses
+                    let condition = clause.condition
+
+                    if case .decls(let declList) = elements {
+                        for declItem in declList {
+                            result.append(ConditionalMember(decl: declItem.decl, condition: condition))
+                        }
+                    }
+                }
+            } else {
+                // Regular unconditional member
+                result.append(ConditionalMember(decl: member.decl, condition: nil))
+            }
+        }
+
+        return result
+    }
+
+    /// Groups function declarations by their name, including conditional members.
+    /// This is used to detect overloaded methods.
+    func groupMethodsByNameIncludingConditional() -> [String: [FunctionDeclSyntax]] {
+        var methodGroups: [String: [FunctionDeclSyntax]] = [:]
+
+        for conditionalMember in extractConditionalMembers() {
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+                let funcName = funcDecl.name.text
+                methodGroups[funcName, default: []].append(funcDecl)
+            }
+        }
+
+        return methodGroups
+    }
+
+    /// Wraps a list of MemberBlockItemSyntax in an IfConfigDecl with the given condition.
+    static func wrapInIfConfig(members: [MemberBlockItemSyntax], condition: ExprSyntax) -> MemberBlockItemSyntax {
+        let ifConfigDecl = IfConfigDeclSyntax(
+            clauses: IfConfigClauseListSyntax([
+                IfConfigClauseSyntax(
+                    poundKeyword: .poundIfToken(),
+                    condition: condition,
+                    elements: .decls(MemberBlockItemListSyntax(members))
+                )
+            ])
+        )
+        return MemberBlockItemSyntax(decl: ifConfigDecl)
+    }
     static func extractGenericParameterNames(from funcDecl: FunctionDeclSyntax) -> Set<String> {
         guard let genericClause = funcDecl.genericParameterClause else {
             return []

@@ -109,23 +109,52 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
-        // Group methods by name to detect overloads
-        let methodGroups = groupMethodsByName()
+        // Group methods by name to detect overloads (including conditional members)
+        let methodGroups = groupMethodsByNameIncludingConditional()
+
+        // Extract all members including those in #if blocks
+        let conditionalMembers = extractConditionalMembers()
+
+        // Group members by their condition
+        var unconditionalMembers: [MemberBlockItemSyntax] = []
+        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
+        var conditionExprs: [String: ExprSyntax] = [:]
 
         // Generate members for each protocol requirement
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+        for conditionalMember in conditionalMembers {
+            var generatedMembers: [MemberBlockItemSyntax] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
                 let funcMembers = generateFunctionMock(funcDecl, suffix: suffix)
-                classMembers.append(contentsOf: funcMembers)
-            } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                generatedMembers.append(contentsOf: funcMembers)
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateVariableMock(varDecl)
-                classMembers.append(contentsOf: varMembers)
-            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                generatedMembers.append(contentsOf: varMembers)
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
                 let subscriptMembers = generateSubscriptMock(subscriptDecl)
-                classMembers.append(contentsOf: subscriptMembers)
+                generatedMembers.append(contentsOf: subscriptMembers)
+            }
+
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionExprs[conditionKey] = condition
+                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
+            } else {
+                unconditionalMembers.append(contentsOf: generatedMembers)
+            }
+        }
+
+        // Add unconditional members first
+        classMembers.append(contentsOf: unconditionalMembers)
+
+        // Add conditional members wrapped in their respective #if blocks
+        for (conditionKey, members) in membersByCondition {
+            if let condition = conditionExprs[conditionKey] {
+                let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
+                classMembers.append(wrappedMember)
             }
         }
 
@@ -195,23 +224,52 @@ struct MockGenerator {
         let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
 
-        // Group methods by name to detect overloads
-        let methodGroups = groupMethodsByName()
+        // Group methods by name to detect overloads (including conditional members)
+        let methodGroups = groupMethodsByNameIncludingConditional()
+
+        // Extract all members including those in #if blocks
+        let conditionalMembers = extractConditionalMembers()
+
+        // Group members by their condition
+        var unconditionalMembers: [MemberBlockItemSyntax] = []
+        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
+        var conditionExprs: [String: ExprSyntax] = [:]
 
         // Generate members for each protocol requirement using Sendable pattern
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+        for conditionalMember in conditionalMembers {
+            var generatedMembers: [MemberBlockItemSyntax] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
                 let funcMembers = generateActorFunctionMock(funcDecl, suffix: suffix)
-                actorMembers.append(contentsOf: funcMembers)
-            } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                generatedMembers.append(contentsOf: funcMembers)
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateActorVariableMock(varDecl)
-                actorMembers.append(contentsOf: varMembers)
-            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                generatedMembers.append(contentsOf: varMembers)
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
                 let subscriptMembers = generateActorSubscriptMock(subscriptDecl)
-                actorMembers.append(contentsOf: subscriptMembers)
+                generatedMembers.append(contentsOf: subscriptMembers)
+            }
+
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionExprs[conditionKey] = condition
+                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
+            } else {
+                unconditionalMembers.append(contentsOf: generatedMembers)
+            }
+        }
+
+        // Add unconditional members first
+        actorMembers.append(contentsOf: unconditionalMembers)
+
+        // Add conditional members wrapped in their respective #if blocks
+        for (conditionKey, members) in membersByCondition {
+            if let condition = conditionExprs[conditionKey] {
+                let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
+                actorMembers.append(wrappedMember)
             }
         }
 

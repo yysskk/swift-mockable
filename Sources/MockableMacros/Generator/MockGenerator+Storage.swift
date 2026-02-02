@@ -7,11 +7,21 @@ extension MockGenerator {
     func generateStorageStruct() -> StructDeclSyntax {
         var storageMembers: [MemberBlockItemSyntax] = []
 
-        // Group methods by name to detect overloads
-        let methodGroups = groupMethodsByName()
+        // Group methods by name to detect overloads (including conditional members)
+        let methodGroups = groupMethodsByNameIncludingConditional()
 
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+        // Extract all members including those in #if blocks
+        let conditionalMembers = extractConditionalMembers()
+
+        // Group storage members by their condition
+        var unconditionalMembers: [MemberBlockItemSyntax] = []
+        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
+        var conditionExprs: [String: ExprSyntax] = [:]
+
+        for conditionalMember in conditionalMembers {
+            var generatedMembers: [MemberBlockItemSyntax] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
@@ -33,7 +43,7 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
+                generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // CallArgs
                 let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
@@ -47,7 +57,7 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
+                generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // Handler
                 let paramTupleType = Self.buildParameterTupleType(
@@ -74,8 +84,8 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
-            } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                           let typeAnnotation = binding.typeAnnotation else { continue }
@@ -101,9 +111,9 @@ extension MockGenerator {
                             )
                         ])
                     )
-                    storageMembers.append(MemberBlockItemSyntax(decl: storageProp))
+                    generatedMembers.append(MemberBlockItemSyntax(decl: storageProp))
                 }
-            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
                 let parameters = subscriptDecl.parameterClause.parameters
                 let returnType = subscriptDecl.returnClause.type
                 let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
@@ -121,7 +131,7 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
+                generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // SubscriptCallArgs
                 let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
@@ -135,7 +145,7 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
+                generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // SubscriptHandler (getter)
                 let paramTupleType = Self.buildParameterTupleType(
@@ -159,7 +169,7 @@ extension MockGenerator {
                         )
                     ])
                 )
-                storageMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
+                generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
 
                 // SubscriptSetHandler (setter) - only if not get-only
                 if !isGetOnly {
@@ -182,8 +192,28 @@ extension MockGenerator {
                             )
                         ])
                     )
-                    storageMembers.append(MemberBlockItemSyntax(decl: setHandlerDecl))
+                    generatedMembers.append(MemberBlockItemSyntax(decl: setHandlerDecl))
                 }
+            }
+
+            // Group by condition
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionExprs[conditionKey] = condition
+                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
+            } else {
+                unconditionalMembers.append(contentsOf: generatedMembers)
+            }
+        }
+
+        // Add unconditional members first
+        storageMembers.append(contentsOf: unconditionalMembers)
+
+        // Add conditional members wrapped in their respective #if blocks
+        for (conditionKey, members) in membersByCondition {
+            if let condition = conditionExprs[conditionKey] {
+                let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
+                storageMembers.append(wrappedMember)
             }
         }
 
