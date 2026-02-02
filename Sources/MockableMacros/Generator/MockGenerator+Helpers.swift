@@ -289,6 +289,49 @@ extension MockGenerator {
         return typeNames.joined()
     }
 
+    /// Generates a unique suffix for an overloaded function within a group of methods with the same name.
+    /// First attempts to use parameter types only. If that results in duplicates within the group,
+    /// adds return type and async/throws modifiers to disambiguate.
+    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
+        let baseSuffix = functionIdentifierSuffix(from: funcDecl)
+
+        // Check if there are duplicates with the same base suffix in the method group
+        let duplicateCount = methodGroup.filter { functionIdentifierSuffix(from: $0) == baseSuffix }.count
+
+        if duplicateCount <= 1 {
+            // No duplicates, use base suffix
+            return baseSuffix
+        }
+
+        // There are duplicates, need to add more distinguishing information
+        return extendedFunctionIdentifierSuffix(from: funcDecl, baseSuffix: baseSuffix)
+    }
+
+    /// Generates an extended suffix that includes return type and async/throws modifiers.
+    private static func extendedFunctionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, baseSuffix: String) -> String {
+        var suffix = baseSuffix
+
+        // Add return type if present and not Void
+        if let returnClause = funcDecl.signature.returnClause {
+            let returnTypeName = returnClause.type.trimmedDescription
+            if returnTypeName != "Void" && returnTypeName != "()" {
+                suffix += sanitizeTypeName(returnTypeName)
+            }
+        }
+
+        // Add async modifier
+        if funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil {
+            suffix += "Async"
+        }
+
+        // Add throws modifier
+        if funcDecl.signature.effectSpecifiers?.hasThrowsEffect == true {
+            suffix += "Throwing"
+        }
+
+        return suffix
+    }
+
     /// Sanitizes a type name for use in an identifier.
     /// Handles special characters, generics, optionals, and arrays.
     static func sanitizeTypeName(_ typeName: String) -> String {

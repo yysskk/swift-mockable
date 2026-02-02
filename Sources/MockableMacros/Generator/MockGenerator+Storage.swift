@@ -23,8 +23,9 @@ extension MockGenerator {
 
             if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
-                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let methodGroup = methodGroups[funcName] ?? []
+                let isOverloaded = methodGroup.count > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
                 let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
                 let parameters = funcDecl.signature.parameterClause.parameters
                 let returnType = funcDecl.signature.returnClause?.type

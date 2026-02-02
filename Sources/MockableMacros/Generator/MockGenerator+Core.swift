@@ -126,8 +126,9 @@ struct MockGenerator {
 
             if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
-                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let methodGroup = methodGroups[funcName] ?? []
+                let isOverloaded = methodGroup.count > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
                 let funcMembers = generateFunctionMock(funcDecl, suffix: suffix)
                 generatedMembers.append(contentsOf: funcMembers)
             } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
@@ -243,8 +244,9 @@ struct MockGenerator {
 
             if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
-                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let methodGroup = methodGroups[funcName] ?? []
+                let isOverloaded = methodGroup.count > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
                 let funcMembers = generateActorFunctionMock(funcDecl, suffix: suffix)
                 generatedMembers.append(contentsOf: funcMembers)
             } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
