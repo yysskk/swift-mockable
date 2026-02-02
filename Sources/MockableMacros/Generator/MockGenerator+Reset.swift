@@ -95,20 +95,22 @@ extension MockGenerator {
         // Add unconditional statements first
         statements.append(contentsOf: unconditionalStatements)
 
-        // Add conditional statements wrapped in their respective #if blocks
-        for (conditionKey, condStatements) in statementsByCondition {
-            if let condition = conditionExprs[conditionKey] {
-                let ifConfigDecl = IfConfigDeclSyntax(
-                    clauses: IfConfigClauseListSyntax([
-                        IfConfigClauseSyntax(
-                            poundKeyword: .poundIfToken(),
-                            condition: condition,
-                            elements: .statements(CodeBlockItemListSyntax(condStatements))
-                        )
-                    ])
-                )
-                statements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(ifConfigDecl))))
+        // Add conditional statements wrapped in their respective #if blocks (sorted for deterministic output)
+        for conditionKey in statementsByCondition.keys.sorted() {
+            guard let condStatements = statementsByCondition[conditionKey],
+                  let condition = conditionExprs[conditionKey] else {
+                continue
             }
+            let ifConfigDecl = IfConfigDeclSyntax(
+                clauses: IfConfigClauseListSyntax([
+                    IfConfigClauseSyntax(
+                        poundKeyword: .poundIfToken(),
+                        condition: condition,
+                        elements: .statements(CodeBlockItemListSyntax(condStatements))
+                    )
+                ])
+            )
+            statements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(ifConfigDecl))))
         }
 
         let body = CodeBlockSyntax(
@@ -199,8 +201,9 @@ extension MockGenerator {
         // Build the reset body with unconditional statements first
         var resetBodyLines = resetStatements
 
-        // Add conditional statements wrapped in #if blocks
-        for (conditionKey, statements) in conditionalResetStatements {
+        // Add conditional statements wrapped in #if blocks (sorted for deterministic output)
+        for conditionKey in conditionalResetStatements.keys.sorted() {
+            guard let statements = conditionalResetStatements[conditionKey] else { continue }
             resetBodyLines.append("#if \(conditionKey)")
             resetBodyLines.append(contentsOf: statements)
             resetBodyLines.append("#endif")

@@ -25,11 +25,9 @@ extension MockGenerator {
             if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
                 // Handle #if blocks
                 for clause in ifConfigDecl.clauses {
-                    guard let elements = clause.elements else { continue }
-
-                    // Only handle #if clauses (not #else or #elseif for now)
-                    // The condition is available for #if clauses
-                    let condition = clause.condition
+                    // Skip clauses without a condition (e.g., #else), since they are still conditional
+                    guard let condition = clause.condition,
+                          let elements = clause.elements else { continue }
 
                     if case .decls(let declList) = elements {
                         for declItem in declList {

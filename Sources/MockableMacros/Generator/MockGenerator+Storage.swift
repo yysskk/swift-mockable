@@ -209,12 +209,14 @@ extension MockGenerator {
         // Add unconditional members first
         storageMembers.append(contentsOf: unconditionalMembers)
 
-        // Add conditional members wrapped in their respective #if blocks
-        for (conditionKey, members) in membersByCondition {
-            if let condition = conditionExprs[conditionKey] {
-                let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
-                storageMembers.append(wrappedMember)
+        // Add conditional members wrapped in their respective #if blocks (sorted for deterministic output)
+        for conditionKey in membersByCondition.keys.sorted() {
+            guard let members = membersByCondition[conditionKey],
+                  let condition = conditionExprs[conditionKey] else {
+                continue
             }
+            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
+            storageMembers.append(wrappedMember)
         }
 
         return StructDeclSyntax(
