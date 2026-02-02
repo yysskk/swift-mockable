@@ -15,18 +15,24 @@ extension MockGenerator {
     private func generateRegularResetMethod() -> FunctionDeclSyntax {
         var statements: [CodeBlockItemSyntax] = []
 
+        // Group methods by name to detect overloads
+        let methodGroups = groupMethodsByName()
+
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
+                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
                 // Reset call count
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(funcName)CallCount = 0"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallCount = 0"))))
 
                 // Reset call args
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(funcName)CallArgs = []"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallArgs = []"))))
 
                 // Reset handler
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(funcName)Handler = nil"))))
+                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)Handler = nil"))))
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
@@ -92,18 +98,24 @@ extension MockGenerator {
     private func generateSendableResetMethod() -> FunctionDeclSyntax {
         var resetStatements: [String] = []
 
+        // Group methods by name to detect overloads
+        let methodGroups = groupMethodsByName()
+
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
+                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
                 // Reset call count
-                resetStatements.append("storage.\(funcName)CallCount = 0")
+                resetStatements.append("storage.\(identifier)CallCount = 0")
 
                 // Reset call args
-                resetStatements.append("storage.\(funcName)CallArgs = []")
+                resetStatements.append("storage.\(identifier)CallArgs = []")
 
                 // Reset handler
-                resetStatements.append("storage.\(funcName)Handler = nil")
+                resetStatements.append("storage.\(identifier)Handler = nil")
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }

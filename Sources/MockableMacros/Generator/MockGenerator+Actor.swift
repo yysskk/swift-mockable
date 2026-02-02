@@ -4,10 +4,11 @@ import SwiftSyntaxBuilder
 // MARK: - Actor Mock Generation
 
 extension MockGenerator {
-    func generateActorFunctionMock(_ funcDecl: FunctionDeclSyntax) -> [MemberBlockItemSyntax] {
+    func generateActorFunctionMock(_ funcDecl: FunctionDeclSyntax, suffix: String = "") -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
 
         let funcName = funcDecl.name.text
+        let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -15,18 +16,18 @@ extension MockGenerator {
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
         // Use Mutex-based pattern with nonisolated computed properties for actor
-        let callCountProperty = generateActorCallCountProperty(funcName: funcName)
+        let callCountProperty = generateActorCallCountProperty(identifier: identifier)
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let callArgsProperty = generateActorCallArgsProperty(
-            funcName: funcName,
+            identifier: identifier,
             parameters: parameters,
             genericParamNames: genericParamNames
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
         let handlerProperty = generateActorHandlerProperty(
-            funcName: funcName,
+            identifier: identifier,
             parameters: parameters,
             returnType: returnType,
             isAsync: isAsync,
@@ -35,13 +36,13 @@ extension MockGenerator {
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
-        let mockFunction = generateSendableMockFunction(funcDecl, genericParamNames: genericParamNames)
+        let mockFunction = generateSendableMockFunction(funcDecl, identifier: identifier, genericParamNames: genericParamNames)
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
         return members
     }
 
-    private func generateActorCallCountProperty(funcName: String) -> VariableDeclSyntax {
+    private func generateActorCallCountProperty(identifier: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.public)),
@@ -50,7 +51,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallCount")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallCount")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -58,7 +59,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)CallCount }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)CallCount }")))
                                     ])
                                 )
                             ),
@@ -66,7 +67,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)CallCount = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)CallCount = newValue }")))
                                     ])
                                 )
                             )
@@ -78,7 +79,7 @@ extension MockGenerator {
     }
 
     private func generateActorCallArgsProperty(
-        funcName: String,
+        identifier: String,
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
@@ -92,7 +93,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallArgs")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallArgs")),
                     typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -100,7 +101,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)CallArgs }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)CallArgs }")))
                                     ])
                                 )
                             ),
@@ -108,7 +109,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)CallArgs = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)CallArgs = newValue }")))
                                     ])
                                 )
                             )
@@ -120,7 +121,7 @@ extension MockGenerator {
     }
 
     private func generateActorHandlerProperty(
-        funcName: String,
+        identifier: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
@@ -153,7 +154,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)Handler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)Handler")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: handlerType)),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -161,7 +162,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)Handler }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)Handler }")))
                                     ])
                                 )
                             ),
@@ -169,7 +170,7 @@ extension MockGenerator {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(funcName)Handler = newValue }")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(identifier)Handler = newValue }")))
                                     ])
                                 )
                             )

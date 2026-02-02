@@ -202,4 +202,97 @@ extension MockGenerator {
 
         return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax(tupleElements)))
     }
+
+    // MARK: - Function Identifier Suffix
+
+    /// Generates a unique suffix based on parameter types to distinguish overloaded functions.
+    /// Example: `func set(_ value: Bool, forKey: Key)` -> "BoolKey"
+    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax) -> String {
+        let parameters = funcDecl.signature.parameterClause.parameters
+        if parameters.isEmpty {
+            return ""
+        }
+
+        let typeNames = parameters.map { param -> String in
+            let typeName = param.type.trimmedDescription
+            return sanitizeTypeName(typeName)
+        }
+
+        return typeNames.joined()
+    }
+
+    /// Sanitizes a type name for use in an identifier.
+    /// Handles special characters, generics, optionals, and arrays.
+    static func sanitizeTypeName(_ typeName: String) -> String {
+        var result = typeName
+
+        // Handle optional types
+        if result.hasSuffix("?") {
+            result = sanitizeTypeName(String(result.dropLast())) + "Optional"
+            return result
+        }
+
+        // Handle implicitly unwrapped optionals
+        if result.hasSuffix("!") {
+            result = sanitizeTypeName(String(result.dropLast())) + "ImplicitlyUnwrapped"
+            return result
+        }
+
+        // Handle array types [T]
+        if result.hasPrefix("[") && result.hasSuffix("]") {
+            let inner = String(result.dropFirst().dropLast())
+            result = sanitizeTypeName(inner) + "Array"
+            return result
+        }
+
+        // Handle generic types like Dictionary<K, V> or Array<T>
+        if let openAngleIndex = result.firstIndex(of: "<"),
+           let closeAngleIndex = result.lastIndex(of: ">") {
+            let baseName = String(result[..<openAngleIndex])
+            let genericArgsStr = String(result[result.index(after: openAngleIndex)..<closeAngleIndex])
+            // Split generic arguments by comma, handling nested generics
+            let genericArgs = splitGenericArguments(genericArgsStr)
+            let sanitizedArgs = genericArgs.map { sanitizeTypeName($0.trimmingCharacters(in: .whitespaces)) }
+            result = baseName + sanitizedArgs.joined()
+        }
+
+        // Remove any remaining special characters
+        result = result.filter { $0.isLetter || $0.isNumber }
+
+        // Ensure first letter is uppercase
+        if let first = result.first {
+            result = first.uppercased() + result.dropFirst()
+        }
+
+        return result
+    }
+
+    /// Splits generic arguments by comma, handling nested generics.
+    /// E.g., "String, Dictionary<Int, String>" -> ["String", "Dictionary<Int, String>"]
+    private static func splitGenericArguments(_ args: String) -> [String] {
+        var result: [String] = []
+        var current = ""
+        var depth = 0
+
+        for char in args {
+            if char == "<" {
+                depth += 1
+                current.append(char)
+            } else if char == ">" {
+                depth -= 1
+                current.append(char)
+            } else if char == "," && depth == 0 {
+                result.append(current)
+                current = ""
+            } else {
+                current.append(char)
+            }
+        }
+
+        if !current.isEmpty {
+            result.append(current)
+        }
+
+        return result
+    }
 }
