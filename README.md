@@ -262,7 +262,7 @@ public class UserServiceMock: UserService {
 
 ## Requirements
 
-- Swift 5.9+ (Swift 5.9, 5.10, and 6.x are supported)
+- Swift 5.9, 5.10, and 6.2+ are supported
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
 - For `Sendable` and `Actor` protocol support: macOS 15.0+ / iOS 18.0+ / tvOS 18.0+ / watchOS 11.0+
 
