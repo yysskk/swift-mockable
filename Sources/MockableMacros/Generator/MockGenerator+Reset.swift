@@ -15,25 +15,35 @@ extension MockGenerator {
     private func generateRegularResetMethod() -> FunctionDeclSyntax {
         var statements: [CodeBlockItemSyntax] = []
 
-        // Group methods by name to detect overloads
-        let methodGroups = groupMethodsByName()
+        // Group methods by name to detect overloads (including conditional members)
+        let methodGroups = groupMethodsByNameIncludingConditional()
 
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+        // Extract all members including those in #if blocks
+        let conditionalMembers = extractConditionalMembers()
+
+        // Group reset statements by their condition
+        var unconditionalStatements: [CodeBlockItemSyntax] = []
+        var statementsByCondition: [String: [CodeBlockItemSyntax]] = [:]
+        var conditionExprs: [String: ExprSyntax] = [:]
+
+        for conditionalMember in conditionalMembers {
+            var generatedStatements: [CodeBlockItemSyntax] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
                 let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
                 // Reset call count
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallCount = 0"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallCount = 0"))))
 
                 // Reset call args
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallArgs = []"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallArgs = []"))))
 
                 // Reset handler
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)Handler = nil"))))
-            } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)Handler = nil"))))
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                           let typeAnnotation = binding.typeAnnotation else { continue }
@@ -48,29 +58,59 @@ extension MockGenerator {
                     //   - Optional types use varName directly (no backing storage)
                     //   - Non-optional types use _varName backing storage
                     if isGetOnly || !isOptional {
-                        statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName) = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName) = nil"))))
                     } else {
-                        statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName) = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName) = nil"))))
                     }
                 }
-            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // Reset subscript call count
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallCount = 0"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallCount = 0"))))
 
                 // Reset subscript call args
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallArgs = []"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallArgs = []"))))
 
                 // Reset subscript handler
-                statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)Handler = nil"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)Handler = nil"))))
 
                 // Reset subscript set handler if not get-only
                 if !isGetOnly {
-                    statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)SetHandler = nil"))))
+                    generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)SetHandler = nil"))))
                 }
             }
+
+            // Group by condition
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionExprs[conditionKey] = condition
+                statementsByCondition[conditionKey, default: []].append(contentsOf: generatedStatements)
+            } else {
+                unconditionalStatements.append(contentsOf: generatedStatements)
+            }
+        }
+
+        // Add unconditional statements first
+        statements.append(contentsOf: unconditionalStatements)
+
+        // Add conditional statements wrapped in their respective #if blocks (sorted for deterministic output)
+        for conditionKey in statementsByCondition.keys.sorted() {
+            guard let condStatements = statementsByCondition[conditionKey],
+                  let condition = conditionExprs[conditionKey] else {
+                continue
+            }
+            let ifConfigDecl = IfConfigDeclSyntax(
+                clauses: IfConfigClauseListSyntax([
+                    IfConfigClauseSyntax(
+                        poundKeyword: .poundIfToken(),
+                        condition: condition,
+                        elements: .statements(CodeBlockItemListSyntax(condStatements))
+                    )
+                ])
+            )
+            statements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(ifConfigDecl))))
         }
 
         let body = CodeBlockSyntax(
@@ -97,54 +137,79 @@ extension MockGenerator {
 
     private func generateSendableResetMethod() -> FunctionDeclSyntax {
         var resetStatements: [String] = []
+        var conditionalResetStatements: [String: [String]] = [:]
 
-        // Group methods by name to detect overloads
-        let methodGroups = groupMethodsByName()
+        // Group methods by name to detect overloads (including conditional members)
+        let methodGroups = groupMethodsByNameIncludingConditional()
 
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+        // Extract all members including those in #if blocks
+        let conditionalMembers = extractConditionalMembers()
+
+        for conditionalMember in conditionalMembers {
+            var generatedStatements: [String] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
                 let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
                 // Reset call count
-                resetStatements.append("storage.\(identifier)CallCount = 0")
+                generatedStatements.append("storage.\(identifier)CallCount = 0")
 
                 // Reset call args
-                resetStatements.append("storage.\(identifier)CallArgs = []")
+                generatedStatements.append("storage.\(identifier)CallArgs = []")
 
                 // Reset handler
-                resetStatements.append("storage.\(identifier)Handler = nil")
-            } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
+                generatedStatements.append("storage.\(identifier)Handler = nil")
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
                     let varName = identifier.identifier.text
 
                     // Reset variable backing storage
-                    resetStatements.append("storage._\(varName) = nil")
+                    generatedStatements.append("storage._\(varName) = nil")
                 }
-            } else if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // Reset subscript call count
-                resetStatements.append("storage.subscript\(suffix)CallCount = 0")
+                generatedStatements.append("storage.subscript\(suffix)CallCount = 0")
 
                 // Reset subscript call args
-                resetStatements.append("storage.subscript\(suffix)CallArgs = []")
+                generatedStatements.append("storage.subscript\(suffix)CallArgs = []")
 
                 // Reset subscript handler
-                resetStatements.append("storage.subscript\(suffix)Handler = nil")
+                generatedStatements.append("storage.subscript\(suffix)Handler = nil")
 
                 // Reset subscript set handler if not get-only
                 if !isGetOnly {
-                    resetStatements.append("storage.subscript\(suffix)SetHandler = nil")
+                    generatedStatements.append("storage.subscript\(suffix)SetHandler = nil")
                 }
+            }
+
+            // Group by condition
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionalResetStatements[conditionKey, default: []].append(contentsOf: generatedStatements)
+            } else {
+                resetStatements.append(contentsOf: generatedStatements)
             }
         }
 
-        let resetBody = resetStatements.joined(separator: "\n    ")
+        // Build the reset body with unconditional statements first
+        var resetBodyLines = resetStatements
+
+        // Add conditional statements wrapped in #if blocks (sorted for deterministic output)
+        for conditionKey in conditionalResetStatements.keys.sorted() {
+            guard let statements = conditionalResetStatements[conditionKey] else { continue }
+            resetBodyLines.append("#if \(conditionKey)")
+            resetBodyLines.append(contentsOf: statements)
+            resetBodyLines.append("#endif")
+        }
+
+        let resetBody = resetBodyLines.joined(separator: "\n    ")
         let withLockBody = """
 _storage.withLock { storage in
     \(resetBody)
