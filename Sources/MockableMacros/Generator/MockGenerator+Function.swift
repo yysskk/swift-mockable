@@ -4,10 +4,11 @@ import SwiftSyntaxBuilder
 // MARK: - Function Mock Generation
 
 extension MockGenerator {
-    func generateFunctionMock(_ funcDecl: FunctionDeclSyntax) -> [MemberBlockItemSyntax] {
+    func generateFunctionMock(_ funcDecl: FunctionDeclSyntax, suffix: String = "") -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
 
         let funcName = funcDecl.name.text
+        let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -16,18 +17,18 @@ extension MockGenerator {
 
         if isSendable {
             // For Sendable protocols, generate computed properties that access the Mutex
-            let callCountProperty = generateSendableCallCountProperty(funcName: funcName)
+            let callCountProperty = generateSendableCallCountProperty(identifier: identifier)
             members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
             let callArgsProperty = generateSendableCallArgsProperty(
-                funcName: funcName,
+                identifier: identifier,
                 parameters: parameters,
                 genericParamNames: genericParamNames
             )
             members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
             let handlerProperty = generateSendableHandlerProperty(
-                funcName: funcName,
+                identifier: identifier,
                 parameters: parameters,
                 returnType: returnType,
                 isAsync: isAsync,
@@ -36,16 +37,16 @@ extension MockGenerator {
             )
             members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
-            let mockFunction = generateSendableMockFunction(funcDecl, genericParamNames: genericParamNames)
+            let mockFunction = generateSendableMockFunction(funcDecl, identifier: identifier, genericParamNames: genericParamNames)
             members.append(MemberBlockItemSyntax(decl: mockFunction))
         } else {
             // Generate call count property
-            let callCountProperty = generateCallCountProperty(funcName: funcName)
+            let callCountProperty = generateCallCountProperty(identifier: identifier)
             members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
             // Generate call arguments storage
             let callArgsProperty = generateCallArgsProperty(
-                funcName: funcName,
+                identifier: identifier,
                 parameters: parameters,
                 genericParamNames: genericParamNames
             )
@@ -53,7 +54,7 @@ extension MockGenerator {
 
             // Generate handler property
             let handlerProperty = generateHandlerProperty(
-                funcName: funcName,
+                identifier: identifier,
                 parameters: parameters,
                 returnType: returnType,
                 isAsync: isAsync,
@@ -63,14 +64,14 @@ extension MockGenerator {
             members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
             // Generate the mock function implementation
-            let mockFunction = generateMockFunction(funcDecl, genericParamNames: genericParamNames)
+            let mockFunction = generateMockFunction(funcDecl, identifier: identifier, genericParamNames: genericParamNames)
             members.append(MemberBlockItemSyntax(decl: mockFunction))
         }
 
         return members
     }
 
-    private func generateCallCountProperty(funcName: String) -> VariableDeclSyntax {
+    private func generateCallCountProperty(identifier: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.public))
@@ -78,7 +79,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallCount")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallCount")),
                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                     initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                 )
@@ -87,7 +88,7 @@ extension MockGenerator {
     }
 
     private func generateCallArgsProperty(
-        funcName: String,
+        identifier: String,
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
     ) -> VariableDeclSyntax {
@@ -100,7 +101,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallArgs")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallArgs")),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: ArrayTypeSyntax(element: tupleType)
                     ),
@@ -113,7 +114,7 @@ extension MockGenerator {
     }
 
     private func generateHandlerProperty(
-        funcName: String,
+        identifier: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
@@ -143,7 +144,7 @@ extension MockGenerator {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)Handler")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)Handler")),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                     ),
@@ -153,8 +154,7 @@ extension MockGenerator {
         )
     }
 
-    private func generateMockFunction(_ funcDecl: FunctionDeclSyntax, genericParamNames: Set<String>) -> FunctionDeclSyntax {
-        let funcName = funcDecl.name.text
+    private func generateMockFunction(_ funcDecl: FunctionDeclSyntax, identifier: String, genericParamNames: Set<String>) -> FunctionDeclSyntax {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -166,7 +166,7 @@ extension MockGenerator {
 
         // Increment call count
         let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("\(funcName)CallCount")),
+            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallCount")),
             operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
             rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
         )
@@ -176,7 +176,7 @@ extension MockGenerator {
         let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("\(funcName)CallArgs")),
+                base: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallArgs")),
                 name: .identifier("append")
             ),
             leftParen: .leftParenToken(),
@@ -189,7 +189,7 @@ extension MockGenerator {
 
         // Call handler if set
         let handlerCallStmts = buildHandlerCallStatements(
-            funcName: funcName,
+            identifier: identifier,
             parameters: parameters,
             returnType: returnType,
             isAsync: isAsync,
@@ -217,7 +217,7 @@ extension MockGenerator {
     }
 
     private func buildHandlerCallStatements(
-        funcName: String,
+        identifier: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
@@ -233,15 +233,15 @@ extension MockGenerator {
             let returnTypeStr = returnType?.description ?? "Void"
             let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(funcName)Handler else {
-    fatalError("\\(Self.self).\(funcName)Handler is not set")
+guard let _handler = \(identifier)Handler else {
+    fatalError("\\(Self.self).\(identifier)Handler is not set")
 }
 """)))
             let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)")))
             return [guardStmt, returnStmt]
         } else {
             let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = \(funcName)Handler {
+if let _handler = \(identifier)Handler {
     \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
 }
 """)))

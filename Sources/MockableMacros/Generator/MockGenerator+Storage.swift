@@ -7,9 +7,15 @@ extension MockGenerator {
     func generateStorageStruct() -> StructDeclSyntax {
         var storageMembers: [MemberBlockItemSyntax] = []
 
+        // Group methods by name to detect overloads
+        let methodGroups = groupMethodsByName()
+
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
+                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
                 let parameters = funcDecl.signature.parameterClause.parameters
                 let returnType = funcDecl.signature.returnClause?.type
                 let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -21,7 +27,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallCount")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallCount")),
                             typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                             initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                         )
@@ -35,7 +41,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)CallArgs")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallArgs")),
                             typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                             initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                         )
@@ -60,7 +66,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(funcName)Handler")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)Handler")),
                             typeAnnotation: TypeAnnotationSyntax(
                                 type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                             ),

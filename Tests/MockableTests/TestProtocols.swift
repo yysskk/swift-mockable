@@ -42,3 +42,20 @@ protocol EventHandlerService {
 protocol SendableEventService: Sendable {
     func register(eventCallback: @escaping @Sendable (String) -> Void) async
 }
+
+// MARK: - Overloaded Method Protocols
+
+@Mockable
+protocol OverloadedUserDefaults: Sendable {
+    func set(_ value: Bool, forKey: String) async
+    func set(_ value: Int, forKey: String) async
+    func set(_ value: String, forKey: String) async
+    func getValue() async -> String
+}
+
+@Mockable
+protocol ActorOverloadedService: Actor {
+    func process(_ value: Int) async
+    func process(_ value: String) async
+    func fetch() async -> String
+}

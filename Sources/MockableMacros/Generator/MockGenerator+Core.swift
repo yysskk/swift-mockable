@@ -109,10 +109,16 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
+        // Group methods by name to detect overloads
+        let methodGroups = groupMethodsByName()
+
         // Generate members for each protocol requirement
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
-                let funcMembers = generateFunctionMock(funcDecl)
+                let funcName = funcDecl.name.text
+                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let funcMembers = generateFunctionMock(funcDecl, suffix: suffix)
                 classMembers.append(contentsOf: funcMembers)
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateVariableMock(varDecl)
@@ -189,10 +195,16 @@ struct MockGenerator {
         let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
 
+        // Group methods by name to detect overloads
+        let methodGroups = groupMethodsByName()
+
         // Generate members for each protocol requirement using Sendable pattern
         for member in members {
             if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
-                let funcMembers = generateActorFunctionMock(funcDecl)
+                let funcName = funcDecl.name.text
+                let isOverloaded = (methodGroups[funcName]?.count ?? 0) > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl) : ""
+                let funcMembers = generateActorFunctionMock(funcDecl, suffix: suffix)
                 actorMembers.append(contentsOf: funcMembers)
             } else if let varDecl = member.decl.as(VariableDeclSyntax.self) {
                 let varMembers = generateActorVariableMock(varDecl)
@@ -240,5 +252,21 @@ struct MockGenerator {
             ),
             memberBlock: memberBlock
         )
+    }
+
+    // MARK: - Helper Methods
+
+    /// Groups function declarations by their name to detect overloaded methods.
+    func groupMethodsByName() -> [String: [FunctionDeclSyntax]] {
+        var methodGroups: [String: [FunctionDeclSyntax]] = [:]
+
+        for member in members {
+            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
+                let funcName = funcDecl.name.text
+                methodGroups[funcName, default: []].append(funcDecl)
+            }
+        }
+
+        return methodGroups
     }
 }
