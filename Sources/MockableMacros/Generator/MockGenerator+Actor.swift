@@ -11,7 +11,7 @@ extension MockGenerator {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-        let isThrows = funcDecl.signature.effectSpecifiers?.throwsClause != nil
+        let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
         // Use Mutex-based pattern with nonisolated computed properties for actor

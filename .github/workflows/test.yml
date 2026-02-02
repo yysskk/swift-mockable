@@ -9,10 +9,16 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    container: swift:6.2
+    strategy:
+      matrix:
+        swift-version: ['5.9', '5.10', '6.2']
+    container: swift:${{ matrix.swift-version }}
     steps:
       - uses: actions/checkout@v6
 
@@ -23,4 +29,18 @@ jobs:
         run: swift build
 
       - name: Run tests
+        if: startsWith(matrix.swift-version, '6.')
         run: swift test
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    steps:
+      - name: Check build results
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          echo "All builds passed"
