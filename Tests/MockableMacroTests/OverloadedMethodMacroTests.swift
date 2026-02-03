@@ -6,6 +6,10 @@ import Testing
 
 @Suite("Overloaded Method Macro Tests")
 struct OverloadedMethodMacroTests {
+    private let testMacros: [String: Macro.Type] = [
+        "Mockable": MockableMacro.self
+    ]
+
     @Test("Protocol with overloaded methods generates unique property names")
     func overloadedMethods() {
         assertMacroExpansionForTesting(
