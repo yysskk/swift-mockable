@@ -29,12 +29,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class DataStoreMock: DataStore {
-                public typealias Model = Any
-                public var fetchCallCount: Int = 0
-                public var fetchCallArgs: [()] = []
-                public var fetchHandler: (@Sendable () -> Model)? = nil
-                public func fetch() -> Model {
+            class DataStoreMock: DataStore {
+                typealias Model = Any
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [()] = []
+                var fetchHandler: (@Sendable () -> Model)? = nil
+                func fetch() -> Model {
                     fetchCallCount += 1
                     fetchCallArgs.append(())
                     guard let _handler = fetchHandler else {
@@ -42,17 +42,17 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler()
                 }
-                public var saveCallCount: Int = 0
-                public var saveCallArgs: [Model] = []
-                public var saveHandler: (@Sendable (Model) -> Void)? = nil
-                public func save(_ model: Model) {
+                var saveCallCount: Int = 0
+                var saveCallArgs: [Model] = []
+                var saveHandler: (@Sendable (Model) -> Void)? = nil
+                func save(_ model: Model) {
                     saveCallCount += 1
                     saveCallArgs.append(model)
                     if let _handler = saveHandler {
                         _handler(model)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
@@ -84,12 +84,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class StringStoreMock: StringStore {
-                public typealias Element = String
-                public var getCallCount: Int = 0
-                public var getCallArgs: [()] = []
-                public var getHandler: (@Sendable () -> Element)? = nil
-                public func get() -> Element {
+            class StringStoreMock: StringStore {
+                typealias Element = String
+                var getCallCount: Int = 0
+                var getCallArgs: [()] = []
+                var getHandler: (@Sendable () -> Element)? = nil
+                func get() -> Element {
                     getCallCount += 1
                     getCallArgs.append(())
                     guard let _handler = getHandler else {
@@ -97,7 +97,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler()
                 }
-                public func resetMock() {
+                func resetMock() {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
@@ -130,13 +130,13 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class RepositoryMock: Repository {
-                public typealias Entity = Any
-                public typealias ID = String
-                public var findCallCount: Int = 0
-                public var findCallArgs: [ID] = []
-                public var findHandler: (@Sendable (ID) -> Entity?)? = nil
-                public func find(by id: ID) -> Entity? {
+            class RepositoryMock: Repository {
+                typealias Entity = Any
+                typealias ID = String
+                var findCallCount: Int = 0
+                var findCallArgs: [ID] = []
+                var findHandler: (@Sendable (ID) -> Entity?)? = nil
+                func find(by id: ID) -> Entity? {
                     findCallCount += 1
                     findCallArgs.append(id)
                     guard let _handler = findHandler else {
@@ -144,10 +144,10 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(id)
                 }
-                public var saveCallCount: Int = 0
-                public var saveCallArgs: [Entity] = []
-                public var saveHandler: (@Sendable (Entity) -> ID)? = nil
-                public func save(_ entity: Entity) -> ID {
+                var saveCallCount: Int = 0
+                var saveCallArgs: [Entity] = []
+                var saveHandler: (@Sendable (Entity) -> ID)? = nil
+                func save(_ entity: Entity) -> ID {
                     saveCallCount += 1
                     saveCallArgs.append(entity)
                     guard let _handler = saveHandler else {
@@ -155,7 +155,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(entity)
                 }
-                public func resetMock() {
+                func resetMock() {
                     findCallCount = 0
                     findCallArgs = []
                     findHandler = nil
@@ -189,15 +189,15 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class AsyncStoreMock: AsyncStore, Sendable {
-                public typealias Item = String
+            final class AsyncStoreMock: AsyncStore, Sendable {
+                typealias Item = String
                 private struct Storage {
                     var fetchCallCount: Int = 0
                     var fetchCallArgs: [()] = []
                     var fetchHandler: (@Sendable () async -> Item)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public var fetchCallCount: Int {
+                var fetchCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.fetchCallCount
@@ -209,7 +209,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var fetchCallArgs: [()] {
+                var fetchCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.fetchCallArgs
@@ -221,7 +221,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var fetchHandler: (@Sendable () async -> Item)? {
+                var fetchHandler: (@Sendable () async -> Item)? {
                     get {
                         _storage.withLock {
                             $0.fetchHandler
@@ -233,7 +233,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func fetch() async -> Item {
+                func fetch() async -> Item {
                     let _handler = _storage.withLock { storage -> (@Sendable () async -> Item)? in
                         storage.fetchCallCount += 1
                         storage.fetchCallArgs.append(())
@@ -244,7 +244,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return await _handler()
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.fetchCallCount = 0
                         storage.fetchCallArgs = []
@@ -253,15 +253,15 @@ struct AssociatedTypeMacroTests {
                 }
             }
             #else
-            public final class AsyncStoreMock: AsyncStore, Sendable {
-                public typealias Item = String
+            final class AsyncStoreMock: AsyncStore, Sendable {
+                typealias Item = String
                 private struct Storage {
                     var fetchCallCount: Int = 0
                     var fetchCallArgs: [()] = []
                     var fetchHandler: (@Sendable () async -> Item)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public var fetchCallCount: Int {
+                var fetchCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.fetchCallCount
@@ -273,7 +273,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var fetchCallArgs: [()] {
+                var fetchCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.fetchCallArgs
@@ -285,7 +285,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var fetchHandler: (@Sendable () async -> Item)? {
+                var fetchHandler: (@Sendable () async -> Item)? {
                     get {
                         _storage.withLock {
                             $0.fetchHandler
@@ -297,7 +297,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func fetch() async -> Item {
+                func fetch() async -> Item {
                     let _handler = _storage.withLock { storage -> (@Sendable () async -> Item)? in
                         storage.fetchCallCount += 1
                         storage.fetchCallArgs.append(())
@@ -308,7 +308,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return await _handler()
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.fetchCallCount = 0
                         storage.fetchCallArgs = []
@@ -344,8 +344,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public actor CacheActorMock: CacheActor {
-                public typealias Value = Data
+            actor CacheActorMock: CacheActor {
+                typealias Value = Data
                 private struct Storage {
                     var getCallCount: Int = 0
                     var getCallArgs: [String] = []
@@ -355,7 +355,7 @@ struct AssociatedTypeMacroTests {
                     var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public nonisolated var getCallCount: Int {
+                nonisolated var getCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.getCallCount
@@ -367,7 +367,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var getCallArgs: [String] {
+                nonisolated var getCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.getCallArgs
@@ -379,7 +379,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var getHandler: (@Sendable (String) -> Value?)? {
+                nonisolated var getHandler: (@Sendable (String) -> Value?)? {
                     get {
                         _storage.withLock {
                             $0.getHandler
@@ -391,7 +391,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func get(key: String) -> Value? {
+                func get(key: String) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Value?)? in
                         storage.getCallCount += 1
                         storage.getCallArgs.append(key)
@@ -402,7 +402,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(key)
                 }
-                public nonisolated var setCallCount: Int {
+                nonisolated var setCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.setCallCount
@@ -414,7 +414,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var setCallArgs: [(key: String, value: Value)] {
+                nonisolated var setCallArgs: [(key: String, value: Value)] {
                     get {
                         _storage.withLock {
                             $0.setCallArgs
@@ -426,7 +426,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
+                nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.setHandler
@@ -438,7 +438,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func set(key: String, value: Value) {
+                func set(key: String, value: Value) {
                     let _handler = _storage.withLock { storage -> (@Sendable ((key: String, value: Value)) -> Void)? in
                         storage.setCallCount += 1
                         storage.setCallArgs.append((key: key, value: value))
@@ -448,7 +448,7 @@ struct AssociatedTypeMacroTests {
                         _handler((key: key, value: value))
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
                         storage.getCallArgs = []
@@ -460,8 +460,8 @@ struct AssociatedTypeMacroTests {
                 }
             }
             #else
-            public actor CacheActorMock: CacheActor {
-                public typealias Value = Data
+            actor CacheActorMock: CacheActor {
+                typealias Value = Data
                 private struct Storage {
                     var getCallCount: Int = 0
                     var getCallArgs: [String] = []
@@ -471,7 +471,7 @@ struct AssociatedTypeMacroTests {
                     var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public nonisolated var getCallCount: Int {
+                nonisolated var getCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.getCallCount
@@ -483,7 +483,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var getCallArgs: [String] {
+                nonisolated var getCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.getCallArgs
@@ -495,7 +495,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var getHandler: (@Sendable (String) -> Value?)? {
+                nonisolated var getHandler: (@Sendable (String) -> Value?)? {
                     get {
                         _storage.withLock {
                             $0.getHandler
@@ -507,7 +507,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func get(key: String) -> Value? {
+                func get(key: String) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Value?)? in
                         storage.getCallCount += 1
                         storage.getCallArgs.append(key)
@@ -518,7 +518,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(key)
                 }
-                public nonisolated var setCallCount: Int {
+                nonisolated var setCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.setCallCount
@@ -530,7 +530,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var setCallArgs: [(key: String, value: Value)] {
+                nonisolated var setCallArgs: [(key: String, value: Value)] {
                     get {
                         _storage.withLock {
                             $0.setCallArgs
@@ -542,7 +542,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
+                nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.setHandler
@@ -554,7 +554,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func set(key: String, value: Value) {
+                func set(key: String, value: Value) {
                     let _handler = _storage.withLock { storage -> (@Sendable ((key: String, value: Value)) -> Void)? in
                         storage.setCallCount += 1
                         storage.setCallArgs.append((key: key, value: value))
@@ -564,7 +564,7 @@ struct AssociatedTypeMacroTests {
                         _handler((key: key, value: value))
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
                         storage.getCallArgs = []
@@ -599,12 +599,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class DecodableStoreMock: DecodableStore {
-                public typealias Item = Any
-                public var decodeCallCount: Int = 0
-                public var decodeCallArgs: [Data] = []
-                public var decodeHandler: (@Sendable (Data) -> Item)? = nil
-                public func decode(from data: Data) -> Item {
+            class DecodableStoreMock: DecodableStore {
+                typealias Item = Any
+                var decodeCallCount: Int = 0
+                var decodeCallArgs: [Data] = []
+                var decodeHandler: (@Sendable (Data) -> Item)? = nil
+                func decode(from data: Data) -> Item {
                     decodeCallCount += 1
                     decodeCallArgs.append(data)
                     guard let _handler = decodeHandler else {
@@ -612,7 +612,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(data)
                 }
-                public func resetMock() {
+                func resetMock() {
                     decodeCallCount = 0
                     decodeCallArgs = []
                     decodeHandler = nil
@@ -643,14 +643,14 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class StateHolderMock: StateHolder {
-                public typealias State = String
-                public var _currentState: State? = nil
-                public var currentState: State {
+            class StateHolderMock: StateHolder {
+                typealias State = String
+                var _currentState: State? = nil
+                var currentState: State {
                     _currentState!
                 }
-                public var previousState: State? = nil
-                public func resetMock() {
+                var previousState: State? = nil
+                func resetMock() {
                     _currentState = nil
                     previousState = nil
                 }
@@ -678,12 +678,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class ArrayStoreMock: ArrayStore {
-                public typealias Element = [String: Int]
-                public var getAllCallCount: Int = 0
-                public var getAllCallArgs: [()] = []
-                public var getAllHandler: (@Sendable () -> Element)? = nil
-                public func getAll() -> Element {
+            class ArrayStoreMock: ArrayStore {
+                typealias Element = [String: Int]
+                var getAllCallCount: Int = 0
+                var getAllCallArgs: [()] = []
+                var getAllHandler: (@Sendable () -> Element)? = nil
+                func getAll() -> Element {
                     getAllCallCount += 1
                     getAllCallArgs.append(())
                     guard let _handler = getAllHandler else {
@@ -691,7 +691,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler()
                 }
-                public func resetMock() {
+                func resetMock() {
                     getAllCallCount = 0
                     getAllCallArgs = []
                     getAllHandler = nil
@@ -720,12 +720,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class OptionalFetcherMock: OptionalFetcher {
-                public typealias Result = Any
-                public var fetchCallCount: Int = 0
-                public var fetchCallArgs: [String] = []
-                public var fetchHandler: (@Sendable (String) -> Result?)? = nil
-                public func fetch(id: String) -> Result? {
+            class OptionalFetcherMock: OptionalFetcher {
+                typealias Result = Any
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [String] = []
+                var fetchHandler: (@Sendable (String) -> Result?)? = nil
+                func fetch(id: String) -> Result? {
                     fetchCallCount += 1
                     fetchCallArgs.append(id)
                     guard let _handler = fetchHandler else {
@@ -733,7 +733,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(id)
                 }
-                public func resetMock() {
+                func resetMock() {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
@@ -762,12 +762,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class BatchProcessorMock: BatchProcessor {
-                public typealias Item = Int
-                public var processCallCount: Int = 0
-                public var processCallArgs: [[Item]] = []
-                public var processHandler: (@Sendable ([Item]) -> Int)? = nil
-                public func process(items: [Item]) -> Int {
+            class BatchProcessorMock: BatchProcessor {
+                typealias Item = Int
+                var processCallCount: Int = 0
+                var processCallArgs: [[Item]] = []
+                var processHandler: (@Sendable ([Item]) -> Int)? = nil
+                func process(items: [Item]) -> Int {
                     processCallCount += 1
                     processCallArgs.append(items)
                     guard let _handler = processHandler else {
@@ -775,7 +775,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(items)
                 }
-                public func resetMock() {
+                func resetMock() {
                     processCallCount = 0
                     processCallArgs = []
                     processHandler = nil
@@ -806,12 +806,12 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class AsyncRepositoryMock: AsyncRepository {
-                public typealias Entity = Any
-                public var fetchCallCount: Int = 0
-                public var fetchCallArgs: [String] = []
-                public var fetchHandler: (@Sendable (String) async throws -> Entity)? = nil
-                public func fetch(id: String) async throws -> Entity {
+            class AsyncRepositoryMock: AsyncRepository {
+                typealias Entity = Any
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [String] = []
+                var fetchHandler: (@Sendable (String) async throws -> Entity)? = nil
+                func fetch(id: String) async throws -> Entity {
                     fetchCallCount += 1
                     fetchCallArgs.append(id)
                     guard let _handler = fetchHandler else {
@@ -819,17 +819,17 @@ struct AssociatedTypeMacroTests {
                     }
                     return try await _handler(id)
                 }
-                public var saveCallCount: Int = 0
-                public var saveCallArgs: [Entity] = []
-                public var saveHandler: (@Sendable (Entity) async throws -> Void)? = nil
-                public func save(_ entity: Entity) async throws {
+                var saveCallCount: Int = 0
+                var saveCallArgs: [Entity] = []
+                var saveHandler: (@Sendable (Entity) async throws -> Void)? = nil
+                func save(_ entity: Entity) async throws {
                     saveCallCount += 1
                     saveCallArgs.append(entity)
                     if let _handler = saveHandler {
                         try await _handler(entity)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
@@ -865,16 +865,16 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
-                public typealias Key = Any
-                public typealias Value = Any
+            final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
+                typealias Key = Any
+                typealias Value = Any
                 private struct Storage {
                     var getCallCount: Int = 0
                     var getCallArgs: [Key] = []
                     var getHandler: (@Sendable (Key) -> Value?)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public var getCallCount: Int {
+                var getCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.getCallCount
@@ -886,7 +886,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var getCallArgs: [Key] {
+                var getCallArgs: [Key] {
                     get {
                         _storage.withLock {
                             $0.getCallArgs
@@ -898,7 +898,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var getHandler: (@Sendable (Key) -> Value?)? {
+                var getHandler: (@Sendable (Key) -> Value?)? {
                     get {
                         _storage.withLock {
                             $0.getHandler
@@ -910,7 +910,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func get(key: Key) -> Value? {
+                func get(key: Key) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (Key) -> Value?)? in
                         storage.getCallCount += 1
                         storage.getCallArgs.append(key)
@@ -921,7 +921,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(key)
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
                         storage.getCallArgs = []
@@ -930,16 +930,16 @@ struct AssociatedTypeMacroTests {
                 }
             }
             #else
-            public final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
-                public typealias Key = Any
-                public typealias Value = Any
+            final class ThreadSafeCacheMock: ThreadSafeCache, Sendable {
+                typealias Key = Any
+                typealias Value = Any
                 private struct Storage {
                     var getCallCount: Int = 0
                     var getCallArgs: [Key] = []
                     var getHandler: (@Sendable (Key) -> Value?)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public var getCallCount: Int {
+                var getCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.getCallCount
@@ -951,7 +951,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var getCallArgs: [Key] {
+                var getCallArgs: [Key] {
                     get {
                         _storage.withLock {
                             $0.getCallArgs
@@ -963,7 +963,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public var getHandler: (@Sendable (Key) -> Value?)? {
+                var getHandler: (@Sendable (Key) -> Value?)? {
                     get {
                         _storage.withLock {
                             $0.getHandler
@@ -975,7 +975,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                public func get(key: Key) -> Value? {
+                func get(key: Key) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (Key) -> Value?)? in
                         storage.getCallCount += 1
                         storage.getCallArgs.append(key)
@@ -986,7 +986,7 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(key)
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
                         storage.getCallArgs = []
@@ -1018,19 +1018,19 @@ struct AssociatedTypeMacroTests {
             }
 
             #if DEBUG
-            public class EventEmitterMock: EventEmitter {
-                public typealias Event = String
-                public var subscribeCallCount: Int = 0
-                public var subscribeCallArgs: [(Event) -> Void] = []
-                public var subscribeHandler: (@Sendable ((Event) -> Void) -> Void)? = nil
-                public func subscribe(handler: @escaping (Event) -> Void) {
+            class EventEmitterMock: EventEmitter {
+                typealias Event = String
+                var subscribeCallCount: Int = 0
+                var subscribeCallArgs: [(Event) -> Void] = []
+                var subscribeHandler: (@Sendable ((Event) -> Void) -> Void)? = nil
+                func subscribe(handler: @escaping (Event) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArgs.append(handler)
                     if let _handler = subscribeHandler {
                         _handler(handler)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil

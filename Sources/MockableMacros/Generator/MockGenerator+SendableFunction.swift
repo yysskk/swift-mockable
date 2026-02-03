@@ -6,9 +6,7 @@ import SwiftSyntaxBuilder
 extension MockGenerator {
     func generateSendableCallCountProperty(identifier: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -50,9 +48,7 @@ extension MockGenerator {
         )
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -106,9 +102,7 @@ extension MockGenerator {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -198,9 +192,7 @@ if let _handler {
         )
 
         return FunctionDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             name: funcDecl.name,
             genericParameterClause: funcDecl.genericParameterClause,
             signature: funcDecl.signature,

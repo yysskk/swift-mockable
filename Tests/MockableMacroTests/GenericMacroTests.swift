@@ -25,11 +25,11 @@ struct GenericMacroTests {
             }
 
             #if DEBUG
-            public class CacheMock: Cache {
-                public var getCallCount: Int = 0
-                public var getCallArgs: [String] = []
-                public var getHandler: (@Sendable (String) -> Any)? = nil
-                public func get<T>(_ key: String) -> T {
+            class CacheMock: Cache {
+                var getCallCount: Int = 0
+                var getCallArgs: [String] = []
+                var getHandler: (@Sendable (String) -> Any)? = nil
+                func get<T>(_ key: String) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
                     guard let _handler = getHandler else {
@@ -37,7 +37,7 @@ struct GenericMacroTests {
                     }
                     return _handler(key) as! T
                 }
-                public func resetMock() {
+                func resetMock() {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
@@ -64,18 +64,18 @@ struct GenericMacroTests {
             }
 
             #if DEBUG
-            public class StorageMock: Storage {
-                public var saveCallCount: Int = 0
-                public var saveCallArgs: [(value: Any, key: String)] = []
-                public var saveHandler: (@Sendable ((value: Any, key: String)) -> Void)? = nil
-                public func save<T>(_ value: T, forKey key: String) {
+            class StorageMock: Storage {
+                var saveCallCount: Int = 0
+                var saveCallArgs: [(value: Any, key: String)] = []
+                var saveHandler: (@Sendable ((value: Any, key: String)) -> Void)? = nil
+                func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
                     saveCallArgs.append((value: value, key: key))
                     if let _handler = saveHandler {
                         _handler((value: value, key: key))
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     saveCallCount = 0
                     saveCallArgs = []
                     saveHandler = nil
@@ -104,11 +104,11 @@ struct GenericMacroTests {
             }
 
             #if DEBUG
-            public class UserDefaultsClientMock: UserDefaultsClient {
-                public var getCallCount: Int = 0
-                public var getCallArgs: [Any] = []
-                public var getHandler: (@Sendable (Any) -> Any)? = nil
-                public func get<T>(_ key: UserDefaultsKey<T>) -> T {
+            class UserDefaultsClientMock: UserDefaultsClient {
+                var getCallCount: Int = 0
+                var getCallArgs: [Any] = []
+                var getHandler: (@Sendable (Any) -> Any)? = nil
+                func get<T>(_ key: UserDefaultsKey<T>) -> T {
                     getCallCount += 1
                     getCallArgs.append(key)
                     guard let _handler = getHandler else {
@@ -116,17 +116,17 @@ struct GenericMacroTests {
                     }
                     return _handler(key) as! T
                 }
-                public var setCallCount: Int = 0
-                public var setCallArgs: [(value: Any, key: Any)] = []
-                public var setHandler: (@Sendable ((value: Any, key: Any)) -> Void)? = nil
-                public func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
+                var setCallCount: Int = 0
+                var setCallArgs: [(value: Any, key: Any)] = []
+                var setHandler: (@Sendable ((value: Any, key: Any)) -> Void)? = nil
+                func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
                     setCallArgs.append((value: value, key: key))
                     if let _handler = setHandler {
                         _handler((value: value, key: key))
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
@@ -158,11 +158,11 @@ struct GenericMacroTests {
             }
 
             #if DEBUG
-            public class UserDefaultsClientMock: UserDefaultsClient {
-                public var integerCallCount: Int = 0
-                public var integerCallArgs: [UserDefaultsKey<Int>] = []
-                public var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)? = nil
-                public func integer(forKey key: UserDefaultsKey<Int>) -> Int {
+            class UserDefaultsClientMock: UserDefaultsClient {
+                var integerCallCount: Int = 0
+                var integerCallArgs: [UserDefaultsKey<Int>] = []
+                var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)? = nil
+                func integer(forKey key: UserDefaultsKey<Int>) -> Int {
                     integerCallCount += 1
                     integerCallArgs.append(key)
                     guard let _handler = integerHandler else {
@@ -170,17 +170,17 @@ struct GenericMacroTests {
                     }
                     return _handler(key)
                 }
-                public var setIntegerCallCount: Int = 0
-                public var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
-                public var setIntegerHandler: (@Sendable ((value: Int, key: UserDefaultsKey<Int>)) -> Void)? = nil
-                public func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
+                var setIntegerCallCount: Int = 0
+                var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
+                var setIntegerHandler: (@Sendable ((value: Int, key: UserDefaultsKey<Int>)) -> Void)? = nil
+                func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
                     setIntegerCallArgs.append((value: value, key: key))
                     if let _handler = setIntegerHandler {
                         _handler((value: value, key: key))
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     integerCallCount = 0
                     integerCallArgs = []
                     integerHandler = nil

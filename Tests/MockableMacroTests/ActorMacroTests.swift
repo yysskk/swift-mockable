@@ -33,7 +33,7 @@ struct ActorMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public actor UserProfileStoreMock: UserProfileStore {
+            actor UserProfileStoreMock: UserProfileStore {
                 private struct Storage {
                     var _profiles: [String: String]? = nil
                     var updateProfileCallCount: Int = 0
@@ -47,7 +47,7 @@ struct ActorMacroTests {
                     var resetHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public nonisolated var _profiles: [String: String]? {
+                nonisolated var _profiles: [String: String]? {
                     get {
                         _storage.withLock {
                             $0._profiles
@@ -59,12 +59,12 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var profiles: [String: String] {
+                var profiles: [String: String] {
                     _storage.withLock {
                         $0._profiles!
                     }
                 }
-                public nonisolated var updateProfileCallCount: Int {
+                nonisolated var updateProfileCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.updateProfileCallCount
@@ -76,7 +76,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
+                nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
                     get {
                         _storage.withLock {
                             $0.updateProfileCallArgs
@@ -88,7 +88,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
+                nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.updateProfileHandler
@@ -100,7 +100,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func updateProfile(_ profile: String, for key: String) {
+                func updateProfile(_ profile: String, for key: String) {
                     let _handler = _storage.withLock { storage -> (@Sendable ((profile: String, key: String)) -> Void)? in
                         storage.updateProfileCallCount += 1
                         storage.updateProfileCallArgs.append((profile: profile, key: key))
@@ -110,7 +110,7 @@ struct ActorMacroTests {
                         _handler((profile: profile, key: key))
                     }
                 }
-                public nonisolated var profileCallCount: Int {
+                nonisolated var profileCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.profileCallCount
@@ -122,7 +122,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var profileCallArgs: [String] {
+                nonisolated var profileCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.profileCallArgs
@@ -134,7 +134,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var profileHandler: (@Sendable (String) -> String?)? {
+                nonisolated var profileHandler: (@Sendable (String) -> String?)? {
                     get {
                         _storage.withLock {
                             $0.profileHandler
@@ -146,7 +146,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func profile(for key: String) -> String? {
+                func profile(for key: String) -> String? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> String?)? in
                         storage.profileCallCount += 1
                         storage.profileCallArgs.append(key)
@@ -157,7 +157,7 @@ struct ActorMacroTests {
                     }
                     return _handler(key)
                 }
-                public nonisolated var resetCallCount: Int {
+                nonisolated var resetCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.resetCallCount
@@ -169,7 +169,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var resetCallArgs: [()] {
+                nonisolated var resetCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.resetCallArgs
@@ -181,7 +181,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var resetHandler: (@Sendable () -> Void)? {
+                nonisolated var resetHandler: (@Sendable () -> Void)? {
                     get {
                         _storage.withLock {
                             $0.resetHandler
@@ -193,7 +193,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func reset() {
+                func reset() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.resetCallCount += 1
                         storage.resetCallArgs.append(())
@@ -203,7 +203,7 @@ struct ActorMacroTests {
                         _handler()
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage._profiles = nil
                         storage.updateProfileCallCount = 0
@@ -219,7 +219,7 @@ struct ActorMacroTests {
                 }
             }
             #else
-            public actor UserProfileStoreMock: UserProfileStore {
+            actor UserProfileStoreMock: UserProfileStore {
                 private struct Storage {
                     var _profiles: [String: String]? = nil
                     var updateProfileCallCount: Int = 0
@@ -233,7 +233,7 @@ struct ActorMacroTests {
                     var resetHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public nonisolated var _profiles: [String: String]? {
+                nonisolated var _profiles: [String: String]? {
                     get {
                         _storage.withLock {
                             $0._profiles
@@ -245,12 +245,12 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var profiles: [String: String] {
+                var profiles: [String: String] {
                     _storage.withLock {
                         $0._profiles!
                     }
                 }
-                public nonisolated var updateProfileCallCount: Int {
+                nonisolated var updateProfileCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.updateProfileCallCount
@@ -262,7 +262,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
+                nonisolated var updateProfileCallArgs: [(profile: String, key: String)] {
                     get {
                         _storage.withLock {
                             $0.updateProfileCallArgs
@@ -274,7 +274,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
+                nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.updateProfileHandler
@@ -286,7 +286,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func updateProfile(_ profile: String, for key: String) {
+                func updateProfile(_ profile: String, for key: String) {
                     let _handler = _storage.withLock { storage -> (@Sendable ((profile: String, key: String)) -> Void)? in
                         storage.updateProfileCallCount += 1
                         storage.updateProfileCallArgs.append((profile: profile, key: key))
@@ -296,7 +296,7 @@ struct ActorMacroTests {
                         _handler((profile: profile, key: key))
                     }
                 }
-                public nonisolated var profileCallCount: Int {
+                nonisolated var profileCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.profileCallCount
@@ -308,7 +308,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var profileCallArgs: [String] {
+                nonisolated var profileCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.profileCallArgs
@@ -320,7 +320,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var profileHandler: (@Sendable (String) -> String?)? {
+                nonisolated var profileHandler: (@Sendable (String) -> String?)? {
                     get {
                         _storage.withLock {
                             $0.profileHandler
@@ -332,7 +332,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func profile(for key: String) -> String? {
+                func profile(for key: String) -> String? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> String?)? in
                         storage.profileCallCount += 1
                         storage.profileCallArgs.append(key)
@@ -343,7 +343,7 @@ struct ActorMacroTests {
                     }
                     return _handler(key)
                 }
-                public nonisolated var resetCallCount: Int {
+                nonisolated var resetCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.resetCallCount
@@ -355,7 +355,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var resetCallArgs: [()] {
+                nonisolated var resetCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.resetCallArgs
@@ -367,7 +367,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var resetHandler: (@Sendable () -> Void)? {
+                nonisolated var resetHandler: (@Sendable () -> Void)? {
                     get {
                         _storage.withLock {
                             $0.resetHandler
@@ -379,7 +379,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func reset() {
+                func reset() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.resetCallCount += 1
                         storage.resetCallArgs.append(())
@@ -389,7 +389,7 @@ struct ActorMacroTests {
                         _handler()
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage._profiles = nil
                         storage.updateProfileCallCount = 0
@@ -430,13 +430,13 @@ struct ActorMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public actor ConfigProviderMock: ConfigProvider {
+            actor ConfigProviderMock: ConfigProvider {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public nonisolated var _apiKey: String? {
+                nonisolated var _apiKey: String? {
                     get {
                         _storage.withLock {
                             $0._apiKey
@@ -448,12 +448,12 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var apiKey: String {
+                var apiKey: String {
                     _storage.withLock {
                         $0._apiKey!
                     }
                 }
-                public nonisolated var _timeout: Int? {
+                nonisolated var _timeout: Int? {
                     get {
                         _storage.withLock {
                             $0._timeout
@@ -465,7 +465,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var timeout: Int {
+                var timeout: Int {
                     get {
                         _storage.withLock {
                             $0._timeout!
@@ -477,7 +477,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage._apiKey = nil
                         storage._timeout = nil
@@ -485,13 +485,13 @@ struct ActorMacroTests {
                 }
             }
             #else
-            public actor ConfigProviderMock: ConfigProvider {
+            actor ConfigProviderMock: ConfigProvider {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public nonisolated var _apiKey: String? {
+                nonisolated var _apiKey: String? {
                     get {
                         _storage.withLock {
                             $0._apiKey
@@ -503,12 +503,12 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var apiKey: String {
+                var apiKey: String {
                     _storage.withLock {
                         $0._apiKey!
                     }
                 }
-                public nonisolated var _timeout: Int? {
+                nonisolated var _timeout: Int? {
                     get {
                         _storage.withLock {
                             $0._timeout
@@ -520,7 +520,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public var timeout: Int {
+                var timeout: Int {
                     get {
                         _storage.withLock {
                             $0._timeout!
@@ -532,7 +532,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage._apiKey = nil
                         storage._timeout = nil
@@ -565,7 +565,7 @@ struct ActorMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public actor DataStoreMock: DataStore {
+            actor DataStoreMock: DataStore {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [String] = []
@@ -575,7 +575,7 @@ struct ActorMacroTests {
                     var loadHandler: (@Sendable () async throws -> String)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public nonisolated var saveCallCount: Int {
+                nonisolated var saveCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.saveCallCount
@@ -587,7 +587,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var saveCallArgs: [String] {
+                nonisolated var saveCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.saveCallArgs
@@ -599,7 +599,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
+                nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
                     get {
                         _storage.withLock {
                             $0.saveHandler
@@ -611,7 +611,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func save(_ data: String) async throws {
+                func save(_ data: String) async throws {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) async throws -> Void)? in
                         storage.saveCallCount += 1
                         storage.saveCallArgs.append(data)
@@ -621,7 +621,7 @@ struct ActorMacroTests {
                         try await _handler(data)
                     }
                 }
-                public nonisolated var loadCallCount: Int {
+                nonisolated var loadCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.loadCallCount
@@ -633,7 +633,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var loadCallArgs: [()] {
+                nonisolated var loadCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.loadCallArgs
@@ -645,7 +645,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var loadHandler: (@Sendable () async throws -> String)? {
+                nonisolated var loadHandler: (@Sendable () async throws -> String)? {
                     get {
                         _storage.withLock {
                             $0.loadHandler
@@ -657,7 +657,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func load() async throws -> String {
+                func load() async throws -> String {
                     let _handler = _storage.withLock { storage -> (@Sendable () async throws -> String)? in
                         storage.loadCallCount += 1
                         storage.loadCallArgs.append(())
@@ -668,7 +668,7 @@ struct ActorMacroTests {
                     }
                     return try await _handler()
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage.saveCallCount = 0
                         storage.saveCallArgs = []
@@ -680,7 +680,7 @@ struct ActorMacroTests {
                 }
             }
             #else
-            public actor DataStoreMock: DataStore {
+            actor DataStoreMock: DataStore {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [String] = []
@@ -690,7 +690,7 @@ struct ActorMacroTests {
                     var loadHandler: (@Sendable () async throws -> String)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public nonisolated var saveCallCount: Int {
+                nonisolated var saveCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.saveCallCount
@@ -702,7 +702,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var saveCallArgs: [String] {
+                nonisolated var saveCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.saveCallArgs
@@ -714,7 +714,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
+                nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
                     get {
                         _storage.withLock {
                             $0.saveHandler
@@ -726,7 +726,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func save(_ data: String) async throws {
+                func save(_ data: String) async throws {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) async throws -> Void)? in
                         storage.saveCallCount += 1
                         storage.saveCallArgs.append(data)
@@ -736,7 +736,7 @@ struct ActorMacroTests {
                         try await _handler(data)
                     }
                 }
-                public nonisolated var loadCallCount: Int {
+                nonisolated var loadCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.loadCallCount
@@ -748,7 +748,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var loadCallArgs: [()] {
+                nonisolated var loadCallArgs: [()] {
                     get {
                         _storage.withLock {
                             $0.loadCallArgs
@@ -760,7 +760,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public nonisolated var loadHandler: (@Sendable () async throws -> String)? {
+                nonisolated var loadHandler: (@Sendable () async throws -> String)? {
                     get {
                         _storage.withLock {
                             $0.loadHandler
@@ -772,7 +772,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                public func load() async throws -> String {
+                func load() async throws -> String {
                     let _handler = _storage.withLock { storage -> (@Sendable () async throws -> String)? in
                         storage.loadCallCount += 1
                         storage.loadCallArgs.append(())
@@ -783,7 +783,7 @@ struct ActorMacroTests {
                     }
                     return try await _handler()
                 }
-                public nonisolated func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage.saveCallCount = 0
                         storage.saveCallArgs = []

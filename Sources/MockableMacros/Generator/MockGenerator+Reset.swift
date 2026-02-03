@@ -121,9 +121,7 @@ extension MockGenerator {
         )
 
         return FunctionDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             name: .identifier("resetMock"),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
@@ -226,17 +224,11 @@ _storage.withLock { storage in
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        var modifiers: [DeclModifierSyntax] = [
-            DeclModifierSyntax(name: .keyword(.public))
-        ]
-
         // For actors, add nonisolated modifier
-        if isActor {
-            modifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
-        }
+        let additionalModifiers: [DeclModifierSyntax] = isActor ? [DeclModifierSyntax(name: .keyword(.nonisolated))] : []
 
         return FunctionDeclSyntax(
-            modifiers: DeclModifierListSyntax(modifiers),
+            modifiers: buildModifiers(additional: additionalModifiers),
             name: .identifier("resetMock"),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
