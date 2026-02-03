@@ -26,6 +26,22 @@ package protocol PackageDataService {
     var isReady: Bool { get }
 }
 
+// Fileprivate protocol - should generate fileprivate mock
+// This is a rare use case but the macro correctly respects the access level
+@Mockable
+fileprivate protocol FileprivateStorageService {
+    func save(value: String)
+    var lastSaved: String? { get }
+}
+
+// Private protocol - should generate private mock
+// This is a rare use case but the macro correctly respects the access level
+@Mockable
+private protocol PrivateHelperService {
+    func compute(input: Int) -> Int
+    var cachedResult: Int? { get }
+}
+
 // MARK: - Tests
 
 @Suite("Access Level Integration Tests")
@@ -176,5 +192,102 @@ struct AccessLevelIntegrationTests {
         #expect(mock.loadDataCallArgs.isEmpty)
         #expect(mock.loadDataHandler == nil)
         #expect(mock._isReady == nil)
+    }
+
+    // MARK: - Edge Cases: fileprivate and private protocols
+
+    @Test("Fileprivate protocol mock can be instantiated and used")
+    func fileprivateProtocolMock() {
+        let mock = FileprivateStorageServiceMock()
+
+        mock.saveHandler = { @Sendable _ in }
+        mock._lastSaved = "test value"
+
+        mock.save(value: "hello")
+
+        #expect(mock.saveCallCount == 1)
+        #expect(mock.saveCallArgs == ["hello"])
+        #expect(mock.lastSaved == "test value")
+    }
+
+    @Test("Fileprivate protocol mock conforms to protocol")
+    func fileprivateProtocolConformance() {
+        func useStorage(_ service: FileprivateStorageService) {
+            service.save(value: "data")
+        }
+
+        let mock = FileprivateStorageServiceMock()
+        mock.saveHandler = { @Sendable _ in }
+
+        useStorage(mock)
+
+        #expect(mock.saveCallCount == 1)
+    }
+
+    @Test("Fileprivate protocol mock reset works")
+    func fileprivateProtocolReset() {
+        let mock = FileprivateStorageServiceMock()
+
+        mock.saveHandler = { @Sendable _ in }
+        mock.save(value: "test")
+        mock._lastSaved = "saved"
+
+        #expect(mock.saveCallCount == 1)
+
+        mock.resetMock()
+
+        #expect(mock.saveCallCount == 0)
+        #expect(mock.saveCallArgs == [])
+        #expect(mock.saveHandler == nil)
+        #expect(mock._lastSaved == nil)
+    }
+
+    @Test("Private protocol mock can be instantiated and used")
+    func privateProtocolMock() {
+        let mock = PrivateHelperServiceMock()
+
+        mock.computeHandler = { @Sendable input in
+            input * 2
+        }
+        mock._cachedResult = 100
+
+        let result = mock.compute(input: 5)
+
+        #expect(result == 10)
+        #expect(mock.computeCallCount == 1)
+        #expect(mock.computeCallArgs == [5])
+        #expect(mock.cachedResult == 100)
+    }
+
+    @Test("Private protocol mock conforms to protocol")
+    func privateProtocolConformance() {
+        func useHelper(_ service: PrivateHelperService) -> Int {
+            service.compute(input: 42)
+        }
+
+        let mock = PrivateHelperServiceMock()
+        mock.computeHandler = { @Sendable input in input }
+
+        let result = useHelper(mock)
+
+        #expect(result == 42)
+    }
+
+    @Test("Private protocol mock reset works")
+    func privateProtocolReset() {
+        let mock = PrivateHelperServiceMock()
+
+        mock.computeHandler = { @Sendable input in input }
+        _ = mock.compute(input: 1)
+        mock._cachedResult = 50
+
+        #expect(mock.computeCallCount == 1)
+
+        mock.resetMock()
+
+        #expect(mock.computeCallCount == 0)
+        #expect(mock.computeCallArgs == [])
+        #expect(mock.computeHandler == nil)
+        #expect(mock._cachedResult == nil)
     }
 }

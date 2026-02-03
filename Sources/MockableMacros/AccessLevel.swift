@@ -8,7 +8,7 @@ enum AccessLevel: String {
     case `fileprivate` = "fileprivate"
     case `private` = "private"
 
-    /// The keyword to use in generated code
+    /// The keyword to use for the class/actor declaration
     var keyword: Keyword {
         switch self {
         case .public: return .public
@@ -19,7 +19,19 @@ enum AccessLevel: String {
         }
     }
 
-    /// Creates a DeclModifierSyntax for this access level.
+    /// The keyword to use for members of the generated mock.
+    /// For `private` protocols, members must be `fileprivate` to satisfy protocol requirements.
+    var memberKeyword: Keyword {
+        switch self {
+        case .public: return .public
+        case .package: return .package
+        case .internal: return .internal
+        case .fileprivate: return .fileprivate
+        case .private: return .fileprivate  // Private protocol members must be fileprivate
+        }
+    }
+
+    /// Creates a DeclModifierSyntax for the class/actor declaration.
     /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
     func makeModifier() -> DeclModifierSyntax? {
         // internal is the default, no modifier needed
@@ -27,6 +39,17 @@ enum AccessLevel: String {
             return nil
         }
         return DeclModifierSyntax(name: .keyword(keyword))
+    }
+
+    /// Creates a DeclModifierSyntax for member declarations.
+    /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
+    /// For `private` protocols, returns `fileprivate` since members must be fileprivate.
+    func makeMemberModifier() -> DeclModifierSyntax? {
+        // internal is the default, no modifier needed
+        if self == .internal {
+            return nil
+        }
+        return DeclModifierSyntax(name: .keyword(memberKeyword))
     }
 
     /// Extracts the access level from a protocol declaration's modifiers

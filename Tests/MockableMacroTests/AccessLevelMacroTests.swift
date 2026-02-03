@@ -186,4 +186,90 @@ struct AccessLevelMacroTests {
             macros: testMacros
         )
     }
+
+    // MARK: - Edge Cases: fileprivate and private protocols
+
+    @Test("Fileprivate protocol generates fileprivate mock")
+    func fileprivateProtocol() {
+        // fileprivate protocols can only be adopted within the same file.
+        // While this is a rare use case, the macro correctly respects the access level.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            fileprivate protocol FileprivateService {
+                func fetch() -> String
+            }
+            """,
+            expandedSource: """
+            fileprivate protocol FileprivateService {
+                func fetch() -> String
+            }
+
+            #if DEBUG
+            fileprivate class FileprivateServiceMock: FileprivateService {
+                fileprivate var fetchCallCount: Int = 0
+                fileprivate var fetchCallArgs: [()] = []
+                fileprivate var fetchHandler: (@Sendable () -> String)? = nil
+                fileprivate func fetch() -> String {
+                    fetchCallCount += 1
+                    fetchCallArgs.append(())
+                    guard let _handler = fetchHandler else {
+                        fatalError("\\(Self.self).fetchHandler is not set")
+                    }
+                    return _handler()
+                }
+                fileprivate func resetMock() {
+                    fetchCallCount = 0
+                    fetchCallArgs = []
+                    fetchHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Private protocol generates private mock")
+    func privateProtocol() {
+        // private protocols can only be adopted within the same enclosing declaration.
+        // While this is a rare use case, the macro correctly respects the access level.
+        // Note: The class is `private`, but members must be `fileprivate` to satisfy
+        // the protocol requirements (a Swift language requirement).
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            private protocol PrivateService {
+                func fetch() -> String
+            }
+            """,
+            expandedSource: """
+            private protocol PrivateService {
+                func fetch() -> String
+            }
+
+            #if DEBUG
+            private class PrivateServiceMock: PrivateService {
+                fileprivate var fetchCallCount: Int = 0
+                fileprivate var fetchCallArgs: [()] = []
+                fileprivate var fetchHandler: (@Sendable () -> String)? = nil
+                fileprivate func fetch() -> String {
+                    fetchCallCount += 1
+                    fetchCallArgs.append(())
+                    guard let _handler = fetchHandler else {
+                        fatalError("\\(Self.self).fetchHandler is not set")
+                    }
+                    return _handler()
+                }
+                fileprivate func resetMock() {
+                    fetchCallCount = 0
+                    fetchCallArgs = []
+                    fetchHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

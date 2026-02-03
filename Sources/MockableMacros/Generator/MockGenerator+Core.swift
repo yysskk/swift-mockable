@@ -10,8 +10,19 @@ struct MockGenerator {
     let isActor: Bool
     let accessLevel: AccessLevel
 
-    /// Builds a DeclModifierListSyntax with the appropriate access level modifier
+    /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
+    /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
     func buildModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+        var modifiers: [DeclModifierSyntax] = []
+        if let accessModifier = accessLevel.makeMemberModifier() {
+            modifiers.append(accessModifier)
+        }
+        modifiers.append(contentsOf: additional)
+        return DeclModifierListSyntax(modifiers)
+    }
+
+    /// Builds a DeclModifierListSyntax for the class/actor declaration itself.
+    func buildClassModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
         if let accessModifier = accessLevel.makeModifier() {
             modifiers.append(accessModifier)
