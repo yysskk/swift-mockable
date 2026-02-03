@@ -9,6 +9,7 @@ struct MockGenerator {
     let isSendable: Bool
     let isActor: Bool
     let accessLevel: AccessLevel
+    let forceLegacyLock: Bool
 
     /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
     /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
@@ -33,8 +34,16 @@ struct MockGenerator {
 
     func generate() throws -> DeclSyntax {
         if isActor {
+            if forceLegacyLock {
+                // Force LegacyLock only (no #if canImport)
+                return DeclSyntax(try generateActorMock(useLegacyLock: true))
+            }
             return DeclSyntax(try generateActorMockWithBackwardCompatibility())
         } else if isSendable {
+            if forceLegacyLock {
+                // Force LegacyLock only (no #if canImport)
+                return DeclSyntax(try generateClassMock(useLegacyLock: true))
+            }
             return DeclSyntax(try generateSendableClassMockWithBackwardCompatibility())
         } else {
             return DeclSyntax(try generateClassMock())

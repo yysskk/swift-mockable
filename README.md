@@ -35,6 +35,7 @@ Then add `Mockable` to your target dependencies:
 - Supports `Sendable` protocols with thread-safe mock generation
 - Supports `Actor` protocols with actor mock generation
 - Backward compatible: iOS 18+ uses `Mutex`, iOS 17 and earlier uses `LegacyLock`
+- `legacyLock: true` option to force `LegacyLock` for projects supporting iOS 17 or earlier
 - Supports subscript declarations (get-only and get-set)
 - `resetMock()` method to reset all tracking state for test reuse
 
@@ -170,6 +171,20 @@ await withTaskGroup(of: Void.self) { group in
 
 The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
 
+#### Force LegacyLock for iOS 17 support
+
+If your project needs to support iOS 17 or earlier while using `Sendable` protocols, you can force the use of `LegacyLock` by passing `legacyLock: true`:
+
+```swift
+@Mockable(legacyLock: true)
+protocol KeychainClient: Sendable {
+    func save(_ data: Data, forKey key: String) throws
+    func load(forKey key: String) throws -> Data?
+}
+```
+
+This generates a mock that uses `LegacyLock` without any `#if canImport(Synchronization)` conditional compilation or `@available` attributes, ensuring compatibility with iOS 17 and earlier.
+
 ### Actor protocols
 
 Protocols that inherit from `Actor` generate actor mocks with thread-safe access using `Mutex`:
@@ -212,6 +227,20 @@ Actor mocks support:
 - **iOS 17 and earlier**: Uses `LegacyLock` (NSLock-based) for backward compatibility
 
 The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
+
+#### Force LegacyLock for iOS 17 support
+
+If your project needs to support iOS 17 or earlier while using `Actor` protocols, you can force the use of `LegacyLock` by passing `legacyLock: true`:
+
+```swift
+@Mockable(legacyLock: true)
+protocol UserProfileStore: Actor {
+    var profiles: [String: String] { get }
+    func updateProfile(_ profile: String, for key: String)
+}
+```
+
+This generates an actor mock that uses `LegacyLock` without any `#if canImport(Synchronization)` conditional compilation or `@available` attributes, ensuring compatibility with iOS 17 and earlier.
 
 ## Generated Code Example
 
