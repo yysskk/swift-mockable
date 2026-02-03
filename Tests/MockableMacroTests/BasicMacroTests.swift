@@ -25,11 +25,11 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class UserServiceMock: UserService {
-                public var fetchUserCallCount: Int = 0
-                public var fetchUserCallArgs: [Int] = []
-                public var fetchUserHandler: (@Sendable (Int) -> String)? = nil
-                public func fetchUser(id: Int) -> String {
+            class UserServiceMock: UserService {
+                var fetchUserCallCount: Int = 0
+                var fetchUserCallArgs: [Int] = []
+                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArgs.append(id)
                     guard let _handler = fetchUserHandler else {
@@ -37,7 +37,7 @@ struct BasicMacroTests {
                     }
                     return _handler(id)
                 }
-                public func resetMock() {
+                func resetMock() {
                     fetchUserCallCount = 0
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
@@ -64,11 +64,11 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class DataServiceMock: DataService {
-                public var loadDataCallCount: Int = 0
-                public var loadDataCallArgs: [String] = []
-                public var loadDataHandler: (@Sendable (String) async throws -> Data)? = nil
-                public func loadData(from url: String) async throws -> Data {
+            class DataServiceMock: DataService {
+                var loadDataCallCount: Int = 0
+                var loadDataCallArgs: [String] = []
+                var loadDataHandler: (@Sendable (String) async throws -> Data)? = nil
+                func loadData(from url: String) async throws -> Data {
                     loadDataCallCount += 1
                     loadDataCallArgs.append(url)
                     guard let _handler = loadDataHandler else {
@@ -76,7 +76,7 @@ struct BasicMacroTests {
                     }
                     return try await _handler(url)
                 }
-                public func resetMock() {
+                func resetMock() {
                     loadDataCallCount = 0
                     loadDataCallArgs = []
                     loadDataHandler = nil
@@ -103,11 +103,11 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class CalculatorMock: Calculator {
-                public var addCallCount: Int = 0
-                public var addCallArgs: [(a: Int, b: Int)] = []
-                public var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)? = nil
-                public func add(a: Int, b: Int) -> Int {
+            class CalculatorMock: Calculator {
+                var addCallCount: Int = 0
+                var addCallArgs: [(a: Int, b: Int)] = []
+                var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)? = nil
+                func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArgs.append((a: a, b: b))
                     guard let _handler = addHandler else {
@@ -115,7 +115,7 @@ struct BasicMacroTests {
                     }
                     return _handler((a: a, b: b))
                 }
-                public func resetMock() {
+                func resetMock() {
                     addCallCount = 0
                     addCallArgs = []
                     addHandler = nil
@@ -142,18 +142,18 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class LoggerMock: Logger {
-                public var logCallCount: Int = 0
-                public var logCallArgs: [String] = []
-                public var logHandler: (@Sendable (String) -> Void)? = nil
-                public func log(message: String) {
+            class LoggerMock: Logger {
+                var logCallCount: Int = 0
+                var logCallArgs: [String] = []
+                var logHandler: (@Sendable (String) -> Void)? = nil
+                func log(message: String) {
                     logCallCount += 1
                     logCallArgs.append(message)
                     if let _handler = logHandler {
                         _handler(message)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     logCallCount = 0
                     logCallArgs = []
                     logHandler = nil
@@ -180,12 +180,12 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class UserProviderMock: UserProvider {
-                public var _currentUser: String? = nil
-                public var currentUser: String {
+            class UserProviderMock: UserProvider {
+                var _currentUser: String? = nil
+                var currentUser: String {
                     _currentUser!
                 }
-                public func resetMock() {
+                func resetMock() {
                     _currentUser = nil
                 }
             }
@@ -210,9 +210,9 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class SettingsMock: Settings {
-                public var _theme: String? = nil
-                public var theme: String {
+            class SettingsMock: Settings {
+                var _theme: String? = nil
+                var theme: String {
                     get {
                         _theme!
                     }
@@ -220,7 +220,7 @@ struct BasicMacroTests {
                         _theme = newValue
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _theme = nil
                 }
             }
@@ -245,9 +245,9 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class CacheMock: Cache {
-                public var lastValue: String? = nil
-                public func resetMock() {
+            class CacheMock: Cache {
+                var lastValue: String? = nil
+                func resetMock() {
                     lastValue = nil
                 }
             }
@@ -289,18 +289,18 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class EventHandlerMock: EventHandler {
-                public var subscribeCallCount: Int = 0
-                public var subscribeCallArgs: [(String) -> Void] = []
-                public var subscribeHandler: (@Sendable ((String) -> Void) -> Void)? = nil
-                public func subscribe(handler: @escaping (String) -> Void) {
+            class EventHandlerMock: EventHandler {
+                var subscribeCallCount: Int = 0
+                var subscribeCallArgs: [(String) -> Void] = []
+                var subscribeHandler: (@Sendable ((String) -> Void) -> Void)? = nil
+                func subscribe(handler: @escaping (String) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArgs.append(handler)
                     if let _handler = subscribeHandler {
                         _handler(handler)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil
@@ -327,18 +327,18 @@ struct BasicMacroTests {
             }
 
             #if DEBUG
-            public class EventHandlerMock: EventHandler {
-                public var subscribeCallCount: Int = 0
-                public var subscribeCallArgs: [@Sendable (String) -> Void] = []
-                public var subscribeHandler: (@Sendable (@Sendable (String) -> Void) -> Void)? = nil
-                public func subscribe(handler: @escaping @Sendable (String) -> Void) {
+            class EventHandlerMock: EventHandler {
+                var subscribeCallCount: Int = 0
+                var subscribeCallArgs: [@Sendable (String) -> Void] = []
+                var subscribeHandler: (@Sendable (@Sendable (String) -> Void) -> Void)? = nil
+                func subscribe(handler: @escaping @Sendable (String) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArgs.append(handler)
                     if let _handler = subscribeHandler {
                         _handler(handler)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil

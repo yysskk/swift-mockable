@@ -43,13 +43,17 @@ public struct MockableMacro: PeerMacro {
             }
         }
 
+        // Extract access level from the protocol declaration
+        let accessLevel = AccessLevel.from(protocolDecl: protocolDecl)
+
         let generator = MockGenerator(
             protocolName: protocolName,
             mockClassName: mockClassName,
             members: members,
             associatedTypes: associatedTypes,
             isSendable: isSendable || hasSendableAttribute,
-            isActor: isActor
+            isActor: isActor,
+            accessLevel: accessLevel
         )
 
         let mockClass = try generator.generate()

@@ -44,10 +44,7 @@ extension MockGenerator {
 
     private func generateActorCallCountProperty(identifier: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -86,10 +83,7 @@ extension MockGenerator {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -147,10 +141,7 @@ extension MockGenerator {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -232,10 +223,7 @@ extension MockGenerator {
         let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -282,9 +270,7 @@ extension MockGenerator {
 
         if isGetOnly {
             return VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -302,9 +288,7 @@ extension MockGenerator {
             let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
 
             return VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(

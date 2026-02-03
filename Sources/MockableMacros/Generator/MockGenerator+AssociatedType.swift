@@ -20,9 +20,7 @@ extension MockGenerator {
         }
 
         return TypeAliasDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             name: .identifier(name),
             initializer: TypeInitializerClauseSyntax(
                 equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),

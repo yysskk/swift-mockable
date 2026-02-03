@@ -37,11 +37,11 @@ struct ConditionalCompilationMacroTests {
             }
 
             #if DEBUG
-            public class KeychainManagerMock: KeychainManager {
-                public var getDeviceIdCallCount: Int = 0
-                public var getDeviceIdCallArgs: [()] = []
-                public var getDeviceIdHandler: (@Sendable () -> String?)? = nil
-                public func getDeviceId() -> String? {
+            class KeychainManagerMock: KeychainManager {
+                var getDeviceIdCallCount: Int = 0
+                var getDeviceIdCallArgs: [()] = []
+                var getDeviceIdHandler: (@Sendable () -> String?)? = nil
+                func getDeviceId() -> String? {
                     getDeviceIdCallCount += 1
                     getDeviceIdCallArgs.append(())
                     guard let _handler = getDeviceIdHandler else {
@@ -49,10 +49,10 @@ struct ConditionalCompilationMacroTests {
                     }
                     return _handler()
                 }
-                public var saveAccessIdCallCount: Int = 0
-                public var saveAccessIdCallArgs: [String] = []
-                public var saveAccessIdHandler: (@Sendable (String) -> Void)? = nil
-                public func saveAccessId(_ accessId: String) {
+                var saveAccessIdCallCount: Int = 0
+                var saveAccessIdCallArgs: [String] = []
+                var saveAccessIdHandler: (@Sendable (String) -> Void)? = nil
+                func saveAccessId(_ accessId: String) {
                     saveAccessIdCallCount += 1
                     saveAccessIdCallArgs.append(accessId)
                     if let _handler = saveAccessIdHandler {
@@ -60,20 +60,20 @@ struct ConditionalCompilationMacroTests {
                     }
                 }
                 #if DEBUG
-                public var deleteDeviceIdCallCount: Int = 0
-                public var deleteDeviceIdCallArgs: [()] = []
-                public var deleteDeviceIdHandler: (@Sendable () -> Void)? = nil
-                public func deleteDeviceId() {
+                var deleteDeviceIdCallCount: Int = 0
+                var deleteDeviceIdCallArgs: [()] = []
+                var deleteDeviceIdHandler: (@Sendable () -> Void)? = nil
+                func deleteDeviceId() {
                     deleteDeviceIdCallCount += 1
                     deleteDeviceIdCallArgs.append(())
                     if let _handler = deleteDeviceIdHandler {
                         _handler()
                     }
                 }
-                public var getAllObjectsCallCount: Int = 0
-                public var getAllObjectsCallArgs: [()] = []
-                public var getAllObjectsHandler: (@Sendable () -> [AnyObject])? = nil
-                public func getAllObjects() -> [AnyObject] {
+                var getAllObjectsCallCount: Int = 0
+                var getAllObjectsCallArgs: [()] = []
+                var getAllObjectsHandler: (@Sendable () -> [AnyObject])? = nil
+                func getAllObjects() -> [AnyObject] {
                     getAllObjectsCallCount += 1
                     getAllObjectsCallArgs.append(())
                     guard let _handler = getAllObjectsHandler else {
@@ -82,7 +82,7 @@ struct ConditionalCompilationMacroTests {
                     return _handler()
                 }
                 #endif
-                public func resetMock() {
+                func resetMock() {
                     getDeviceIdCallCount = 0
                     getDeviceIdCallArgs = []
                     getDeviceIdHandler = nil
@@ -128,14 +128,14 @@ struct ConditionalCompilationMacroTests {
             }
 
             #if DEBUG
-            public class DebugServiceMock: DebugService {
-                public var _isEnabled: Bool? = nil
-                public var isEnabled: Bool {
+            class DebugServiceMock: DebugService {
+                var _isEnabled: Bool? = nil
+                var isEnabled: Bool {
                     _isEnabled!
                 }
                 #if DEBUG
-                public var _debugInfo: String? = nil
-                public var debugInfo: String {
+                var _debugInfo: String? = nil
+                var debugInfo: String {
                     get {
                         _debugInfo!
                     }
@@ -144,7 +144,7 @@ struct ConditionalCompilationMacroTests {
                     }
                 }
                 #endif
-                public func resetMock() {
+                func resetMock() {
                     _isEnabled = nil
                     #if DEBUG
                     _debugInfo = nil

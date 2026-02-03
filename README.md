@@ -24,6 +24,7 @@ Then add `Mockable` to your target dependencies:
 ## Features
 
 - Generates mock classes wrapped in `#if DEBUG`
+- Respects protocol access levels (`public`, `package`, `internal`)
 - Call count tracking (`<method>CallCount`)
 - Call arguments recording (`<method>CallArgs`)
 - Configurable handlers with `@Sendable` support (`<method>Handler`)
@@ -214,16 +215,16 @@ The generated code uses `#if canImport(Synchronization)` to automatically select
 
 ## Generated Code Example
 
-For the `UserService` protocol above, the following mock class is generated:
+For the `UserService` protocol above (which is `internal` by default), the following mock class is generated:
 
 ```swift
 #if DEBUG
-public class UserServiceMock: UserService {
-    public var fetchUserCallCount: Int = 0
-    public var fetchUserCallArgs: [Int] = []
-    public var fetchUserHandler: (@Sendable (Int) async throws -> User)?
+class UserServiceMock: UserService {
+    var fetchUserCallCount: Int = 0
+    var fetchUserCallArgs: [Int] = []
+    var fetchUserHandler: (@Sendable (Int) async throws -> User)?
 
-    public func fetchUser(id: Int) async throws -> User {
+    func fetchUser(id: Int) async throws -> User {
         fetchUserCallCount += 1
         fetchUserCallArgs.append(id)
         guard let handler = fetchUserHandler else {
@@ -232,11 +233,11 @@ public class UserServiceMock: UserService {
         return try await handler(id)
     }
 
-    public var saveUserCallCount: Int = 0
-    public var saveUserCallArgs: [User] = []
-    public var saveUserHandler: (@Sendable (User) async throws -> Void)?
+    var saveUserCallCount: Int = 0
+    var saveUserCallArgs: [User] = []
+    var saveUserHandler: (@Sendable (User) async throws -> Void)?
 
-    public func saveUser(_ user: User) async throws {
+    func saveUser(_ user: User) async throws {
         saveUserCallCount += 1
         saveUserCallArgs.append(user)
         if let handler = saveUserHandler {
@@ -244,18 +245,18 @@ public class UserServiceMock: UserService {
         }
     }
 
-    public var _currentUser: User?
-    public var currentUser: User? {
+    var _currentUser: User?
+    var currentUser: User? {
         _currentUser
     }
 
-    public var _isLoggedIn: Bool?
-    public var isLoggedIn: Bool {
+    var _isLoggedIn: Bool?
+    var isLoggedIn: Bool {
         get { _isLoggedIn! }
         set { _isLoggedIn = newValue }
     }
 
-    public func resetMock() {
+    func resetMock() {
         fetchUserCallCount = 0
         fetchUserCallArgs = []
         fetchUserHandler = nil
@@ -268,6 +269,8 @@ public class UserServiceMock: UserService {
 }
 #endif
 ```
+
+**Note:** If the protocol were declared as `public protocol UserService`, all generated members would have `public` access modifiers.
 
 ## Requirements
 

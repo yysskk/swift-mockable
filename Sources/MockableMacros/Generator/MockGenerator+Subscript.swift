@@ -194,9 +194,7 @@ extension MockGenerator {
 
     private func generateSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -216,9 +214,7 @@ extension MockGenerator {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -250,9 +246,7 @@ extension MockGenerator {
         let closureType = parameters.isEmpty ? "() -> \(returnTypeStr)" : "(\(paramTupleType.description)) -> \(returnTypeStr)"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -288,9 +282,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -383,9 +375,7 @@ extension MockGenerator {
         }
 
         return SubscriptDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             genericParameterClause: subscriptDecl.genericParameterClause,
             parameterClause: subscriptDecl.parameterClause,
             returnClause: subscriptDecl.returnClause,
@@ -434,9 +424,7 @@ if let _handler = subscript\(suffix)SetHandler {
 
     private func generateSendableSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -475,9 +463,7 @@ if let _handler = subscript\(suffix)SetHandler {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -525,9 +511,7 @@ if let _handler = subscript\(suffix)SetHandler {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -580,9 +564,7 @@ if let _handler = subscript\(suffix)SetHandler {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -679,9 +661,7 @@ _storage.withLock { storage in
         }
 
         return SubscriptDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             genericParameterClause: subscriptDecl.genericParameterClause,
             parameterClause: subscriptDecl.parameterClause,
             returnClause: subscriptDecl.returnClause,
@@ -732,10 +712,7 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
 
     private func generateActorSubscriptCallCountProperty(suffix: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -774,10 +751,7 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -825,10 +799,7 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -881,10 +852,7 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
         let handlerType = "(@Sendable \(closureType))?"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public)),
-                DeclModifierSyntax(name: .keyword(.nonisolated))
-            ]),
+            modifiers: buildModifiers(additional: [DeclModifierSyntax(name: .keyword(.nonisolated))]),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(

@@ -8,6 +8,28 @@ struct MockGenerator {
     let associatedTypes: [AssociatedTypeDeclSyntax]
     let isSendable: Bool
     let isActor: Bool
+    let accessLevel: AccessLevel
+
+    /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
+    /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
+    func buildModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+        var modifiers: [DeclModifierSyntax] = []
+        if let accessModifier = accessLevel.makeMemberModifier() {
+            modifiers.append(accessModifier)
+        }
+        modifiers.append(contentsOf: additional)
+        return DeclModifierListSyntax(modifiers)
+    }
+
+    /// Builds a DeclModifierListSyntax for the class/actor declaration itself.
+    func buildClassModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+        var modifiers: [DeclModifierSyntax] = []
+        if let accessModifier = accessLevel.makeModifier() {
+            modifiers.append(accessModifier)
+        }
+        modifiers.append(contentsOf: additional)
+        return DeclModifierListSyntax(modifiers)
+    }
 
     func generate() throws -> DeclSyntax {
         if isActor {
@@ -184,9 +206,10 @@ struct MockGenerator {
         }
 
         // Build modifiers
-        var modifiers: [DeclModifierSyntax] = [
-            DeclModifierSyntax(name: .keyword(.public))
-        ]
+        var modifiers: [DeclModifierSyntax] = []
+        if let accessModifier = accessLevel.makeModifier() {
+            modifiers.append(accessModifier)
+        }
         if isSendable {
             modifiers.append(DeclModifierSyntax(name: .keyword(.final)))
         }
@@ -295,9 +318,10 @@ struct MockGenerator {
         ]
 
         // Build modifiers
-        let modifiers: [DeclModifierSyntax] = [
-            DeclModifierSyntax(name: .keyword(.public))
-        ]
+        var modifiers: [DeclModifierSyntax] = []
+        if let accessModifier = accessLevel.makeModifier() {
+            modifiers.append(accessModifier)
+        }
 
         // Build attributes - only add @available for Mutex (iOS 18+), not for LegacyLock
         var attributes: [AttributeListSyntax.Element] = []

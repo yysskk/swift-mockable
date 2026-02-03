@@ -73,9 +73,7 @@ extension MockGenerator {
 
     private func generateCallCountProperty(identifier: String) -> VariableDeclSyntax {
         VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -95,9 +93,7 @@ extension MockGenerator {
         let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -138,9 +134,7 @@ extension MockGenerator {
         closureType += " -> \(returnTypeStr)"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -205,9 +199,7 @@ extension MockGenerator {
         )
 
         return FunctionDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             name: funcDecl.name,
             genericParameterClause: funcDecl.genericParameterClause,
             signature: funcDecl.signature,

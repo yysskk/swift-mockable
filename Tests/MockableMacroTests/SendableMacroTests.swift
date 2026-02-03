@@ -498,14 +498,14 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class LoggerMock: Logger, Sendable {
+            final class LoggerMock: Logger, Sendable {
                 private struct Storage {
                     var logCallCount: Int = 0
                     var logCallArgs: [String] = []
                     var logHandler: (@Sendable (String) -> Void)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public var logCallCount: Int {
+                var logCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.logCallCount
@@ -517,7 +517,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var logCallArgs: [String] {
+                var logCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.logCallArgs
@@ -529,7 +529,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var logHandler: (@Sendable (String) -> Void)? {
+                var logHandler: (@Sendable (String) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.logHandler
@@ -541,7 +541,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func log(message: String) {
+                func log(message: String) {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
                         storage.logCallCount += 1
                         storage.logCallArgs.append(message)
@@ -551,7 +551,7 @@ struct SendableMacroTests {
                         _handler(message)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.logCallCount = 0
                         storage.logCallArgs = []
@@ -560,14 +560,14 @@ struct SendableMacroTests {
                 }
             }
             #else
-            public final class LoggerMock: Logger, Sendable {
+            final class LoggerMock: Logger, Sendable {
                 private struct Storage {
                     var logCallCount: Int = 0
                     var logCallArgs: [String] = []
                     var logHandler: (@Sendable (String) -> Void)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public var logCallCount: Int {
+                var logCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.logCallCount
@@ -579,7 +579,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var logCallArgs: [String] {
+                var logCallArgs: [String] {
                     get {
                         _storage.withLock {
                             $0.logCallArgs
@@ -591,7 +591,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var logHandler: (@Sendable (String) -> Void)? {
+                var logHandler: (@Sendable (String) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.logHandler
@@ -603,7 +603,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func log(message: String) {
+                func log(message: String) {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
                         storage.logCallCount += 1
                         storage.logCallArgs.append(message)
@@ -613,7 +613,7 @@ struct SendableMacroTests {
                         _handler(message)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.logCallCount = 0
                         storage.logCallArgs = []
@@ -645,14 +645,14 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class EventServiceMock: EventService, Sendable {
+            final class EventServiceMock: EventService, Sendable {
                 private struct Storage {
                     var registerCallCount: Int = 0
                     var registerCallArgs: [@Sendable (String) -> Void] = []
                     var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public var registerCallCount: Int {
+                var registerCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.registerCallCount
@@ -664,7 +664,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var registerCallArgs: [@Sendable (String) -> Void] {
+                var registerCallArgs: [@Sendable (String) -> Void] {
                     get {
                         _storage.withLock {
                             $0.registerCallArgs
@@ -676,7 +676,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
+                var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
                     get {
                         _storage.withLock {
                             $0.registerHandler
@@ -688,7 +688,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func register(handler: @escaping @Sendable (String) -> Void) async {
+                func register(handler: @escaping @Sendable (String) -> Void) async {
                     let _handler = _storage.withLock { storage -> (@Sendable (@Sendable (String) -> Void) async -> Void)? in
                         storage.registerCallCount += 1
                         storage.registerCallArgs.append(handler)
@@ -698,7 +698,7 @@ struct SendableMacroTests {
                         await _handler(handler)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.registerCallCount = 0
                         storage.registerCallArgs = []
@@ -707,14 +707,14 @@ struct SendableMacroTests {
                 }
             }
             #else
-            public final class EventServiceMock: EventService, Sendable {
+            final class EventServiceMock: EventService, Sendable {
                 private struct Storage {
                     var registerCallCount: Int = 0
                     var registerCallArgs: [@Sendable (String) -> Void] = []
                     var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public var registerCallCount: Int {
+                var registerCallCount: Int {
                     get {
                         _storage.withLock {
                             $0.registerCallCount
@@ -726,7 +726,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var registerCallArgs: [@Sendable (String) -> Void] {
+                var registerCallArgs: [@Sendable (String) -> Void] {
                     get {
                         _storage.withLock {
                             $0.registerCallArgs
@@ -738,7 +738,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
+                var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {
                     get {
                         _storage.withLock {
                             $0.registerHandler
@@ -750,7 +750,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func register(handler: @escaping @Sendable (String) -> Void) async {
+                func register(handler: @escaping @Sendable (String) -> Void) async {
                     let _handler = _storage.withLock { storage -> (@Sendable (@Sendable (String) -> Void) async -> Void)? in
                         storage.registerCallCount += 1
                         storage.registerCallArgs.append(handler)
@@ -760,7 +760,7 @@ struct SendableMacroTests {
                         await _handler(handler)
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage.registerCallCount = 0
                         storage.registerCallArgs = []
@@ -794,13 +794,13 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class ConfigProviderMock: ConfigProvider, Sendable {
+            final class ConfigProviderMock: ConfigProvider, Sendable {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
                 private let _storage = Mutex<Storage>(Storage())
-                public var _apiKey: String? {
+                var _apiKey: String? {
                     get {
                         _storage.withLock {
                             $0._apiKey
@@ -812,12 +812,12 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var apiKey: String {
+                var apiKey: String {
                     _storage.withLock {
                         $0._apiKey!
                     }
                 }
-                public var timeout: Int {
+                var timeout: Int {
                     get {
                         _storage.withLock {
                             $0._timeout!
@@ -829,7 +829,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage._apiKey = nil
                         storage._timeout = nil
@@ -837,13 +837,13 @@ struct SendableMacroTests {
                 }
             }
             #else
-            public final class ConfigProviderMock: ConfigProvider, Sendable {
+            final class ConfigProviderMock: ConfigProvider, Sendable {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
                 private let _storage = LegacyLock<Storage>(Storage())
-                public var _apiKey: String? {
+                var _apiKey: String? {
                     get {
                         _storage.withLock {
                             $0._apiKey
@@ -855,12 +855,12 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var apiKey: String {
+                var apiKey: String {
                     _storage.withLock {
                         $0._apiKey!
                     }
                 }
-                public var timeout: Int {
+                var timeout: Int {
                     get {
                         _storage.withLock {
                             $0._timeout!
@@ -872,7 +872,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public func resetMock() {
+                func resetMock() {
                     _storage.withLock { storage in
                         storage._apiKey = nil
                         storage._timeout = nil

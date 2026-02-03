@@ -96,9 +96,7 @@ extension MockGenerator {
         let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -145,9 +143,7 @@ extension MockGenerator {
 
         if isGetOnly {
             return VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -165,9 +161,7 @@ extension MockGenerator {
             let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
 
             return VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -215,9 +209,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -245,9 +237,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.public))
-            ]),
+            modifiers: buildModifiers(),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -274,9 +264,7 @@ extension MockGenerator {
         if isOptional {
             // For optional types, generate a simple stored property
             let storedProperty = VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -291,9 +279,7 @@ extension MockGenerator {
             // For non-optional get-set properties, generate backing storage + computed property
             // to ensure protocol conformance
             let backingProperty = VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -307,9 +293,7 @@ extension MockGenerator {
             )
 
             let computedProperty = VariableDeclSyntax(
-                modifiers: DeclModifierListSyntax([
-                    DeclModifierSyntax(name: .keyword(.public))
-                ]),
+                modifiers: buildModifiers(),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
