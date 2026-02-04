@@ -171,11 +171,14 @@ await withTaskGroup(of: Void.self) { group in
 
 The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
 
-#### Force LegacyLock for iOS 17 support
+#### When to use `legacyLock: true`
 
-If your project needs to support iOS 17 or earlier while using `Sendable` protocols, you can force the use of `LegacyLock` by passing `legacyLock: true`:
+Use `legacyLock: true` when building with **Xcode 16+ (Swift 6 SDK)** and your **deployment target is iOS 17 or earlier**.
+
+Without this option, the generated mock uses `#if canImport(Synchronization)` which evaluates to `true` with newer SDKs, generating a Mutex-based mock with `@available(iOS 18.0, *)`. This causes availability errors when your app needs to run on iOS 17.
 
 ```swift
+// Required when: Xcode 16+ AND deployment target < iOS 18
 @Mockable(legacyLock: true)
 protocol KeychainClient: Sendable {
     func save(_ data: Data, forKey key: String) throws
@@ -228,11 +231,14 @@ Actor mocks support:
 
 The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
 
-#### Force LegacyLock for iOS 17 support
+#### When to use `legacyLock: true`
 
-If your project needs to support iOS 17 or earlier while using `Actor` protocols, you can force the use of `LegacyLock` by passing `legacyLock: true`:
+Use `legacyLock: true` when building with **Xcode 16+ (Swift 6 SDK)** and your **deployment target is iOS 17 or earlier**.
+
+Without this option, the generated mock uses `#if canImport(Synchronization)` which evaluates to `true` with newer SDKs, generating a Mutex-based mock with `@available(iOS 18.0, *)`. This causes availability errors when your app needs to run on iOS 17.
 
 ```swift
+// Required when: Xcode 16+ AND deployment target < iOS 18
 @Mockable(legacyLock: true)
 protocol UserProfileStore: Actor {
     var profiles: [String: String] { get }

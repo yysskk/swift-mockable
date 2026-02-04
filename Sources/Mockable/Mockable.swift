@@ -26,8 +26,8 @@
 /// ## Parameters
 ///
 /// - `legacyLock`: When `true`, forces the use of `LegacyLock` instead of `Mutex`
-///   for thread-safe storage. Use this when your project needs to support iOS 17 or earlier
-///   while still conforming to `Sendable` or `Actor` protocols. Default is `false`.
+///   for thread-safe storage. Use this when building with Xcode 16+ (Swift 6 SDK)
+///   and your deployment target is iOS 17 or earlier. Default is `false`.
 ///
 /// ## Example with legacyLock
 ///
