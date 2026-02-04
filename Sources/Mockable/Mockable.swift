@@ -23,5 +23,20 @@
 /// - Call tracking for verification
 /// - Property stubs
 ///
+/// ## Parameters
+///
+/// - `legacyLock`: When `true`, forces the use of `LegacyLock` instead of `Mutex`
+///   for thread-safe storage. Use this when building with Xcode 16+ (Swift 6 SDK)
+///   and your deployment target is iOS 17 or earlier. Default is `false`.
+///
+/// ## Example with legacyLock
+///
+/// ```swift
+/// @Mockable(legacyLock: true)
+/// protocol MyService: Sendable {
+///     func fetch() async -> Data
+/// }
+/// ```
+///
 @attached(peer, names: suffixed(Mock))
-public macro Mockable() = #externalMacro(module: "MockableMacros", type: "MockableMacro")
+public macro Mockable(legacyLock: Bool = false) = #externalMacro(module: "MockableMacros", type: "MockableMacro")

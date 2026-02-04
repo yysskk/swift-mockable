@@ -800,4 +800,53 @@ struct ActorMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Actor protocol with legacyLock: true uses LegacyLock only")
+    func actorProtocolWithForceLegacyLock() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(legacyLock: true)
+            protocol ConfigProvider: Actor {
+                var apiKey: String { get }
+            }
+            """,
+            expandedSource: """
+            protocol ConfigProvider: Actor {
+                var apiKey: String { get }
+            }
+
+            #if DEBUG
+            actor ConfigProviderMock: ConfigProvider {
+                private struct Storage {
+                    var _apiKey: String? = nil
+                }
+                private let _storage = LegacyLock<Storage>(Storage())
+                nonisolated var _apiKey: String? {
+                    get {
+                        _storage.withLock {
+                            $0._apiKey
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._apiKey = newValue
+                        }
+                    }
+                }
+                var apiKey: String {
+                    _storage.withLock {
+                        $0._apiKey!
+                    }
+                }
+                nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage._apiKey = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

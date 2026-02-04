@@ -13,6 +13,9 @@ public struct MockableMacro: PeerMacro {
             throw MockableError.notAProtocol
         }
 
+        // Parse legacyLock parameter from macro arguments
+        let forceLegacyLock = parseLegacyLockArgument(from: node)
+
         let protocolName = protocolDecl.name.text
         let mockClassName = "\(protocolName)Mock"
 
@@ -53,7 +56,8 @@ public struct MockableMacro: PeerMacro {
             associatedTypes: associatedTypes,
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor,
-            accessLevel: accessLevel
+            accessLevel: accessLevel,
+            forceLegacyLock: forceLegacyLock
         )
 
         let mockClass = try generator.generate()
@@ -72,5 +76,22 @@ public struct MockableMacro: PeerMacro {
         )
 
         return [DeclSyntax(ifConfigDecl)]
+    }
+
+    /// Parses the `legacyLock` argument from the macro attribute.
+    private static func parseLegacyLockArgument(from node: AttributeSyntax) -> Bool {
+        guard let arguments = node.arguments,
+              case .argumentList(let argList) = arguments else {
+            return false
+        }
+
+        for argument in argList {
+            if argument.label?.text == "legacyLock",
+               let boolExpr = argument.expression.as(BooleanLiteralExprSyntax.self) {
+                return boolExpr.literal.tokenKind == .keyword(.true)
+            }
+        }
+
+        return false
     }
 }
