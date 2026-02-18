@@ -233,8 +233,10 @@ extension MockGenerator {
         )
     }
 
-    func generateMutexProperty(useLegacyLock: Bool = false) -> VariableDeclSyntax {
-        let lockType = useLegacyLock ? "LegacyLock" : "Mutex"
+    func generateMutexProperty(storageStrategy: StorageStrategy) -> VariableDeclSyntax {
+        guard let lockType = storageStrategy.lockTypeName else {
+            fatalError("generateMutexProperty(storageStrategy:) requires a lock-based strategy")
+        }
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.private))

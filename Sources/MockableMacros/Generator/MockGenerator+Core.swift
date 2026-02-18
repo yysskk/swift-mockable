@@ -35,26 +35,24 @@ struct MockGenerator {
     func generate() throws -> DeclSyntax {
         if isActor {
             if forceLegacyLock {
-                // Force LegacyLock only (no #if canImport)
-                return DeclSyntax(try generateActorMock(useLegacyLock: true))
+                return DeclSyntax(try generateActorMock(storageStrategy: .legacyLock))
             }
             return DeclSyntax(try generateActorMockWithBackwardCompatibility())
-        } else if isSendable {
+        }
+
+        if isSendable {
             if forceLegacyLock {
-                // Force LegacyLock only (no #if canImport)
-                return DeclSyntax(try generateClassMock(useLegacyLock: true))
+                return DeclSyntax(try generateClassMock(storageStrategy: .legacyLock))
             }
             return DeclSyntax(try generateSendableClassMockWithBackwardCompatibility())
-        } else {
-            return DeclSyntax(try generateClassMock())
         }
+
+        return DeclSyntax(try generateClassMock(storageStrategy: .direct))
     }
 
     private func generateSendableClassMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
-        // iOS 18+ version with Mutex
-        let iOS18PlusMock = try generateClassMock(useLegacyLock: false)
-        // iOS 17- version with LegacyLock
-        let legacyMock = try generateClassMock(useLegacyLock: true)
+        let iOS18PlusMock = try generateClassMock(storageStrategy: .mutex)
+        let legacyMock = try generateClassMock(storageStrategy: .legacyLock)
 
         let canImportCondition = FunctionCallExprSyntax(
             calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
@@ -87,10 +85,8 @@ struct MockGenerator {
     }
 
     private func generateActorMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
-        // iOS 18+ version with Mutex
-        let iOS18PlusMock = try generateActorMock(useLegacyLock: false)
-        // iOS 17- version with LegacyLock
-        let legacyMock = try generateActorMock(useLegacyLock: true)
+        let iOS18PlusMock = try generateActorMock(storageStrategy: .mutex)
+        let legacyMock = try generateActorMock(storageStrategy: .legacyLock)
 
         let canImportCondition = FunctionCallExprSyntax(
             calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
@@ -122,77 +118,24 @@ struct MockGenerator {
         )
     }
 
-    private func generateClassMock(useLegacyLock: Bool = false) throws -> ClassDeclSyntax {
+    private func generateClassMock(storageStrategy: StorageStrategy) throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
 
-        // Generate typealiases for associated types
         for associatedType in associatedTypes {
             let typealiasDecl = generateTypeAlias(for: associatedType)
             classMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
         }
 
-        // For Sendable protocols, add a lock for thread-safe storage
-        if isSendable {
+        if storageStrategy.isLockBased {
             let storageStruct = generateStorageStruct()
             classMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-            let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
+            let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
-        // Group methods by name to detect overloads (including conditional members)
-        let methodGroups = groupMethodsByNameIncludingConditional()
+        classMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
 
-        // Extract all members including those in #if blocks
-        let conditionalMembers = extractConditionalMembers()
-
-        // Group members by their condition
-        var unconditionalMembers: [MemberBlockItemSyntax] = []
-        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
-        var conditionExprs: [String: ExprSyntax] = [:]
-
-        // Generate members for each protocol requirement
-        for conditionalMember in conditionalMembers {
-            var generatedMembers: [MemberBlockItemSyntax] = []
-
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                let methodGroup = methodGroups[funcName] ?? []
-                let isOverloaded = methodGroup.count > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                let funcMembers = generateFunctionMock(funcDecl, suffix: suffix)
-                generatedMembers.append(contentsOf: funcMembers)
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
-                let varMembers = generateVariableMock(varDecl)
-                generatedMembers.append(contentsOf: varMembers)
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
-                let subscriptMembers = generateSubscriptMock(subscriptDecl)
-                generatedMembers.append(contentsOf: subscriptMembers)
-            }
-
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionExprs[conditionKey] = condition
-                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
-            } else {
-                unconditionalMembers.append(contentsOf: generatedMembers)
-            }
-        }
-
-        // Add unconditional members first
-        classMembers.append(contentsOf: unconditionalMembers)
-
-        // Add conditional members wrapped in their respective #if blocks (sorted for deterministic output)
-        for conditionKey in membersByCondition.keys.sorted() {
-            guard let members = membersByCondition[conditionKey],
-                  let condition = conditionExprs[conditionKey] else {
-                continue
-            }
-            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
-            classMembers.append(wrappedMember)
-        }
-
-        // Generate reset method
         let resetMethod = generateResetMethod()
         classMembers.append(MemberBlockItemSyntax(decl: resetMethod))
 
@@ -202,7 +145,6 @@ struct MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        // Build inheritance clause
         var inheritedTypes: [InheritedTypeSyntax] = [
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
         ]
@@ -214,7 +156,6 @@ struct MockGenerator {
             inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "Sendable")))
         }
 
-        // Build modifiers
         var modifiers: [DeclModifierSyntax] = []
         if let accessModifier = accessLevel.makeModifier() {
             modifiers.append(accessModifier)
@@ -223,10 +164,8 @@ struct MockGenerator {
             modifiers.append(DeclModifierSyntax(name: .keyword(.final)))
         }
 
-        // Build attributes
         var attributes: [AttributeListSyntax.Element] = []
-        // Only add @available attribute for Mutex (iOS 18+), not for LegacyLock
-        if isSendable && !useLegacyLock {
+        if storageStrategy == .mutex {
             var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
             availableAttribute.trailingTrivia = .newline
             attributes.append(.attribute(availableAttribute))
@@ -243,75 +182,22 @@ struct MockGenerator {
         )
     }
 
-    private func generateActorMock(useLegacyLock: Bool = false) throws -> ActorDeclSyntax {
+    private func generateActorMock(storageStrategy: StorageStrategy) throws -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
 
-        // Generate typealiases for associated types
         for associatedType in associatedTypes {
             let typealiasDecl = generateTypeAlias(for: associatedType)
             actorMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
         }
 
-        // Add Storage struct and lock for thread-safe access (same as Sendable pattern)
         let storageStruct = generateStorageStruct()
         actorMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-        let mutexProperty = generateMutexProperty(useLegacyLock: useLegacyLock)
+        let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
 
-        // Group methods by name to detect overloads (including conditional members)
-        let methodGroups = groupMethodsByNameIncludingConditional()
+        actorMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
 
-        // Extract all members including those in #if blocks
-        let conditionalMembers = extractConditionalMembers()
-
-        // Group members by their condition
-        var unconditionalMembers: [MemberBlockItemSyntax] = []
-        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
-        var conditionExprs: [String: ExprSyntax] = [:]
-
-        // Generate members for each protocol requirement using Sendable pattern
-        for conditionalMember in conditionalMembers {
-            var generatedMembers: [MemberBlockItemSyntax] = []
-
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                let methodGroup = methodGroups[funcName] ?? []
-                let isOverloaded = methodGroup.count > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                let funcMembers = generateActorFunctionMock(funcDecl, suffix: suffix)
-                generatedMembers.append(contentsOf: funcMembers)
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
-                let varMembers = generateActorVariableMock(varDecl)
-                generatedMembers.append(contentsOf: varMembers)
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
-                let subscriptMembers = generateActorSubscriptMock(subscriptDecl)
-                generatedMembers.append(contentsOf: subscriptMembers)
-            }
-
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionExprs[conditionKey] = condition
-                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
-            } else {
-                unconditionalMembers.append(contentsOf: generatedMembers)
-            }
-        }
-
-        // Add unconditional members first
-        actorMembers.append(contentsOf: unconditionalMembers)
-
-        // Add conditional members wrapped in their respective #if blocks (sorted for deterministic output)
-        for conditionKey in membersByCondition.keys.sorted() {
-            guard let members = membersByCondition[conditionKey],
-                  let condition = conditionExprs[conditionKey] else {
-                continue
-            }
-            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
-            actorMembers.append(wrappedMember)
-        }
-
-        // Generate reset method
         let resetMethod = generateResetMethod()
         actorMembers.append(MemberBlockItemSyntax(decl: resetMethod))
 
@@ -321,20 +207,17 @@ struct MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        // Build inheritance clause - just the protocol name for actors
         let inheritedTypes: [InheritedTypeSyntax] = [
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
         ]
 
-        // Build modifiers
         var modifiers: [DeclModifierSyntax] = []
         if let accessModifier = accessLevel.makeModifier() {
             modifiers.append(accessModifier)
         }
 
-        // Build attributes - only add @available for Mutex (iOS 18+), not for LegacyLock
         var attributes: [AttributeListSyntax.Element] = []
-        if !useLegacyLock {
+        if storageStrategy == .mutex {
             var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
             availableAttribute.trailingTrivia = .newline
             attributes.append(.attribute(availableAttribute))
@@ -349,6 +232,56 @@ struct MockGenerator {
             ),
             memberBlock: memberBlock
         )
+    }
+
+    private func generateMockMembers(storageStrategy: StorageStrategy) -> [MemberBlockItemSyntax] {
+        let methodGroups = groupMethodsByNameIncludingConditional()
+        let conditionalMembers = extractConditionalMembers()
+
+        var unconditionalMembers: [MemberBlockItemSyntax] = []
+        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
+        var conditionExprs: [String: ExprSyntax] = [:]
+
+        for conditionalMember in conditionalMembers {
+            var generatedMembers: [MemberBlockItemSyntax] = []
+
+            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+                let funcName = funcDecl.name.text
+                let methodGroup = methodGroups[funcName] ?? []
+                let isOverloaded = methodGroup.count > 1
+                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
+                let funcMembers = generateFunctionMock(funcDecl, suffix: suffix, storageStrategy: storageStrategy)
+                generatedMembers.append(contentsOf: funcMembers)
+            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
+                let varMembers = generateVariableMock(varDecl, storageStrategy: storageStrategy)
+                generatedMembers.append(contentsOf: varMembers)
+            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
+                let subscriptMembers = generateSubscriptMock(subscriptDecl, storageStrategy: storageStrategy)
+                generatedMembers.append(contentsOf: subscriptMembers)
+            }
+
+            if let condition = conditionalMember.condition {
+                let conditionKey = condition.trimmedDescription
+                conditionExprs[conditionKey] = condition
+                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
+            } else {
+                unconditionalMembers.append(contentsOf: generatedMembers)
+            }
+        }
+
+        var result: [MemberBlockItemSyntax] = []
+        result.append(contentsOf: unconditionalMembers)
+
+        for conditionKey in membersByCondition.keys.sorted() {
+            guard let members = membersByCondition[conditionKey],
+                  let condition = conditionExprs[conditionKey] else {
+                continue
+            }
+            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
+            result.append(wrappedMember)
+        }
+
+        return result
     }
 
     // MARK: - Helper Methods
