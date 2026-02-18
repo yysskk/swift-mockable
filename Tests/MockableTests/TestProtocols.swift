@@ -27,6 +27,11 @@ protocol MultiParameterService {
 }
 
 @Mockable
+protocol VariadicService {
+    func log(_ messages: String...)
+}
+
+@Mockable
 protocol GenericService {
     func get<T>(_ key: String) -> T
     func set<T>(_ value: T, forKey key: String)

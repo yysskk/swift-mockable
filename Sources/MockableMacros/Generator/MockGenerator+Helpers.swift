@@ -88,12 +88,12 @@ extension MockGenerator {
         }
 
         if parameters.count == 1, let param = parameters.first {
-            return eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
+            return parameterStorageType(for: param, genericParamNames: genericParamNames)
         }
 
         let tupleElements = parameters.enumerated().map { index, param -> TupleTypeElementSyntax in
             let isLast = index == parameters.count - 1
-            let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
+            let erasedType = parameterStorageType(for: param, genericParamNames: genericParamNames)
             return TupleTypeElementSyntax(
                 firstName: param.secondName ?? param.firstName,
                 colon: .colonToken(trailingTrivia: .space),
@@ -103,6 +103,18 @@ extension MockGenerator {
         }
 
         return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax(tupleElements)))
+    }
+
+    private static func parameterStorageType(
+        for param: FunctionParameterSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax {
+        let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
+        guard param.ellipsis != nil else {
+            return erasedType
+        }
+
+        return TypeSyntax(ArrayTypeSyntax(element: erasedType))
     }
 
     static func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {

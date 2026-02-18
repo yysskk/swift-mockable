@@ -18,6 +18,11 @@ protocol SendableConfigProvider: Sendable {
     var optionalEndpoint: String? { get set }
 }
 
+@Mockable
+protocol SendableVariadicService: Sendable {
+    func log(_ messages: String...)
+}
+
 // MARK: - Sendable Integration Tests
 
 @Suite("Sendable Integration Tests")
@@ -86,6 +91,23 @@ struct SendableIntegrationTests {
 
         #expect(mock.logCallCount == 3)
         #expect(mock.logCallArgs == ["first", "second", "third"])
+    }
+
+    @Test("Sendable variadic method tracks arrays and handler receives array")
+    func sendableVariadicMethod() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableVariadicServiceMock()
+        nonisolated(unsafe) var captured: [String] = []
+
+        mock.logHandler = { @Sendable messages in
+            captured = messages
+        }
+
+        mock.log("first", "second")
+
+        #expect(mock.logCallCount == 1)
+        #expect(mock.logCallArgs == [["first", "second"]])
+        #expect(captured == ["first", "second"])
     }
 
     @Test("Sendable mock can be used from multiple tasks")

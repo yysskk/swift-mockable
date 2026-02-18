@@ -817,6 +817,18 @@ struct SendableMacroTests {
                         $0._apiKey!
                     }
                 }
+                var _timeout: Int? {
+                    get {
+                        _storage.withLock {
+                            $0._timeout
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
+                    }
+                }
                 var timeout: Int {
                     get {
                         _storage.withLock {
@@ -858,6 +870,18 @@ struct SendableMacroTests {
                 var apiKey: String {
                     _storage.withLock {
                         $0._apiKey!
+                    }
+                }
+                var _timeout: Int? {
+                    get {
+                        _storage.withLock {
+                            $0._timeout
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._timeout = newValue
+                        }
                     }
                 }
                 var timeout: Int {

@@ -165,6 +165,44 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Protocol with variadic parameter")
+    func variadicParameterMethod() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Logger {
+                func log(_ messages: String...)
+            }
+            """,
+            expandedSource: """
+            protocol Logger {
+                func log(_ messages: String...)
+            }
+
+            #if DEBUG
+            class LoggerMock: Logger {
+                var logCallCount: Int = 0
+                var logCallArgs: [[String]] = []
+                var logHandler: (@Sendable ([String]) -> Void)? = nil
+                func log(_ messages: String...) {
+                    logCallCount += 1
+                    logCallArgs.append(messages)
+                    if let _handler = logHandler {
+                        _handler(messages)
+                    }
+                }
+                func resetMock() {
+                    logCallCount = 0
+                    logCallArgs = []
+                    logHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Protocol with get-only property")
     func getOnlyProperty() {
         assertMacroExpansionForTesting(
