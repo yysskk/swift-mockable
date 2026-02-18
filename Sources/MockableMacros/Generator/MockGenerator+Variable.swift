@@ -22,14 +22,11 @@ extension MockGenerator {
             let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
             if storageStrategy.isLockBased {
-                let shouldGenerateBackingProperty = isGetOnly || isActor
-                if shouldGenerateBackingProperty {
-                    let backingProperty = generateLockBasedBackingSetterProperty(
-                        varName: varName,
-                        varType: varType
-                    )
-                    members.append(MemberBlockItemSyntax(decl: backingProperty))
-                }
+                let backingProperty = generateLockBasedBackingSetterProperty(
+                    varName: varName,
+                    varType: varType
+                )
+                members.append(MemberBlockItemSyntax(decl: backingProperty))
 
                 let computedProperty = generateLockBasedVariableProperty(
                     varName: varName,

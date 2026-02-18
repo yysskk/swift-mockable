@@ -126,6 +126,33 @@ struct MockableIntegrationTests {
         #expect(mock.calculateCallArgs[0].c == 3)
     }
 
+    @Test("Variadic parameters are tracked as arrays")
+    func variadicParameters() {
+        let mock = VariadicServiceMock()
+
+        mock.log("a", "b")
+        mock.log("c")
+
+        #expect(mock.logCallCount == 2)
+        #expect(mock.logCallArgs.count == 2)
+        #expect(mock.logCallArgs[0] == ["a", "b"])
+        #expect(mock.logCallArgs[1] == ["c"])
+    }
+
+    @Test("Variadic handler receives array argument")
+    func variadicHandler() {
+        let mock = VariadicServiceMock()
+        nonisolated(unsafe) var captured: [String] = []
+
+        mock.logHandler = { @Sendable messages in
+            captured = messages
+        }
+
+        mock.log("x", "y", "z")
+
+        #expect(captured == ["x", "y", "z"])
+    }
+
     @Test("Generic method with return")
     func genericMethodWithReturn() {
         let mock = GenericServiceMock()
