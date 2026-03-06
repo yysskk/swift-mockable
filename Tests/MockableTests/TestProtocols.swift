@@ -78,6 +78,19 @@ protocol InoutGenericService {
     func transform<T>(_ value: inout T)
 }
 
+// MARK: - Protocol Inheritance
+
+@Mockable
+protocol BaseService {
+    func baseMethod() -> String
+    var baseName: String { get }
+}
+
+@Mockable
+protocol ChildService: BaseService {
+    func childMethod() -> Int
+}
+
 // MARK: - Overloaded Method Protocols
 
 @Mockable

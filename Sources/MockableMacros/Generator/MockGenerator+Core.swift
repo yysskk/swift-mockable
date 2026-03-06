@@ -10,6 +10,11 @@ struct MockGenerator {
     let isActor: Bool
     let accessLevel: AccessLevel
     let forceLegacyLock: Bool
+    let parentMockClassName: String?
+
+    var hasParentMock: Bool {
+        parentMockClassName != nil && !isActor
+    }
 
     /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
     /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
@@ -145,23 +150,32 @@ struct MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        var inheritedTypes: [InheritedTypeSyntax] = [
+        var inheritedTypes: [InheritedTypeSyntax] = []
+
+        if hasParentMock, let parentMockClassName {
+            inheritedTypes.append(
+                InheritedTypeSyntax(
+                    type: TypeSyntax(stringLiteral: parentMockClassName),
+                    trailingComma: .commaToken()
+                )
+            )
+        }
+
+        inheritedTypes.append(
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
-        ]
+        )
+
         if isSendable {
-            inheritedTypes[0] = InheritedTypeSyntax(
-                type: TypeSyntax(stringLiteral: protocolName),
+            inheritedTypes[inheritedTypes.count - 1] = InheritedTypeSyntax(
+                type: inheritedTypes[inheritedTypes.count - 1].type,
                 trailingComma: .commaToken()
             )
-            inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "Sendable")))
+            inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "@unchecked Sendable")))
         }
 
         var modifiers: [DeclModifierSyntax] = []
         if let accessModifier = accessLevel.makeModifier() {
             modifiers.append(accessModifier)
-        }
-        if isSendable {
-            modifiers.append(DeclModifierSyntax(name: .keyword(.final)))
         }
 
         var attributes: [AttributeListSyntax.Element] = []

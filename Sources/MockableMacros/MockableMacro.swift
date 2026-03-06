@@ -36,6 +36,14 @@ public struct MockableMacro: PeerMacro {
             inherited.type.trimmedDescription == "Actor"
         } ?? false
 
+        // Extract parent protocol names (excluding well-known non-protocol types)
+        let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
+        let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
+            .map { $0.type.trimmedDescription }
+            .filter { !knownNonParentProtocols.contains($0) }
+            ?? []
+        let parentMockClassName: String? = parentProtocolNames.first.map { "\($0)Mock" }
+
         let members = protocolDecl.memberBlock.members
 
         // Extract associated type declarations
@@ -57,7 +65,8 @@ public struct MockableMacro: PeerMacro {
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor,
             accessLevel: accessLevel,
-            forceLegacyLock: forceLegacyLock
+            forceLegacyLock: forceLegacyLock,
+            parentMockClassName: parentMockClassName
         )
 
         let mockClass = try generator.generate()
