@@ -93,6 +93,11 @@ extension MockGenerator {
             }
         }
 
+        // Add super.resetMock() call if inheriting from parent mock
+        if hasParentMock {
+            statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.resetMock()"))))
+        }
+
         // Add unconditional statements first
         statements.append(contentsOf: unconditionalStatements)
 
@@ -120,8 +125,12 @@ extension MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
+        let additionalModifiers: [DeclModifierSyntax] = hasParentMock
+            ? [DeclModifierSyntax(name: .keyword(.override))]
+            : []
+
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: additionalModifiers),
             name: .identifier("resetMock"),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
@@ -216,16 +225,30 @@ _storage.withLock { storage in
 }
 """
 
+        var bodyStatements: [CodeBlockItemSyntax] = []
+        if hasParentMock {
+            bodyStatements.append(
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.resetMock()")))
+            )
+        }
+        bodyStatements.append(
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: withLockBody)))
+        )
+
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax([
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: withLockBody)))
-            ]),
+            statements: CodeBlockItemListSyntax(bodyStatements),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        // For actors, add nonisolated modifier
-        let additionalModifiers: [DeclModifierSyntax] = isActor ? [DeclModifierSyntax(name: .keyword(.nonisolated))] : []
+        // For actors, add nonisolated modifier; for inherited mocks, add override
+        var additionalModifiers: [DeclModifierSyntax] = []
+        if isActor {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
+        }
+        if hasParentMock {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.override)))
+        }
 
         return FunctionDeclSyntax(
             modifiers: buildModifiers(additional: additionalModifiers),
