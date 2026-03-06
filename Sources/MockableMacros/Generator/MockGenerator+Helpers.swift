@@ -109,12 +109,21 @@ extension MockGenerator {
         for param: FunctionParameterSyntax,
         genericParamNames: Set<String>
     ) -> TypeSyntax {
-        let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
+        let normalizedType = stripInOutKeyword(from: param.type)
+        let erasedType = eraseGenericTypes(in: normalizedType, genericParamNames: genericParamNames)
         guard param.ellipsis != nil else {
             return erasedType
         }
 
         return TypeSyntax(ArrayTypeSyntax(element: erasedType))
+    }
+
+    private static func stripInOutKeyword(from type: TypeSyntax) -> TypeSyntax {
+        let trimmed = type.trimmedDescription
+        guard trimmed.hasPrefix("inout ") else {
+            return type
+        }
+        return TypeSyntax(stringLiteral: String(trimmed.dropFirst("inout ".count)))
     }
 
     static func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {

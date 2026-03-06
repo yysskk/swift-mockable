@@ -150,7 +150,8 @@ extension MockGenerator {
                 returnType: returnType,
                 isAsync: isAsync,
                 isThrows: isThrows,
-                hasGenericReturn: hasGenericReturn
+                hasGenericReturn: hasGenericReturn,
+                genericParamNames: genericParamNames
             )
         }
 
@@ -170,7 +171,8 @@ extension MockGenerator {
         returnType: TypeSyntax?,
         isAsync: Bool,
         isThrows: Bool,
-        hasGenericReturn: Bool
+        hasGenericReturn: Bool,
+        genericParamNames: Set<String>
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
 
@@ -201,13 +203,14 @@ extension MockGenerator {
             returnType: returnType,
             isAsync: isAsync,
             isThrows: isThrows,
-            hasGenericReturn: hasGenericReturn
+            hasGenericReturn: hasGenericReturn,
+            genericParamNames: genericParamNames
         )
         statements.append(contentsOf: handlerCallStmts)
 
         return CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(statements),
+            statements: CodeBlockItemListSyntax(Self.ensureNewlinesBetweenStatements(statements)),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
     }
@@ -222,8 +225,9 @@ extension MockGenerator {
         genericParamNames: Set<String>
     ) -> CodeBlockSyntax {
         let argsExpr = Self.buildArgsExpression(parameters: parameters)
-        let hasReturnValue = returnType != nil && returnType?.description != "Void"
+        let hasReturnValue = Self.hasReturnValue(returnType)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
 
         let closureType = buildFunctionClosureType(
             parameters: parameters,
@@ -243,34 +247,39 @@ let _handler = _storage.withLock { storage -> (@Sendable \(closureType))? in
 """)))
         statements.append(withLockStmt)
 
+        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
-            let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
     fatalError("\\(Self.self).\(identifier)Handler is not set")
 }
 """)))
             statements.append(guardStmt)
-            let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)")))
-            statements.append(returnStmt)
+            statements.append(contentsOf: Self.buildHandlerInvocationStatements(
+                invokePrefix: invokePrefix,
+                handlerCallArgs: handlerCallArgs,
+                inOutParams: inOutParams,
+                hasGenericReturn: hasGenericReturn,
+                returnTypeStr: returnTypeStr
+            ))
         } else {
-            let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler {
-\(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
-}
-""")))
-            statements.append(ifStmt)
+            statements.append(Self.buildOptionalHandlerCallStatement(
+                handlerBinding: "_handler",
+                invokePrefix: invokePrefix,
+                handlerCallArgs: handlerCallArgs,
+                inOutParams: inOutParams
+            ))
         }
 
         return CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(statements),
+            statements: CodeBlockItemListSyntax(Self.ensureNewlinesBetweenStatements(statements)),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
     }
 
-    private func buildFunctionClosureType(
+    func buildFunctionClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
         isAsync: Bool,
@@ -282,7 +291,18 @@ if let _handler {
             genericParamNames: genericParamNames
         )
         let erasedReturnType = returnType.map { Self.eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
-        let returnTypeStr = erasedReturnType?.description ?? "Void"
+        let hasReturnValue = Self.hasReturnValue(returnType)
+        let baseReturnTypeStr = erasedReturnType?.description ?? "Void"
+        let returnTypeStr: String
+        if let inOutWriteBackType = Self.buildInOutWriteBackType(parameters: parameters, genericParamNames: genericParamNames) {
+            if hasReturnValue {
+                returnTypeStr = "(returnValue: \(baseReturnTypeStr), inoutArgs: \(inOutWriteBackType))"
+            } else {
+                returnTypeStr = inOutWriteBackType
+            }
+        } else {
+            returnTypeStr = baseReturnTypeStr
+        }
 
         var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
         if isAsync {
@@ -301,30 +321,163 @@ if let _handler {
         returnType: TypeSyntax?,
         isAsync: Bool,
         isThrows: Bool,
-        hasGenericReturn: Bool = false
+        hasGenericReturn: Bool = false,
+        genericParamNames: Set<String>
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
+        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
 
-        let hasReturnValue = returnType != nil && returnType?.description != "Void"
+        let hasReturnValue = Self.hasReturnValue(returnType)
 
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
-            let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler = \(identifier)Handler else {
     fatalError("\\(Self.self).\(identifier)Handler is not set")
 }
 """)))
-            let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))\(castSuffix)")))
-            return [guardStmt, returnStmt]
+            var result: [CodeBlockItemSyntax] = [guardStmt]
+            result.append(contentsOf: Self.buildHandlerInvocationStatements(
+                invokePrefix: invokePrefix,
+                handlerCallArgs: handlerCallArgs,
+                inOutParams: inOutParams,
+                hasGenericReturn: hasGenericReturn,
+                returnTypeStr: returnTypeStr
+            ))
+            return result
         } else {
-            let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = \(identifier)Handler {
-    \(isThrows ? "try " : "")\(isAsync ? "await " : "")_handler(\(handlerCallArgs))
+            return [Self.buildOptionalHandlerCallStatement(
+                handlerBinding: "_handler = \(identifier)Handler",
+                invokePrefix: invokePrefix,
+                handlerCallArgs: handlerCallArgs,
+                inOutParams: inOutParams
+            )]
+        }
+    }
+
+    /// Builds statements for invoking a handler and handling inout write-back (return value path).
+    /// Used by both lock-based and direct paths after the handler variable is available.
+    private static func buildHandlerInvocationStatements(
+        invokePrefix: String,
+        handlerCallArgs: String,
+        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        hasGenericReturn: Bool,
+        returnTypeStr: String
+    ) -> [CodeBlockItemSyntax] {
+        if !inOutParams.isEmpty {
+            var result: [CodeBlockItemSyntax] = []
+            result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _result = \(invokePrefix)_handler(\(handlerCallArgs))"))))
+            result.append(contentsOf: buildInOutWriteBackStatements(inOutParams: inOutParams, source: "_result.inoutArgs"))
+            let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+            result.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _result.returnValue\(castSuffix)"))))
+            return result
+        }
+
+        let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+        return [CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))]
+    }
+
+    /// Builds an `if let _handler` statement for optional handler calls (void return).
+    /// The `handlerBinding` parameter controls the binding expression:
+    /// - Lock-based: `"_handler"` (already bound from withLock)
+    /// - Direct: `"_handler = identifierHandler"` (binds from stored property)
+    private static func buildOptionalHandlerCallStatement(
+        handlerBinding: String,
+        invokePrefix: String,
+        handlerCallArgs: String,
+        inOutParams: [(name: String, erasedType: String, originalType: String)]
+    ) -> CodeBlockItemSyntax {
+        if !inOutParams.isEmpty {
+            var ifBodyLines = [
+                "let _writeBack = \(invokePrefix)_handler(\(handlerCallArgs))"
+            ]
+            ifBodyLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "_writeBack"))
+            let ifBody = ifBodyLines.map { "    \($0)" }.joined(separator: "\n")
+            return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let \(handlerBinding) {
+\(ifBody)
 }
 """)))
-            return [ifStmt]
+        }
+
+        return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let \(handlerBinding) {
+    \(invokePrefix)_handler(\(handlerCallArgs))
+}
+""")))
+    }
+
+    private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
+        guard let returnType else {
+            return false
+        }
+        let trimmed = returnType.trimmedDescription
+        return trimmed != "Void" && trimmed != "()"
+    }
+
+    private static func extractInOutParameters(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String>
+    ) -> [(name: String, erasedType: String, originalType: String)] {
+        parameters.compactMap { param in
+            let typeText = param.type.trimmedDescription
+            guard typeText.hasPrefix("inout ") else {
+                return nil
+            }
+            let name = (param.secondName ?? param.firstName).text
+            let originalType = String(typeText.dropFirst("inout ".count))
+            let strippedType = TypeSyntax(stringLiteral: originalType)
+            let erased = eraseGenericTypes(in: strippedType, genericParamNames: genericParamNames)
+            return (name: name, erasedType: erased.description, originalType: originalType)
+        }
+    }
+
+    private static func buildInOutWriteBackType(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String>
+    ) -> String? {
+        let inOutParams = extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
+        guard !inOutParams.isEmpty else {
+            return nil
+        }
+        if inOutParams.count == 1, let first = inOutParams.first {
+            return first.erasedType
+        }
+        let elements = inOutParams.map { "\($0.name): \($0.erasedType)" }.joined(separator: ", ")
+        return "(\(elements))"
+    }
+
+    private static func buildInOutWriteBackAssignments(
+        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        source: String
+    ) -> [String] {
+        if inOutParams.count == 1, let first = inOutParams.first {
+            let castSuffix = first.erasedType != first.originalType ? " as! \(first.originalType)" : ""
+            return ["\(first.name) = \(source)\(castSuffix)"]
+        }
+        return inOutParams.map {
+            let castSuffix = $0.erasedType != $0.originalType ? " as! \($0.originalType)" : ""
+            return "\($0.name) = \(source).\($0.name)\(castSuffix)"
+        }
+    }
+
+    private static func buildInOutWriteBackStatements(
+        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        source: String
+    ) -> [CodeBlockItemSyntax] {
+        buildInOutWriteBackAssignments(inOutParams: inOutParams, source: source).map {
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: $0)))
+        }
+    }
+
+    private static func ensureNewlinesBetweenStatements(_ statements: [CodeBlockItemSyntax]) -> [CodeBlockItemSyntax] {
+        statements.enumerated().map { index, stmt in
+            guard index > 0 else { return stmt }
+            var s = stmt
+            s.leadingTrivia = .newline
+            return s
         }
     }
 }

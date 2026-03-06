@@ -61,17 +61,13 @@ extension MockGenerator {
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // Handler
-                let paramTupleType = Self.buildParameterTupleType(
+                let closureType = buildFunctionClosureType(
                     parameters: parameters,
+                    returnType: returnType,
+                    isAsync: isAsync,
+                    isThrows: isThrows,
                     genericParamNames: genericParamNames
                 )
-                let erasedReturnType = returnType.map { Self.eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
-                let returnTypeStr = erasedReturnType?.description ?? "Void"
-
-                var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
-                if isAsync { closureType += " async" }
-                if isThrows { closureType += " throws" }
-                closureType += " -> \(returnTypeStr)"
 
                 let handlerDecl = VariableDeclSyntax(
                     bindingSpecifier: .keyword(.var),
