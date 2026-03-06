@@ -23,6 +23,26 @@ protocol SendableVariadicService: Sendable {
     func log(_ messages: String...)
 }
 
+@Mockable
+protocol SendableInoutService: Sendable {
+    func sort(_ array: inout [Int])
+}
+
+@Mockable
+protocol SendableInoutWithReturnService: Sendable {
+    func removeFirst(_ array: inout [String]) -> String
+}
+
+@Mockable
+protocol SendableMultipleInoutService: Sendable {
+    func swap(_ a: inout Int, _ b: inout Int)
+}
+
+@Mockable
+protocol SendableInoutThrowsService: Sendable {
+    func parse(_ buffer: inout [UInt8]) throws -> String
+}
+
 // MARK: - Sendable Integration Tests
 
 @Suite("Sendable Integration Tests")
@@ -91,6 +111,74 @@ struct SendableIntegrationTests {
 
         #expect(mock.logCallCount == 3)
         #expect(mock.logCallArgs == ["first", "second", "third"])
+    }
+
+    @Test("Sendable mock inout parameter is tracked and write-backed")
+    func sendableMockInoutWriteBack() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableInoutServiceMock()
+        mock.sortHandler = { @Sendable values in
+            values.sorted()
+        }
+
+        var values = [9, 4, 1]
+        mock.sort(&values)
+
+        #expect(mock.sortCallCount == 1)
+        #expect(mock.sortCallArgs == [[9, 4, 1]])
+        #expect(values == [1, 4, 9])
+    }
+
+    @Test("Sendable mock inout with return value")
+    func sendableMockInoutWithReturnValue() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableInoutWithReturnServiceMock()
+        mock.removeFirstHandler = { @Sendable array in
+            let first = array.first!
+            return (returnValue: first, inoutArgs: Array(array.dropFirst()))
+        }
+
+        var items = ["x", "y", "z"]
+        let removed = mock.removeFirst(&items)
+
+        #expect(removed == "x")
+        #expect(items == ["y", "z"])
+        #expect(mock.removeFirstCallCount == 1)
+        #expect(mock.removeFirstCallArgs == [["x", "y", "z"]])
+    }
+
+    @Test("Sendable mock multiple inout parameters")
+    func sendableMockMultipleInoutParameters() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableMultipleInoutServiceMock()
+        mock.swapHandler = { @Sendable args in
+            (a: args.1, b: args.0)
+        }
+
+        var x = 100
+        var y = 200
+        mock.swap(&x, &y)
+
+        #expect(x == 200)
+        #expect(y == 100)
+        #expect(mock.swapCallCount == 1)
+    }
+
+    @Test("Sendable mock inout with throws")
+    func sendableMockInoutWithThrows() throws {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let mock = SendableInoutThrowsServiceMock()
+        mock.parseHandler = { @Sendable buffer in
+            let str = String(bytes: buffer, encoding: .utf8)!
+            return (returnValue: str, inoutArgs: [])
+        }
+
+        var buffer: [UInt8] = Array("test".utf8)
+        let result = try mock.parse(&buffer)
+
+        #expect(result == "test")
+        #expect(buffer == [])
+        #expect(mock.parseCallCount == 1)
     }
 
     @Test("Sendable variadic method tracks arrays and handler receives array")

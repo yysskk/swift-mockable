@@ -256,4 +256,102 @@ struct MockableIntegrationTests {
         #expect(mock.registerCallCount == 1)
         #expect(receivedValue == "registered")
     }
+
+    @Test("Inout parameter is tracked and write-backed")
+    func inoutParameterWriteBack() {
+        let mock = InoutSortingServiceMock()
+        mock.sortHandler = { @Sendable values in
+            values.sorted()
+        }
+
+        var values = [3, 1, 2]
+        mock.sort(&values)
+
+        #expect(mock.sortCallCount == 1)
+        #expect(mock.sortCallArgs == [[3, 1, 2]])
+        #expect(values == [1, 2, 3])
+    }
+
+    @Test("Inout parameter with return value")
+    func inoutWithReturnValue() {
+        let mock = InoutWithReturnServiceMock()
+        mock.removeFirstHandler = { @Sendable array in
+            let first = array.first!
+            return (returnValue: first, inoutArgs: Array(array.dropFirst()))
+        }
+
+        var items = ["a", "b", "c"]
+        let removed = mock.removeFirst(&items)
+
+        #expect(removed == "a")
+        #expect(items == ["b", "c"])
+        #expect(mock.removeFirstCallCount == 1)
+        #expect(mock.removeFirstCallArgs == [["a", "b", "c"]])
+    }
+
+    @Test("Multiple inout parameters")
+    func multipleInoutParameters() {
+        let mock = MultipleInoutServiceMock()
+        mock.swapHandler = { @Sendable args in
+            (a: args.1, b: args.0)
+        }
+
+        var x = 10
+        var y = 20
+        mock.swap(&x, &y)
+
+        #expect(x == 20)
+        #expect(y == 10)
+        #expect(mock.swapCallCount == 1)
+    }
+
+    @Test("Inout parameter with throws")
+    func inoutWithThrows() throws {
+        let mock = InoutThrowsServiceMock()
+        mock.parseHandler = { @Sendable buffer in
+            let str = String(bytes: buffer, encoding: .utf8)!
+            return (returnValue: str, inoutArgs: [])
+        }
+
+        var buffer: [UInt8] = Array("hello".utf8)
+        let result = try mock.parse(&buffer)
+
+        #expect(result == "hello")
+        #expect(buffer == [])
+        #expect(mock.parseCallCount == 1)
+    }
+
+    @Test("Inout parameter with async")
+    func inoutWithAsync() async {
+        let mock = InoutAsyncServiceMock()
+        mock.processHandler = { @Sendable data in
+            let sum = data.reduce(0, +)
+            return (returnValue: sum, inoutArgs: [])
+        }
+
+        var data = [1, 2, 3]
+        let sum = await mock.process(&data)
+
+        #expect(sum == 6)
+        #expect(data == [])
+        #expect(mock.processCallCount == 1)
+    }
+
+    @Test("Inout parameter with generic type")
+    func inoutWithGenericType() {
+        let mock = InoutGenericServiceMock()
+        mock.transformHandler = { @Sendable value in
+            if var intValue = value as? Int {
+                intValue *= 2
+                return intValue
+            }
+            return value
+        }
+
+        var number: Int = 5
+        mock.transform(&number)
+
+        #expect(number == 10)
+        #expect(mock.transformCallCount == 1)
+    }
 }

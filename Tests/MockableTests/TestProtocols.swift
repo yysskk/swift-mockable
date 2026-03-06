@@ -48,6 +48,36 @@ protocol SendableEventService: Sendable {
     func register(eventCallback: @escaping @Sendable (String) -> Void) async
 }
 
+@Mockable
+protocol InoutSortingService {
+    func sort(_ array: inout [Int])
+}
+
+@Mockable
+protocol InoutWithReturnService {
+    func removeFirst(_ array: inout [String]) -> String
+}
+
+@Mockable
+protocol MultipleInoutService {
+    func swap(_ a: inout Int, _ b: inout Int)
+}
+
+@Mockable
+protocol InoutThrowsService {
+    func parse(_ buffer: inout [UInt8]) throws -> String
+}
+
+@Mockable
+protocol InoutAsyncService {
+    func process(_ data: inout [Int]) async -> Int
+}
+
+@Mockable
+protocol InoutGenericService {
+    func transform<T>(_ value: inout T)
+}
+
 // MARK: - Overloaded Method Protocols
 
 @Mockable
