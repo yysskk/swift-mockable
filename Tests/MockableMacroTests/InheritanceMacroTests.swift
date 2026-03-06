@@ -181,7 +181,7 @@ struct InheritanceMacroTests {
             }
 
             #if DEBUG
-            final class ChildMock: BaseMock, Child, Sendable {
+            class ChildMock: BaseMock, Child, @unchecked Sendable {
                 private struct Storage {
                     var childMethodCallCount: Int = 0
                     var childMethodCallArgs: [()] = []
@@ -242,6 +242,46 @@ struct InheritanceMacroTests {
                         storage.childMethodCallArgs = []
                         storage.childMethodHandler = nil
                     }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Non-Sendable child inheriting from Sendable parent does not use final")
+    func sendableParentNonSendableChild() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Child: SendableBase {
+                func childMethod() -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Child: SendableBase {
+                func childMethod() -> Int
+            }
+
+            #if DEBUG
+            class ChildMock: SendableBaseMock, Child {
+                var childMethodCallCount: Int = 0
+                var childMethodCallArgs: [()] = []
+                var childMethodHandler: (@Sendable () -> Int)? = nil
+                func childMethod() -> Int {
+                    childMethodCallCount += 1
+                    childMethodCallArgs.append(())
+                    guard let _handler = childMethodHandler else {
+                        fatalError("\\(Self.self).childMethodHandler is not set")
+                    }
+                    return _handler()
+                }
+                override func resetMock() {
+                    super.resetMock()
+                    childMethodCallCount = 0
+                    childMethodCallArgs = []
+                    childMethodHandler = nil
                 }
             }
             #endif

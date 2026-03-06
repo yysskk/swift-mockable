@@ -170,15 +170,12 @@ struct MockGenerator {
                 type: inheritedTypes[inheritedTypes.count - 1].type,
                 trailingComma: .commaToken()
             )
-            inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "Sendable")))
+            inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "@unchecked Sendable")))
         }
 
         var modifiers: [DeclModifierSyntax] = []
         if let accessModifier = accessLevel.makeModifier() {
             modifiers.append(accessModifier)
-        }
-        if isSendable {
-            modifiers.append(DeclModifierSyntax(name: .keyword(.final)))
         }
 
         var attributes: [AttributeListSyntax.Element] = []

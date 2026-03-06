@@ -33,7 +33,7 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            public final class KeychainClientProtocolMock: KeychainClientProtocol, Sendable {
+            public class KeychainClientProtocolMock: KeychainClientProtocol, @unchecked Sendable {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [(data: Data, key: String)] = []
@@ -253,7 +253,7 @@ struct SendableMacroTests {
                 }
             }
             #else
-            public final class KeychainClientProtocolMock: KeychainClientProtocol, Sendable {
+            public class KeychainClientProtocolMock: KeychainClientProtocol, @unchecked Sendable {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [(data: Data, key: String)] = []
@@ -498,7 +498,7 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            final class LoggerMock: Logger, Sendable {
+            class LoggerMock: Logger, @unchecked Sendable {
                 private struct Storage {
                     var logCallCount: Int = 0
                     var logCallArgs: [String] = []
@@ -560,7 +560,7 @@ struct SendableMacroTests {
                 }
             }
             #else
-            final class LoggerMock: Logger, Sendable {
+            class LoggerMock: Logger, @unchecked Sendable {
                 private struct Storage {
                     var logCallCount: Int = 0
                     var logCallArgs: [String] = []
@@ -645,7 +645,7 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            final class EventServiceMock: EventService, Sendable {
+            class EventServiceMock: EventService, @unchecked Sendable {
                 private struct Storage {
                     var registerCallCount: Int = 0
                     var registerCallArgs: [@Sendable (String) -> Void] = []
@@ -707,7 +707,7 @@ struct SendableMacroTests {
                 }
             }
             #else
-            final class EventServiceMock: EventService, Sendable {
+            class EventServiceMock: EventService, @unchecked Sendable {
                 private struct Storage {
                     var registerCallCount: Int = 0
                     var registerCallArgs: [@Sendable (String) -> Void] = []
@@ -794,7 +794,7 @@ struct SendableMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            final class ConfigProviderMock: ConfigProvider, Sendable {
+            class ConfigProviderMock: ConfigProvider, @unchecked Sendable {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
@@ -849,7 +849,7 @@ struct SendableMacroTests {
                 }
             }
             #else
-            final class ConfigProviderMock: ConfigProvider, Sendable {
+            class ConfigProviderMock: ConfigProvider, @unchecked Sendable {
                 private struct Storage {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
@@ -925,7 +925,7 @@ struct SendableMacroTests {
             }
 
             #if DEBUG
-            final class ConfigProviderMock: ConfigProvider, Sendable {
+            class ConfigProviderMock: ConfigProvider, @unchecked Sendable {
                 private struct Storage {
                     var _apiKey: String? = nil
                 }

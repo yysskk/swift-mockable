@@ -226,7 +226,7 @@ struct SubscriptMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            final class SendableCacheMock: SendableCache, Sendable {
+            class SendableCacheMock: SendableCache, @unchecked Sendable {
                 private struct Storage {
                     var subscriptStringCallCount: Int = 0
                     var subscriptStringCallArgs: [String] = []
@@ -291,7 +291,7 @@ struct SubscriptMacroTests {
                 }
             }
             #else
-            final class SendableCacheMock: SendableCache, Sendable {
+            class SendableCacheMock: SendableCache, @unchecked Sendable {
                 private struct Storage {
                     var subscriptStringCallCount: Int = 0
                     var subscriptStringCallArgs: [String] = []
@@ -379,7 +379,7 @@ struct SubscriptMacroTests {
             #if DEBUG
             #if canImport(Synchronization)
             @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-            final class SendableStorageMock: SendableStorage, Sendable {
+            class SendableStorageMock: SendableStorage, @unchecked Sendable {
                 private struct Storage {
                     var subscriptIntCallCount: Int = 0
                     var subscriptIntCallArgs: [Int] = []
@@ -466,7 +466,7 @@ struct SubscriptMacroTests {
                 }
             }
             #else
-            final class SendableStorageMock: SendableStorage, Sendable {
+            class SendableStorageMock: SendableStorage, @unchecked Sendable {
                 private struct Storage {
                     var subscriptIntCallCount: Int = 0
                     var subscriptIntCallArgs: [Int] = []
