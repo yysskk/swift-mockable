@@ -265,19 +265,4 @@ struct MockGenerator {
         }
     }
 
-    // MARK: - Helper Methods
-
-    /// Groups function declarations by their name to detect overloaded methods.
-    func groupMethodsByName() -> [String: [FunctionDeclSyntax]] {
-        var methodGroups: [String: [FunctionDeclSyntax]] = [:]
-
-        for member in members {
-            if let funcDecl = member.decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                methodGroups[funcName, default: []].append(funcDecl)
-            }
-        }
-
-        return methodGroups
-    }
 }

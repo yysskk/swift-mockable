@@ -88,7 +88,7 @@ public struct MockableMacro: PeerMacro {
         var hasError = false
     }
 
-    /// Parses the `legacyLock` argument from the macro attribute.
+    /// Parses and validates `@Mockable` arguments.
     private static func parseArguments(
         from node: AttributeSyntax,
         in context: some MacroExpansionContext
