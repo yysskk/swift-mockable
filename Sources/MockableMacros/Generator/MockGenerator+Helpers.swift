@@ -109,7 +109,8 @@ extension MockGenerator {
         var result: [DeclSyntax] = []
 
         for clause in ifConfigDecl.clauses {
-            guard let elements = clause.elements,
+            guard clause.condition != nil,
+                  let elements = clause.elements,
                   case .decls(let decls) = elements else {
                 continue
             }
