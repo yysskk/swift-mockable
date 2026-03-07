@@ -1,4 +1,5 @@
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
@@ -10,11 +11,15 @@ public struct MockableMacro: PeerMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard let protocolDecl = declaration.as(ProtocolDeclSyntax.self) else {
-            throw MockableError.notAProtocol
+            context.diagnose(Diagnostic(node: Syntax(node), message: MockableError.notAProtocol))
+            return []
         }
 
-        // Parse legacyLock parameter from macro arguments
-        let forceLegacyLock = parseLegacyLockArgument(from: node)
+        let parsedArguments = parseArguments(from: node, in: context)
+        let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
+        guard !parsedArguments.hasError, !hasUnsupportedMembers else {
+            return []
+        }
 
         let protocolName = protocolDecl.name.text
         let mockClassName = "\(protocolName)Mock"
@@ -46,14 +51,6 @@ public struct MockableMacro: PeerMacro {
 
         let members = protocolDecl.memberBlock.members
 
-        // Extract associated type declarations
-        var associatedTypes: [AssociatedTypeDeclSyntax] = []
-        for member in members {
-            if let associatedTypeDecl = member.decl.as(AssociatedTypeDeclSyntax.self) {
-                associatedTypes.append(associatedTypeDecl)
-            }
-        }
-
         // Extract access level from the protocol declaration
         let accessLevel = AccessLevel.from(protocolDecl: protocolDecl)
 
@@ -61,11 +58,10 @@ public struct MockableMacro: PeerMacro {
             protocolName: protocolName,
             mockClassName: mockClassName,
             members: members,
-            associatedTypes: associatedTypes,
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor,
             accessLevel: accessLevel,
-            forceLegacyLock: forceLegacyLock,
+            forceLegacyLock: parsedArguments.forceLegacyLock,
             parentMockClassName: parentMockClassName
         )
 
@@ -87,20 +83,150 @@ public struct MockableMacro: PeerMacro {
         return [DeclSyntax(ifConfigDecl)]
     }
 
-    /// Parses the `legacyLock` argument from the macro attribute.
-    private static func parseLegacyLockArgument(from node: AttributeSyntax) -> Bool {
+    private struct ParsedArguments {
+        var forceLegacyLock = false
+        var hasError = false
+    }
+
+    /// Parses and validates `@Mockable` arguments.
+    private static func parseArguments(
+        from node: AttributeSyntax,
+        in context: some MacroExpansionContext
+    ) -> ParsedArguments {
+        var parsedArguments = ParsedArguments()
+
         guard let arguments = node.arguments,
               case .argumentList(let argList) = arguments else {
-            return false
+            return parsedArguments
         }
 
+        var seenLabels: Set<String> = []
+
         for argument in argList {
-            if argument.label?.text == "legacyLock",
-               let boolExpr = argument.expression.as(BooleanLiteralExprSyntax.self) {
-                return boolExpr.literal.tokenKind == .keyword(.true)
+            guard let label = argument.label?.text else {
+                context.diagnose(
+                    Diagnostic(
+                        node: Syntax(argument),
+                        message: MockableError.invalidMacroArgument("unlabeled arguments are not supported")
+                    )
+                )
+                parsedArguments.hasError = true
+                continue
+            }
+
+            guard seenLabels.insert(label).inserted else {
+                context.diagnose(
+                    Diagnostic(
+                        node: Syntax(argument),
+                        message: MockableError.invalidMacroArgument("duplicate argument '\(label)'")
+                    )
+                )
+                parsedArguments.hasError = true
+                continue
+            }
+
+            switch label {
+            case "legacyLock":
+                guard let boolExpr = argument.expression.as(BooleanLiteralExprSyntax.self) else {
+                    context.diagnose(
+                        Diagnostic(
+                            node: Syntax(argument),
+                            message: MockableError.invalidMacroArgument("'legacyLock' must be a boolean literal")
+                        )
+                    )
+                    parsedArguments.hasError = true
+                    continue
+                }
+
+                parsedArguments.forceLegacyLock = boolExpr.literal.tokenKind == .keyword(.true)
+
+            default:
+                context.diagnose(
+                    Diagnostic(
+                        node: Syntax(argument),
+                        message: MockableError.invalidMacroArgument(
+                            "unexpected argument label '\(label)'; supported arguments: legacyLock"
+                        )
+                    )
+                )
+                parsedArguments.hasError = true
             }
         }
 
+        return parsedArguments
+    }
+
+    private static func diagnoseUnsupportedMembers(
+        in members: MemberBlockItemListSyntax,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        var hasError = false
+
+        for member in members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                if diagnoseUnsupportedMembers(in: ifConfigDecl, context: context) {
+                    hasError = true
+                }
+                continue
+            }
+
+            if memberIsSupported(member.decl) {
+                continue
+            }
+
+            context.diagnose(
+                Diagnostic(node: Syntax(member.decl), message: MockableError.unsupportedMember(member.decl.trimmedDescription))
+            )
+            hasError = true
+        }
+
+        return hasError
+    }
+
+    private static func diagnoseUnsupportedMembers(
+        in ifConfigDecl: IfConfigDeclSyntax,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        var hasError = false
+
+        for clause in ifConfigDecl.clauses {
+            guard let elements = clause.elements,
+                  case .decls(let members) = elements else {
+                continue
+            }
+
+            if diagnoseUnsupportedMembers(in: members, context: context) {
+                hasError = true
+            }
+        }
+
+        return hasError
+    }
+
+    private static func memberIsSupported(_ decl: DeclSyntax) -> Bool {
+        if decl.is(AssociatedTypeDeclSyntax.self) {
+            return true
+        }
+
+        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+            return !hasTypeMemberModifier(funcDecl.modifiers)
+        }
+
+        if let varDecl = decl.as(VariableDeclSyntax.self) {
+            return !hasTypeMemberModifier(varDecl.modifiers)
+        }
+
+        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+            return !hasTypeMemberModifier(subscriptDecl.modifiers)
+        }
+
         return false
+    }
+
+    private static func hasTypeMemberModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
+        modifiers.contains { modifier in
+            let modifierName = modifier.name.text
+            return modifierName == "static" || modifierName == "class"
+        }
     }
 }

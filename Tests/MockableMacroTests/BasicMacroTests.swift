@@ -312,6 +312,52 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Unsupported protocol members should produce diagnostics")
+    func unsupportedMembersProduceDiagnostics() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol UnsupportedRequirements {
+                static func makeShared()
+                init(token: String)
+            }
+            """,
+            expandedSource: """
+            protocol UnsupportedRequirements {
+                static func makeShared()
+                init(token: String)
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "Unsupported protocol member: static func makeShared()", line: 3, column: 5),
+                DiagnosticSpec(message: "Unsupported protocol member: init(token: String)", line: 4, column: 5)
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Invalid macro arguments should produce diagnostics")
+    func invalidMacroArgumentsProduceDiagnostics() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(legacyLock: 1, debug: true)
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "Invalid @Mockable argument: 'legacyLock' must be a boolean literal", line: 1, column: 11),
+                DiagnosticSpec(message: "Invalid @Mockable argument: unexpected argument label 'debug'; supported arguments: legacyLock", line: 1, column: 26)
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Protocol with @escaping closure parameter")
     func escapingClosureParameter() {
         assertMacroExpansionForTesting(

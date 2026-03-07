@@ -1,47 +1,12 @@
+import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
 // MARK: - Conditional Compilation Support
 
-/// Represents a protocol member that may be wrapped in conditional compilation (e.g., #if DEBUG)
-struct ConditionalMember {
-    let decl: DeclSyntax
-    let condition: ExprSyntax?  // nil means unconditional
-
-    var isConditional: Bool {
-        condition != nil
-    }
-}
-
-// MARK: - Helper Methods
-
 extension MockGenerator {
-    /// Extracts all members from the protocol, including those inside #if blocks.
-    /// Returns an array of ConditionalMember, where each member knows its condition (if any).
-    func extractConditionalMembers() -> [ConditionalMember] {
-        var result: [ConditionalMember] = []
-
-        for member in members {
-            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                // Handle #if blocks
-                for clause in ifConfigDecl.clauses {
-                    // Skip clauses without a condition (e.g., #else), since they are still conditional
-                    guard let condition = clause.condition,
-                          let elements = clause.elements else { continue }
-
-                    if case .decls(let declList) = elements {
-                        for declItem in declList {
-                            result.append(ConditionalMember(decl: declItem.decl, condition: condition))
-                        }
-                    }
-                }
-            } else {
-                // Regular unconditional member
-                result.append(ConditionalMember(decl: member.decl, condition: nil))
-            }
-        }
-
-        return result
+    func collectDeclsIncludingConditional(from members: MemberBlockItemListSyntax? = nil) -> [DeclSyntax] {
+        collectDecls(from: members ?? self.members)
     }
 
     /// Groups function declarations by their name, including conditional members.
@@ -49,8 +14,8 @@ extension MockGenerator {
     func groupMethodsByNameIncludingConditional() -> [String: [FunctionDeclSyntax]] {
         var methodGroups: [String: [FunctionDeclSyntax]] = [:]
 
-        for conditionalMember in extractConditionalMembers() {
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+        for decl in collectDeclsIncludingConditional() {
+            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 methodGroups[funcName, default: []].append(funcDecl)
             }
@@ -59,19 +24,222 @@ extension MockGenerator {
         return methodGroups
     }
 
-    /// Wraps a list of MemberBlockItemSyntax in an IfConfigDecl with the given condition.
-    static func wrapInIfConfig(members: [MemberBlockItemSyntax], condition: ExprSyntax) -> MemberBlockItemSyntax {
-        let ifConfigDecl = IfConfigDeclSyntax(
-            clauses: IfConfigClauseListSyntax([
-                IfConfigClauseSyntax(
-                    poundKeyword: .poundIfToken(),
-                    condition: condition,
-                    elements: .decls(MemberBlockItemListSyntax(members))
-                )
-            ])
-        )
-        return MemberBlockItemSyntax(decl: ifConfigDecl)
+    func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
+        mapMemberBlockItemsPreservingIfConfig { decl in
+            guard let associatedType = decl.as(AssociatedTypeDeclSyntax.self) else {
+                return []
+            }
+
+            return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
+        }
     }
+
+    func mapMemberBlockItemsPreservingIfConfig(
+        from members: MemberBlockItemListSyntax? = nil,
+        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+    ) -> [MemberBlockItemSyntax] {
+        var result: [MemberBlockItemSyntax] = []
+
+        for member in members ?? self.members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                guard let mappedIfConfig = mapIfConfigDeclToMembers(ifConfigDecl, transform: transform) else {
+                    continue
+                }
+                result.append(MemberBlockItemSyntax(decl: DeclSyntax(mappedIfConfig)))
+            } else {
+                result.append(contentsOf: transform(member.decl))
+            }
+        }
+
+        return result
+    }
+
+    func mapCodeBlockItemsPreservingIfConfig(
+        from members: MemberBlockItemListSyntax? = nil,
+        transform: (DeclSyntax) -> [CodeBlockItemSyntax]
+    ) -> [CodeBlockItemSyntax] {
+        var result: [CodeBlockItemSyntax] = []
+
+        for member in members ?? self.members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                guard let mappedIfConfig = mapIfConfigDeclToStatements(ifConfigDecl, transform: transform) else {
+                    continue
+                }
+                result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(mappedIfConfig))))
+            } else {
+                result.append(contentsOf: transform(member.decl))
+            }
+        }
+
+        return result
+    }
+
+    func mapLinesPreservingIfConfig(
+        from members: MemberBlockItemListSyntax? = nil,
+        transform: (DeclSyntax) -> [String]
+    ) -> [String] {
+        var result: [String] = []
+
+        for member in members ?? self.members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                result.append(contentsOf: mapIfConfigDeclToLines(ifConfigDecl, transform: transform))
+            } else {
+                result.append(contentsOf: transform(member.decl))
+            }
+        }
+
+        return result
+    }
+
+    private func collectDecls(from members: MemberBlockItemListSyntax) -> [DeclSyntax] {
+        var result: [DeclSyntax] = []
+
+        for member in members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                result.append(contentsOf: collectDecls(from: ifConfigDecl))
+            } else {
+                result.append(member.decl)
+            }
+        }
+
+        return result
+    }
+
+    private func collectDecls(from ifConfigDecl: IfConfigDeclSyntax) -> [DeclSyntax] {
+        var result: [DeclSyntax] = []
+
+        for clause in ifConfigDecl.clauses {
+            guard clause.condition != nil,
+                  let elements = clause.elements,
+                  case .decls(let decls) = elements else {
+                continue
+            }
+
+            result.append(contentsOf: collectDecls(from: decls))
+        }
+
+        return result
+    }
+
+    private func mapIfConfigDeclToMembers(
+        _ ifConfigDecl: IfConfigDeclSyntax,
+        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+    ) -> IfConfigDeclSyntax? {
+        var hasGeneratedContent = false
+
+        let clauses = IfConfigClauseListSyntax(
+            ifConfigDecl.clauses.map { clause in
+                let mappedElements: IfConfigClauseSyntax.Elements?
+                if let elements = clause.elements,
+                   case .decls(let decls) = elements {
+                    let mappedMembers = mapMemberBlockItemsPreservingIfConfig(from: decls, transform: transform)
+                    if !mappedMembers.isEmpty {
+                        hasGeneratedContent = true
+                    }
+                    mappedElements = .decls(MemberBlockItemListSyntax(mappedMembers))
+                } else {
+                    mappedElements = clause.elements
+                }
+
+                return IfConfigClauseSyntax(
+                    poundKeyword: normalizedPoundKeyword(for: clause),
+                    condition: clause.condition,
+                    elements: mappedElements
+                )
+            }
+        )
+
+        guard hasGeneratedContent else {
+            return nil
+        }
+
+        return IfConfigDeclSyntax(clauses: clauses)
+    }
+
+    private func mapIfConfigDeclToStatements(
+        _ ifConfigDecl: IfConfigDeclSyntax,
+        transform: (DeclSyntax) -> [CodeBlockItemSyntax]
+    ) -> IfConfigDeclSyntax? {
+        var hasGeneratedContent = false
+
+        let clauses = IfConfigClauseListSyntax(
+            ifConfigDecl.clauses.map { clause in
+                let mappedElements: IfConfigClauseSyntax.Elements?
+                if let elements = clause.elements,
+                   case .decls(let decls) = elements {
+                    let mappedStatements = mapCodeBlockItemsPreservingIfConfig(from: decls, transform: transform)
+                    if !mappedStatements.isEmpty {
+                        hasGeneratedContent = true
+                    }
+                    mappedElements = .statements(CodeBlockItemListSyntax(mappedStatements))
+                } else {
+                    mappedElements = clause.elements
+                }
+
+                return IfConfigClauseSyntax(
+                    poundKeyword: normalizedPoundKeyword(for: clause),
+                    condition: clause.condition,
+                    elements: mappedElements
+                )
+            }
+        )
+
+        guard hasGeneratedContent else {
+            return nil
+        }
+
+        return IfConfigDeclSyntax(clauses: clauses)
+    }
+
+    private func mapIfConfigDeclToLines(
+        _ ifConfigDecl: IfConfigDeclSyntax,
+        transform: (DeclSyntax) -> [String]
+    ) -> [String] {
+        var lines: [String] = []
+        var hasGeneratedContent = false
+
+        for clause in ifConfigDecl.clauses {
+            let mappedLines: [String]
+            if let elements = clause.elements,
+               case .decls(let decls) = elements {
+                mappedLines = mapLinesPreservingIfConfig(from: decls, transform: transform)
+            } else {
+                mappedLines = []
+            }
+
+            if !mappedLines.isEmpty {
+                hasGeneratedContent = true
+            }
+
+            if let condition = clause.condition {
+                lines.append("\(clause.poundKeyword.text) \(condition.trimmedDescription)")
+            } else {
+                lines.append(clause.poundKeyword.text)
+            }
+            lines.append(contentsOf: mappedLines)
+        }
+
+        guard hasGeneratedContent else {
+            return []
+        }
+
+        lines.append("#endif")
+        return lines
+    }
+
+    private func normalizedPoundKeyword(for clause: IfConfigClauseSyntax) -> TokenSyntax {
+        switch clause.poundKeyword.text {
+        case "#if":
+            return .poundIfToken()
+        case "#elseif":
+            return .poundElseifToken()
+        case "#else":
+            return .poundElseToken()
+        default:
+            return clause.poundKeyword.with(\.leadingTrivia, []).with(\.trailingTrivia, [])
+        }
+    }
+
     static func extractGenericParameterNames(from funcDecl: FunctionDeclSyntax) -> Set<String> {
         guard let genericClause = funcDecl.genericParameterClause else {
             return []

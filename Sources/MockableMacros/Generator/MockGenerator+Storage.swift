@@ -5,23 +5,13 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     func generateStorageStruct() -> StructDeclSyntax {
-        var storageMembers: [MemberBlockItemSyntax] = []
-
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
 
-        // Extract all members including those in #if blocks
-        let conditionalMembers = extractConditionalMembers()
-
-        // Group storage members by their condition
-        var unconditionalMembers: [MemberBlockItemSyntax] = []
-        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
-        var conditionExprs: [String: ExprSyntax] = [:]
-
-        for conditionalMember in conditionalMembers {
+        let storageMembers = mapMemberBlockItemsPreservingIfConfig { decl in
             var generatedMembers: [MemberBlockItemSyntax] = []
 
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let methodGroup = methodGroups[funcName] ?? []
                 let isOverloaded = methodGroup.count > 1
@@ -82,7 +72,7 @@ extension MockGenerator {
                     ])
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
+            } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                           let typeAnnotation = binding.typeAnnotation else { continue }
@@ -110,7 +100,7 @@ extension MockGenerator {
                     )
                     generatedMembers.append(MemberBlockItemSyntax(decl: storageProp))
                 }
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
                 let parameters = subscriptDecl.parameterClause.parameters
                 let returnType = subscriptDecl.returnClause.type
                 let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
@@ -193,27 +183,7 @@ extension MockGenerator {
                 }
             }
 
-            // Group by condition
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionExprs[conditionKey] = condition
-                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
-            } else {
-                unconditionalMembers.append(contentsOf: generatedMembers)
-            }
-        }
-
-        // Add unconditional members first
-        storageMembers.append(contentsOf: unconditionalMembers)
-
-        // Add conditional members wrapped in their respective #if blocks (sorted for deterministic output)
-        for conditionKey in membersByCondition.keys.sorted() {
-            guard let members = membersByCondition[conditionKey],
-                  let condition = conditionExprs[conditionKey] else {
-                continue
-            }
-            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
-            storageMembers.append(wrappedMember)
+            return generatedMembers
         }
 
         return StructDeclSyntax(
