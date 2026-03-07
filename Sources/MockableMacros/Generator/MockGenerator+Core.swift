@@ -5,7 +5,6 @@ struct MockGenerator {
     let protocolName: String
     let mockClassName: String
     let members: MemberBlockItemListSyntax
-    let associatedTypes: [AssociatedTypeDeclSyntax]
     let isSendable: Bool
     let isActor: Bool
     let accessLevel: AccessLevel
@@ -126,10 +125,7 @@ struct MockGenerator {
     private func generateClassMock(storageStrategy: StorageStrategy) throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
 
-        for associatedType in associatedTypes {
-            let typealiasDecl = generateTypeAlias(for: associatedType)
-            classMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
-        }
+        classMembers.append(contentsOf: generateAssociatedTypeMembers())
 
         if storageStrategy.isLockBased {
             let storageStruct = generateStorageStruct()
@@ -199,10 +195,7 @@ struct MockGenerator {
     private func generateActorMock(storageStrategy: StorageStrategy) throws -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
 
-        for associatedType in associatedTypes {
-            let typealiasDecl = generateTypeAlias(for: associatedType)
-            actorMembers.append(MemberBlockItemSyntax(decl: typealiasDecl))
-        }
+        actorMembers.append(contentsOf: generateAssociatedTypeMembers())
 
         let storageStruct = generateStorageStruct()
         actorMembers.append(MemberBlockItemSyntax(decl: storageStruct))
@@ -250,52 +243,26 @@ struct MockGenerator {
 
     private func generateMockMembers(storageStrategy: StorageStrategy) -> [MemberBlockItemSyntax] {
         let methodGroups = groupMethodsByNameIncludingConditional()
-        let conditionalMembers = extractConditionalMembers()
 
-        var unconditionalMembers: [MemberBlockItemSyntax] = []
-        var membersByCondition: [String: [MemberBlockItemSyntax]] = [:]
-        var conditionExprs: [String: ExprSyntax] = [:]
-
-        for conditionalMember in conditionalMembers {
-            var generatedMembers: [MemberBlockItemSyntax] = []
-
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+        return mapMemberBlockItemsPreservingIfConfig { decl in
+            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let methodGroup = methodGroups[funcName] ?? []
                 let isOverloaded = methodGroup.count > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                let funcMembers = generateFunctionMock(funcDecl, suffix: suffix, storageStrategy: storageStrategy)
-                generatedMembers.append(contentsOf: funcMembers)
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
-                let varMembers = generateVariableMock(varDecl, storageStrategy: storageStrategy)
-                generatedMembers.append(contentsOf: varMembers)
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
-                let subscriptMembers = generateSubscriptMock(subscriptDecl, storageStrategy: storageStrategy)
-                generatedMembers.append(contentsOf: subscriptMembers)
+                return generateFunctionMock(funcDecl, suffix: suffix, storageStrategy: storageStrategy)
             }
 
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionExprs[conditionKey] = condition
-                membersByCondition[conditionKey, default: []].append(contentsOf: generatedMembers)
-            } else {
-                unconditionalMembers.append(contentsOf: generatedMembers)
+            if let varDecl = decl.as(VariableDeclSyntax.self) {
+                return generateVariableMock(varDecl, storageStrategy: storageStrategy)
             }
+
+            if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+                return generateSubscriptMock(subscriptDecl, storageStrategy: storageStrategy)
+            }
+
+            return []
         }
-
-        var result: [MemberBlockItemSyntax] = []
-        result.append(contentsOf: unconditionalMembers)
-
-        for conditionKey in membersByCondition.keys.sorted() {
-            guard let members = membersByCondition[conditionKey],
-                  let condition = conditionExprs[conditionKey] else {
-                continue
-            }
-            let wrappedMember = Self.wrapInIfConfig(members: members, condition: condition)
-            result.append(wrappedMember)
-        }
-
-        return result
     }
 
     // MARK: - Helper Methods

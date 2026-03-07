@@ -18,18 +18,10 @@ extension MockGenerator {
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
 
-        // Extract all members including those in #if blocks
-        let conditionalMembers = extractConditionalMembers()
-
-        // Group reset statements by their condition
-        var unconditionalStatements: [CodeBlockItemSyntax] = []
-        var statementsByCondition: [String: [CodeBlockItemSyntax]] = [:]
-        var conditionExprs: [String: ExprSyntax] = [:]
-
-        for conditionalMember in conditionalMembers {
+        let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
             var generatedStatements: [CodeBlockItemSyntax] = []
 
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let methodGroup = methodGroups[funcName] ?? []
                 let isOverloaded = methodGroup.count > 1
@@ -44,7 +36,7 @@ extension MockGenerator {
 
                 // Reset handler
                 generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)Handler = nil"))))
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
+            } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                           let typeAnnotation = binding.typeAnnotation else { continue }
@@ -64,7 +56,7 @@ extension MockGenerator {
                         generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName) = nil"))))
                     }
                 }
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
@@ -83,14 +75,7 @@ extension MockGenerator {
                 }
             }
 
-            // Group by condition
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionExprs[conditionKey] = condition
-                statementsByCondition[conditionKey, default: []].append(contentsOf: generatedStatements)
-            } else {
-                unconditionalStatements.append(contentsOf: generatedStatements)
-            }
+            return generatedStatements
         }
 
         // Add super.resetMock() call if inheriting from parent mock
@@ -98,26 +83,7 @@ extension MockGenerator {
             statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.resetMock()"))))
         }
 
-        // Add unconditional statements first
-        statements.append(contentsOf: unconditionalStatements)
-
-        // Add conditional statements wrapped in their respective #if blocks (sorted for deterministic output)
-        for conditionKey in statementsByCondition.keys.sorted() {
-            guard let condStatements = statementsByCondition[conditionKey],
-                  let condition = conditionExprs[conditionKey] else {
-                continue
-            }
-            let ifConfigDecl = IfConfigDeclSyntax(
-                clauses: IfConfigClauseListSyntax([
-                    IfConfigClauseSyntax(
-                        poundKeyword: .poundIfToken(),
-                        condition: condition,
-                        elements: .statements(CodeBlockItemListSyntax(condStatements))
-                    )
-                ])
-            )
-            statements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(ifConfigDecl))))
-        }
+        statements.append(contentsOf: resetStatements)
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
@@ -144,19 +110,13 @@ extension MockGenerator {
     }
 
     private func generateSendableResetMethod() -> FunctionDeclSyntax {
-        var resetStatements: [String] = []
-        var conditionalResetStatements: [String: [String]] = [:]
-
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
 
-        // Extract all members including those in #if blocks
-        let conditionalMembers = extractConditionalMembers()
-
-        for conditionalMember in conditionalMembers {
+        let resetLines = mapLinesPreservingIfConfig { decl in
             var generatedStatements: [String] = []
 
-            if let funcDecl = conditionalMember.decl.as(FunctionDeclSyntax.self) {
+            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let methodGroup = methodGroups[funcName] ?? []
                 let isOverloaded = methodGroup.count > 1
@@ -171,7 +131,7 @@ extension MockGenerator {
 
                 // Reset handler
                 generatedStatements.append("storage.\(identifier)Handler = nil")
-            } else if let varDecl = conditionalMember.decl.as(VariableDeclSyntax.self) {
+            } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
                     let varName = identifier.identifier.text
@@ -179,7 +139,7 @@ extension MockGenerator {
                     // Reset variable backing storage
                     generatedStatements.append("storage._\(varName) = nil")
                 }
-            } else if let subscriptDecl = conditionalMember.decl.as(SubscriptDeclSyntax.self) {
+            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
                 let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
@@ -198,30 +158,18 @@ extension MockGenerator {
                 }
             }
 
-            // Group by condition
-            if let condition = conditionalMember.condition {
-                let conditionKey = condition.trimmedDescription
-                conditionalResetStatements[conditionKey, default: []].append(contentsOf: generatedStatements)
-            } else {
-                resetStatements.append(contentsOf: generatedStatements)
-            }
+            return generatedStatements
         }
 
-        // Build the reset body with unconditional statements first
-        var resetBodyLines = resetStatements
-
-        // Add conditional statements wrapped in #if blocks (sorted for deterministic output)
-        for conditionKey in conditionalResetStatements.keys.sorted() {
-            guard let statements = conditionalResetStatements[conditionKey] else { continue }
-            resetBodyLines.append("#if \(conditionKey)")
-            resetBodyLines.append(contentsOf: statements)
-            resetBodyLines.append("#endif")
-        }
-
-        let resetBody = resetBodyLines.joined(separator: "\n    ")
-        let withLockBody = """
+        let resetBody = resetLines
+            .map { "    \($0)" }
+            .joined(separator: "\n")
+        let withLockBody = resetBody.isEmpty ? """
 _storage.withLock { storage in
-    \(resetBody)
+}
+""" : """
+_storage.withLock { storage in
+\(resetBody)
 }
 """
 
