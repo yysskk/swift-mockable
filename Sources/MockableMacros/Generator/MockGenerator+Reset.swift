@@ -27,16 +27,19 @@ extension MockGenerator {
                 let isOverloaded = methodGroup.count > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
                 let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
+                let prefix = Self.isTypeMember(funcDecl.modifiers) ? "Self." : ""
 
                 // Reset call count
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallCount = 0"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)CallCount = 0"))))
 
                 // Reset call args
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)CallArgs = []"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)CallArgs = []"))))
 
                 // Reset handler
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(identifier)Handler = nil"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)Handler = nil"))))
             } else if let varDecl = decl.as(VariableDeclSyntax.self) {
+                let prefix = Self.isTypeMember(varDecl.modifiers) ? "Self." : ""
+
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                           let typeAnnotation = binding.typeAnnotation else { continue }
@@ -51,9 +54,9 @@ extension MockGenerator {
                     //   - Optional types use varName directly (no backing storage)
                     //   - Non-optional types use _varName backing storage
                     if isGetOnly || !isOptional {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName) = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)_\(varName) = nil"))))
                     } else {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName) = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName) = nil"))))
                     }
                 }
             } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
@@ -113,65 +116,82 @@ extension MockGenerator {
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
 
-        let resetLines = mapLinesPreservingIfConfig { decl in
-            var generatedStatements: [String] = []
+        func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {
+            mapLinesPreservingIfConfig { decl in
+                var generatedStatements: [String] = []
+                let isTypeMember = Self.isTypeMember(decl)
 
-            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                let methodGroup = methodGroups[funcName] ?? []
-                let isOverloaded = methodGroup.count > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
-
-                // Reset call count
-                generatedStatements.append("storage.\(identifier)CallCount = 0")
-
-                // Reset call args
-                generatedStatements.append("storage.\(identifier)CallArgs = []")
-
-                // Reset handler
-                generatedStatements.append("storage.\(identifier)Handler = nil")
-            } else if let varDecl = decl.as(VariableDeclSyntax.self) {
-                for binding in varDecl.bindings {
-                    guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
-                    let varName = identifier.identifier.text
-
-                    // Reset variable backing storage
-                    generatedStatements.append("storage._\(varName) = nil")
+                guard isTypeMember == includeTypeMembers else {
+                    return generatedStatements
                 }
-            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-                let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-                let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
-                // Reset subscript call count
-                generatedStatements.append("storage.subscript\(suffix)CallCount = 0")
+                if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+                    let funcName = funcDecl.name.text
+                    let methodGroup = methodGroups[funcName] ?? []
+                    let isOverloaded = methodGroup.count > 1
+                    let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
+                    let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
-                // Reset subscript call args
-                generatedStatements.append("storage.subscript\(suffix)CallArgs = []")
+                    // Reset call count
+                    generatedStatements.append("storage.\(identifier)CallCount = 0")
 
-                // Reset subscript handler
-                generatedStatements.append("storage.subscript\(suffix)Handler = nil")
+                    // Reset call args
+                    generatedStatements.append("storage.\(identifier)CallArgs = []")
 
-                // Reset subscript set handler if not get-only
-                if !isGetOnly {
-                    generatedStatements.append("storage.subscript\(suffix)SetHandler = nil")
+                    // Reset handler
+                    generatedStatements.append("storage.\(identifier)Handler = nil")
+                } else if let varDecl = decl.as(VariableDeclSyntax.self) {
+                    for binding in varDecl.bindings {
+                        guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
+                        let varName = identifier.identifier.text
+
+                        // Reset variable backing storage
+                        generatedStatements.append("storage._\(varName) = nil")
+                    }
+                } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+                    let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+                    let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
+
+                    // Reset subscript call count
+                    generatedStatements.append("storage.subscript\(suffix)CallCount = 0")
+
+                    // Reset subscript call args
+                    generatedStatements.append("storage.subscript\(suffix)CallArgs = []")
+
+                    // Reset subscript handler
+                    generatedStatements.append("storage.subscript\(suffix)Handler = nil")
+
+                    // Reset subscript set handler if not get-only
+                    if !isGetOnly {
+                        generatedStatements.append("storage.subscript\(suffix)SetHandler = nil")
+                    }
                 }
+
+                return generatedStatements
             }
-
-            return generatedStatements
         }
 
-        let resetBody = resetLines
-            .map { "    \($0)" }
-            .joined(separator: "\n")
-        let withLockBody = resetBody.isEmpty ? """
-_storage.withLock { storage in
+        func buildWithLockBody(storageName: String, resetLines: [String]) -> String {
+            let resetBody = resetLines
+                .map { "    \($0)" }
+                .joined(separator: "\n")
+
+            if resetBody.isEmpty {
+                return """
+\(storageName).withLock { storage in
 }
-""" : """
-_storage.withLock { storage in
+"""
+            }
+
+            return """
+\(storageName).withLock { storage in
 \(resetBody)
 }
 """
+        }
+
+        let instanceResetLines = resetLines(forTypeMembers: false)
+        let staticResetLines = resetLines(forTypeMembers: true)
 
         var bodyStatements: [CodeBlockItemSyntax] = []
         if hasParentMock {
@@ -180,8 +200,13 @@ _storage.withLock { storage in
             )
         }
         bodyStatements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: withLockBody)))
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "_storage", resetLines: instanceResetLines))))
         )
+        if !staticResetLines.isEmpty {
+            bodyStatements.append(
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "Self._staticStorage", resetLines: staticResetLines))))
+            )
+        }
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),

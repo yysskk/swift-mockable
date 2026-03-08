@@ -9,6 +9,11 @@ extension MockGenerator {
         storageStrategy: StorageStrategy
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
+        let isTypeMember = Self.isTypeMember(varDecl.modifiers)
+        let usesLockBasedStorage = Self.usesLockBasedStorage(
+            isTypeMember: isTypeMember,
+            storageStrategy: storageStrategy
+        )
 
         for binding in varDecl.bindings {
             guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
@@ -21,35 +26,43 @@ extension MockGenerator {
             let varType = typeAnnotation.type
             let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
-            if storageStrategy.isLockBased {
+            if usesLockBasedStorage {
                 let backingProperty = generateLockBasedBackingSetterProperty(
                     varName: varName,
-                    varType: varType
+                    varType: varType,
+                    isTypeMember: isTypeMember
                 )
                 members.append(MemberBlockItemSyntax(decl: backingProperty))
 
                 let computedProperty = generateLockBasedVariableProperty(
                     varName: varName,
                     varType: varType,
-                    isGetOnly: isGetOnly
+                    isGetOnly: isGetOnly,
+                    isTypeMember: isTypeMember
                 )
                 members.append(MemberBlockItemSyntax(decl: computedProperty))
                 continue
             }
 
             if isGetOnly {
-                let storageProperty = generateGetOnlyStorageProperty(varName: varName, varType: varType)
+                let storageProperty = generateGetOnlyStorageProperty(
+                    varName: varName,
+                    varType: varType,
+                    isTypeMember: isTypeMember
+                )
                 members.append(MemberBlockItemSyntax(decl: storageProperty))
 
                 let computedProperty = generateComputedGetProperty(
                     varName: varName,
-                    varType: varType
+                    varType: varType,
+                    isTypeMember: isTypeMember
                 )
                 members.append(MemberBlockItemSyntax(decl: computedProperty))
             } else {
                 let storedPropertyMembers = generateStoredProperty(
                     varName: varName,
-                    varType: varType
+                    varType: varType,
+                    isTypeMember: isTypeMember
                 )
                 members.append(contentsOf: storedPropertyMembers)
             }
@@ -75,9 +88,11 @@ extension MockGenerator {
 
     private func generateLockBasedBackingSetterProperty(
         varName: String,
-        varType: TypeSyntax
+        varType: TypeSyntax,
+        isTypeMember: Bool
     ) -> VariableDeclSyntax {
         let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
 
         let storageType: TypeSyntax
         if isOptional {
@@ -86,11 +101,15 @@ extension MockGenerator {
             storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
         }
 
-        let getterBody = "_storage.withLock { $0._\(varName) }"
-        let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
+        let getterBody = "\(storageName).withLock { $0._\(varName) }"
+        let setterBody = "\(storageName).withLock { $0._\(varName) = newValue }"
+        var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
+        if !isTypeMember {
+            additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
+        }
 
         return VariableDeclSyntax(
-            modifiers: buildModifiers(additional: storageBackedMemberModifiers()),
+            modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -124,20 +143,23 @@ extension MockGenerator {
     private func generateLockBasedVariableProperty(
         varName: String,
         varType: TypeSyntax,
-        isGetOnly: Bool
+        isGetOnly: Bool,
+        isTypeMember: Bool
     ) -> VariableDeclSyntax {
         let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
+        let additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
         let getterBody: String
         if isOptional {
-            getterBody = "_storage.withLock { $0._\(varName) }"
+            getterBody = "\(storageName).withLock { $0._\(varName) }"
         } else {
-            getterBody = "_storage.withLock { $0._\(varName)! }"
+            getterBody = "\(storageName).withLock { $0._\(varName)! }"
         }
 
         if isGetOnly {
             return VariableDeclSyntax(
-                modifiers: buildModifiers(),
+                modifiers: buildModifiers(additional: additionalModifiers),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -153,9 +175,9 @@ extension MockGenerator {
             )
         }
 
-        let setterBody = "_storage.withLock { $0._\(varName) = newValue }"
+        let setterBody = "\(storageName).withLock { $0._\(varName) = newValue }"
         return VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -186,7 +208,11 @@ extension MockGenerator {
         )
     }
 
-    private func generateGetOnlyStorageProperty(varName: String, varType: TypeSyntax) -> VariableDeclSyntax {
+    private func generateGetOnlyStorageProperty(
+        varName: String,
+        varType: TypeSyntax,
+        isTypeMember: Bool
+    ) -> VariableDeclSyntax {
         let isOptional = varType.is(OptionalTypeSyntax.self) ||
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
 
@@ -202,7 +228,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -216,7 +242,8 @@ extension MockGenerator {
 
     private func generateComputedGetProperty(
         varName: String,
-        varType: TypeSyntax
+        varType: TypeSyntax,
+        isTypeMember: Bool
     ) -> VariableDeclSyntax {
         let isOptional = varType.is(OptionalTypeSyntax.self) ||
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
@@ -229,7 +256,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -247,14 +274,16 @@ extension MockGenerator {
 
     private func generateStoredProperty(
         varName: String,
-        varType: TypeSyntax
+        varType: TypeSyntax,
+        isTypeMember: Bool
     ) -> [MemberBlockItemSyntax] {
         let isOptional = varType.is(OptionalTypeSyntax.self) ||
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+        let additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
         if isOptional {
             let storedProperty = VariableDeclSyntax(
-                modifiers: buildModifiers(),
+                modifiers: buildModifiers(additional: additionalModifiers),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -268,7 +297,7 @@ extension MockGenerator {
         }
 
         let backingProperty = VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -282,7 +311,7 @@ extension MockGenerator {
         )
 
         let computedProperty = VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(

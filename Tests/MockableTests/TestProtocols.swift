@@ -44,6 +44,14 @@ protocol EventHandlerService {
 }
 
 @Mockable
+protocol StaticService {
+    static func makeIdentifier(prefix: String) -> String
+    static var readOnlyToken: String { get }
+    static var cachedValue: String? { get set }
+    static var retryCount: Int { get set }
+}
+
+@Mockable
 protocol SendableEventService: Sendable {
     func register(eventCallback: @escaping @Sendable (String) -> Void) async
 }

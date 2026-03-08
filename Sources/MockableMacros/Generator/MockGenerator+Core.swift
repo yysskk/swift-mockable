@@ -124,6 +124,7 @@ struct MockGenerator {
 
     private func generateClassMock(storageStrategy: StorageStrategy) throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
+        let needsStaticStorage = hasTypeMembers()
 
         classMembers.append(contentsOf: generateAssociatedTypeMembers())
 
@@ -133,6 +134,25 @@ struct MockGenerator {
 
             let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
+
+            if needsStaticStorage {
+                let staticStorageStruct = generateStaticStorageStruct()
+                classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
+
+                let staticMutexProperty = generateMutexProperty(
+                    storageStrategy: storageStrategy,
+                    propertyName: "_staticStorage",
+                    storageTypeName: "StaticStorage",
+                    isStatic: true
+                )
+                classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
+            }
+        } else if needsStaticStorage {
+            let staticStorageStruct = generateStaticStorageStruct()
+            classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
+
+            let staticMutexProperty = generateStaticLockPropertyForRegularMock()
+            classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
         classMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
@@ -202,6 +222,19 @@ struct MockGenerator {
 
         let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
+
+        if hasTypeMembers() {
+            let staticStorageStruct = generateStaticStorageStruct()
+            actorMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
+
+            let staticMutexProperty = generateMutexProperty(
+                storageStrategy: storageStrategy,
+                propertyName: "_staticStorage",
+                storageTypeName: "StaticStorage",
+                isStatic: true
+            )
+            actorMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
+        }
 
         actorMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
 

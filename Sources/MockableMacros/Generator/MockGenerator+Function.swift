@@ -13,6 +13,7 @@ extension MockGenerator {
 
         let funcName = funcDecl.name.text
         let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
+        let isTypeMember = Self.isTypeMember(funcDecl.modifiers)
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -24,6 +25,7 @@ extension MockGenerator {
             propertyName: "CallCount",
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
+            isTypeMember: isTypeMember,
             storageStrategy: storageStrategy
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
@@ -34,6 +36,7 @@ extension MockGenerator {
             propertyName: "CallArgs",
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
+            isTypeMember: isTypeMember,
             storageStrategy: storageStrategy
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
@@ -50,6 +53,7 @@ extension MockGenerator {
             propertyName: "Handler",
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
+            isTypeMember: isTypeMember,
             storageStrategy: storageStrategy
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
@@ -58,6 +62,7 @@ extension MockGenerator {
             funcDecl,
             identifier: identifier,
             genericParamNames: genericParamNames,
+            isTypeMember: isTypeMember,
             storageStrategy: storageStrategy
         )
         members.append(MemberBlockItemSyntax(decl: mockFunction))
@@ -70,13 +75,24 @@ extension MockGenerator {
         propertyName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
+        isTypeMember: Bool,
         storageStrategy: StorageStrategy
     ) -> VariableDeclSyntax {
         let fullName = "\(identifier)\(propertyName)"
+        var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
+        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
+        let usesLockBasedStorage = Self.usesLockBasedStorage(
+            isTypeMember: isTypeMember,
+            storageStrategy: storageStrategy
+        )
 
-        if storageStrategy.isLockBased {
+        if usesLockBasedStorage {
+            if !isTypeMember {
+                additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
+            }
+
             return VariableDeclSyntax(
-                modifiers: buildModifiers(additional: storageBackedMemberModifiers()),
+                modifiers: buildModifiers(additional: additionalModifiers),
                 bindingSpecifier: .keyword(.var),
                 bindings: PatternBindingListSyntax([
                     PatternBindingSyntax(
@@ -88,7 +104,7 @@ extension MockGenerator {
                                     accessorSpecifier: .keyword(.get),
                                     body: CodeBlockSyntax(
                                         statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(fullName) }")))
+                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(storageName).withLock { $0.\(fullName) }")))
                                         ])
                                     )
                                 ),
@@ -96,7 +112,7 @@ extension MockGenerator {
                                     accessorSpecifier: .keyword(.set),
                                     body: CodeBlockSyntax(
                                         statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(fullName) = newValue }")))
+                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(storageName).withLock { $0.\(fullName) = newValue }")))
                                         ])
                                     )
                                 )
@@ -108,7 +124,7 @@ extension MockGenerator {
         }
 
         return VariableDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -124,6 +140,7 @@ extension MockGenerator {
         _ funcDecl: FunctionDeclSyntax,
         identifier: String,
         genericParamNames: Set<String>,
+        isTypeMember: Bool,
         storageStrategy: StorageStrategy
     ) -> FunctionDeclSyntax {
         let parameters = funcDecl.signature.parameterClause.parameters
@@ -131,15 +148,20 @@ extension MockGenerator {
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
         let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+        let usesLockBasedStorage = Self.usesLockBasedStorage(
+            isTypeMember: isTypeMember,
+            storageStrategy: storageStrategy
+        )
 
         let body: CodeBlockSyntax
-        if storageStrategy.isLockBased {
+        if usesLockBasedStorage {
             body = buildLockBasedFunctionBody(
                 identifier: identifier,
                 parameters: parameters,
                 returnType: returnType,
                 isAsync: isAsync,
                 isThrows: isThrows,
+                isTypeMember: isTypeMember,
                 hasGenericReturn: hasGenericReturn,
                 genericParamNames: genericParamNames
             )
@@ -156,7 +178,7 @@ extension MockGenerator {
         }
 
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             name: funcDecl.name,
             genericParameterClause: funcDecl.genericParameterClause,
             signature: funcDecl.signature,
@@ -221,6 +243,7 @@ extension MockGenerator {
         returnType: TypeSyntax?,
         isAsync: Bool,
         isThrows: Bool,
+        isTypeMember: Bool,
         hasGenericReturn: Bool,
         genericParamNames: Set<String>
     ) -> CodeBlockSyntax {
@@ -228,6 +251,7 @@ extension MockGenerator {
         let hasReturnValue = Self.hasReturnValue(returnType)
         let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
+        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
 
         let closureType = buildFunctionClosureType(
             parameters: parameters,
@@ -239,7 +263,7 @@ extension MockGenerator {
 
         var statements: [CodeBlockItemSyntax] = []
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let _handler = _storage.withLock { storage -> (@Sendable \(closureType))? in
+let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
     storage.\(identifier)CallCount += 1
     storage.\(identifier)CallArgs.append(\(argsExpr))
     return storage.\(identifier)Handler
