@@ -208,12 +208,12 @@ public struct MockableMacro: PeerMacro {
             return true
         }
 
-        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-            return !hasTypeMemberModifier(funcDecl.modifiers)
+        if decl.is(FunctionDeclSyntax.self) {
+            return true
         }
 
-        if let varDecl = decl.as(VariableDeclSyntax.self) {
-            return !hasTypeMemberModifier(varDecl.modifiers)
+        if decl.is(VariableDeclSyntax.self) {
+            return true
         }
 
         if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {

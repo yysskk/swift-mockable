@@ -27,6 +27,12 @@ protocol ActorConfigProvider: Actor {
     var optionalEndpoint: String? { get set }
 }
 
+@Mockable
+protocol ActorStaticService: Actor {
+    static func lookup(key: String) -> String
+    static var cachedToken: String? { get set }
+}
+
 // MARK: - Actor Integration Tests
 
 @Suite("Actor Integration Tests")
@@ -113,6 +119,31 @@ struct ActorIntegrationTests {
 
         let count = mock.resetCallCount
         #expect(count == 2)
+    }
+
+    @Test("Actor static members are tracked and reset")
+    func actorStaticMembers() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
+        let resetter = ActorStaticServiceMock()
+        resetter.resetMock()
+
+        ActorStaticServiceMock.lookupHandler = { key in
+            "value-\(key)"
+        }
+        ActorStaticServiceMock.cachedToken = "token"
+
+        let result = ActorStaticServiceMock.lookup(key: "abc")
+
+        #expect(result == "value-abc")
+        #expect(ActorStaticServiceMock.lookupCallCount == 1)
+        #expect(ActorStaticServiceMock.lookupCallArgs == ["abc"])
+        #expect(ActorStaticServiceMock.cachedToken == "token")
+
+        resetter.resetMock()
+        #expect(ActorStaticServiceMock.lookupCallCount == 0)
+        #expect(ActorStaticServiceMock.lookupCallArgs == [])
+        #expect(ActorStaticServiceMock.lookupHandler == nil)
+        #expect(ActorStaticServiceMock.cachedToken == nil)
     }
 
     @Test("Actor mock get-only property")

@@ -4,12 +4,75 @@ import SwiftSyntaxBuilder
 // MARK: - Sendable Support
 
 extension MockGenerator {
+    private func generateLockProperty(
+        lockTypeName: String,
+        propertyName: String = "_storage",
+        storageTypeName: String = "Storage",
+        isStatic: Bool = false
+    ) -> VariableDeclSyntax {
+        var modifiers = [
+            DeclModifierSyntax(name: .keyword(.private))
+        ]
+        modifiers.append(contentsOf: Self.typeMemberModifiers(isTypeMember: isStatic))
+
+        return VariableDeclSyntax(
+            modifiers: DeclModifierListSyntax(modifiers),
+            bindingSpecifier: .keyword(.let),
+            bindings: PatternBindingListSyntax([
+                PatternBindingSyntax(
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
+                    typeAnnotation: nil,
+                    initializer: InitializerClauseSyntax(
+                        value: FunctionCallExprSyntax(
+                            calledExpression: GenericSpecializationExprSyntax(
+                                expression: DeclReferenceExprSyntax(baseName: .identifier(lockTypeName)),
+                                genericArgumentClause: GenericArgumentClauseSyntax(
+                                    arguments: GenericArgumentListSyntax([
+                                        makeGenericArgument(type: TypeSyntax(stringLiteral: storageTypeName))
+                                    ])
+                                )
+                            ),
+                            leftParen: .leftParenToken(),
+                            arguments: LabeledExprListSyntax([
+                                LabeledExprSyntax(
+                                    expression: FunctionCallExprSyntax(
+                                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier(storageTypeName)),
+                                        leftParen: .leftParenToken(),
+                                        arguments: LabeledExprListSyntax([]),
+                                        rightParen: .rightParenToken()
+                                    )
+                                )
+                            ]),
+                            rightParen: .rightParenToken()
+                        )
+                    )
+                )
+            ])
+        )
+    }
+
     func generateStorageStruct() -> StructDeclSyntax {
+        generateStorageStruct(named: "Storage", includeTypeMembers: false)
+    }
+
+    func generateStaticStorageStruct() -> StructDeclSyntax {
+        generateStorageStruct(named: "StaticStorage", includeTypeMembers: true)
+    }
+
+    private func generateStorageStruct(
+        named storageName: String,
+        includeTypeMembers: Bool
+    ) -> StructDeclSyntax {
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
 
         let storageMembers = mapMemberBlockItemsPreservingIfConfig { decl in
             var generatedMembers: [MemberBlockItemSyntax] = []
+            let isTypeMember = Self.isTypeMember(decl)
+
+            guard isTypeMember == includeTypeMembers else {
+                return generatedMembers
+            }
 
             if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
@@ -190,7 +253,7 @@ extension MockGenerator {
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.private))
             ]),
-            name: .identifier("Storage"),
+            name: .identifier(storageName),
             memberBlock: MemberBlockSyntax(
                 leftBrace: .leftBraceToken(trailingTrivia: .newline),
                 members: MemberBlockItemListSyntax(storageMembers),
@@ -199,45 +262,32 @@ extension MockGenerator {
         )
     }
 
-    func generateMutexProperty(storageStrategy: StorageStrategy) -> VariableDeclSyntax {
+    func generateMutexProperty(
+        storageStrategy: StorageStrategy,
+        propertyName: String = "_storage",
+        storageTypeName: String = "Storage",
+        isStatic: Bool = false
+    ) -> VariableDeclSyntax {
         guard let lockType = storageStrategy.lockTypeName else {
             fatalError("generateMutexProperty(storageStrategy:) requires a lock-based strategy")
         }
-        return VariableDeclSyntax(
-            modifiers: DeclModifierListSyntax([
-                DeclModifierSyntax(name: .keyword(.private))
-            ]),
-            bindingSpecifier: .keyword(.let),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("_storage")),
-                    typeAnnotation: nil,
-                    initializer: InitializerClauseSyntax(
-                        value: FunctionCallExprSyntax(
-                            calledExpression: GenericSpecializationExprSyntax(
-                                expression: DeclReferenceExprSyntax(baseName: .identifier(lockType)),
-                                genericArgumentClause: GenericArgumentClauseSyntax(
-                                    arguments: GenericArgumentListSyntax([
-                                        makeGenericArgument(type: TypeSyntax(stringLiteral: "Storage"))
-                                    ])
-                                )
-                            ),
-                            leftParen: .leftParenToken(),
-                            arguments: LabeledExprListSyntax([
-                                LabeledExprSyntax(
-                                    expression: FunctionCallExprSyntax(
-                                        calledExpression: DeclReferenceExprSyntax(baseName: .identifier("Storage")),
-                                        leftParen: .leftParenToken(),
-                                        arguments: LabeledExprListSyntax([]),
-                                        rightParen: .rightParenToken()
-                                    )
-                                )
-                            ]),
-                            rightParen: .rightParenToken()
-                        )
-                    )
-                )
-            ])
+        return generateLockProperty(
+            lockTypeName: lockType,
+            propertyName: propertyName,
+            storageTypeName: storageTypeName,
+            isStatic: isStatic
+        )
+    }
+
+    func generateStaticLockPropertyForRegularMock() -> DeclSyntax {
+        let lockTypeName = forceLegacyLock ? "LegacyLock" : "MockableLock"
+        return DeclSyntax(
+            generateLockProperty(
+                lockTypeName: lockTypeName,
+                propertyName: "_staticStorage",
+                storageTypeName: "StaticStorage",
+                isStatic: true
+            )
         )
     }
 }

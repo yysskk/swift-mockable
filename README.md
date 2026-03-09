@@ -30,6 +30,7 @@ Then add `Mockable` to your target dependencies:
 - Configurable handlers with `@Sendable` support (`<method>Handler`)
 - Supports `async` and `throws` methods
 - Supports get-only and get/set properties
+- Supports static functions and static properties
 - Supports optional properties
 - Supports generic methods (with type erasure to `Any`)
 - Supports `Sendable` protocols with thread-safe mock generation

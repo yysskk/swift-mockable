@@ -295,6 +295,136 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Protocol with static members")
+    func staticMembers() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol SharedState {
+                static func makeValue(prefix: String) -> String
+                static var cachedToken: String { get }
+                static var cachedCount: Int? { get set }
+            }
+            """,
+            expandedSource: """
+            protocol SharedState {
+                static func makeValue(prefix: String) -> String
+                static var cachedToken: String { get }
+                static var cachedCount: Int? { get set }
+            }
+
+            #if DEBUG
+            class SharedStateMock: SharedState {
+                private struct StaticStorage {
+                    var makeValueCallCount: Int = 0
+                    var makeValueCallArgs: [String] = []
+                    var makeValueHandler: (@Sendable (String) -> String)? = nil
+                    var _cachedToken: String? = nil
+                    var _cachedCount: Int? = nil
+                }
+                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                static var makeValueCallCount: Int {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeValueCallCount
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeValueCallCount = newValue
+                        }
+                    }
+                }
+                static var makeValueCallArgs: [String] {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeValueCallArgs
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeValueCallArgs = newValue
+                        }
+                    }
+                }
+                static var makeValueHandler: (@Sendable (String) -> String)? {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeValueHandler
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeValueHandler = newValue
+                        }
+                    }
+                }
+                static func makeValue(prefix: String) -> String {
+                    let _handler = _staticStorage.withLock { storage -> (@Sendable (String) -> String)? in
+                        storage.makeValueCallCount += 1
+                        storage.makeValueCallArgs.append(prefix)
+                        return storage.makeValueHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).makeValueHandler is not set")
+                    }
+                    return _handler(prefix)
+                }
+                static var _cachedToken: String? {
+                    get {
+                        _staticStorage.withLock {
+                            $0._cachedToken
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0._cachedToken = newValue
+                        }
+                    }
+                }
+                static var cachedToken: String {
+                    _staticStorage.withLock {
+                        $0._cachedToken!
+                    }
+                }
+                static var _cachedCount: Int? {
+                    get {
+                        _staticStorage.withLock {
+                            $0._cachedCount
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0._cachedCount = newValue
+                        }
+                    }
+                }
+                static var cachedCount: Int? {
+                    get {
+                        _staticStorage.withLock {
+                            $0._cachedCount
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0._cachedCount = newValue
+                        }
+                    }
+                }
+                func resetMock() {
+                    Self.makeValueCallCount = 0
+                    Self.makeValueCallArgs = []
+                    Self.makeValueHandler = nil
+                    Self._cachedToken = nil
+                    Self.cachedCount = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Non-protocol declaration should fail")
     func nonProtocolFails() {
         assertMacroExpansionForTesting(
@@ -318,19 +448,16 @@ struct BasicMacroTests {
             """
             @Mockable
             protocol UnsupportedRequirements {
-                static func makeShared()
                 init(token: String)
             }
             """,
             expandedSource: """
             protocol UnsupportedRequirements {
-                static func makeShared()
                 init(token: String)
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Unsupported protocol member: static func makeShared()", line: 3, column: 5),
-                DiagnosticSpec(message: "Unsupported protocol member: init(token: String)", line: 4, column: 5)
+                DiagnosticSpec(message: "Unsupported protocol member: init(token: String)", line: 3, column: 5)
             ],
             macros: testMacros
         )

@@ -239,6 +239,49 @@ struct MockableIntegrationTests {
         #expect(receivedValue == 42)
     }
 
+    @Test("Static members are lock-backed and resettable")
+    func staticMembers() async {
+        let resetter = StaticServiceMock()
+        resetter.resetMock()
+
+        StaticServiceMock.makeIdentifierHandler = { @Sendable prefix in
+            "\(prefix)-mock"
+        }
+
+        let result = StaticServiceMock.makeIdentifier(prefix: "user")
+
+        #expect(result == "user-mock")
+        #expect(StaticServiceMock.makeIdentifierCallCount == 1)
+        #expect(StaticServiceMock.makeIdentifierCallArgs == ["user"])
+
+        StaticServiceMock._readOnlyToken = "token"
+        StaticServiceMock.cachedValue = "cached"
+        StaticServiceMock.retryCount = 3
+
+        #expect(StaticServiceMock.readOnlyToken == "token")
+        #expect(StaticServiceMock.cachedValue == "cached")
+        #expect(StaticServiceMock.retryCount == 3)
+
+        await withTaskGroup(of: Void.self) { group in
+            for index in 0..<100 {
+                group.addTask {
+                    _ = StaticServiceMock.makeIdentifier(prefix: "\(index)")
+                }
+            }
+        }
+
+        #expect(StaticServiceMock.makeIdentifierCallCount == 101)
+        #expect(StaticServiceMock.makeIdentifierCallArgs.count == 101)
+
+        resetter.resetMock()
+        #expect(StaticServiceMock.makeIdentifierCallCount == 0)
+        #expect(StaticServiceMock.makeIdentifierCallArgs == [])
+        #expect(StaticServiceMock.makeIdentifierHandler == nil)
+        #expect(StaticServiceMock._readOnlyToken == nil)
+        #expect(StaticServiceMock.cachedValue == nil)
+        #expect(StaticServiceMock._retryCount == nil)
+    }
+
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
     @Test("Sendable protocol with @escaping @Sendable closure parameter")
     func sendableProtocolEscapingClosure() async {
