@@ -467,7 +467,7 @@ struct BasicMacroTests {
     func invalidMacroArgumentsProduceDiagnostics() {
         assertMacroExpansionForTesting(
             """
-            @Mockable(legacyLock: 1, debug: true)
+            @Mockable(debug: true)
             protocol CacheService {
                 func clear()
             }
@@ -478,8 +478,7 @@ struct BasicMacroTests {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Invalid @Mockable argument: 'legacyLock' must be a boolean literal", line: 1, column: 11),
-                DiagnosticSpec(message: "Invalid @Mockable argument: unexpected argument label 'debug'; supported arguments: legacyLock", line: 1, column: 26)
+                DiagnosticSpec(message: "Invalid @Mockable argument: unexpected argument label 'debug'; @Mockable does not accept arguments", line: 1, column: 11)
             ],
             macros: testMacros
         )

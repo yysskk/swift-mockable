@@ -4,14 +4,13 @@ import SwiftSyntax
 
 enum StorageStrategy {
     case direct
-    case mutex
-    case legacyLock
+    case mockableLock
 
     var isLockBased: Bool {
         switch self {
         case .direct:
             return false
-        case .mutex, .legacyLock:
+        case .mockableLock:
             return true
         }
     }
@@ -20,10 +19,8 @@ enum StorageStrategy {
         switch self {
         case .direct:
             return nil
-        case .mutex:
-            return "Mutex"
-        case .legacyLock:
-            return "LegacyLock"
+        case .mockableLock:
+            return "MockableLock"
         }
     }
 }

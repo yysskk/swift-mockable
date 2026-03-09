@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-import Mockable
+@testable import Mockable
 
 // MARK: - LegacyLock Unit Tests
 

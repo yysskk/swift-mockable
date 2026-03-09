@@ -166,11 +166,11 @@ struct InheritanceMacroTests {
         )
     }
 
-    @Test("Sendable protocol inheriting from parent uses legacyLock with override and super")
-    func parentAndSendableLegacyLock() {
+    @Test("Sendable protocol inheriting from parent uses MockableLock with override and super")
+    func parentAndSendableMockableLock() {
         assertMacroExpansionForTesting(
             """
-            @Mockable(legacyLock: true)
+            @Mockable
             protocol Child: Base, Sendable {
                 func childMethod() -> String
             }
@@ -187,7 +187,7 @@ struct InheritanceMacroTests {
                     var childMethodCallArgs: [()] = []
                     var childMethodHandler: (@Sendable () -> String)? = nil
                 }
-                private let _storage = LegacyLock<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 var childMethodCallCount: Int {
                     get {
                         _storage.withLock {

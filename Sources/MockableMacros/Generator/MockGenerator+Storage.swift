@@ -280,10 +280,9 @@ extension MockGenerator {
     }
 
     func generateStaticLockPropertyForRegularMock() -> DeclSyntax {
-        let lockTypeName = forceLegacyLock ? "LegacyLock" : "MockableLock"
         return DeclSyntax(
             generateLockProperty(
-                lockTypeName: lockTypeName,
+                lockTypeName: "MockableLock",
                 propertyName: "_staticStorage",
                 storageTypeName: "StaticStorage",
                 isStatic: true

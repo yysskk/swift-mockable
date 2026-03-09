@@ -8,7 +8,6 @@ struct MockGenerator {
     let isSendable: Bool
     let isActor: Bool
     let accessLevel: AccessLevel
-    let forceLegacyLock: Bool
     let parentMockClassName: String?
 
     var hasParentMock: Bool {
@@ -38,88 +37,14 @@ struct MockGenerator {
 
     func generate() throws -> DeclSyntax {
         if isActor {
-            if forceLegacyLock {
-                return DeclSyntax(try generateActorMock(storageStrategy: .legacyLock))
-            }
-            return DeclSyntax(try generateActorMockWithBackwardCompatibility())
+            return DeclSyntax(try generateActorMock(storageStrategy: .mockableLock))
         }
 
         if isSendable {
-            if forceLegacyLock {
-                return DeclSyntax(try generateClassMock(storageStrategy: .legacyLock))
-            }
-            return DeclSyntax(try generateSendableClassMockWithBackwardCompatibility())
+            return DeclSyntax(try generateClassMock(storageStrategy: .mockableLock))
         }
 
         return DeclSyntax(try generateClassMock(storageStrategy: .direct))
-    }
-
-    private func generateSendableClassMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
-        let iOS18PlusMock = try generateClassMock(storageStrategy: .mutex)
-        let legacyMock = try generateClassMock(storageStrategy: .legacyLock)
-
-        let canImportCondition = FunctionCallExprSyntax(
-            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("Synchronization")))
-            ]),
-            rightParen: .rightParenToken()
-        )
-
-        let ifClause = IfConfigClauseSyntax(
-            poundKeyword: .poundIfToken(),
-            condition: canImportCondition,
-            elements: .decls(MemberBlockItemListSyntax([
-                MemberBlockItemSyntax(decl: DeclSyntax(iOS18PlusMock))
-            ]))
-        )
-
-        let elseClause = IfConfigClauseSyntax(
-            poundKeyword: .poundElseToken(),
-            condition: nil as ExprSyntax?,
-            elements: .decls(MemberBlockItemListSyntax([
-                MemberBlockItemSyntax(decl: DeclSyntax(legacyMock))
-            ]))
-        )
-
-        return IfConfigDeclSyntax(
-            clauses: IfConfigClauseListSyntax([ifClause, elseClause])
-        )
-    }
-
-    private func generateActorMockWithBackwardCompatibility() throws -> IfConfigDeclSyntax {
-        let iOS18PlusMock = try generateActorMock(storageStrategy: .mutex)
-        let legacyMock = try generateActorMock(storageStrategy: .legacyLock)
-
-        let canImportCondition = FunctionCallExprSyntax(
-            calledExpression: DeclReferenceExprSyntax(baseName: .identifier("canImport")),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: DeclReferenceExprSyntax(baseName: .identifier("Synchronization")))
-            ]),
-            rightParen: .rightParenToken()
-        )
-
-        let ifClause = IfConfigClauseSyntax(
-            poundKeyword: .poundIfToken(),
-            condition: canImportCondition,
-            elements: .decls(MemberBlockItemListSyntax([
-                MemberBlockItemSyntax(decl: DeclSyntax(iOS18PlusMock))
-            ]))
-        )
-
-        let elseClause = IfConfigClauseSyntax(
-            poundKeyword: .poundElseToken(),
-            condition: nil as ExprSyntax?,
-            elements: .decls(MemberBlockItemListSyntax([
-                MemberBlockItemSyntax(decl: DeclSyntax(legacyMock))
-            ]))
-        )
-
-        return IfConfigDeclSyntax(
-            clauses: IfConfigClauseListSyntax([ifClause, elseClause])
-        )
     }
 
     private func generateClassMock(storageStrategy: StorageStrategy) throws -> ClassDeclSyntax {
@@ -194,15 +119,8 @@ struct MockGenerator {
             modifiers.append(accessModifier)
         }
 
-        var attributes: [AttributeListSyntax.Element] = []
-        if storageStrategy == .mutex {
-            var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
-            availableAttribute.trailingTrivia = .newline
-            attributes.append(.attribute(availableAttribute))
-        }
-
         return ClassDeclSyntax(
-            attributes: AttributeListSyntax(attributes),
+            attributes: AttributeListSyntax([]),
             modifiers: DeclModifierListSyntax(modifiers),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
@@ -256,15 +174,8 @@ struct MockGenerator {
             modifiers.append(accessModifier)
         }
 
-        var attributes: [AttributeListSyntax.Element] = []
-        if storageStrategy == .mutex {
-            var availableAttribute: AttributeSyntax = "@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)"
-            availableAttribute.trailingTrivia = .newline
-            attributes.append(.attribute(availableAttribute))
-        }
-
         return ActorDeclSyntax(
-            attributes: AttributeListSyntax(attributes),
+            attributes: AttributeListSyntax([]),
             modifiers: DeclModifierListSyntax(modifiers),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
