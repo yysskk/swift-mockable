@@ -16,9 +16,12 @@ struct MockGenerator {
 
     /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
     /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
-    func buildModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+    func buildModifiers(
+        additional: [DeclModifierSyntax] = [],
+        isOverridable: Bool = false
+    ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeMemberModifier() {
+        if let accessModifier = accessLevel.makeMemberModifier(isOverridable: isOverridable) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
@@ -26,13 +29,20 @@ struct MockGenerator {
     }
 
     /// Builds a DeclModifierListSyntax for the class/actor declaration itself.
-    func buildClassModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+    func buildClassModifiers(
+        additional: [DeclModifierSyntax] = [],
+        supportsOpen: Bool = false
+    ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
+        if let accessModifier = accessLevel.makeModifier(supportsOpen: supportsOpen) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
         return DeclModifierListSyntax(modifiers)
+    }
+
+    var canBeSubclassedOutsideModule: Bool {
+        accessLevel == .public && !isActor
     }
 
     func generate() throws -> DeclSyntax {
@@ -107,14 +117,9 @@ struct MockGenerator {
             inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "@unchecked Sendable")))
         }
 
-        var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
-            modifiers.append(accessModifier)
-        }
-
         return ClassDeclSyntax(
             attributes: AttributeListSyntax([]),
-            modifiers: DeclModifierListSyntax(modifiers),
+            modifiers: buildClassModifiers(supportsOpen: true),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
@@ -161,14 +166,9 @@ struct MockGenerator {
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
         ]
 
-        var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
-            modifiers.append(accessModifier)
-        }
-
         return ActorDeclSyntax(
             attributes: AttributeListSyntax([]),
-            modifiers: DeclModifierListSyntax(modifiers),
+            modifiers: buildClassModifiers(),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)

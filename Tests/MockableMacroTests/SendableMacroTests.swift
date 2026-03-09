@@ -31,7 +31,7 @@ struct SendableMacroTests {
             }
 
             #if DEBUG
-            public class KeychainClientProtocolMock: KeychainClientProtocol, @unchecked Sendable {
+            open class KeychainClientProtocolMock: KeychainClientProtocol, @unchecked Sendable {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [(data: Data, key: String)] = []
@@ -233,7 +233,7 @@ struct SendableMacroTests {
                     }
                     return _handler(key)
                 }
-                public func resetMock() {
+                open func resetMock() {
                     _storage.withLock { storage in
                         storage.saveCallCount = 0
                         storage.saveCallArgs = []

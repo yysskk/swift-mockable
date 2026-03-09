@@ -166,6 +166,46 @@ struct InheritanceMacroTests {
         )
     }
 
+    @Test("Public protocol inheritance keeps mock subclassable across modules")
+    func publicParentProtocol() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            public protocol ChildService: BaseService {
+                func fetchChild(id: Int) -> String
+            }
+            """,
+            expandedSource: """
+            public protocol ChildService: BaseService {
+                func fetchChild(id: Int) -> String
+            }
+
+            #if DEBUG
+            open class ChildServiceMock: BaseServiceMock, ChildService {
+                public var fetchChildCallCount: Int = 0
+                public var fetchChildCallArgs: [Int] = []
+                public var fetchChildHandler: (@Sendable (Int) -> String)? = nil
+                public func fetchChild(id: Int) -> String {
+                    fetchChildCallCount += 1
+                    fetchChildCallArgs.append(id)
+                    guard let _handler = fetchChildHandler else {
+                        fatalError("\\(Self.self).fetchChildHandler is not set")
+                    }
+                    return _handler(id)
+                }
+                open override func resetMock() {
+                    super.resetMock()
+                    fetchChildCallCount = 0
+                    fetchChildCallArgs = []
+                    fetchChildHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Sendable protocol inheriting from parent uses MockableLock with override and super")
     func parentAndSendableMockableLock() {
         assertMacroExpansionForTesting(
