@@ -1,10 +1,14 @@
 # swift-mockable
 
-A Swift Macro that generates mock classes from protocols for testing.
+`swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
+
+- Generated mocks are emitted inside `#if DEBUG`.
+- Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`).
+- `resetMock()` is generated to clear all tracking state.
 
 ## Installation
 
-Add the following to your `Package.swift`:
+Add the package:
 
 ```swift
 dependencies: [
@@ -12,7 +16,7 @@ dependencies: [
 ]
 ```
 
-Then add `Mockable` to your target dependencies:
+Add `Mockable` to your target:
 
 ```swift
 .target(
@@ -21,25 +25,7 @@ Then add `Mockable` to your target dependencies:
 )
 ```
 
-## Features
-
-- Generates mock classes wrapped in `#if DEBUG`
-- Respects protocol access levels (`public`, `package`, `internal`)
-- Call count tracking (`<method>CallCount`)
-- Call arguments recording (`<method>CallArgs`)
-- Configurable handlers with `@Sendable` support (`<method>Handler`)
-- Supports `async` and `throws` methods
-- Supports get-only and get/set properties
-- Supports static functions and static properties
-- Supports optional properties
-- Supports generic methods (with type erasure to `Any`)
-- Supports `Sendable` protocols with thread-safe mock generation
-- Supports `Actor` protocols with actor mock generation
-- Backward compatible: `MockableLock` uses `Mutex` on newer OSes and `LegacyLock` on older ones
-- Supports subscript declarations (get-only and get-set)
-- `resetMock()` method to reset all tracking state for test reuse
-
-## Usage
+## Quick Start
 
 ```swift
 import Mockable
@@ -52,230 +38,88 @@ protocol UserService {
     var isLoggedIn: Bool { get set }
 }
 
-// In tests
 let mock = UserServiceMock()
 
-// Configure handlers
 mock.fetchUserHandler = { id in
     User(id: id, name: "Test User")
 }
 
-// Set properties
 mock._currentUser = User(id: 1, name: "Current")
 mock.isLoggedIn = true
 
-// Use in tests
 let user = try await mock.fetchUser(id: 42)
 
-// Verify calls
+#expect(user.id == 42)
 #expect(mock.fetchUserCallCount == 1)
-#expect(mock.fetchUserCallArgs.first == 42)
+#expect(mock.fetchUserCallArgs == [42])
 
-// Reset mock for reuse in another test case
 mock.resetMock()
 #expect(mock.fetchUserCallCount == 0)
 ```
 
-### Void methods
+## What Gets Generated
 
-Void methods don't require a handler to be set:
+For each protocol requirement, `@Mockable` generates test-friendly members:
 
-```swift
-mock.saveUserHandler = { user in
-    // Optional: perform assertions or side effects
-}
+- Functions:
+  - `<method>CallCount`
+  - `<method>CallArgs`
+  - `<method>Handler`
+- Properties:
+  - Backing storage for setup (for example `_<property>`)
+  - Computed protocol-conforming property (`property`)
+- Subscripts:
+  - `subscript<suffix>CallCount`
+  - `subscript<suffix>CallArgs`
+  - `subscript<suffix>Handler`
+  - `subscript<suffix>SetHandler` for get/set subscripts
+- Utility:
+  - `resetMock()`
 
-try await mock.saveUser(user) // Works even without handler
-```
+## Supported Features
 
-### Methods with return values
+- Access-level-aware generation (including `private` / `fileprivate` edge cases)
+- Sync / `async` / `throws` methods
+- Variadic parameters (captured as arrays)
+- `inout` parameters with write-back support
+- Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
+- Overloaded methods (unique suffixes are added to generated names when needed)
+- Associated types (generated as `typealias`, using default type when available, otherwise `Any`)
+- Static methods and static properties
+- Get-only / get-set / optional properties
+- Get-only / get-set subscripts
+- `#if` / `#elseif` / `#else` conditional compilation inside protocols
+- Protocol inheritance (child mock inherits from first parent mock when applicable)
+- `Sendable` protocol support (`@unchecked Sendable` mock generation)
+- `Actor` protocol support (actor mock generation with nonisolated helper members)
 
-Methods with return values require a handler, otherwise they will crash with `fatalError`:
+## Behavioral Notes
 
-```swift
-// This will crash if handler is not set
-mock.fetchUserHandler = { id in
-    User(id: id, name: "Test")
-}
-```
+- Return-value methods and get-only subscripts `fatalError` if their handler is not set.
+- Void-return methods and subscript setters are no-op when handler is `nil`.
+- `resetMock()` clears handlers, call counts, call arguments, and backing properties.
+- For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
 
-### Generic methods
+## Diagnostics and Limitations
 
-Generic methods are supported with type erasure. Parameters and return types containing generic type parameters are erased to `Any`:
+- `@Mockable` can only be applied to protocols.
+- `@Mockable` does not accept arguments.
+- Unsupported protocol members (for example `init`) emit compile-time diagnostics.
+- Static/class subscripts are not supported.
+- For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
-```swift
-@Mockable
-protocol Storage {
-    func get<T>(_ key: UserDefaultsKey<T>) -> T
-    func set<T>(_ value: T, forKey key: UserDefaultsKey<T>)
-}
+## Documentation
 
-// In tests
-let mock = StorageMock()
-
-mock.getHandler = { key in
-    return "stored value"  // Returns Any, cast to T at call site
-}
-
-mock.setHandler = { value, key in
-    // value and key are Any
-}
-
-let result: String = mock.get(UserDefaultsKey<String>("name"))
-```
-
-**Note:** For non-generic methods with concrete generic types (e.g., `UserDefaultsKey<Int>`), full type information is preserved:
-
-```swift
-@Mockable
-protocol UserDefaultsClient {
-    func integer(forKey key: UserDefaultsKey<Int>) -> Int
-}
-
-// Generated mock preserves the concrete type
-// mock.integerCallArgs: [UserDefaultsKey<Int>]
-```
-
-### Sendable protocols
-
-Protocols that inherit from `Sendable` or have the `@Sendable` attribute generate thread-safe mocks using `MockableLock`:
-
-```swift
-@Mockable
-protocol KeychainClient: Sendable {
-    func save(_ data: Data, forKey key: String) throws
-    func load(forKey key: String) throws -> Data?
-}
-
-// Generated mock is thread-safe and can be used from multiple tasks
-let mock = KeychainClientMock()
-mock.loadHandler = { @Sendable key in
-    "test data".data(using: .utf8)
-}
-
-// Safe to use concurrently
-await withTaskGroup(of: Void.self) { group in
-    for _ in 0..<100 {
-        group.addTask {
-            _ = try? mock.load(forKey: "key")
-        }
-    }
-}
-
-#expect(mock.loadCallCount == 100)
-```
-
-**Platform Support:** Sendable mocks use `MockableLock`, which automatically selects the appropriate lock implementation:
-- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Prefers `Mutex` from the `Synchronization` module
-- **iOS 17 and earlier**: Falls back to `LegacyLock` (NSLock-based)
-
-### Actor protocols
-
-Protocols that inherit from `Actor` generate actor mocks with thread-safe access using `MockableLock`:
-
-```swift
-@Mockable
-protocol UserProfileStore: Actor {
-    var profiles: [String: String] { get }
-    func updateProfile(_ profile: String, for key: String)
-    func profile(for key: String) -> String?
-    func reset()
-}
-
-// Generated mock is an actor and can be used safely from multiple tasks
-let mock = UserProfileStoreMock()
-mock._profiles = ["key1": "profile1"]
-mock.profileHandler = { key in
-    key == "existing" ? "Found" : nil
-}
-
-// Access actor properties and methods
-let profiles = await mock.profiles
-let result = await mock.profile(for: "existing")
-
-// Verify calls
-#expect(mock.profileCallCount == 1)
-```
-
-Actor mocks support:
-- Async methods with `async throws`
-- Get-only and get-set properties
-- Concurrent access from multiple tasks
-- Implicit `Sendable` conformance (all actors are Sendable)
-- `nonisolated` helper properties (`CallCount`, `CallArgs`, `Handler`) for easy test verification without `await`
-- `nonisolated` backing properties (`_propertyName`) for easy test setup without `await`
-- `nonisolated func resetMock()` for easy mock reset without `await`
-
-**Platform Support:** Actor mocks use `MockableLock`, which automatically selects the appropriate lock implementation:
-- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Prefers `Mutex` from the `Synchronization` module
-- **iOS 17 and earlier**: Falls back to `LegacyLock` (NSLock-based)
-
-## Generated Code Example
-
-For the `UserService` protocol above (which is `internal` by default), the following mock class is generated:
-
-```swift
-#if DEBUG
-class UserServiceMock: UserService {
-    var fetchUserCallCount: Int = 0
-    var fetchUserCallArgs: [Int] = []
-    var fetchUserHandler: (@Sendable (Int) async throws -> User)?
-
-    func fetchUser(id: Int) async throws -> User {
-        fetchUserCallCount += 1
-        fetchUserCallArgs.append(id)
-        guard let handler = fetchUserHandler else {
-            fatalError("\(Self.self).fetchUserHandler is not set")
-        }
-        return try await handler(id)
-    }
-
-    var saveUserCallCount: Int = 0
-    var saveUserCallArgs: [User] = []
-    var saveUserHandler: (@Sendable (User) async throws -> Void)?
-
-    func saveUser(_ user: User) async throws {
-        saveUserCallCount += 1
-        saveUserCallArgs.append(user)
-        if let handler = saveUserHandler {
-            try await handler(user)
-        }
-    }
-
-    var _currentUser: User?
-    var currentUser: User? {
-        _currentUser
-    }
-
-    var _isLoggedIn: Bool?
-    var isLoggedIn: Bool {
-        get { _isLoggedIn! }
-        set { _isLoggedIn = newValue }
-    }
-
-    func resetMock() {
-        fetchUserCallCount = 0
-        fetchUserCallArgs = []
-        fetchUserHandler = nil
-        saveUserCallCount = 0
-        saveUserCallArgs = []
-        saveUserHandler = nil
-        _currentUser = nil
-        _isLoggedIn = nil
-    }
-}
-#endif
-```
-
-**Note:** If the protocol were declared as `public protocol UserService`, all generated members would have `public` access modifiers.
+- [Docs index](docs/README.md)
+- [Advanced usage and naming rules](docs/advanced-usage.md)
 
 ## Requirements
 
-- Swift 5.9, 5.10, and 6.2+ are supported
+- Swift 5.9, 5.10, and 6.2+
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
-- `Sendable` and `Actor` protocol mocks work on all supported platforms (iOS 13+, etc.)
-  - iOS 18.0+ / macOS 15.0+: `MockableLock` prefers `Mutex` for optimal performance
-  - iOS 17 and earlier: `MockableLock` falls back to `LegacyLock` (NSLock-based)
+- `MockableLock` lock strategy:
+  - iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+: prefers `Mutex` (`Synchronization`)
+  - Older OS versions: falls back to `LegacyLock` (`NSLock`-based)
 
 ## License
 
