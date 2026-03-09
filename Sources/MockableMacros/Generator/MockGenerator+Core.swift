@@ -37,50 +37,43 @@ struct MockGenerator {
 
     func generate() throws -> DeclSyntax {
         if isActor {
-            return DeclSyntax(try generateActorMock(storageStrategy: .mockableLock))
+            return DeclSyntax(try generateActorMock())
         }
 
         if isSendable {
-            return DeclSyntax(try generateClassMock(storageStrategy: .mockableLock))
+            return DeclSyntax(try generateClassMock())
         }
 
-        return DeclSyntax(try generateClassMock(storageStrategy: .direct))
+        return DeclSyntax(try generateClassMock())
     }
 
-    private func generateClassMock(storageStrategy: StorageStrategy) throws -> ClassDeclSyntax {
+    private func generateClassMock() throws -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
         let needsStaticStorage = hasTypeMembers()
 
         classMembers.append(contentsOf: generateAssociatedTypeMembers())
 
-        if storageStrategy.isLockBased {
+        if usesInstanceStorageLock {
             let storageStruct = generateStorageStruct()
             classMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-            let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
+            let mutexProperty = generateLockProperty()
             classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
+        }
 
-            if needsStaticStorage {
-                let staticStorageStruct = generateStaticStorageStruct()
-                classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
-
-                let staticMutexProperty = generateMutexProperty(
-                    storageStrategy: storageStrategy,
-                    propertyName: "_staticStorage",
-                    storageTypeName: "StaticStorage",
-                    isStatic: true
-                )
-                classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
-            }
-        } else if needsStaticStorage {
+        if needsStaticStorage {
             let staticStorageStruct = generateStaticStorageStruct()
             classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
-            let staticMutexProperty = generateStaticLockPropertyForRegularMock()
+            let staticMutexProperty = generateLockProperty(
+                propertyName: "_staticStorage",
+                storageTypeName: "StaticStorage",
+                isStatic: true
+            )
             classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
-        classMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
+        classMembers.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
         classMembers.append(MemberBlockItemSyntax(decl: resetMethod))
@@ -130,7 +123,7 @@ struct MockGenerator {
         )
     }
 
-    private func generateActorMock(storageStrategy: StorageStrategy) throws -> ActorDeclSyntax {
+    private func generateActorMock() throws -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
 
         actorMembers.append(contentsOf: generateAssociatedTypeMembers())
@@ -138,15 +131,14 @@ struct MockGenerator {
         let storageStruct = generateStorageStruct()
         actorMembers.append(MemberBlockItemSyntax(decl: storageStruct))
 
-        let mutexProperty = generateMutexProperty(storageStrategy: storageStrategy)
+        let mutexProperty = generateLockProperty()
         actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
 
         if hasTypeMembers() {
             let staticStorageStruct = generateStaticStorageStruct()
             actorMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
-            let staticMutexProperty = generateMutexProperty(
-                storageStrategy: storageStrategy,
+            let staticMutexProperty = generateLockProperty(
                 propertyName: "_staticStorage",
                 storageTypeName: "StaticStorage",
                 isStatic: true
@@ -154,7 +146,7 @@ struct MockGenerator {
             actorMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
-        actorMembers.append(contentsOf: generateMockMembers(storageStrategy: storageStrategy))
+        actorMembers.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
         actorMembers.append(MemberBlockItemSyntax(decl: resetMethod))
@@ -185,7 +177,7 @@ struct MockGenerator {
         )
     }
 
-    private func generateMockMembers(storageStrategy: StorageStrategy) -> [MemberBlockItemSyntax] {
+    private func generateMockMembers() -> [MemberBlockItemSyntax] {
         let methodGroups = groupMethodsByNameIncludingConditional()
 
         return mapMemberBlockItemsPreservingIfConfig { decl in
@@ -194,15 +186,15 @@ struct MockGenerator {
                 let methodGroup = methodGroups[funcName] ?? []
                 let isOverloaded = methodGroup.count > 1
                 let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                return generateFunctionMock(funcDecl, suffix: suffix, storageStrategy: storageStrategy)
+                return generateFunctionMock(funcDecl, suffix: suffix)
             }
 
             if let varDecl = decl.as(VariableDeclSyntax.self) {
-                return generateVariableMock(varDecl, storageStrategy: storageStrategy)
+                return generateVariableMock(varDecl)
             }
 
             if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-                return generateSubscriptMock(subscriptDecl, storageStrategy: storageStrategy)
+                return generateSubscriptMock(subscriptDecl)
             }
 
             return []

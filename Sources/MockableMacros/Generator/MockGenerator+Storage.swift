@@ -4,8 +4,7 @@ import SwiftSyntaxBuilder
 // MARK: - Sendable Support
 
 extension MockGenerator {
-    private func generateLockProperty(
-        lockTypeName: String,
+    func generateLockProperty(
         propertyName: String = "_storage",
         storageTypeName: String = "Storage",
         isStatic: Bool = false
@@ -25,7 +24,7 @@ extension MockGenerator {
                     initializer: InitializerClauseSyntax(
                         value: FunctionCallExprSyntax(
                             calledExpression: GenericSpecializationExprSyntax(
-                                expression: DeclReferenceExprSyntax(baseName: .identifier(lockTypeName)),
+                                expression: DeclReferenceExprSyntax(baseName: .identifier("MockableLock")),
                                 genericArgumentClause: GenericArgumentClauseSyntax(
                                     arguments: GenericArgumentListSyntax([
                                         makeGenericArgument(type: TypeSyntax(stringLiteral: storageTypeName))
@@ -258,34 +257,6 @@ extension MockGenerator {
                 leftBrace: .leftBraceToken(trailingTrivia: .newline),
                 members: MemberBlockItemListSyntax(storageMembers),
                 rightBrace: .rightBraceToken(leadingTrivia: .newline)
-            )
-        )
-    }
-
-    func generateMutexProperty(
-        storageStrategy: StorageStrategy,
-        propertyName: String = "_storage",
-        storageTypeName: String = "Storage",
-        isStatic: Bool = false
-    ) -> VariableDeclSyntax {
-        guard let lockType = storageStrategy.lockTypeName else {
-            fatalError("generateMutexProperty(storageStrategy:) requires a lock-based strategy")
-        }
-        return generateLockProperty(
-            lockTypeName: lockType,
-            propertyName: propertyName,
-            storageTypeName: storageTypeName,
-            isStatic: isStatic
-        )
-    }
-
-    func generateStaticLockPropertyForRegularMock() -> DeclSyntax {
-        return DeclSyntax(
-            generateLockProperty(
-                lockTypeName: "MockableLock",
-                propertyName: "_staticStorage",
-                storageTypeName: "StaticStorage",
-                isStatic: true
             )
         )
     }
