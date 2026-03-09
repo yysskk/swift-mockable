@@ -5,15 +5,11 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     func generateVariableMock(
-        _ varDecl: VariableDeclSyntax,
-        storageStrategy: StorageStrategy
+        _ varDecl: VariableDeclSyntax
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
         let isTypeMember = Self.isTypeMember(varDecl.modifiers)
-        let usesLockBasedStorage = Self.usesLockBasedStorage(
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
-        )
+        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
             guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
@@ -26,7 +22,7 @@ extension MockGenerator {
             let varType = typeAnnotation.type
             let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
-            if usesLockBasedStorage {
+            if shouldUseLockBasedStorage {
                 let backingProperty = generateLockBasedBackingSetterProperty(
                     varName: varName,
                     varType: varType,

@@ -245,7 +245,7 @@ struct ConditionalCompilationMacroTests {
     func sendableConditionalCompilationWithElseIfAndElse() {
         assertMacroExpansionForTesting(
             """
-            @Mockable(legacyLock: true)
+            @Mockable
             protocol ThreadSafePlatformLogger: Sendable {
                 #if os(iOS)
                 func logToConsole()
@@ -284,7 +284,7 @@ struct ConditionalCompilationMacroTests {
                     var logToFallbackHandler: (@Sendable () -> Void)? = nil
                     #endif
                 }
-                private let _storage = LegacyLock<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 #if os(iOS)
                 var logToConsoleCallCount: Int {
                     get {

@@ -6,8 +6,7 @@ import SwiftSyntaxBuilder
 extension MockGenerator {
     func generateFunctionMock(
         _ funcDecl: FunctionDeclSyntax,
-        suffix: String = "",
-        storageStrategy: StorageStrategy
+        suffix: String = ""
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
 
@@ -25,8 +24,7 @@ extension MockGenerator {
             propertyName: "CallCount",
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
+            isTypeMember: isTypeMember
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
@@ -36,8 +34,7 @@ extension MockGenerator {
             propertyName: "CallArgs",
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
+            isTypeMember: isTypeMember
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -53,8 +50,7 @@ extension MockGenerator {
             propertyName: "Handler",
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
+            isTypeMember: isTypeMember
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -62,8 +58,7 @@ extension MockGenerator {
             funcDecl,
             identifier: identifier,
             genericParamNames: genericParamNames,
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
+            isTypeMember: isTypeMember
         )
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
@@ -75,18 +70,14 @@ extension MockGenerator {
         propertyName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
-        isTypeMember: Bool,
-        storageStrategy: StorageStrategy
+        isTypeMember: Bool
     ) -> VariableDeclSyntax {
         let fullName = "\(identifier)\(propertyName)"
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
-        let usesLockBasedStorage = Self.usesLockBasedStorage(
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
-        )
+        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
-        if usesLockBasedStorage {
+        if shouldUseLockBasedStorage {
             if !isTypeMember {
                 additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
             }
@@ -140,21 +131,17 @@ extension MockGenerator {
         _ funcDecl: FunctionDeclSyntax,
         identifier: String,
         genericParamNames: Set<String>,
-        isTypeMember: Bool,
-        storageStrategy: StorageStrategy
+        isTypeMember: Bool
     ) -> FunctionDeclSyntax {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
         let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
-        let usesLockBasedStorage = Self.usesLockBasedStorage(
-            isTypeMember: isTypeMember,
-            storageStrategy: storageStrategy
-        )
+        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         let body: CodeBlockSyntax
-        if usesLockBasedStorage {
+        if shouldUseLockBasedStorage {
             body = buildLockBasedFunctionBody(
                 identifier: identifier,
                 parameters: parameters,

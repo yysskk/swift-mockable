@@ -63,11 +63,12 @@ extension MockGenerator {
         isTypeMember ? "_staticStorage" : "_storage"
     }
 
-    static func usesLockBasedStorage(
-        isTypeMember: Bool,
-        storageStrategy: StorageStrategy
-    ) -> Bool {
-        storageStrategy.isLockBased || isTypeMember
+    var usesInstanceStorageLock: Bool {
+        isActor || isSendable
+    }
+
+    func usesLockBasedStorage(isTypeMember: Bool) -> Bool {
+        usesInstanceStorageLock || isTypeMember
     }
 
     func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {

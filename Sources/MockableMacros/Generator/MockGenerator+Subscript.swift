@@ -5,8 +5,7 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     func generateSubscriptMock(
-        _ subscriptDecl: SubscriptDeclSyntax,
-        storageStrategy: StorageStrategy
+        _ subscriptDecl: SubscriptDeclSyntax
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
 
@@ -20,7 +19,7 @@ extension MockGenerator {
             propertyName: "subscript\(suffix)CallCount",
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            storageStrategy: storageStrategy
+            usesLockBasedStorage: usesInstanceStorageLock
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
@@ -29,7 +28,7 @@ extension MockGenerator {
             propertyName: "subscript\(suffix)CallArgs",
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            storageStrategy: storageStrategy
+            usesLockBasedStorage: usesInstanceStorageLock
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -42,7 +41,7 @@ extension MockGenerator {
             propertyName: "subscript\(suffix)Handler",
             type: TypeSyntax(stringLiteral: "(@Sendable \(getterClosureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
-            storageStrategy: storageStrategy
+            usesLockBasedStorage: usesInstanceStorageLock
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -56,7 +55,7 @@ extension MockGenerator {
                 propertyName: "subscript\(suffix)SetHandler",
                 type: TypeSyntax(stringLiteral: "(@Sendable \(setterClosureType))?"),
                 initializer: ExprSyntax(NilLiteralExprSyntax()),
-                storageStrategy: storageStrategy
+                usesLockBasedStorage: usesInstanceStorageLock
             )
             members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
         }
@@ -65,8 +64,7 @@ extension MockGenerator {
             subscriptDecl,
             isGetOnly: isGetOnly,
             genericParamNames: genericParamNames,
-            suffix: suffix,
-            storageStrategy: storageStrategy
+            suffix: suffix
         )
         members.append(MemberBlockItemSyntax(decl: mockSubscript))
 
@@ -114,9 +112,9 @@ extension MockGenerator {
         propertyName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
-        storageStrategy: StorageStrategy
+        usesLockBasedStorage: Bool
     ) -> VariableDeclSyntax {
-        if storageStrategy.isLockBased {
+        if usesLockBasedStorage {
             return VariableDeclSyntax(
                 modifiers: buildModifiers(additional: storageBackedMemberModifiers()),
                 bindingSpecifier: .keyword(.var),
@@ -166,15 +164,14 @@ extension MockGenerator {
         _ subscriptDecl: SubscriptDeclSyntax,
         isGetOnly: Bool,
         genericParamNames: Set<String>,
-        suffix: String,
-        storageStrategy: StorageStrategy
+        suffix: String
     ) -> SubscriptDeclSyntax {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
         let hasGenericReturn = Self.typeContainsGeneric(returnType, genericParamNames: genericParamNames)
 
         let getterStatements: [CodeBlockItemSyntax]
-        if storageStrategy.isLockBased {
+        if usesInstanceStorageLock {
             getterStatements = buildLockBasedSubscriptGetterStatements(
                 parameters: parameters,
                 returnType: returnType,
@@ -197,7 +194,7 @@ extension MockGenerator {
             )
         } else {
             let setterStatements: [CodeBlockItemSyntax]
-            if storageStrategy.isLockBased {
+            if usesInstanceStorageLock {
                 setterStatements = [buildLockBasedSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)]
             } else {
                 setterStatements = [buildDirectSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)]

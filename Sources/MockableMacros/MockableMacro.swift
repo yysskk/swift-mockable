@@ -15,9 +15,9 @@ public struct MockableMacro: PeerMacro {
             return []
         }
 
-        let parsedArguments = parseArguments(from: node, in: context)
+        let hasInvalidArguments = diagnoseArguments(from: node, in: context)
         let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
-        guard !parsedArguments.hasError, !hasUnsupportedMembers else {
+        guard !hasInvalidArguments, !hasUnsupportedMembers else {
             return []
         }
 
@@ -61,7 +61,6 @@ public struct MockableMacro: PeerMacro {
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor,
             accessLevel: accessLevel,
-            forceLegacyLock: parsedArguments.forceLegacyLock,
             parentMockClassName: parentMockClassName
         )
 
@@ -83,77 +82,42 @@ public struct MockableMacro: PeerMacro {
         return [DeclSyntax(ifConfigDecl)]
     }
 
-    private struct ParsedArguments {
-        var forceLegacyLock = false
-        var hasError = false
-    }
-
-    /// Parses and validates `@Mockable` arguments.
-    private static func parseArguments(
+    /// Validates that `@Mockable` is used without arguments.
+    private static func diagnoseArguments(
         from node: AttributeSyntax,
         in context: some MacroExpansionContext
-    ) -> ParsedArguments {
-        var parsedArguments = ParsedArguments()
-
+    ) -> Bool {
         guard let arguments = node.arguments,
               case .argumentList(let argList) = arguments else {
-            return parsedArguments
+            return false
         }
 
-        var seenLabels: Set<String> = []
+        var hasError = false
 
         for argument in argList {
             guard let label = argument.label?.text else {
                 context.diagnose(
                     Diagnostic(
                         node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument("unlabeled arguments are not supported")
+                        message: MockableError.invalidMacroArgument("@Mockable does not accept unlabeled arguments")
                     )
                 )
-                parsedArguments.hasError = true
+                hasError = true
                 continue
             }
 
-            guard seenLabels.insert(label).inserted else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument("duplicate argument '\(label)'")
+            context.diagnose(
+                Diagnostic(
+                    node: Syntax(argument),
+                    message: MockableError.invalidMacroArgument(
+                        "unexpected argument label '\(label)'; @Mockable does not accept arguments"
                     )
                 )
-                parsedArguments.hasError = true
-                continue
-            }
-
-            switch label {
-            case "legacyLock":
-                guard let boolExpr = argument.expression.as(BooleanLiteralExprSyntax.self) else {
-                    context.diagnose(
-                        Diagnostic(
-                            node: Syntax(argument),
-                            message: MockableError.invalidMacroArgument("'legacyLock' must be a boolean literal")
-                        )
-                    )
-                    parsedArguments.hasError = true
-                    continue
-                }
-
-                parsedArguments.forceLegacyLock = boolExpr.literal.tokenKind == .keyword(.true)
-
-            default:
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument(
-                            "unexpected argument label '\(label)'; supported arguments: legacyLock"
-                        )
-                    )
-                )
-                parsedArguments.hasError = true
-            }
+            )
+            hasError = true
         }
 
-        return parsedArguments
+        return hasError
     }
 
     private static func diagnoseUnsupportedMembers(

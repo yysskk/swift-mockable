@@ -1,4 +1,4 @@
-// Re-export Mutex for Sendable mock support (macOS 15.0+/iOS 18.0+)
+// Re-export Synchronization when available for clients that use it alongside Mockable.
 #if canImport(Synchronization)
 @_exported import Synchronization
 #endif
@@ -23,20 +23,5 @@
 /// - Call tracking for verification
 /// - Property stubs
 ///
-/// ## Parameters
-///
-/// - `legacyLock`: When `true`, forces the use of `LegacyLock` instead of `Mutex`
-///   for thread-safe storage. Use this when building with Xcode 16+ (Swift 6 SDK)
-///   and your deployment target is iOS 17 or earlier. Default is `false`.
-///
-/// ## Example with legacyLock
-///
-/// ```swift
-/// @Mockable(legacyLock: true)
-/// protocol MyService: Sendable {
-///     func fetch() async -> Data
-/// }
-/// ```
-///
 @attached(peer, names: suffixed(Mock))
-public macro Mockable(legacyLock: Bool = false) = #externalMacro(module: "MockableMacros", type: "MockableMacro")
+public macro Mockable() = #externalMacro(module: "MockableMacros", type: "MockableMacro")

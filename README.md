@@ -35,8 +35,7 @@ Then add `Mockable` to your target dependencies:
 - Supports generic methods (with type erasure to `Any`)
 - Supports `Sendable` protocols with thread-safe mock generation
 - Supports `Actor` protocols with actor mock generation
-- Backward compatible: iOS 18+ uses `Mutex`, iOS 17 and earlier uses `LegacyLock`
-- `legacyLock: true` option to force `LegacyLock` for projects supporting iOS 17 or earlier
+- Backward compatible: `MockableLock` uses `Mutex` on newer OSes and `LegacyLock` on older ones
 - Supports subscript declarations (get-only and get-set)
 - `resetMock()` method to reset all tracking state for test reuse
 
@@ -139,7 +138,7 @@ protocol UserDefaultsClient {
 
 ### Sendable protocols
 
-Protocols that inherit from `Sendable` or have the `@Sendable` attribute generate thread-safe mocks using `Mutex`:
+Protocols that inherit from `Sendable` or have the `@Sendable` attribute generate thread-safe mocks using `MockableLock`:
 
 ```swift
 @Mockable
@@ -166,32 +165,13 @@ await withTaskGroup(of: Void.self) { group in
 #expect(mock.loadCallCount == 100)
 ```
 
-**Platform Support:** Sendable mocks automatically use the appropriate lock implementation:
-- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Uses `Mutex` from the `Synchronization` module (generated with `@available` attribute)
-- **iOS 17 and earlier**: Uses `LegacyLock` (NSLock-based) for backward compatibility
-
-The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
-
-#### When to use `legacyLock: true`
-
-Use `legacyLock: true` when building with **Xcode 16+ (Swift 6 SDK)** and your **deployment target is iOS 17 or earlier**.
-
-Without this option, the generated mock uses `#if canImport(Synchronization)` which evaluates to `true` with newer SDKs, generating a Mutex-based mock with `@available(iOS 18.0, *)`. This causes availability errors when your app needs to run on iOS 17.
-
-```swift
-// Required when: Xcode 16+ AND deployment target < iOS 18
-@Mockable(legacyLock: true)
-protocol KeychainClient: Sendable {
-    func save(_ data: Data, forKey key: String) throws
-    func load(forKey key: String) throws -> Data?
-}
-```
-
-This generates a mock that uses `LegacyLock` without any `#if canImport(Synchronization)` conditional compilation or `@available` attributes, ensuring compatibility with iOS 17 and earlier.
+**Platform Support:** Sendable mocks use `MockableLock`, which automatically selects the appropriate lock implementation:
+- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Prefers `Mutex` from the `Synchronization` module
+- **iOS 17 and earlier**: Falls back to `LegacyLock` (NSLock-based)
 
 ### Actor protocols
 
-Protocols that inherit from `Actor` generate actor mocks with thread-safe access using `Mutex`:
+Protocols that inherit from `Actor` generate actor mocks with thread-safe access using `MockableLock`:
 
 ```swift
 @Mockable
@@ -226,28 +206,9 @@ Actor mocks support:
 - `nonisolated` backing properties (`_propertyName`) for easy test setup without `await`
 - `nonisolated func resetMock()` for easy mock reset without `await`
 
-**Platform Support:** Actor mocks automatically use the appropriate lock implementation:
-- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Uses `Mutex` from the `Synchronization` module (generated with `@available` attribute)
-- **iOS 17 and earlier**: Uses `LegacyLock` (NSLock-based) for backward compatibility
-
-The generated code uses `#if canImport(Synchronization)` to automatically select the correct implementation at compile time.
-
-#### When to use `legacyLock: true`
-
-Use `legacyLock: true` when building with **Xcode 16+ (Swift 6 SDK)** and your **deployment target is iOS 17 or earlier**.
-
-Without this option, the generated mock uses `#if canImport(Synchronization)` which evaluates to `true` with newer SDKs, generating a Mutex-based mock with `@available(iOS 18.0, *)`. This causes availability errors when your app needs to run on iOS 17.
-
-```swift
-// Required when: Xcode 16+ AND deployment target < iOS 18
-@Mockable(legacyLock: true)
-protocol UserProfileStore: Actor {
-    var profiles: [String: String] { get }
-    func updateProfile(_ profile: String, for key: String)
-}
-```
-
-This generates an actor mock that uses `LegacyLock` without any `#if canImport(Synchronization)` conditional compilation or `@available` attributes, ensuring compatibility with iOS 17 and earlier.
+**Platform Support:** Actor mocks use `MockableLock`, which automatically selects the appropriate lock implementation:
+- **iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+**: Prefers `Mutex` from the `Synchronization` module
+- **iOS 17 and earlier**: Falls back to `LegacyLock` (NSLock-based)
 
 ## Generated Code Example
 
@@ -313,8 +274,8 @@ class UserServiceMock: UserService {
 - Swift 5.9, 5.10, and 6.2+ are supported
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
 - `Sendable` and `Actor` protocol mocks work on all supported platforms (iOS 13+, etc.)
-  - iOS 18.0+ / macOS 15.0+: Uses `Mutex` for optimal performance
-  - iOS 17 and earlier: Uses `LegacyLock` (NSLock-based) for compatibility
+  - iOS 18.0+ / macOS 15.0+: `MockableLock` prefers `Mutex` for optimal performance
+  - iOS 17 and earlier: `MockableLock` falls back to `LegacyLock` (NSLock-based)
 
 ## License
 

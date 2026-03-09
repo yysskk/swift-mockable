@@ -7,7 +7,7 @@ import Synchronization
 /// Provides the same `withLock` API as `Mutex` for API compatibility.
 ///
 /// This type is used on iOS 17 and earlier, while `Mutex` is used on iOS 18+.
-public final class LegacyLock<Value>: @unchecked Sendable {
+final class LegacyLock<Value>: @unchecked Sendable {
     private var _value: Value
     private let _lock = NSLock()
 

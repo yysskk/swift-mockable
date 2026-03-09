@@ -224,15 +224,13 @@ struct SubscriptMacroTests {
             }
 
             #if DEBUG
-            #if canImport(Synchronization)
-            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             class SendableCacheMock: SendableCache, @unchecked Sendable {
                 private struct Storage {
                     var subscriptStringCallCount: Int = 0
                     var subscriptStringCallArgs: [String] = []
                     var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
                 }
-                private let _storage = Mutex<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 var subscriptStringCallCount: Int {
                     get {
                         _storage.withLock {
@@ -290,72 +288,6 @@ struct SubscriptMacroTests {
                     }
                 }
             }
-            #else
-            class SendableCacheMock: SendableCache, @unchecked Sendable {
-                private struct Storage {
-                    var subscriptStringCallCount: Int = 0
-                    var subscriptStringCallArgs: [String] = []
-                    var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
-                }
-                private let _storage = LegacyLock<Storage>(Storage())
-                var subscriptStringCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount = newValue
-                        }
-                    }
-                }
-                var subscriptStringCallArgs: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallArgs
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallArgs = newValue
-                        }
-                    }
-                }
-                var subscriptStringHandler: (@Sendable (String) -> Int )? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringHandler = newValue
-                        }
-                    }
-                }
-                subscript(key: String) -> Int {
-                    _storage.withLock { storage in
-                        storage.subscriptStringCallCount += 1
-                        storage.subscriptStringCallArgs.append(key)
-                    }
-                    let _handler = _storage.withLock {
-                        $0.subscriptStringHandler
-                    }
-                    guard let _handler else {
-                        fatalError("\\(Self.self).subscriptStringHandler is not set")
-                    }
-                    return _handler(key)
-                }
-                func resetMock() {
-                    _storage.withLock { storage in
-                        storage.subscriptStringCallCount = 0
-                        storage.subscriptStringCallArgs = []
-                        storage.subscriptStringHandler = nil
-                    }
-                }
-            }
-            #endif
             #endif
             """,
             macros: testMacros
@@ -377,8 +309,6 @@ struct SubscriptMacroTests {
             }
 
             #if DEBUG
-            #if canImport(Synchronization)
-            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             class SendableStorageMock: SendableStorage, @unchecked Sendable {
                 private struct Storage {
                     var subscriptIntCallCount: Int = 0
@@ -386,7 +316,7 @@ struct SubscriptMacroTests {
                     var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
                     var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
                 }
-                private let _storage = Mutex<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 var subscriptIntCallCount: Int {
                     get {
                         _storage.withLock {
@@ -465,94 +395,6 @@ struct SubscriptMacroTests {
                     }
                 }
             }
-            #else
-            class SendableStorageMock: SendableStorage, @unchecked Sendable {
-                private struct Storage {
-                    var subscriptIntCallCount: Int = 0
-                    var subscriptIntCallArgs: [Int] = []
-                    var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
-                    var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
-                }
-                private let _storage = LegacyLock<Storage>(Storage())
-                var subscriptIntCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount = newValue
-                        }
-                    }
-                }
-                var subscriptIntCallArgs: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallArgs
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallArgs = newValue
-                        }
-                    }
-                }
-                var subscriptIntHandler: (@Sendable (Int) -> String )? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntHandler = newValue
-                        }
-                    }
-                }
-                var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntSetHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntSetHandler = newValue
-                        }
-                    }
-                }
-                subscript(index: Int) -> String {
-                    get {
-                        _storage.withLock { storage in
-                            storage.subscriptIntCallCount += 1
-                            storage.subscriptIntCallArgs.append(index)
-                        }
-                        let _handler = _storage.withLock {
-                            $0.subscriptIntHandler
-                        }
-                        guard let _handler else {
-                            fatalError("\\(Self.self).subscriptIntHandler is not set")
-                        }
-                        return _handler(index)
-                    }
-                    set {
-                        if let _handler = _storage.withLock({ $0.subscriptIntSetHandler
-                            }) {
-                            _handler(index, newValue)
-                        }
-                    }
-                }
-                func resetMock() {
-                    _storage.withLock { storage in
-                        storage.subscriptIntCallCount = 0
-                        storage.subscriptIntCallArgs = []
-                        storage.subscriptIntHandler = nil
-                        storage.subscriptIntSetHandler = nil
-                    }
-                }
-            }
-            #endif
             #endif
             """,
             macros: testMacros
@@ -574,15 +416,13 @@ struct SubscriptMacroTests {
             }
 
             #if DEBUG
-            #if canImport(Synchronization)
-            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             actor ActorCacheMock: ActorCache {
                 private struct Storage {
                     var subscriptStringCallCount: Int = 0
                     var subscriptStringCallArgs: [String] = []
                     var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
                 }
-                private let _storage = Mutex<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var subscriptStringCallCount: Int {
                     get {
                         _storage.withLock {
@@ -640,72 +480,6 @@ struct SubscriptMacroTests {
                     }
                 }
             }
-            #else
-            actor ActorCacheMock: ActorCache {
-                private struct Storage {
-                    var subscriptStringCallCount: Int = 0
-                    var subscriptStringCallArgs: [String] = []
-                    var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
-                }
-                private let _storage = LegacyLock<Storage>(Storage())
-                nonisolated var subscriptStringCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount = newValue
-                        }
-                    }
-                }
-                nonisolated var subscriptStringCallArgs: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallArgs
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallArgs = newValue
-                        }
-                    }
-                }
-                nonisolated var subscriptStringHandler: (@Sendable (String) -> Int )? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringHandler = newValue
-                        }
-                    }
-                }
-                subscript(key: String) -> Int {
-                    _storage.withLock { storage in
-                        storage.subscriptStringCallCount += 1
-                        storage.subscriptStringCallArgs.append(key)
-                    }
-                    let _handler = _storage.withLock {
-                        $0.subscriptStringHandler
-                    }
-                    guard let _handler else {
-                        fatalError("\\(Self.self).subscriptStringHandler is not set")
-                    }
-                    return _handler(key)
-                }
-                nonisolated func resetMock() {
-                    _storage.withLock { storage in
-                        storage.subscriptStringCallCount = 0
-                        storage.subscriptStringCallArgs = []
-                        storage.subscriptStringHandler = nil
-                    }
-                }
-            }
-            #endif
             #endif
             """,
             macros: testMacros
@@ -727,8 +501,6 @@ struct SubscriptMacroTests {
             }
 
             #if DEBUG
-            #if canImport(Synchronization)
-            @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
             actor ActorStorageMock: ActorStorage {
                 private struct Storage {
                     var subscriptIntCallCount: Int = 0
@@ -736,7 +508,7 @@ struct SubscriptMacroTests {
                     var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
                     var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
                 }
-                private let _storage = Mutex<Storage>(Storage())
+                private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var subscriptIntCallCount: Int {
                     get {
                         _storage.withLock {
@@ -815,94 +587,6 @@ struct SubscriptMacroTests {
                     }
                 }
             }
-            #else
-            actor ActorStorageMock: ActorStorage {
-                private struct Storage {
-                    var subscriptIntCallCount: Int = 0
-                    var subscriptIntCallArgs: [Int] = []
-                    var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
-                    var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
-                }
-                private let _storage = LegacyLock<Storage>(Storage())
-                nonisolated var subscriptIntCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount = newValue
-                        }
-                    }
-                }
-                nonisolated var subscriptIntCallArgs: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallArgs
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallArgs = newValue
-                        }
-                    }
-                }
-                nonisolated var subscriptIntHandler: (@Sendable (Int) -> String )? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntHandler = newValue
-                        }
-                    }
-                }
-                nonisolated var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntSetHandler
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntSetHandler = newValue
-                        }
-                    }
-                }
-                subscript(index: Int) -> String {
-                    get {
-                        _storage.withLock { storage in
-                            storage.subscriptIntCallCount += 1
-                            storage.subscriptIntCallArgs.append(index)
-                        }
-                        let _handler = _storage.withLock {
-                            $0.subscriptIntHandler
-                        }
-                        guard let _handler else {
-                            fatalError("\\(Self.self).subscriptIntHandler is not set")
-                        }
-                        return _handler(index)
-                    }
-                    set {
-                        if let _handler = _storage.withLock({ $0.subscriptIntSetHandler
-                            }) {
-                            _handler(index, newValue)
-                        }
-                    }
-                }
-                nonisolated func resetMock() {
-                    _storage.withLock { storage in
-                        storage.subscriptIntCallCount = 0
-                        storage.subscriptIntCallArgs = []
-                        storage.subscriptIntHandler = nil
-                        storage.subscriptIntSetHandler = nil
-                    }
-                }
-            }
-            #endif
             #endif
             """,
             macros: testMacros
