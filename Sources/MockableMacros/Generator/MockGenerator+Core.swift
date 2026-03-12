@@ -83,6 +83,13 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
+        // Generate explicit init when access level requires it (e.g., public/open)
+        // Without this, the default init is internal, making the mock unusable across modules
+        if accessLevel == .public || accessLevel == .package {
+            let initDecl = generateInit()
+            classMembers.append(MemberBlockItemSyntax(decl: initDecl))
+        }
+
         classMembers.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
@@ -199,6 +206,32 @@ struct MockGenerator {
 
             return []
         }
+    }
+
+    /// Generates an explicit initializer for the mock class.
+    /// For `public` protocols, the default memberwise initializer is `internal`,
+    /// which prevents the mock from being instantiated across module boundaries.
+    /// When the mock inherits from a parent mock, the init uses `override`.
+    private func generateInit() -> DeclSyntax {
+        let isOverride = hasParentMock
+        let modifiers = buildModifiers(
+            additional: isOverride ? [DeclModifierSyntax(name: .keyword(.override))] : [],
+            isOverridable: false
+        )
+
+        let initDecl = InitializerDeclSyntax(
+            modifiers: modifiers,
+            signature: FunctionSignatureSyntax(
+                parameterClause: FunctionParameterClauseSyntax(
+                    parameters: FunctionParameterListSyntax([])
+                )
+            ),
+            body: CodeBlockSyntax(
+                statements: CodeBlockItemListSyntax([])
+            )
+        )
+
+        return DeclSyntax(initDecl)
     }
 
 }

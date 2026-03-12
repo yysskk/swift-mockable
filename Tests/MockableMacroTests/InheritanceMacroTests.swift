@@ -182,6 +182,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             open class ChildServiceMock: BaseServiceMock, ChildService {
+                public override init() {
+                }
                 public var fetchChildCallCount: Int = 0
                 public var fetchChildCallArgs: [Int] = []
                 public var fetchChildHandler: (@Sendable (Int) -> String)? = nil

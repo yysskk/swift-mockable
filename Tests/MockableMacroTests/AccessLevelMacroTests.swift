@@ -65,6 +65,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             open class PublicServiceMock: PublicService {
+                public init() {
+                }
                 public var fetchCallCount: Int = 0
                 public var fetchCallArgs: [()] = []
                 public var fetchHandler: (@Sendable () -> String)? = nil
@@ -104,6 +106,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             package class PackageServiceMock: PackageService {
+                package init() {
+                }
                 package var fetchCallCount: Int = 0
                 package var fetchCallArgs: [()] = []
                 package var fetchHandler: (@Sendable () -> String)? = nil
@@ -173,6 +177,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             open class PublicConfigMock: PublicConfig {
+                public init() {
+                }
                 public var _apiKey: String? = nil
                 public var apiKey: String {
                     _apiKey!

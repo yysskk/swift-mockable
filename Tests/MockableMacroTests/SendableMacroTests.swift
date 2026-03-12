@@ -47,6 +47,8 @@ struct SendableMacroTests {
                     var existsHandler: (@Sendable (String) -> Bool)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
+                public init() {
+                }
                 public var saveCallCount: Int {
                     get {
                         _storage.withLock {
