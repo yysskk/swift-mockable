@@ -134,6 +134,26 @@ extension MockGenerator {
                     ])
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
+
+                // ReturnValue (for non-generic return types)
+                let hasReturnValue = Self.hasReturnValue(returnType)
+                let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+                if hasReturnValue && !hasGenericReturn {
+                    let returnTypeStr = returnType?.description ?? "Void"
+                    let returnValueDecl = VariableDeclSyntax(
+                        bindingSpecifier: .keyword(.var),
+                        bindings: PatternBindingListSyntax([
+                            PatternBindingSyntax(
+                                pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)ReturnValue")),
+                                typeAnnotation: TypeAnnotationSyntax(
+                                    type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(\(returnTypeStr))"))
+                                ),
+                                initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                            )
+                        ])
+                    )
+                    generatedMembers.append(MemberBlockItemSyntax(decl: returnValueDecl))
+                }
             } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 for binding in varDecl.bindings {
                     guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),

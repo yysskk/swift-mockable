@@ -41,13 +41,10 @@ public struct MockableMacro: PeerMacro {
             inherited.type.trimmedDescription == "Actor"
         } ?? false
 
-        // Extract parent protocol names (excluding well-known non-protocol types)
-        let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
-        let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
-            .map { $0.type.trimmedDescription }
-            .filter { !knownNonParentProtocols.contains($0) }
-            ?? []
-        let parentMockClassName: String? = parentProtocolNames.first.map { "\($0)Mock" }
+        // Mock class inheritance is disabled: it causes issues with @MainActor isolation,
+        // cross-module override restrictions, and conflicting method signatures.
+        // Each mock is generated as a standalone class.
+        let parentMockClassName: String? = nil
 
         let members = protocolDecl.memberBlock.members
 

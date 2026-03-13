@@ -54,6 +54,21 @@ extension MockGenerator {
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
+        // Generate ReturnValue property for functions with non-generic return values
+        let hasReturnValue = Self.hasReturnValue(returnType)
+        let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+        if hasReturnValue && !hasGenericReturn {
+            let returnTypeStr = returnType?.description ?? "Void"
+            let returnValueProperty = generateFunctionStorageProperty(
+                identifier: identifier,
+                propertyName: "ReturnValue",
+                type: TypeSyntax(stringLiteral: "(\(returnTypeStr))?"),
+                initializer: ExprSyntax(NilLiteralExprSyntax()),
+                isTypeMember: isTypeMember
+            )
+            members.append(MemberBlockItemSyntax(decl: returnValueProperty))
+        }
+
         let mockFunction = generateMockFunction(
             funcDecl,
             identifier: identifier,
@@ -248,39 +263,72 @@ extension MockGenerator {
             genericParamNames: genericParamNames
         )
 
+        let isOptionalReturn = returnType?.is(OptionalTypeSyntax.self) == true ||
+            returnType?.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) == true
+
         var statements: [CodeBlockItemSyntax] = []
-        let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
+        if hasReturnValue && !hasGenericReturn {
+            // Lock-based path with ReturnValue fallback
+            let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
+let (_handler, _returnValue) = \(storageName).withLock { storage -> ((@Sendable \(closureType))?, (\(returnType?.description ?? "Void"))?) in
+    storage.\(identifier)CallCount += 1
+    storage.\(identifier)CallArgs.append(\(argsExpr))
+    return (storage.\(identifier)Handler, storage.\(identifier)ReturnValue)
+}
+""")))
+            statements.append(withLockStmt)
+
+            let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+            let fallbackLine: String
+            if isOptionalReturn {
+                fallbackLine = "return nil"
+            } else {
+                fallbackLine = "fatalError(\"\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set\")"
+            }
+            let ifHandlerStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let _handler {
+    return \(invokePrefix)_handler(\(handlerCallArgs))
+} else if let _returnValue {
+    return _returnValue
+} else {
+    \(fallbackLine)
+}
+""")))
+            statements.append(ifHandlerStmt)
+        } else {
+            let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
 let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
     storage.\(identifier)CallCount += 1
     storage.\(identifier)CallArgs.append(\(argsExpr))
     return storage.\(identifier)Handler
 }
 """)))
-        statements.append(withLockStmt)
+            statements.append(withLockStmt)
 
-        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
-        if hasReturnValue {
-            let returnTypeStr = returnType?.description ?? "Void"
-            let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+            let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+            if hasReturnValue {
+                let returnTypeStr = returnType?.description ?? "Void"
+                let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
     fatalError("\\(Self.self).\(identifier)Handler is not set")
 }
 """)))
-            statements.append(guardStmt)
-            statements.append(contentsOf: Self.buildHandlerInvocationStatements(
-                invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams,
-                hasGenericReturn: hasGenericReturn,
-                returnTypeStr: returnTypeStr
-            ))
-        } else {
-            statements.append(Self.buildOptionalHandlerCallStatement(
-                handlerBinding: "_handler",
-                invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams
-            ))
+                statements.append(guardStmt)
+                statements.append(contentsOf: Self.buildHandlerInvocationStatements(
+                    invokePrefix: invokePrefix,
+                    handlerCallArgs: handlerCallArgs,
+                    inOutParams: inOutParams,
+                    hasGenericReturn: hasGenericReturn,
+                    returnTypeStr: returnTypeStr
+                ))
+            } else {
+                statements.append(Self.buildOptionalHandlerCallStatement(
+                    handlerBinding: "_handler",
+                    invokePrefix: invokePrefix,
+                    handlerCallArgs: handlerCallArgs,
+                    inOutParams: inOutParams
+                ))
+            }
         }
 
         return CodeBlockSyntax(
@@ -341,8 +389,27 @@ guard let _handler else {
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
 
         let hasReturnValue = Self.hasReturnValue(returnType)
+        let isOptionalReturn = returnType?.is(OptionalTypeSyntax.self) == true ||
+            returnType?.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) == true
 
-        if hasReturnValue {
+        if hasReturnValue && !hasGenericReturn {
+            let fallback: String
+            if isOptionalReturn {
+                fallback = "return nil"
+            } else {
+                fallback = "fatalError(\"\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set\")"
+            }
+            let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+if let _handler = \(identifier)Handler {
+    return \(invokePrefix)_handler(\(handlerCallArgs))
+} else if let _returnValue = \(identifier)ReturnValue {
+    return _returnValue
+} else {
+    \(fallback)
+}
+""")))
+            return [ifStmt]
+        } else if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler = \(identifier)Handler else {
@@ -420,7 +487,7 @@ if let \(handlerBinding) {
 """)))
     }
 
-    private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
+    static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
         guard let returnType else {
             return false
         }
