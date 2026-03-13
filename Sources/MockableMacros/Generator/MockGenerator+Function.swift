@@ -263,6 +263,9 @@ extension MockGenerator {
             genericParamNames: genericParamNames
         )
 
+        let isOptionalReturn = returnType?.is(OptionalTypeSyntax.self) == true ||
+            returnType?.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) == true
+
         var statements: [CodeBlockItemSyntax] = []
         if hasReturnValue && !hasGenericReturn {
             // Lock-based path with ReturnValue fallback
@@ -276,13 +279,19 @@ let (_handler, _returnValue) = \(storageName).withLock { storage -> ((@Sendable 
             statements.append(withLockStmt)
 
             let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+            let fallbackLine: String
+            if isOptionalReturn {
+                fallbackLine = "return nil"
+            } else {
+                fallbackLine = "fatalError(\"\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set\")"
+            }
             let ifHandlerStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 if let _handler {
     return \(invokePrefix)_handler(\(handlerCallArgs))
 } else if let _returnValue {
     return _returnValue
 } else {
-    fatalError("\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set")
+    \(fallbackLine)
 }
 """)))
             statements.append(ifHandlerStmt)
@@ -380,15 +389,23 @@ guard let _handler else {
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
 
         let hasReturnValue = Self.hasReturnValue(returnType)
+        let isOptionalReturn = returnType?.is(OptionalTypeSyntax.self) == true ||
+            returnType?.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) == true
 
         if hasReturnValue && !hasGenericReturn {
+            let fallback: String
+            if isOptionalReturn {
+                fallback = "return nil"
+            } else {
+                fallback = "fatalError(\"\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set\")"
+            }
             let ifStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 if let _handler = \(identifier)Handler {
     return \(invokePrefix)_handler(\(handlerCallArgs))
 } else if let _returnValue = \(identifier)ReturnValue {
     return _returnValue
 } else {
-    fatalError("\\(Self.self).\(identifier)Handler or \(identifier)ReturnValue must be set")
+    \(fallback)
 }
 """)))
             return [ifStmt]
@@ -470,7 +487,7 @@ if let \(handlerBinding) {
 """)))
     }
 
-    private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
+    static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
         guard let returnType else {
             return false
         }

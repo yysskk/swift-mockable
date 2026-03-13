@@ -37,6 +37,15 @@ extension MockGenerator {
 
                 // Reset handler
                 generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)Handler = nil"))))
+
+                // Reset return value (for non-generic return types)
+                let returnType = funcDecl.signature.returnClause?.type
+                let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
+                let hasReturnValue = Self.hasReturnValue(returnType)
+                let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+                if hasReturnValue && !hasGenericReturn {
+                    generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)ReturnValue = nil"))))
+                }
             } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 let prefix = Self.isTypeMember(varDecl.modifiers) ? "Self." : ""
 
@@ -143,6 +152,15 @@ extension MockGenerator {
 
                     // Reset handler
                     generatedStatements.append("storage.\(identifier)Handler = nil")
+
+                    // Reset return value (for non-generic return types)
+                    let returnType = funcDecl.signature.returnClause?.type
+                    let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
+                    let hasReturnValue = Self.hasReturnValue(returnType)
+                    let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+                    if hasReturnValue && !hasGenericReturn {
+                        generatedStatements.append("storage.\(identifier)ReturnValue = nil")
+                    }
                 } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                     for binding in varDecl.bindings {
                         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
