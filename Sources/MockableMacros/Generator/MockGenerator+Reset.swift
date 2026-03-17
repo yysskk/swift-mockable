@@ -99,7 +99,10 @@ extension MockGenerator {
             : []
 
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(additional: additionalModifiers),
+            modifiers: buildModifiers(
+                additional: additionalModifiers,
+                isOverridable: canBeSubclassedOutsideModule
+            ),
             name: .identifier("resetMock"),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
@@ -224,7 +227,10 @@ extension MockGenerator {
         }
 
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(additional: additionalModifiers),
+            modifiers: buildModifiers(
+                additional: additionalModifiers,
+                isOverridable: canBeSubclassedOutsideModule
+            ),
             name: .identifier("resetMock"),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
