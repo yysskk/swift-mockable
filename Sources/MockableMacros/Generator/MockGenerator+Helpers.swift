@@ -372,6 +372,37 @@ extension MockGenerator {
             ))
         }
 
+        // Handle parenthesized types / tuple types BEFORE the genericParamNames.isEmpty early return
+        // A single-element tuple like `(@escaping (Error?) -> Void)` should be unwrapped
+        // so the inner attributed type can be properly processed (e.g., @escaping stripped)
+        if let tupleType = type.as(TupleTypeSyntax.self) {
+            if tupleType.elements.count == 1, let element = tupleType.elements.first,
+               element.firstName == nil, element.secondName == nil {
+                // Single-element tuple = parenthesized type; unwrap and recurse
+                return eraseGenericTypes(in: element.type, genericParamNames: genericParamNames)
+            }
+            if !genericParamNames.isEmpty {
+                // Multi-element tuple: recurse into each element
+                let processedElements = TupleTypeElementListSyntax(
+                    tupleType.elements.map { element in
+                        TupleTypeElementSyntax(
+                            firstName: element.firstName,
+                            secondName: element.secondName,
+                            colon: element.colon,
+                            type: eraseGenericTypes(in: element.type, genericParamNames: genericParamNames),
+                            ellipsis: element.ellipsis,
+                            trailingComma: element.trailingComma
+                        )
+                    }
+                )
+                return TypeSyntax(TupleTypeSyntax(
+                    leftParen: tupleType.leftParen,
+                    elements: processedElements,
+                    rightParen: tupleType.rightParen
+                ))
+            }
+        }
+
         if genericParamNames.isEmpty {
             return type
         }

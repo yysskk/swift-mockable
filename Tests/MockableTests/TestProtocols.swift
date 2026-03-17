@@ -44,6 +44,12 @@ protocol EventHandlerService {
 }
 
 @Mockable
+protocol ParenthesizedEscapingService {
+    func doSomething(completion: (@escaping (Error?) -> Void))
+    func doAnother(completion: (@escaping @Sendable (String) -> Void))
+}
+
+@Mockable
 protocol StaticService {
     static func makeIdentifier(prefix: String) -> String
     static var readOnlyToken: String { get }

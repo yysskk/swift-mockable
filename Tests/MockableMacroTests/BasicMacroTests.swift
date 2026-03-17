@@ -559,4 +559,80 @@ struct BasicMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Protocol with parenthesized @escaping closure parameter")
+    func parenthesizedEscapingClosureParameter() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol CompletionHandler {
+                func doSomething(completion: (@escaping (Error?) -> Void))
+            }
+            """,
+            expandedSource: """
+            protocol CompletionHandler {
+                func doSomething(completion: (@escaping (Error?) -> Void))
+            }
+
+            #if DEBUG
+            class CompletionHandlerMock: CompletionHandler {
+                var doSomethingCallCount: Int = 0
+                var doSomethingCallArgs: [(Error?) -> Void] = []
+                var doSomethingHandler: (@Sendable ((Error?) -> Void) -> Void)? = nil
+                func doSomething(completion: (@escaping (Error?) -> Void)) {
+                    doSomethingCallCount += 1
+                    doSomethingCallArgs.append(completion)
+                    if let _handler = doSomethingHandler {
+                        _handler(completion)
+                    }
+                }
+                func resetMock() {
+                    doSomethingCallCount = 0
+                    doSomethingCallArgs = []
+                    doSomethingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Protocol with parenthesized @escaping @Sendable closure parameter")
+    func parenthesizedEscapingSendableClosureParameter() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol CompletionHandler {
+                func doSomething(completion: (@escaping @Sendable (Error?) -> Void))
+            }
+            """,
+            expandedSource: """
+            protocol CompletionHandler {
+                func doSomething(completion: (@escaping @Sendable (Error?) -> Void))
+            }
+
+            #if DEBUG
+            class CompletionHandlerMock: CompletionHandler {
+                var doSomethingCallCount: Int = 0
+                var doSomethingCallArgs: [@Sendable (Error?) -> Void] = []
+                var doSomethingHandler: (@Sendable (@Sendable (Error?) -> Void) -> Void)? = nil
+                func doSomething(completion: (@escaping @Sendable (Error?) -> Void)) {
+                    doSomethingCallCount += 1
+                    doSomethingCallArgs.append(completion)
+                    if let _handler = doSomethingHandler {
+                        _handler(completion)
+                    }
+                }
+                func resetMock() {
+                    doSomethingCallCount = 0
+                    doSomethingCallArgs = []
+                    doSomethingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }
