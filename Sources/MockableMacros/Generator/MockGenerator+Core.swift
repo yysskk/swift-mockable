@@ -7,6 +7,7 @@ struct MockGenerator {
     let members: MemberBlockItemListSyntax
     let isSendable: Bool
     let isActor: Bool
+    let isMainActor: Bool
     let accessLevel: AccessLevel
     let parentMockClassName: String?
 
@@ -124,8 +125,15 @@ struct MockGenerator {
             inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "@unchecked Sendable")))
         }
 
+        var classAttributes: [AttributeListSyntax.Element] = []
+        if isMainActor {
+            classAttributes.append(.attribute(
+                AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier("MainActor")))
+            ))
+        }
+
         return ClassDeclSyntax(
-            attributes: AttributeListSyntax([]),
+            attributes: AttributeListSyntax(classAttributes),
             modifiers: buildClassModifiers(supportsOpen: true),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(

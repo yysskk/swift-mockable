@@ -41,6 +41,14 @@ public struct MockableMacro: PeerMacro {
             inherited.type.trimmedDescription == "Actor"
         } ?? false
 
+        // Check if the protocol has @MainActor attribute
+        let isMainActor = protocolDecl.attributes.contains { attr in
+            if case .attribute(let attributeSyntax) = attr {
+                return attributeSyntax.attributeName.trimmedDescription == "MainActor"
+            }
+            return false
+        }
+
         // Extract parent protocol names (excluding well-known non-protocol types)
         let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
         let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
@@ -60,6 +68,7 @@ public struct MockableMacro: PeerMacro {
             members: members,
             isSendable: isSendable || hasSendableAttribute,
             isActor: isActor,
+            isMainActor: isMainActor,
             accessLevel: accessLevel,
             parentMockClassName: parentMockClassName
         )
