@@ -32,24 +32,44 @@ enum AccessLevel: String {
     }
 
     /// Creates a DeclModifierSyntax for the class/actor declaration.
+    /// When `supportsOpen` is true, `public` becomes `open` so generated mock classes
+    /// can be subclassed from other modules.
     /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
-    func makeModifier() -> DeclModifierSyntax? {
+    func makeModifier(supportsOpen: Bool = false) -> DeclModifierSyntax? {
         // internal is the default, no modifier needed
         if self == .internal {
             return nil
         }
-        return DeclModifierSyntax(name: .keyword(keyword))
+
+        let modifierKeyword: Keyword
+        if supportsOpen, self == .public {
+            modifierKeyword = .open
+        } else {
+            modifierKeyword = keyword
+        }
+
+        return DeclModifierSyntax(name: .keyword(modifierKeyword))
     }
 
     /// Creates a DeclModifierSyntax for member declarations.
+    /// When `isOverridable` is true, `public` becomes `open` so subclasses in other
+    /// modules can override the generated member.
     /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
     /// For `private` protocols, returns `fileprivate` since members must be fileprivate.
-    func makeMemberModifier() -> DeclModifierSyntax? {
+    func makeMemberModifier(isOverridable: Bool = false) -> DeclModifierSyntax? {
         // internal is the default, no modifier needed
         if self == .internal {
             return nil
         }
-        return DeclModifierSyntax(name: .keyword(memberKeyword))
+
+        let modifierKeyword: Keyword
+        if isOverridable, self == .public {
+            modifierKeyword = .open
+        } else {
+            modifierKeyword = memberKeyword
+        }
+
+        return DeclModifierSyntax(name: .keyword(modifierKeyword))
     }
 
     /// Extracts the access level from a protocol declaration's modifiers

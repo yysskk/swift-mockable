@@ -16,9 +16,12 @@ struct MockGenerator {
 
     /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
     /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
-    func buildModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+    func buildModifiers(
+        additional: [DeclModifierSyntax] = [],
+        isOverridable: Bool = false
+    ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeMemberModifier() {
+        if let accessModifier = accessLevel.makeMemberModifier(isOverridable: isOverridable) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
@@ -26,13 +29,20 @@ struct MockGenerator {
     }
 
     /// Builds a DeclModifierListSyntax for the class/actor declaration itself.
-    func buildClassModifiers(additional: [DeclModifierSyntax] = []) -> DeclModifierListSyntax {
+    func buildClassModifiers(
+        additional: [DeclModifierSyntax] = [],
+        supportsOpen: Bool = false
+    ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
+        if let accessModifier = accessLevel.makeModifier(supportsOpen: supportsOpen) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
         return DeclModifierListSyntax(modifiers)
+    }
+
+    var canBeSubclassedOutsideModule: Bool {
+        accessLevel == .public && !isActor
     }
 
     func generate() throws -> DeclSyntax {
@@ -73,6 +83,13 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
+        // Generate explicit init when access level requires it (e.g., public/open)
+        // Without this, the default init is internal, making the mock unusable across modules
+        if accessLevel == .public || accessLevel == .package {
+            let initDecl = generateInit()
+            classMembers.append(MemberBlockItemSyntax(decl: initDecl))
+        }
+
         classMembers.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
@@ -107,14 +124,9 @@ struct MockGenerator {
             inheritedTypes.append(InheritedTypeSyntax(type: TypeSyntax(stringLiteral: "@unchecked Sendable")))
         }
 
-        var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
-            modifiers.append(accessModifier)
-        }
-
         return ClassDeclSyntax(
             attributes: AttributeListSyntax([]),
-            modifiers: DeclModifierListSyntax(modifiers),
+            modifiers: buildClassModifiers(supportsOpen: true),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
@@ -146,6 +158,13 @@ struct MockGenerator {
             actorMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
+        // Generate explicit init when access level requires it (e.g., public/package)
+        // Without this, the default synthesized init is internal, making the mock unusable across modules
+        if accessLevel == .public || accessLevel == .package {
+            let initDecl = generateInit()
+            actorMembers.append(MemberBlockItemSyntax(decl: initDecl))
+        }
+
         actorMembers.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
@@ -161,14 +180,9 @@ struct MockGenerator {
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
         ]
 
-        var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier() {
-            modifiers.append(accessModifier)
-        }
-
         return ActorDeclSyntax(
             attributes: AttributeListSyntax([]),
-            modifiers: DeclModifierListSyntax(modifiers),
+            modifiers: buildClassModifiers(),
             name: .identifier(mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
@@ -199,6 +213,39 @@ struct MockGenerator {
 
             return []
         }
+    }
+
+    /// Generates an explicit initializer for the mock class.
+    /// For `public` protocols, the default synthesized initializer is `internal`,
+    /// which prevents the mock from being instantiated across module boundaries.
+    /// When the mock inherits from a parent mock, the init uses `override`.
+    private func generateInit() -> DeclSyntax {
+        let isOverride = hasParentMock
+        let modifiers = buildModifiers(
+            additional: isOverride ? [DeclModifierSyntax(name: .keyword(.override))] : [],
+            isOverridable: false
+        )
+
+        var bodyStatements: [CodeBlockItemSyntax] = []
+        if isOverride {
+            bodyStatements.append(
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.init()")))
+            )
+        }
+
+        let initDecl = InitializerDeclSyntax(
+            modifiers: modifiers,
+            signature: FunctionSignatureSyntax(
+                parameterClause: FunctionParameterClauseSyntax(
+                    parameters: FunctionParameterListSyntax([])
+                )
+            ),
+            body: CodeBlockSyntax(
+                statements: CodeBlockItemListSyntax(bodyStatements)
+            )
+        )
+
+        return DeclSyntax(initDecl)
     }
 
 }

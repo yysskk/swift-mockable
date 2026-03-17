@@ -49,7 +49,7 @@ struct AccessLevelMacroTests {
         )
     }
 
-    @Test("Public protocol generates public mock")
+    @Test("Public protocol generates open mock class")
     func publicProtocol() {
         assertMacroExpansionForTesting(
             """
@@ -64,7 +64,9 @@ struct AccessLevelMacroTests {
             }
 
             #if DEBUG
-            public class PublicServiceMock: PublicService {
+            open class PublicServiceMock: PublicService {
+                public init() {
+                }
                 public var fetchCallCount: Int = 0
                 public var fetchCallArgs: [()] = []
                 public var fetchHandler: (@Sendable () -> String)? = nil
@@ -76,7 +78,7 @@ struct AccessLevelMacroTests {
                     }
                     return _handler()
                 }
-                public func resetMock() {
+                open func resetMock() {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
@@ -104,6 +106,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             package class PackageServiceMock: PackageService {
+                package init() {
+                }
                 package var fetchCallCount: Int = 0
                 package var fetchCallArgs: [()] = []
                 package var fetchHandler: (@Sendable () -> String)? = nil
@@ -157,7 +161,7 @@ struct AccessLevelMacroTests {
         )
     }
 
-    @Test("Public protocol with property generates public mock")
+    @Test("Public protocol with property generates open mock class")
     func publicProtocolWithProperty() {
         assertMacroExpansionForTesting(
             """
@@ -172,12 +176,14 @@ struct AccessLevelMacroTests {
             }
 
             #if DEBUG
-            public class PublicConfigMock: PublicConfig {
+            open class PublicConfigMock: PublicConfig {
+                public init() {
+                }
                 public var _apiKey: String? = nil
                 public var apiKey: String {
                     _apiKey!
                 }
-                public func resetMock() {
+                open func resetMock() {
                     _apiKey = nil
                 }
             }

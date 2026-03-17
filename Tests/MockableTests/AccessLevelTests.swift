@@ -12,7 +12,7 @@ protocol InternalUserService {
     var currentUser: String { get }
 }
 
-// Public protocol - should generate public mock
+// Public protocol - should generate open mock class
 @Mockable
 public protocol PublicConfigService {
     func getConfig(key: String) -> String
