@@ -86,6 +86,18 @@ protocol InoutGenericService {
     func transform<T>(_ value: inout T)
 }
 
+// MARK: - MainActor Protocols
+
+@Mockable
+@MainActor
+protocol MainActorPresenter {
+    func loadData()
+    func fetchItems() async throws -> [String]
+    var title: String { get }
+    var subtitle: String { get set }
+    var optionalNote: String? { get set }
+}
+
 // MARK: - Protocol Inheritance
 
 @Mockable
