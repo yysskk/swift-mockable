@@ -181,6 +181,10 @@ public struct MockableMacro: PeerMacro {
             return true
         }
 
+        if decl.is(TypeAliasDeclSyntax.self) {
+            return true
+        }
+
         if decl.is(FunctionDeclSyntax.self) {
             return true
         }

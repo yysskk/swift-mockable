@@ -73,11 +73,23 @@ extension MockGenerator {
 
     func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
         mapMemberBlockItemsPreservingIfConfig { decl in
-            guard let associatedType = decl.as(AssociatedTypeDeclSyntax.self) else {
-                return []
+            if let associatedType = decl.as(AssociatedTypeDeclSyntax.self) {
+                return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
             }
 
-            return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
+            if let typeAliasDecl = decl.as(TypeAliasDeclSyntax.self) {
+                let rebuilt = TypeAliasDeclSyntax(
+                    modifiers: buildModifiers(),
+                    name: .identifier(typeAliasDecl.name.text),
+                    initializer: TypeInitializerClauseSyntax(
+                        equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),
+                        value: typeAliasDecl.initializer.value
+                    )
+                )
+                return [MemberBlockItemSyntax(decl: rebuilt)]
+            }
+
+            return []
         }
     }
 
