@@ -239,6 +239,40 @@ struct MockableIntegrationTests {
         #expect(receivedValue == 42)
     }
 
+    @Test("Method with parenthesized @escaping closure parameter")
+    func parenthesizedEscapingClosureParameter() {
+        let mock = ParenthesizedEscapingServiceMock()
+        nonisolated(unsafe) var receivedError: Error?
+
+        mock.doSomethingHandler = { @Sendable completion in
+            completion(NSError(domain: "test", code: 1))
+        }
+
+        mock.doSomething { error in
+            receivedError = error
+        }
+
+        #expect(mock.doSomethingCallCount == 1)
+        #expect((receivedError as? NSError)?.domain == "test")
+    }
+
+    @Test("Method with parenthesized @escaping @Sendable closure parameter")
+    func parenthesizedEscapingSendableClosureParameter() {
+        let mock = ParenthesizedEscapingServiceMock()
+        nonisolated(unsafe) var receivedValue: String?
+
+        mock.doAnotherHandler = { @Sendable completion in
+            completion("hello")
+        }
+
+        mock.doAnother { value in
+            receivedValue = value
+        }
+
+        #expect(mock.doAnotherCallCount == 1)
+        #expect(receivedValue == "hello")
+    }
+
     @Test("Static members are lock-backed and resettable")
     func staticMembers() async {
         let resetter = StaticServiceMock()
