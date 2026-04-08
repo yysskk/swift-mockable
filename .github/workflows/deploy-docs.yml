@@ -43,4 +43,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}documentation/mockable
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
