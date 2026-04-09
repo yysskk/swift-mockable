@@ -1,0 +1,44 @@
+# swift-mockable
+
+> A Swift macro (`@Mockable`) that generates protocol mocks with call tracking, argument capture, and configurable handlers for testing. MIT licensed, supports Swift 5.9+/6.2+.
+
+swift-mockable provides a single `@Mockable` macro that you attach to any Swift protocol. It generates a `<ProtocolName>Mock` class wrapped in `#if DEBUG` with:
+
+- `<method>CallCount` / `<method>CallArgs` / `<method>Handler` for every method
+- `_<property>` backing storage and protocol-conforming computed properties
+- `subscript<suffix>CallCount` / `CallArgs` / `Handler` / `SetHandler` for subscripts
+- `resetMock()` to clear all tracking state
+
+## Key Features
+
+- Sync, async, throws methods
+- Get-only, get-set, and optional properties
+- Get-only and get-set subscripts
+- Variadic parameters (captured as arrays)
+- `inout` parameters with write-back support
+- Generic methods (type-erased to `Any`)
+- Associated types (uses default type or `Any`)
+- Overloaded methods (unique suffixes auto-generated)
+- Static methods and properties
+- `Sendable` protocol support (`@unchecked Sendable` + `MockableLock`)
+- `Actor` protocol support (actor mock with `nonisolated` helpers)
+- `@MainActor` protocol support
+- Protocol inheritance (child mock inherits parent mock)
+- `#if` / `#elseif` / `#else` conditional compilation
+
+## Requirements
+
+- Swift 5.9, 5.10, 6.2+
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+- MIT License
+
+## Documentation
+
+- [Full documentation for LLMs](https://yysskk.github.io/swift-mockable/llms-full.txt): Complete installation, usage, naming conventions, and advanced features in a single file
+- [Getting Started](https://yysskk.github.io/swift-mockable/documentation/mockable/gettingstarted): Installation and basic usage
+- [Advanced Usage](https://yysskk.github.io/swift-mockable/documentation/mockable/advancedusage): Naming rules, generics, inout, Sendable, Actor, inheritance
+
+## Optional
+
+- [GitHub Repository](https://github.com/yysskk/swift-mockable): Source code, issues, contributions
+- [API Reference](https://yysskk.github.io/swift-mockable/documentation/mockable): DocC-generated API documentation

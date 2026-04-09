@@ -1,0 +1,387 @@
+# swift-mockable: Complete Documentation
+
+> swift-mockable is a Swift testing library that provides a `@Mockable` macro for generating protocol mocks using compile-time code generation (Swift macros). It produces a `<ProtocolName>Mock` class with call tracking, argument capture, configurable handlers, and property stubs. All generated mocks are wrapped in `#if DEBUG`. MIT licensed.
+
+## Installation
+
+Add the package dependency in `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "0.1.0")
+]
+```
+
+Add `Mockable` to your target:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: ["Mockable"]
+)
+```
+
+## Quick Start
+
+```swift
+import Mockable
+
+@Mockable
+protocol UserService {
+    func fetchUser(id: Int) async throws -> User
+    func saveUser(_ user: User) async throws
+    var currentUser: User? { get }
+    var isLoggedIn: Bool { get set }
+}
+
+let mock = UserServiceMock()
+
+// Configure handlers
+mock.fetchUserHandler = { id in
+    User(id: id, name: "Test User")
+}
+
+// Set properties
+mock._currentUser = User(id: 1, name: "Current")
+mock.isLoggedIn = true
+
+// Call methods
+let user = try await mock.fetchUser(id: 42)
+
+// Verify
+#expect(user.id == 42)
+#expect(mock.fetchUserCallCount == 1)
+#expect(mock.fetchUserCallArgs == [42])
+
+// Reset
+mock.resetMock()
+#expect(mock.fetchUserCallCount == 0)
+```
+
+## What Gets Generated
+
+For each protocol requirement, `@Mockable` generates test-friendly members:
+
+### Functions
+
+- `<method>CallCount` -- number of times the method was called
+- `<method>CallArgs` -- array of captured arguments from each call
+- `<method>Handler` -- configurable closure that implements the method
+
+### Properties
+
+- `_<property>` -- backing storage for get-only properties (set this in tests)
+- `<property>` -- computed property that conforms to the protocol
+
+For get-set properties, the generated property is a stored property, not computed.
+
+### Subscripts
+
+- `subscript<suffix>CallCount` -- number of subscript accesses
+- `subscript<suffix>CallArgs` -- array of captured subscript arguments
+- `subscript<suffix>Handler` -- configurable closure for get subscripts
+- `subscript<suffix>SetHandler` -- configurable closure for set subscripts (get-set only)
+
+### Utility
+
+- `resetMock()` -- clears all handlers, call counts, call arguments, and backing properties
+
+## Naming Conventions
+
+### Non-overloaded Methods
+
+For a method named `fetch`, generated members are simply:
+
+- `fetchCallCount`
+- `fetchCallArgs`
+- `fetchHandler`
+
+### Overloaded Methods
+
+When methods share the same base name, suffixes are appended to disambiguate:
+
+1. Start with sanitized parameter type names.
+2. If still ambiguous, append return type (if non-Void), `Async` (for async), and `Throwing` (for throws).
+
+Example:
+
+```swift
+func get(url: URL) async -> String
+func get(url: URL) async throws -> Data
+```
+
+Generates: `getURLStringAsyncHandler` and `getURLDataAsyncThrowingHandler`.
+
+### Subscripts
+
+Subscript-generated names use `subscript<suffix>...`, where the suffix is based on parameter types.
+
+```swift
+subscript(index: Int) -> String { get }
+```
+
+Generates: `subscriptIntCallCount`, `subscriptIntCallArgs`, `subscriptIntHandler`.
+
+Get-set subscripts also generate `subscript<suffix>SetHandler`.
+
+## Supported Features
+
+### Sync, Async, and Throws Methods
+
+All method signatures are supported:
+
+```swift
+@Mockable
+protocol DataService {
+    func loadSync() -> Data
+    func loadAsync() async -> Data
+    func loadThrowing() throws -> Data
+    func loadAsyncThrowing() async throws -> Data
+}
+```
+
+Each generates its own `CallCount`, `CallArgs`, and `Handler`.
+
+### Properties
+
+Get-only, get-set, and optional properties are supported:
+
+```swift
+@Mockable
+protocol UserStore {
+    var name: String { get }        // generates _name backing storage
+    var age: Int { get set }        // generates stored property
+    var email: String? { get }      // generates _email optional backing storage
+}
+
+let mock = UserStoreMock()
+mock._name = "Alice"       // set backing storage for get-only
+mock.age = 30              // set stored property directly
+mock._email = nil          // optional left as nil
+```
+
+### Subscripts
+
+Get-only and get-set subscripts:
+
+```swift
+@Mockable
+protocol Cache {
+    subscript(key: String) -> Data? { get }
+    subscript(index: Int) -> String { get set }
+}
+
+let mock = CacheMock()
+
+mock.subscriptStringHandler = { key in
+    someData
+}
+
+mock.subscriptIntHandler = { index in
+    "value"
+}
+
+mock.subscriptIntSetHandler = { index, newValue in
+    // handle set
+}
+```
+
+### Variadic Parameters
+
+Variadic parameters are captured as arrays in `CallArgs`:
+
+```swift
+@Mockable
+protocol Logger {
+    func log(_ items: Any...)
+}
+
+let mock = LoggerMock()
+mock.logHandler = { items in }
+
+mock.log("a", "b", "c")
+// mock.logCallArgs contains [[\"a\", \"b\", \"c\"]]
+```
+
+### `inout` Parameters
+
+`CallArgs` stores the input snapshot before mutation. Handler return shapes vary:
+
+Single `inout`, no return value -- handler returns the updated value:
+
+```swift
+func normalize(_ value: inout Double)
+// handler: (Double) -> Double
+```
+
+Multiple `inout`, no return value -- handler returns a tuple of updated values:
+
+```swift
+func swap(_ a: inout Int, _ b: inout Int)
+// handler: (Int, Int) -> (Int, Int)
+```
+
+`inout` with return value -- handler returns `(returnValue, inoutArgs)`:
+
+```swift
+func removeFirst(_ array: inout [String]) -> String
+// handler: ([String]) -> (returnValue: String, inoutArgs: [String])
+
+mock.removeFirstHandler = { array in
+    let first = array.first!
+    return (returnValue: first, inoutArgs: Array(array.dropFirst()))
+}
+```
+
+### Generic Methods
+
+Generic type parameters are type-erased to `Any` in `CallArgs` storage and handlers. Generated method implementations cast generic returns back to the requested type:
+
+```swift
+@Mockable
+protocol Repository {
+    func find<T>(by id: String) -> T?
+}
+
+let mock = RepositoryMock()
+mock.findHandler = { id in
+    User(id: id, name: "Test") as Any
+}
+
+let user: User? = mock.find(by: "123")
+```
+
+### Associated Types
+
+Each associated type generates a `typealias` in the mock. If the protocol provides a default type, that type is used; otherwise `Any` is used:
+
+```swift
+associatedtype Value = Int   // -> typealias Value = Int
+associatedtype Value         // -> typealias Value = Any
+```
+
+### Static Methods and Properties
+
+Static methods and properties are supported. They are lock-backed through shared static storage:
+
+```swift
+@Mockable
+protocol Configuration {
+    static var shared: String { get }
+    static func reset()
+}
+```
+
+`resetMock()` also resets static generated members.
+
+### Protocol Inheritance
+
+If a protocol inherits from another `@Mockable` protocol, the child mock inherits from the parent mock:
+
+```swift
+@Mockable
+protocol Animal {
+    func eat()
+}
+
+@Mockable
+protocol Dog: Animal {
+    func bark()
+}
+
+// DogMock inherits from AnimalMock
+```
+
+Child `resetMock()` calls `super.resetMock()` first.
+
+For multiple parent protocols, the first parent is used as the mock superclass.
+
+### Conditional Compilation
+
+Protocol members inside `#if` / `#elseif` / `#else` are preserved in the generated mock. `resetMock()` includes matching conditional branches:
+
+```swift
+@Mockable
+protocol PlatformService {
+    func commonMethod()
+    #if os(iOS)
+    func iOSOnly()
+    #else
+    func nonIOSOnly()
+    #endif
+}
+```
+
+### `Sendable` Protocol Support
+
+If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock` for thread safety:
+
+```swift
+@Mockable
+protocol ThreadSafeService: Sendable {
+    func process() async
+}
+// ThreadSafeServiceMock is @unchecked Sendable with lock-protected state
+```
+
+`MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to `NSLock`-based `LegacyLock` on older OS versions.
+
+### `Actor` Protocol Support
+
+If a protocol inherits from `Actor`, the generated mock is an actor. Helper members (call counters, argument collections, handlers, backing properties, `resetMock()`) are generated as `nonisolated` for test ergonomics:
+
+```swift
+@Mockable
+protocol MyActorProtocol: Actor {
+    func doWork() async
+}
+// MyActorProtocolMock is an actor with nonisolated test helpers
+```
+
+### `@MainActor` Protocol Support
+
+Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
+
+## Behavioral Notes
+
+- Return-value methods and get-only subscripts call `fatalError` if their handler is not set.
+- Void-return methods and subscript setters are no-ops when handler is `nil`.
+- `resetMock()` clears handlers, call counts, call arguments, and backing properties.
+- For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
+
+## Diagnostics and Limitations
+
+- `@Mockable` can only be applied to protocols.
+- `@Mockable` does not accept arguments.
+- Unsupported protocol members (e.g. `init`) emit compile-time diagnostics.
+- Static/class subscripts are not supported.
+- For protocols with multiple parent protocols, the first parent is used as the mock superclass.
+
+## Requirements
+
+- Swift 5.9, 5.10, and 6.2+
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+- `MockableLock` lock strategy:
+  - iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+: uses `Mutex` (`Synchronization`)
+  - Older OS versions: falls back to `LegacyLock` (`NSLock`-based)
+
+## API Reference
+
+### `@Mockable` Macro
+
+```swift
+@attached(peer, names: suffixed(Mock))
+public macro Mockable()
+```
+
+Attach to a protocol to generate a `<ProtocolName>Mock` class.
+
+### `MockableLock`
+
+A thread-safe lock wrapper used internally by `Sendable` mock types. Uses `Mutex` when the `Synchronization` module is available (newer OS), otherwise falls back to `NSLock`-based locking.
+
+## Links
+
+- GitHub: https://github.com/yysskk/swift-mockable
+- API Documentation: https://yysskk.github.io/swift-mockable/documentation/mockable
+- License: MIT
