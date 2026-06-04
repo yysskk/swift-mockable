@@ -274,9 +274,11 @@ extension MockGenerator {
 
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+        let elseBody = Self.defaultReturnStatement(for: returnType)
+            ?? "fatalError(\"\\(Self.self).subscript\(suffix)Handler is not set\")"
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler = subscript\(suffix)Handler else {
-    fatalError("\\(Self.self).subscript\(suffix)Handler is not set")
+    \(elseBody)
 }
 """)))
         let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
@@ -325,9 +327,11 @@ _storage.withLock { storage in
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
 
+        let elseBody = Self.defaultReturnStatement(for: returnType)
+            ?? "fatalError(\"\\(Self.self).subscript\(suffix)Handler is not set\")"
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
-    fatalError("\\(Self.self).subscript\(suffix)Handler is not set")
+    \(elseBody)
 }
 """)))
         let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))

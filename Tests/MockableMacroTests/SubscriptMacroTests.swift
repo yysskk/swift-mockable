@@ -49,6 +49,84 @@ struct SubscriptMacroTests {
         )
     }
 
+    @Test("Get-only optional subscript returns nil when handler is unset")
+    func getOnlyOptionalSubscriptDefaultsToNil() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                subscript(key: String) -> Int? { get }
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                subscript(key: String) -> Int? { get }
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var subscriptStringCallCount: Int = 0
+                var subscriptStringCallArgs: [String] = []
+                var subscriptStringHandler: (@Sendable (String) -> Int? )? = nil
+                subscript(key: String) -> Int? {
+                    subscriptStringCallCount += 1
+                    subscriptStringCallArgs.append(key)
+                    guard let _handler = subscriptStringHandler else {
+                        return nil
+                    }
+                    return _handler(key)
+                }
+                func resetMock() {
+                    subscriptStringCallCount = 0
+                    subscriptStringCallArgs = []
+                    subscriptStringHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Get-only array subscript returns empty array when handler is unset")
+    func getOnlyArraySubscriptDefaultsToEmptyArray() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                subscript(key: String) -> [Int] { get }
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                subscript(key: String) -> [Int] { get }
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var subscriptStringCallCount: Int = 0
+                var subscriptStringCallArgs: [String] = []
+                var subscriptStringHandler: (@Sendable (String) -> [Int] )? = nil
+                subscript(key: String) -> [Int] {
+                    subscriptStringCallCount += 1
+                    subscriptStringCallArgs.append(key)
+                    guard let _handler = subscriptStringHandler else {
+                        return []
+                    }
+                    return _handler(key)
+                }
+                func resetMock() {
+                    subscriptStringCallCount = 0
+                    subscriptStringCallArgs = []
+                    subscriptStringHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Protocol with get-set subscript")
     func getSetSubscript() {
         assertMacroExpansionForTesting(

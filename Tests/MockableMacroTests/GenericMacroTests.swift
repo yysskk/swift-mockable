@@ -194,4 +194,82 @@ struct GenericMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Generic method with optional return returns nil when handler is unset")
+    func genericOptionalReturnDefaultsToNil() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func get<T>(_ key: String) -> T?
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func get<T>(_ key: String) -> T?
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var getCallCount: Int = 0
+                var getCallArgs: [String] = []
+                var getHandler: (@Sendable (String) -> Any?)? = nil
+                func get<T>(_ key: String) -> T? {
+                    getCallCount += 1
+                    getCallArgs.append(key)
+                    guard let _handler = getHandler else {
+                        return nil
+                    }
+                    return _handler(key) as! T?
+                }
+                func resetMock() {
+                    getCallCount = 0
+                    getCallArgs = []
+                    getHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method with array return returns empty array when handler is unset")
+    func genericArrayReturnDefaultsToEmptyArray() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func get<T>(_ key: String) -> [T]
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func get<T>(_ key: String) -> [T]
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var getCallCount: Int = 0
+                var getCallArgs: [String] = []
+                var getHandler: (@Sendable (String) -> [Any])? = nil
+                func get<T>(_ key: String) -> [T] {
+                    getCallCount += 1
+                    getCallArgs.append(key)
+                    guard let _handler = getHandler else {
+                        return []
+                    }
+                    return _handler(key) as! [T]
+                }
+                func resetMock() {
+                    getCallCount = 0
+                    getCallArgs = []
+                    getHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

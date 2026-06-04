@@ -635,4 +635,412 @@ struct BasicMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Method with optional return returns nil when handler is unset")
+    func optionalReturnDefaultsToNil() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func fetch() -> String?
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func fetch() -> String?
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [()] = []
+                var fetchHandler: (@Sendable () -> String?)? = nil
+                func fetch() -> String? {
+                    fetchCallCount += 1
+                    fetchCallArgs.append(())
+                    guard let _handler = fetchHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    fetchCallCount = 0
+                    fetchCallArgs = []
+                    fetchHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Method with array return returns empty array when handler is unset")
+    func arrayReturnDefaultsToEmptyArray() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func items() -> [String]
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func items() -> [String]
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var itemsCallCount: Int = 0
+                var itemsCallArgs: [()] = []
+                var itemsHandler: (@Sendable () -> [String])? = nil
+                func items() -> [String] {
+                    itemsCallCount += 1
+                    itemsCallArgs.append(())
+                    guard let _handler = itemsHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    itemsCallCount = 0
+                    itemsCallArgs = []
+                    itemsHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Method with set return returns empty collection when handler is unset")
+    func setReturnDefaultsToEmptyCollection() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func tags() -> Set<String>
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func tags() -> Set<String>
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var tagsCallCount: Int = 0
+                var tagsCallArgs: [()] = []
+                var tagsHandler: (@Sendable () -> Set<String>)? = nil
+                func tags() -> Set<String> {
+                    tagsCallCount += 1
+                    tagsCallArgs.append(())
+                    guard let _handler = tagsHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    tagsCallCount = 0
+                    tagsCallArgs = []
+                    tagsHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Method with dictionary return returns empty dictionary when handler is unset")
+    func dictionaryReturnDefaultsToEmptyDictionary() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func mapping() -> [String: Int]
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func mapping() -> [String: Int]
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var mappingCallCount: Int = 0
+                var mappingCallArgs: [()] = []
+                var mappingHandler: (@Sendable () -> [String: Int])? = nil
+                func mapping() -> [String: Int] {
+                    mappingCallCount += 1
+                    mappingCallArgs.append(())
+                    guard let _handler = mappingHandler else {
+                        return [:]
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    mappingCallCount = 0
+                    mappingCallArgs = []
+                    mappingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Long-form Optional, Array and Dictionary returns use empty defaults")
+    func longFormCollectionsDefaultToEmpty() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func optionalValue() -> Optional<String>
+                func arrayValue() -> Array<String>
+                func dictionaryValue() -> Dictionary<String, Int>
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func optionalValue() -> Optional<String>
+                func arrayValue() -> Array<String>
+                func dictionaryValue() -> Dictionary<String, Int>
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var optionalValueCallCount: Int = 0
+                var optionalValueCallArgs: [()] = []
+                var optionalValueHandler: (@Sendable () -> Optional<String>)? = nil
+                func optionalValue() -> Optional<String> {
+                    optionalValueCallCount += 1
+                    optionalValueCallArgs.append(())
+                    guard let _handler = optionalValueHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                var arrayValueCallCount: Int = 0
+                var arrayValueCallArgs: [()] = []
+                var arrayValueHandler: (@Sendable () -> Array<String>)? = nil
+                func arrayValue() -> Array<String> {
+                    arrayValueCallCount += 1
+                    arrayValueCallArgs.append(())
+                    guard let _handler = arrayValueHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                var dictionaryValueCallCount: Int = 0
+                var dictionaryValueCallArgs: [()] = []
+                var dictionaryValueHandler: (@Sendable () -> Dictionary<String, Int>)? = nil
+                func dictionaryValue() -> Dictionary<String, Int> {
+                    dictionaryValueCallCount += 1
+                    dictionaryValueCallArgs.append(())
+                    guard let _handler = dictionaryValueHandler else {
+                        return [:]
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    optionalValueCallCount = 0
+                    optionalValueCallArgs = []
+                    optionalValueHandler = nil
+                    arrayValueCallCount = 0
+                    arrayValueCallArgs = []
+                    arrayValueHandler = nil
+                    dictionaryValueCallCount = 0
+                    dictionaryValueCallArgs = []
+                    dictionaryValueHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Module-qualified Swift.Optional, Swift.Array, Swift.Set and Swift.Dictionary returns use empty defaults")
+    func moduleQualifiedCollectionsDefaultToEmpty() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func optionalValue() -> Swift.Optional<String>
+                func arrayValue() -> Swift.Array<String>
+                func setValue() -> Swift.Set<String>
+                func dictionaryValue() -> Swift.Dictionary<String, Int>
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func optionalValue() -> Swift.Optional<String>
+                func arrayValue() -> Swift.Array<String>
+                func setValue() -> Swift.Set<String>
+                func dictionaryValue() -> Swift.Dictionary<String, Int>
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var optionalValueCallCount: Int = 0
+                var optionalValueCallArgs: [()] = []
+                var optionalValueHandler: (@Sendable () -> Swift.Optional<String>)? = nil
+                func optionalValue() -> Swift.Optional<String> {
+                    optionalValueCallCount += 1
+                    optionalValueCallArgs.append(())
+                    guard let _handler = optionalValueHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                var arrayValueCallCount: Int = 0
+                var arrayValueCallArgs: [()] = []
+                var arrayValueHandler: (@Sendable () -> Swift.Array<String>)? = nil
+                func arrayValue() -> Swift.Array<String> {
+                    arrayValueCallCount += 1
+                    arrayValueCallArgs.append(())
+                    guard let _handler = arrayValueHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                var setValueCallCount: Int = 0
+                var setValueCallArgs: [()] = []
+                var setValueHandler: (@Sendable () -> Swift.Set<String>)? = nil
+                func setValue() -> Swift.Set<String> {
+                    setValueCallCount += 1
+                    setValueCallArgs.append(())
+                    guard let _handler = setValueHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                var dictionaryValueCallCount: Int = 0
+                var dictionaryValueCallArgs: [()] = []
+                var dictionaryValueHandler: (@Sendable () -> Swift.Dictionary<String, Int>)? = nil
+                func dictionaryValue() -> Swift.Dictionary<String, Int> {
+                    dictionaryValueCallCount += 1
+                    dictionaryValueCallArgs.append(())
+                    guard let _handler = dictionaryValueHandler else {
+                        return [:]
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    optionalValueCallCount = 0
+                    optionalValueCallArgs = []
+                    optionalValueHandler = nil
+                    arrayValueCallCount = 0
+                    arrayValueCallArgs = []
+                    arrayValueHandler = nil
+                    setValueCallCount = 0
+                    setValueCallArgs = []
+                    setValueHandler = nil
+                    dictionaryValueCallCount = 0
+                    dictionaryValueCallArgs = []
+                    dictionaryValueHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Method with implicitly unwrapped optional return returns nil when handler is unset")
+    func implicitlyUnwrappedOptionalReturnDefaultsToNil() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func fetch() -> String!
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func fetch() -> String!
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [()] = []
+                var fetchHandler: (@Sendable () -> String?)? = nil
+                func fetch() -> String! {
+                    fetchCallCount += 1
+                    fetchCallArgs.append(())
+                    guard let _handler = fetchHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    fetchCallCount = 0
+                    fetchCallArgs = []
+                    fetchHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Nested collection returns use the outermost type for the default")
+    func nestedCollectionReturnsUseOutermostType() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func optionalArray() -> [String]?
+                func arrayOfOptional() -> [String?]
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func optionalArray() -> [String]?
+                func arrayOfOptional() -> [String?]
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var optionalArrayCallCount: Int = 0
+                var optionalArrayCallArgs: [()] = []
+                var optionalArrayHandler: (@Sendable () -> [String]?)? = nil
+                func optionalArray() -> [String]? {
+                    optionalArrayCallCount += 1
+                    optionalArrayCallArgs.append(())
+                    guard let _handler = optionalArrayHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                var arrayOfOptionalCallCount: Int = 0
+                var arrayOfOptionalCallArgs: [()] = []
+                var arrayOfOptionalHandler: (@Sendable () -> [String?])? = nil
+                func arrayOfOptional() -> [String?] {
+                    arrayOfOptionalCallCount += 1
+                    arrayOfOptionalCallArgs.append(())
+                    guard let _handler = arrayOfOptionalHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    optionalArrayCallCount = 0
+                    optionalArrayCallArgs = []
+                    optionalArrayHandler = nil
+                    arrayOfOptionalCallCount = 0
+                    arrayOfOptionalCallArgs = []
+                    arrayOfOptionalHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

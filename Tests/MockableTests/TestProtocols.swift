@@ -133,3 +133,18 @@ protocol ActorOverloadedService: Actor {
     func process(_ value: String) async
     func fetch() async -> String
 }
+
+// MARK: - Unset-Handler Default Return Protocols
+
+@Mockable
+protocol DefaultReturningService {
+    func optionalValue() -> String?
+    func arrayValue() -> [String]
+    func setValue() -> Set<String>
+    func dictionaryValue() -> [String: Int]
+}
+
+@Mockable
+protocol ImplicitlyUnwrappedReturningService {
+    func implicitlyUnwrappedValue() -> String!
+}

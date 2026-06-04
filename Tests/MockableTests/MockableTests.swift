@@ -432,3 +432,50 @@ struct MockableIntegrationTests {
         #expect(mock.transformCallCount == 1)
     }
 }
+
+@Suite("Unset Handler Default Return Tests")
+struct UnsetHandlerDefaultReturnTests {
+    @Test("Optional return defaults to nil when handler is unset")
+    func optionalReturnsNil() {
+        let mock = DefaultReturningServiceMock()
+        #expect(mock.optionalValue() == nil)
+        #expect(mock.optionalValueCallCount == 1)
+    }
+
+    @Test("Array return defaults to empty when handler is unset")
+    func arrayReturnsEmpty() {
+        let mock = DefaultReturningServiceMock()
+        #expect(mock.arrayValue().isEmpty)
+        #expect(mock.arrayValueCallCount == 1)
+    }
+
+    @Test("Set return defaults to empty when handler is unset")
+    func setReturnsEmpty() {
+        let mock = DefaultReturningServiceMock()
+        #expect(mock.setValue().isEmpty)
+        #expect(mock.setValueCallCount == 1)
+    }
+
+    @Test("Dictionary return defaults to empty when handler is unset")
+    func dictionaryReturnsEmpty() {
+        let mock = DefaultReturningServiceMock()
+        #expect(mock.dictionaryValue().isEmpty)
+        #expect(mock.dictionaryValueCallCount == 1)
+    }
+
+    @Test("Implicitly unwrapped optional return defaults to nil when handler is unset")
+    func implicitlyUnwrappedReturnsNil() {
+        let mock = ImplicitlyUnwrappedReturningServiceMock()
+        let result: String? = mock.implicitlyUnwrappedValue()
+        #expect(result == nil)
+    }
+
+    @Test("Set handler still overrides the default return")
+    func handlerOverridesDefault() {
+        let mock = DefaultReturningServiceMock()
+        mock.optionalValueHandler = { "value" }
+        mock.arrayValueHandler = { ["a", "b"] }
+        #expect(mock.optionalValue() == "value")
+        #expect(mock.arrayValue() == ["a", "b"])
+    }
+}

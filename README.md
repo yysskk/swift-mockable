@@ -95,7 +95,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 
 ## Behavioral Notes
 
-- Return-value methods and get-only subscripts `fatalError` if their handler is not set.
+- Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.

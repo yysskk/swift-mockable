@@ -151,7 +151,7 @@ struct ActorMacroTests {
                         return storage.profileHandler
                     }
                     guard let _handler else {
-                        fatalError("\\(Self.self).profileHandler is not set")
+                        return nil
                     }
                     return _handler(key)
                 }

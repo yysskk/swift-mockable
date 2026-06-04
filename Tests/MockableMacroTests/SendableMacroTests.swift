@@ -138,7 +138,7 @@ struct SendableMacroTests {
                         return storage.loadHandler
                     }
                     guard let _handler else {
-                        fatalError("\\(Self.self).loadHandler is not set")
+                        return nil
                     }
                     return try _handler(key)
                 }

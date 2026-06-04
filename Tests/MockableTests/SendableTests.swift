@@ -438,3 +438,26 @@ struct SendableIntegrationTests {
         #expect(mock.logCallCount >= 0)
     }
 }
+
+@Mockable
+protocol SendableDefaultReturningService: Sendable {
+    func optionalValue() -> String?
+    func arrayValue() -> [String]
+    func setValue() -> Set<String>
+    func dictionaryValue() -> [String: Int]
+}
+
+@Suite("Sendable Default Return Tests")
+struct SendableDefaultReturnTests {
+    @Test("Sendable unset handlers return defaults")
+    func sendableUnsetHandlersReturnDefaults() {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else {
+            return
+        }
+        let mock = SendableDefaultReturningServiceMock()
+        #expect(mock.optionalValue() == nil)
+        #expect(mock.arrayValue().isEmpty)
+        #expect(mock.setValue().isEmpty)
+        #expect(mock.dictionaryValue().isEmpty)
+    }
+}
