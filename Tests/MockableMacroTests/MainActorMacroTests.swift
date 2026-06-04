@@ -82,7 +82,7 @@ struct MainActorMacroTests {
                     fetchItemsCallCount += 1
                     fetchItemsCallArgs.append(())
                     guard let _handler = fetchItemsHandler else {
-                        fatalError("\\(Self.self).fetchItemsHandler is not set")
+                        return []
                     }
                     return await _handler()
                 }

@@ -140,7 +140,7 @@ struct AssociatedTypeMacroTests {
                     findCallCount += 1
                     findCallArgs.append(id)
                     guard let _handler = findHandler else {
-                        fatalError("\\(Self.self).findHandler is not set")
+                        return nil
                     }
                     return _handler(id)
                 }
@@ -329,7 +329,7 @@ struct AssociatedTypeMacroTests {
                         return storage.getHandler
                     }
                     guard let _handler else {
-                        fatalError("\\(Self.self).getHandler is not set")
+                        return nil
                     }
                     return _handler(key)
                 }
@@ -543,7 +543,7 @@ struct AssociatedTypeMacroTests {
                     fetchCallCount += 1
                     fetchCallArgs.append(id)
                     guard let _handler = fetchHandler else {
-                        fatalError("\\(Self.self).fetchHandler is not set")
+                        return nil
                     }
                     return _handler(id)
                 }
@@ -729,7 +729,7 @@ struct AssociatedTypeMacroTests {
                         return storage.getHandler
                     }
                     guard let _handler else {
-                        fatalError("\\(Self.self).getHandler is not set")
+                        return nil
                     }
                     return _handler(key)
                 }

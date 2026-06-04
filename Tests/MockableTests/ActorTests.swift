@@ -454,3 +454,30 @@ struct ActorIntegrationTests {
         #expect(mock.updateProfileCallCount >= 0)
     }
 }
+
+@Mockable
+protocol ActorDefaultReturningService: Actor {
+    func optionalValue() -> String?
+    func arrayValue() -> [String]
+    func setValue() -> Set<String>
+    func dictionaryValue() -> [String: Int]
+}
+
+@Suite("Actor Default Return Tests")
+struct ActorDefaultReturnTests {
+    @Test("Actor unset handlers return defaults")
+    func actorUnsetHandlersReturnDefaults() async {
+        guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else {
+            return
+        }
+        let mock = ActorDefaultReturningServiceMock()
+        let optional = await mock.optionalValue()
+        #expect(optional == nil)
+        let array = await mock.arrayValue()
+        #expect(array.isEmpty)
+        let set = await mock.setValue()
+        #expect(set.isEmpty)
+        let dict = await mock.dictionaryValue()
+        #expect(dict.isEmpty)
+    }
+}

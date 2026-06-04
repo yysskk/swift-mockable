@@ -45,7 +45,7 @@ struct ConditionalCompilationMacroTests {
                     getDeviceIdCallCount += 1
                     getDeviceIdCallArgs.append(())
                     guard let _handler = getDeviceIdHandler else {
-                        fatalError("\\(Self.self).getDeviceIdHandler is not set")
+                        return nil
                     }
                     return _handler()
                 }
@@ -77,7 +77,7 @@ struct ConditionalCompilationMacroTests {
                     getAllObjectsCallCount += 1
                     getAllObjectsCallArgs.append(())
                     guard let _handler = getAllObjectsHandler else {
-                        fatalError("\\(Self.self).getAllObjectsHandler is not set")
+                        return []
                     }
                     return _handler()
                 }

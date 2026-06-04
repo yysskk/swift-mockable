@@ -261,9 +261,11 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
+            let elseBody = Self.defaultReturnStatement(for: returnType)
+                ?? "fatalError(\"\\(Self.self).\(identifier)Handler is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
-    fatalError("\\(Self.self).\(identifier)Handler is not set")
+    \(elseBody)
 }
 """)))
             statements.append(guardStmt)
@@ -344,9 +346,11 @@ guard let _handler else {
 
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
+            let elseBody = Self.defaultReturnStatement(for: returnType)
+                ?? "fatalError(\"\\(Self.self).\(identifier)Handler is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler = \(identifier)Handler else {
-    fatalError("\\(Self.self).\(identifier)Handler is not set")
+    \(elseBody)
 }
 """)))
             var result: [CodeBlockItemSyntax] = [guardStmt]

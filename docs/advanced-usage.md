@@ -181,4 +181,4 @@ Compilation errors are emitted when:
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- Return-value methods and get-only subscript getters require handler setup; missing handlers trigger `fatalError`.
+- Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

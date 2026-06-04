@@ -438,3 +438,24 @@ struct MultipleSubscriptOverloadsTests {
         #expect(mock.subscriptIntIntHandler == nil)
     }
 }
+
+@Mockable
+protocol OptionalSubscriptService {
+    subscript(key: String) -> String? { get }
+    subscript(index: Int) -> [String] { get }
+}
+
+@Suite("Subscript Default Return Tests")
+struct SubscriptDefaultReturnTests {
+    @Test("Get-only optional subscript returns nil when handler is unset")
+    func optionalSubscriptReturnsNil() {
+        let mock = OptionalSubscriptServiceMock()
+        #expect(mock["key"] == nil)
+    }
+
+    @Test("Get-only array subscript returns empty when handler is unset")
+    func arraySubscriptReturnsEmpty() {
+        let mock = OptionalSubscriptServiceMock()
+        #expect(mock[0].isEmpty)
+    }
+}
