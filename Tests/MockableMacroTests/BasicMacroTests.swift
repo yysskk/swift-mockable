@@ -863,6 +863,93 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Module-qualified Swift.Optional, Swift.Array, Swift.Set and Swift.Dictionary returns use empty defaults")
+    func moduleQualifiedCollectionsDefaultToEmpty() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                func optionalValue() -> Swift.Optional<String>
+                func arrayValue() -> Swift.Array<String>
+                func setValue() -> Swift.Set<String>
+                func dictionaryValue() -> Swift.Dictionary<String, Int>
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                func optionalValue() -> Swift.Optional<String>
+                func arrayValue() -> Swift.Array<String>
+                func setValue() -> Swift.Set<String>
+                func dictionaryValue() -> Swift.Dictionary<String, Int>
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var optionalValueCallCount: Int = 0
+                var optionalValueCallArgs: [()] = []
+                var optionalValueHandler: (@Sendable () -> Swift.Optional<String>)? = nil
+                func optionalValue() -> Swift.Optional<String> {
+                    optionalValueCallCount += 1
+                    optionalValueCallArgs.append(())
+                    guard let _handler = optionalValueHandler else {
+                        return nil
+                    }
+                    return _handler()
+                }
+                var arrayValueCallCount: Int = 0
+                var arrayValueCallArgs: [()] = []
+                var arrayValueHandler: (@Sendable () -> Swift.Array<String>)? = nil
+                func arrayValue() -> Swift.Array<String> {
+                    arrayValueCallCount += 1
+                    arrayValueCallArgs.append(())
+                    guard let _handler = arrayValueHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                var setValueCallCount: Int = 0
+                var setValueCallArgs: [()] = []
+                var setValueHandler: (@Sendable () -> Swift.Set<String>)? = nil
+                func setValue() -> Swift.Set<String> {
+                    setValueCallCount += 1
+                    setValueCallArgs.append(())
+                    guard let _handler = setValueHandler else {
+                        return []
+                    }
+                    return _handler()
+                }
+                var dictionaryValueCallCount: Int = 0
+                var dictionaryValueCallArgs: [()] = []
+                var dictionaryValueHandler: (@Sendable () -> Swift.Dictionary<String, Int>)? = nil
+                func dictionaryValue() -> Swift.Dictionary<String, Int> {
+                    dictionaryValueCallCount += 1
+                    dictionaryValueCallArgs.append(())
+                    guard let _handler = dictionaryValueHandler else {
+                        return [:]
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    optionalValueCallCount = 0
+                    optionalValueCallArgs = []
+                    optionalValueHandler = nil
+                    arrayValueCallCount = 0
+                    arrayValueCallArgs = []
+                    arrayValueHandler = nil
+                    setValueCallCount = 0
+                    setValueCallArgs = []
+                    setValueHandler = nil
+                    dictionaryValueCallCount = 0
+                    dictionaryValueCallArgs = []
+                    dictionaryValueHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Method with implicitly unwrapped optional return returns nil when handler is unset")
     func implicitlyUnwrappedOptionalReturnDefaultsToNil() {
         assertMacroExpansionForTesting(

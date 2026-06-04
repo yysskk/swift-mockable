@@ -589,12 +589,16 @@ extension MockGenerator {
     }
 
     /// True when `type` is an identifier with a generic argument clause and the given name,
-    /// e.g. `Optional<Foo>`, `Array<Foo>`, `Set<Foo>`, `Dictionary<K, V>`.
+    /// e.g. `Optional<Foo>`, `Array<Foo>`, `Set<Foo>`, `Dictionary<K, V>`,
+    /// or the module-qualified form `Swift.Optional<Foo>`, `Swift.Array<Foo>`, etc.
     private static func isGenericStdlibType(_ type: TypeSyntax, named name: String) -> Bool {
-        guard let identifier = type.as(IdentifierTypeSyntax.self) else {
-            return false
+        if let identifier = type.as(IdentifierTypeSyntax.self) {
+            return identifier.name.text == name && identifier.genericArgumentClause != nil
         }
-        return identifier.name.text == name && identifier.genericArgumentClause != nil
+        if let member = type.as(MemberTypeSyntax.self) {
+            return member.name.text == name && member.genericArgumentClause != nil
+        }
+        return false
     }
 
     static func buildArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
