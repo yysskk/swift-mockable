@@ -332,6 +332,28 @@ extension MockGenerator {
         return TypeSyntax(TupleTypeSyntax(elements: TupleTypeElementListSyntax(tupleElements)))
     }
 
+    /// Builds a comma-joined, label-less list of the per-parameter storage types,
+    /// e.g. for `(a: Int, b: Int)` returns `"Int, Int"`. Reuses `parameterStorageType`
+    /// so the erasure (inout stripped, variadic `T...` -> `[T]`, generics -> `Any`,
+    /// `@escaping` stripped, `T!` -> `T?`) matches the labeled-tuple element types exactly.
+    static func buildSeparateParameterTypeList(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String> = []
+    ) -> String {
+        parameters
+            .map { parameterStorageType(for: $0, genericParamNames: genericParamNames).description }
+            .joined(separator: ", ")
+    }
+
+    /// Builds the parameter clause for a separate-parameters handler closure type,
+    /// e.g. `"(Int, Int)"`. Callers should only use this when `parameters.count >= 2`.
+    static func buildSeparateParameterClause(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String> = []
+    ) -> String {
+        "(\(buildSeparateParameterTypeList(parameters: parameters, genericParamNames: genericParamNames)))"
+    }
+
     private static func parameterStorageType(
         for param: FunctionParameterSyntax,
         genericParamNames: Set<String>

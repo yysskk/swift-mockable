@@ -85,8 +85,8 @@ struct TypeAliasIntegrationTests {
         let mock = TypeAliasedServiceMock()
         nonisolated(unsafe) var registeredCallbacks: [TypeAliasedServiceMock.ID] = []
 
-        mock.registerHandler = { @Sendable args in
-            registeredCallbacks.append(args.id)
+        mock.registerHandler = { @Sendable id, callback in
+            registeredCallbacks.append(id)
         }
 
         mock.register(id: 1, callback: { _ in })

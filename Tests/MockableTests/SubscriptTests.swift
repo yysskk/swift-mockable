@@ -121,8 +121,8 @@ struct SubscriptMockTests {
     func multiIndexSubscript() {
         let mock = MultiIndexSubscriptServiceMock()
 
-        mock.subscriptIntIntHandler = { args in
-            Double(args.row * 10 + args.column)
+        mock.subscriptIntIntHandler = { row, column in
+            Double(row * 10 + column)
         }
 
         let result = mock[2, 3]
@@ -139,9 +139,9 @@ struct SubscriptMockTests {
         let mock = MultiIndexSubscriptServiceMock()
         nonisolated(unsafe) var storedValue: (row: Int, column: Int, value: Double)?
 
-        mock.subscriptIntIntHandler = { _ in 0.0 }
-        mock.subscriptIntIntSetHandler = { args, newValue in
-            storedValue = (args.row, args.column, newValue)
+        mock.subscriptIntIntHandler = { _, _ in 0.0 }
+        mock.subscriptIntIntSetHandler = { row, column, newValue in
+            storedValue = (row, column, newValue)
         }
 
         mock[1, 2] = 3.14
@@ -345,8 +345,8 @@ struct MultipleSubscriptOverloadsTests {
             key.count
         }
 
-        mock.subscriptIntIntHandler = { args in
-            Double(args.row + args.column)
+        mock.subscriptIntIntHandler = { row, column in
+            Double(row + column)
         }
 
         // Test Int subscript
@@ -414,7 +414,7 @@ struct MultipleSubscriptOverloadsTests {
 
         mock.subscriptIntHandler = { _ in "test" }
         mock.subscriptStringHandler = { _ in 0 }
-        mock.subscriptIntIntHandler = { _ in 0.0 }
+        mock.subscriptIntIntHandler = { _, _ in 0.0 }
 
         _ = mock[1]
         _ = mock[2]

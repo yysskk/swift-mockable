@@ -112,8 +112,8 @@ struct MockableIntegrationTests {
     func multipleParameters() {
         let mock = MultiParameterServiceMock()
 
-        mock.calculateHandler = { @Sendable args in
-            args.a + args.b + args.c
+        mock.calculateHandler = { @Sendable a, b, c in
+            a + b + c
         }
 
         let result = mock.calculate(a: 1, b: 2, c: 3)
@@ -178,7 +178,7 @@ struct MockableIntegrationTests {
     func genericMethodWithGenericParameter() {
         let mock = GenericServiceMock()
 
-        mock.setHandler = { @Sendable _ in }
+        mock.setHandler = { @Sendable _, _ in }
 
         mock.set(42, forKey: "number")
         mock.set("hello", forKey: "greeting")
@@ -369,8 +369,8 @@ struct MockableIntegrationTests {
     @Test("Multiple inout parameters")
     func multipleInoutParameters() {
         let mock = MultipleInoutServiceMock()
-        mock.swapHandler = { @Sendable args in
-            (a: args.1, b: args.0)
+        mock.swapHandler = { @Sendable a, b in
+            (a: b, b: a)
         }
 
         var x = 10

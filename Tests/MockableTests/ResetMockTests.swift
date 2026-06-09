@@ -62,7 +62,7 @@ struct ResetMockIntegrationTests {
     @Test("resetMock resets call args for methods with parameters")
     func resetMockResetsCallArgs() {
         let mock = MultiParameterServiceMock()
-        mock.calculateHandler = { @Sendable args in args.a + args.b + args.c }
+        mock.calculateHandler = { @Sendable a, b, c in a + b + c }
 
         _ = mock.calculate(a: 1, b: 2, c: 3)
         _ = mock.calculate(a: 4, b: 5, c: 6)
@@ -118,7 +118,7 @@ struct ResetMockIntegrationTests {
     func resetMockResetsGenericService() {
         let mock = GenericServiceMock()
         mock.getHandler = { @Sendable _ in 42 }
-        mock.setHandler = { @Sendable _ in }
+        mock.setHandler = { @Sendable _, _ in }
 
         let _: Int = mock.get("key")
         mock.set("value", forKey: "key")

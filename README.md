@@ -76,6 +76,27 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 - Utility:
   - `resetMock()`
 
+## Handlers
+
+A handler for a member with two or more parameters takes individual parameters, so it
+can be written as `{ a, b in ... }` (no tuple destructuring needed):
+
+```swift
+@Mockable
+protocol Calculator {
+    func add(a: Int, b: Int) -> Int
+}
+
+// var addHandler: (@Sendable (Int, Int) -> Int)? = nil
+mock.addHandler = { a, b in a + b }
+```
+
+Notes:
+
+- This applies to methods and subscripts alike (subscript getter `(Int, Int) -> V`, setter `(Int, Int, V) -> Void`).
+- Zero- and single-parameter members pass their argument directly.
+- `<name>CallArgs` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
+
 ## Supported Features
 
 - Access-level-aware generation (including `private` / `fileprivate` edge cases)

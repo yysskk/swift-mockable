@@ -36,7 +36,7 @@ struct ActorMacroTests {
                     var _profiles: [String: String]? = nil
                     var updateProfileCallCount: Int = 0
                     var updateProfileCallArgs: [(profile: String, key: String)] = []
-                    var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? = nil
+                    var updateProfileHandler: (@Sendable (String, String) -> Void)? = nil
                     var profileCallCount: Int = 0
                     var profileCallArgs: [String] = []
                     var profileHandler: (@Sendable (String) -> String?)? = nil
@@ -86,7 +86,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                nonisolated var updateProfileHandler: (@Sendable ((profile: String, key: String)) -> Void)? {
+                nonisolated var updateProfileHandler: (@Sendable (String, String) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.updateProfileHandler
@@ -99,13 +99,13 @@ struct ActorMacroTests {
                     }
                 }
                 func updateProfile(_ profile: String, for key: String) {
-                    let _handler = _storage.withLock { storage -> (@Sendable ((profile: String, key: String)) -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String, String) -> Void)? in
                         storage.updateProfileCallCount += 1
                         storage.updateProfileCallArgs.append((profile: profile, key: key))
                         return storage.updateProfileHandler
                     }
                     if let _handler {
-                        _handler((profile: profile, key: key))
+                        _handler(profile, key)
                     }
                 }
                 nonisolated var profileCallCount: Int {

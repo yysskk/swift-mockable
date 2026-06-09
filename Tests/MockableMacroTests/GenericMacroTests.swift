@@ -67,12 +67,12 @@ struct GenericMacroTests {
             class StorageMock: Storage {
                 var saveCallCount: Int = 0
                 var saveCallArgs: [(value: Any, key: String)] = []
-                var saveHandler: (@Sendable ((value: Any, key: String)) -> Void)? = nil
+                var saveHandler: (@Sendable (Any, String) -> Void)? = nil
                 func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
                     saveCallArgs.append((value: value, key: key))
                     if let _handler = saveHandler {
-                        _handler((value: value, key: key))
+                        _handler(value, key)
                     }
                 }
                 func resetMock() {
@@ -118,12 +118,12 @@ struct GenericMacroTests {
                 }
                 var setCallCount: Int = 0
                 var setCallArgs: [(value: Any, key: Any)] = []
-                var setHandler: (@Sendable ((value: Any, key: Any)) -> Void)? = nil
+                var setHandler: (@Sendable (Any, Any) -> Void)? = nil
                 func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
                     setCallArgs.append((value: value, key: key))
                     if let _handler = setHandler {
-                        _handler((value: value, key: key))
+                        _handler(value, key)
                     }
                 }
                 func resetMock() {
@@ -172,12 +172,12 @@ struct GenericMacroTests {
                 }
                 var setIntegerCallCount: Int = 0
                 var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
-                var setIntegerHandler: (@Sendable ((value: Int, key: UserDefaultsKey<Int>)) -> Void)? = nil
+                var setIntegerHandler: (@Sendable (Int, UserDefaultsKey<Int>) -> Void)? = nil
                 func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
                     setIntegerCallArgs.append((value: value, key: key))
                     if let _handler = setIntegerHandler {
-                        _handler((value: value, key: key))
+                        _handler(value, key)
                     }
                 }
                 func resetMock() {

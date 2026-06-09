@@ -61,7 +61,7 @@ struct ActorIntegrationTests {
         }
 
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await useStore(mock)
 
@@ -73,7 +73,7 @@ struct ActorIntegrationTests {
     func actorMockVoidMethodTracking() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await mock.updateProfile("profile1", for: "key1")
         await mock.updateProfile("profile2", for: "key2")
@@ -274,7 +274,7 @@ struct ActorIntegrationTests {
     func actorMockConcurrentAccess() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await withTaskGroup(of: Void.self) { group in
             for i in 0..<100 {
@@ -312,7 +312,7 @@ struct ActorIntegrationTests {
     func actorMockResetMockResetsMethodTracking() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
         mock.profileHandler = { _ in nil }
         mock.resetHandler = {}
 
@@ -356,14 +356,14 @@ struct ActorIntegrationTests {
     func actorMockResetMockAllowsReuse() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await mock.updateProfile("first", for: "key")
         #expect(mock.updateProfileCallCount == 1)
 
         mock.resetMock()
 
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
         await mock.updateProfile("second", for: "key")
         await mock.updateProfile("third", for: "key")
 
@@ -421,7 +421,7 @@ struct ActorIntegrationTests {
     func actorMockResetMockIsNonisolated() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await mock.updateProfile("test", for: "key")
 
@@ -435,7 +435,7 @@ struct ActorIntegrationTests {
     func actorMockResetMockIsThreadSafe() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock.updateProfileHandler = { _ in }
+        mock.updateProfileHandler = { _, _ in }
 
         await withTaskGroup(of: Void.self) { group in
             for i in 0..<50 {

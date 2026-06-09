@@ -197,14 +197,11 @@ extension MockGenerator {
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // SubscriptHandler (getter)
-                let paramTupleType = Self.buildParameterTupleType(
+                let closureType = buildSubscriptGetterClosureType(
                     parameters: parameters,
+                    returnType: returnType,
                     genericParamNames: genericParamNames
                 )
-                let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
-                let returnTypeStr = erasedReturnType.description
-
-                let closureType = parameters.isEmpty ? "() -> \(returnTypeStr)" : "(\(paramTupleType.description)) -> \(returnTypeStr)"
 
                 let handlerDecl = VariableDeclSyntax(
                     bindingSpecifier: .keyword(.var),
@@ -222,12 +219,11 @@ extension MockGenerator {
 
                 // SubscriptSetHandler (setter) - only if not get-only
                 if !isGetOnly {
-                    let setClosureType: String
-                    if parameters.isEmpty {
-                        setClosureType = "(\(returnTypeStr)) -> Void"
-                    } else {
-                        setClosureType = "(\(paramTupleType.description), \(returnTypeStr)) -> Void"
-                    }
+                    let setClosureType = buildSubscriptSetterClosureType(
+                        parameters: parameters,
+                        returnType: returnType,
+                        genericParamNames: genericParamNames
+                    )
 
                     let setHandlerDecl = VariableDeclSyntax(
                         bindingSpecifier: .keyword(.var),
