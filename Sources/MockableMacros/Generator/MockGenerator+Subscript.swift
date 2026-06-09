@@ -269,8 +269,7 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         suffix: String
     ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
-        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
 
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
@@ -289,12 +288,11 @@ guard let _handler = subscript\(suffix)Handler else {
         parameters: FunctionParameterListSyntax,
         suffix: String
     ) -> CodeBlockItemSyntax {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
             handlerCallArgs = "newValue"
         } else {
-            handlerCallArgs = "\(argsExpr), newValue"
+            handlerCallArgs = "\(buildHandlerCallArguments(parameters: parameters)), newValue"
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
@@ -323,7 +321,7 @@ _storage.withLock { storage in
         let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = _storage.withLock { $0.subscript\(suffix)Handler }")))
         statements.append(getHandlerStmt)
 
-        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
 
@@ -345,12 +343,11 @@ guard let _handler else {
         parameters: FunctionParameterListSyntax,
         suffix: String
     ) -> CodeBlockItemSyntax {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let handlerCallArgs: String
         if parameters.isEmpty {
             handlerCallArgs = "newValue"
         } else {
-            handlerCallArgs = "\(argsExpr), newValue"
+            handlerCallArgs = "\(buildHandlerCallArguments(parameters: parameters)), newValue"
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
@@ -360,36 +357,48 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
 """)))
     }
 
-    private func buildSubscriptGetterClosureType(
+    /// The parameter-type portion of a subscript handler closure.
+    /// Callers handle the empty-parameter case separately (subscripts always have >= 1 param,
+    /// but the closure-type builders keep the defensive branch).
+    /// - multiple parameters (>= 2): `"Int, Int"` (individual parameters)
+    /// - single parameter:           `"Int"`
+    private func subscriptHandlerParameterList(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String>
+    ) -> String {
+        if parameters.count >= 2 {
+            return Self.buildSeparateParameterTypeList(parameters: parameters, genericParamNames: genericParamNames)
+        }
+        return Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames).description
+    }
+
+    func buildSubscriptGetterClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         genericParamNames: Set<String>
     ) -> String {
-        let paramTupleType = Self.buildParameterTupleType(
-            parameters: parameters,
-            genericParamNames: genericParamNames
-        )
         let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
 
-        return parameters.isEmpty ? "() -> \(returnTypeStr)" : "(\(paramTupleType.description)) -> \(returnTypeStr)"
+        if parameters.isEmpty {
+            return "() -> \(returnTypeStr)"
+        }
+        let paramList = subscriptHandlerParameterList(parameters: parameters, genericParamNames: genericParamNames)
+        return "(\(paramList)) -> \(returnTypeStr)"
     }
 
-    private func buildSubscriptSetterClosureType(
+    func buildSubscriptSetterClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         genericParamNames: Set<String>
     ) -> String {
-        let paramTupleType = Self.buildParameterTupleType(
-            parameters: parameters,
-            genericParamNames: genericParamNames
-        )
         let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
 
         if parameters.isEmpty {
             return "(\(returnTypeStr)) -> Void"
         }
-        return "(\(paramTupleType.description), \(returnTypeStr)) -> Void"
+        let paramList = subscriptHandlerParameterList(parameters: parameters, genericParamNames: genericParamNames)
+        return "(\(paramList), \(returnTypeStr)) -> Void"
     }
 }

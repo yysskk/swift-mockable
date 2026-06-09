@@ -34,32 +34,32 @@ struct OverloadedMethodMacroTests {
             class UserDefaultsMock: UserDefaults {
                 var setBoolStringCallCount: Int = 0
                 var setBoolStringCallArgs: [(value: Bool, forKey: String)] = []
-                var setBoolStringHandler: (@Sendable ((value: Bool, forKey: String)) -> Void)? = nil
+                var setBoolStringHandler: (@Sendable (Bool, String) -> Void)? = nil
                 func set(_ value: Bool, forKey: String) {
                     setBoolStringCallCount += 1
                     setBoolStringCallArgs.append((value: value, forKey: forKey))
                     if let _handler = setBoolStringHandler {
-                        _handler((value: value, forKey: forKey))
+                        _handler(value, forKey)
                     }
                 }
                 var setIntStringCallCount: Int = 0
                 var setIntStringCallArgs: [(value: Int, forKey: String)] = []
-                var setIntStringHandler: (@Sendable ((value: Int, forKey: String)) -> Void)? = nil
+                var setIntStringHandler: (@Sendable (Int, String) -> Void)? = nil
                 func set(_ value: Int, forKey: String) {
                     setIntStringCallCount += 1
                     setIntStringCallArgs.append((value: value, forKey: forKey))
                     if let _handler = setIntStringHandler {
-                        _handler((value: value, forKey: forKey))
+                        _handler(value, forKey)
                     }
                 }
                 var setStringStringCallCount: Int = 0
                 var setStringStringCallArgs: [(value: String, forKey: String)] = []
-                var setStringStringHandler: (@Sendable ((value: String, forKey: String)) -> Void)? = nil
+                var setStringStringHandler: (@Sendable (String, String) -> Void)? = nil
                 func set(_ value: String, forKey: String) {
                     setStringStringCallCount += 1
                     setStringStringCallArgs.append((value: value, forKey: forKey))
                     if let _handler = setStringStringHandler {
-                        _handler((value: value, forKey: forKey))
+                        _handler(value, forKey)
                     }
                 }
                 var getValueCallCount: Int = 0

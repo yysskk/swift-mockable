@@ -12,9 +12,9 @@ struct SendableOverloadedMethodTests {
     func overloadedMethodsSeparateCallCounts() async {
         let mock = OverloadedUserDefaultsMock()
 
-        mock.setBoolStringHandler = { @Sendable _ in }
-        mock.setIntStringHandler = { @Sendable _ in }
-        mock.setStringStringHandler = { @Sendable _ in }
+        mock.setBoolStringHandler = { @Sendable _, _ in }
+        mock.setIntStringHandler = { @Sendable _, _ in }
+        mock.setStringStringHandler = { @Sendable _, _ in }
 
         await mock.set(true, forKey: "boolKey")
         await mock.set(42, forKey: "intKey")
@@ -31,9 +31,9 @@ struct SendableOverloadedMethodTests {
     func overloadedMethodsSeparateCallArgs() async {
         let mock = OverloadedUserDefaultsMock()
 
-        mock.setBoolStringHandler = { @Sendable _ in }
-        mock.setIntStringHandler = { @Sendable _ in }
-        mock.setStringStringHandler = { @Sendable _ in }
+        mock.setBoolStringHandler = { @Sendable _, _ in }
+        mock.setIntStringHandler = { @Sendable _, _ in }
+        mock.setStringStringHandler = { @Sendable _, _ in }
 
         await mock.set(true, forKey: "enabled")
         await mock.set(42, forKey: "count")
@@ -60,13 +60,13 @@ struct SendableOverloadedMethodTests {
         nonisolated(unsafe) var intHandlerCalled = false
         nonisolated(unsafe) var stringHandlerCalled = false
 
-        mock.setBoolStringHandler = { @Sendable _ in
+        mock.setBoolStringHandler = { @Sendable _, _ in
             boolHandlerCalled = true
         }
-        mock.setIntStringHandler = { @Sendable _ in
+        mock.setIntStringHandler = { @Sendable _, _ in
             intHandlerCalled = true
         }
-        mock.setStringStringHandler = { @Sendable _ in
+        mock.setStringStringHandler = { @Sendable _, _ in
             stringHandlerCalled = true
         }
 
@@ -101,9 +101,9 @@ struct SendableOverloadedMethodTests {
     func resetClearsOverloadedMethodStates() async {
         let mock = OverloadedUserDefaultsMock()
 
-        mock.setBoolStringHandler = { @Sendable _ in }
-        mock.setIntStringHandler = { @Sendable _ in }
-        mock.setStringStringHandler = { @Sendable _ in }
+        mock.setBoolStringHandler = { @Sendable _, _ in }
+        mock.setIntStringHandler = { @Sendable _, _ in }
+        mock.setStringStringHandler = { @Sendable _, _ in }
         mock.getValueHandler = { @Sendable in "result" }
 
         await mock.set(true, forKey: "key")

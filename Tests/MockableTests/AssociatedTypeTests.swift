@@ -119,7 +119,7 @@ struct AssociatedTypeIntegrationTests {
             return nil
         }
 
-        mock.setHandler = { @Sendable _ in }
+        mock.setHandler = { @Sendable _, _ in }
 
         let result = mock.get(key: "answer")
         mock.set(key: "count", value: 100)
@@ -237,7 +237,7 @@ struct AssociatedTypeIntegrationTests {
     func associatedTypeWithDefaultResetMock() {
         let mock = TypedCacheMock()
         mock.getHandler = { @Sendable _ in 42 }
-        mock.setHandler = { @Sendable _ in }
+        mock.setHandler = { @Sendable _, _ in }
 
         _ = mock.get(key: "key")
         mock.set(key: "key", value: 100)

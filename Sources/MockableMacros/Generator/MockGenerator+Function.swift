@@ -236,7 +236,7 @@ extension MockGenerator {
     ) -> CodeBlockSyntax {
         let argsExpr = Self.buildArgsExpression(parameters: parameters)
         let hasReturnValue = Self.hasReturnValue(returnType)
-        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
 
@@ -317,7 +317,21 @@ guard let _handler else {
             returnTypeStr = baseReturnTypeStr
         }
 
-        var closureType = parameters.isEmpty ? "()" : "(\(paramTupleType.description))"
+        // Multiple parameters become individual closure parameters, e.g. `(Int, Int)`,
+        // so handlers can be written as `{ a, b in ... }`. A single parameter keeps its
+        // own type (`(Int)`); zero parameters produce `()`.
+        let parameterClause: String
+        if parameters.isEmpty {
+            parameterClause = "()"
+        } else if parameters.count >= 2 {
+            parameterClause = Self.buildSeparateParameterClause(
+                parameters: parameters,
+                genericParamNames: genericParamNames
+            )
+        } else {
+            parameterClause = "(\(paramTupleType.description))"
+        }
+        var closureType = parameterClause
         if isAsync {
             closureType += " async"
         }
@@ -326,6 +340,24 @@ guard let _handler else {
         }
         closureType += " -> \(returnTypeStr)"
         return closureType
+    }
+
+    /// Builds the argument string passed to `_handler(...)` in the generated method body.
+    /// - multiple parameters (>= 2): `a, b`  -> `_handler(a, b)`
+    /// - single parameter:           the bare name -> `_handler(id)`
+    /// - zero parameters:            `""`    -> `_handler()`
+    ///
+    /// Also reused for subscript getter handlers, whose parameter shaping is identical.
+    func buildHandlerCallArguments(parameters: FunctionParameterListSyntax) -> String {
+        if parameters.isEmpty {
+            return ""
+        }
+        if parameters.count >= 2 {
+            return parameters
+                .map { ($0.secondName ?? $0.firstName).text }
+                .joined(separator: ", ")
+        }
+        return Self.buildArgsExpression(parameters: parameters).description
     }
 
     private func buildHandlerCallStatements(
@@ -337,8 +369,7 @@ guard let _handler else {
         hasGenericReturn: Bool = false,
         genericParamNames: Set<String>
     ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
-        let handlerCallArgs = parameters.isEmpty ? "" : "\(argsExpr)"
+        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
 

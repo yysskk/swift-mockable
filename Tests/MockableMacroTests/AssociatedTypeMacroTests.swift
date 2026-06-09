@@ -283,7 +283,7 @@ struct AssociatedTypeMacroTests {
                     var getHandler: (@Sendable (String) -> Value?)? = nil
                     var setCallCount: Int = 0
                     var setCallArgs: [(key: String, value: Value)] = []
-                    var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? = nil
+                    var setHandler: (@Sendable (String, Value) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var getCallCount: Int {
@@ -357,7 +357,7 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                nonisolated var setHandler: (@Sendable ((key: String, value: Value)) -> Void)? {
+                nonisolated var setHandler: (@Sendable (String, Value) -> Void)? {
                     get {
                         _storage.withLock {
                             $0.setHandler
@@ -370,13 +370,13 @@ struct AssociatedTypeMacroTests {
                     }
                 }
                 func set(key: String, value: Value) {
-                    let _handler = _storage.withLock { storage -> (@Sendable ((key: String, value: Value)) -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String, Value) -> Void)? in
                         storage.setCallCount += 1
                         storage.setCallArgs.append((key: key, value: value))
                         return storage.setHandler
                     }
                     if let _handler {
-                        _handler((key: key, value: value))
+                        _handler(key, value)
                     }
                 }
                 nonisolated func resetMock() {

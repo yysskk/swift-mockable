@@ -35,7 +35,7 @@ struct SendableMacroTests {
                 private struct Storage {
                     var saveCallCount: Int = 0
                     var saveCallArgs: [(data: Data, key: String)] = []
-                    var saveHandler: (@Sendable ((data: Data, key: String)) throws -> Void)? = nil
+                    var saveHandler: (@Sendable (Data, String) throws -> Void)? = nil
                     var loadCallCount: Int = 0
                     var loadCallArgs: [String] = []
                     var loadHandler: (@Sendable (String) throws -> Data?)? = nil
@@ -73,7 +73,7 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var saveHandler: (@Sendable ((data: Data, key: String)) throws -> Void)? {
+                public var saveHandler: (@Sendable (Data, String) throws -> Void)? {
                     get {
                         _storage.withLock {
                             $0.saveHandler
@@ -86,13 +86,13 @@ struct SendableMacroTests {
                     }
                 }
                 public func save(_ data: Data, forKey key: String) throws {
-                    let _handler = _storage.withLock { storage -> (@Sendable ((data: Data, key: String)) throws -> Void)? in
+                    let _handler = _storage.withLock { storage -> (@Sendable (Data, String) throws -> Void)? in
                         storage.saveCallCount += 1
                         storage.saveCallArgs.append((data: data, key: key))
                         return storage.saveHandler
                     }
                     if let _handler {
-                        try _handler((data: data, key: key))
+                        try _handler(data, key)
                     }
                 }
                 public var loadCallCount: Int {

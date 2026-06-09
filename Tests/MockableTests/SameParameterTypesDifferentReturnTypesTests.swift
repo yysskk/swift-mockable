@@ -79,7 +79,7 @@ struct SameParameterTypesDifferentReturnTypesTests {
         // get(url:httpHeader:) uses parameter-based suffix URLStringStringArray
         // because [String: String] is sanitized to StringStringArray (treated as array-like syntax)
         mock.getURLStringAsyncHandler = { @Sendable _ in "simple" }
-        mock.getURLStringStringArrayHandler = { @Sendable _ in "with header" }
+        mock.getURLStringStringArrayHandler = { @Sendable _, _ in "with header" }
 
         let simpleResult: String = await mock.get(url: URL(string: "https://example.com")!)
         let headerResult = await mock.get(url: URL(string: "https://example.com")!, httpHeader: ["Auth": "token"])
@@ -108,7 +108,7 @@ struct SameParameterTypesDifferentReturnTypesTests {
 
         mock.getURLStringAsyncHandler = { @Sendable _ in "result" }
         mock.getURLDataAsyncThrowingHandler = { @Sendable _ in Data() }
-        mock.getURLStringStringArrayHandler = { @Sendable _ in "with header" }
+        mock.getURLStringStringArrayHandler = { @Sendable _, _ in "with header" }
 
         let _: String = await mock.get(url: URL(string: "https://example.com")!)
         let _: Data = try await mock.get(url: URL(string: "https://example.com")!)

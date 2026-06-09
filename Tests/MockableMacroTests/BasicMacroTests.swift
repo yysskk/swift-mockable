@@ -106,14 +106,14 @@ struct BasicMacroTests {
             class CalculatorMock: Calculator {
                 var addCallCount: Int = 0
                 var addCallArgs: [(a: Int, b: Int)] = []
-                var addHandler: (@Sendable ((a: Int, b: Int)) -> Int)? = nil
+                var addHandler: (@Sendable (Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArgs.append((a: a, b: b))
                     guard let _handler = addHandler else {
                         fatalError("\\(Self.self).addHandler is not set")
                     }
-                    return _handler((a: a, b: b))
+                    return _handler(a, b)
                 }
                 func resetMock() {
                     addCallCount = 0

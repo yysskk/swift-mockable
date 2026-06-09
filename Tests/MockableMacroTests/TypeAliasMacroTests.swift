@@ -75,12 +75,12 @@ struct TypeAliasMacroTests {
                 typealias ID = Int
                 var registerCallCount: Int = 0
                 var registerCallArgs: [(id: ID, callback: Callback)] = []
-                var registerHandler: (@Sendable ((id: ID, callback: Callback)) -> Void)? = nil
+                var registerHandler: (@Sendable (ID, Callback) -> Void)? = nil
                 func register(id: ID, callback: @escaping Callback) {
                     registerCallCount += 1
                     registerCallArgs.append((id: id, callback: callback))
                     if let _handler = registerHandler {
-                        _handler((id: id, callback: callback))
+                        _handler(id, callback)
                     }
                 }
                 func resetMock() {

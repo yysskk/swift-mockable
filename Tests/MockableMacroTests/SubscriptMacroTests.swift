@@ -193,8 +193,8 @@ struct SubscriptMacroTests {
             class MatrixMock: Matrix {
                 var subscriptIntIntCallCount: Int = 0
                 var subscriptIntIntCallArgs: [(row: Int, column: Int)] = []
-                var subscriptIntIntHandler: (@Sendable ((row: Int, column: Int)) -> Double )? = nil
-                var subscriptIntIntSetHandler: (@Sendable ((row: Int, column: Int), Double ) -> Void)? = nil
+                var subscriptIntIntHandler: (@Sendable (Int, Int) -> Double )? = nil
+                var subscriptIntIntSetHandler: (@Sendable (Int, Int, Double ) -> Void)? = nil
                 subscript(row: Int, column: Int) -> Double {
                     get {
                         subscriptIntIntCallCount += 1
@@ -202,11 +202,11 @@ struct SubscriptMacroTests {
                         guard let _handler = subscriptIntIntHandler else {
                             fatalError("\\(Self.self).subscriptIntIntHandler is not set")
                         }
-                        return _handler((row: row, column: column))
+                        return _handler(row, column)
                     }
                     set {
                         if let _handler = subscriptIntIntSetHandler {
-                            _handler((row: row, column: column), newValue)
+                            _handler(row, column, newValue)
                         }
                     }
                 }
