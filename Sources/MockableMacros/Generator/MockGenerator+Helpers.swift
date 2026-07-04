@@ -719,20 +719,36 @@ extension MockGenerator {
 
     /// Generates a unique suffix for an overloaded function within a group of methods with the same name.
     /// First attempts to use parameter types only. If that results in duplicates within the group,
-    /// adds return type and async/throws modifiers to disambiguate.
+    /// adds return type and async/throws modifiers to disambiguate. If overloads still collide
+    /// (e.g. nested generics that sanitize identically, such as `Foo<Bar, Baz>` and `Foo<BarBaz>`),
+    /// a deterministic source-order ordinal is appended so generated names stay unique.
     static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
         let baseSuffix = functionIdentifierSuffix(from: funcDecl)
 
         // Check if there are duplicates with the same base suffix in the method group
-        let duplicateCount = methodGroup.filter { functionIdentifierSuffix(from: $0) == baseSuffix }.count
+        let baseCollisions = methodGroup.filter { functionIdentifierSuffix(from: $0) == baseSuffix }
 
-        if duplicateCount <= 1 {
+        if baseCollisions.count <= 1 {
             // No duplicates, use base suffix
             return baseSuffix
         }
 
-        // There are duplicates, need to add more distinguishing information
-        return extendedFunctionIdentifierSuffix(from: funcDecl, baseSuffix: baseSuffix)
+        // There are duplicates, add return type and async/throws to disambiguate
+        let extendedSuffix = extendedFunctionIdentifierSuffix(from: funcDecl, baseSuffix: baseSuffix)
+
+        let extendedCollisions = baseCollisions.filter {
+            extendedFunctionIdentifierSuffix(from: $0, baseSuffix: functionIdentifierSuffix(from: $0)) == extendedSuffix
+        }
+        guard extendedCollisions.count > 1 else {
+            return extendedSuffix
+        }
+
+        // Still colliding: append a deterministic 1-based ordinal by source order.
+        // The first colliding overload keeps the extended suffix for stability.
+        guard let index = extendedCollisions.firstIndex(where: { $0.id == funcDecl.id }), index > 0 else {
+            return extendedSuffix
+        }
+        return "\(extendedSuffix)\(index + 1)"
     }
 
     /// Generates an extended suffix that includes return type and async/throws modifiers.
