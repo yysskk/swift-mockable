@@ -15,6 +15,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - Get-only, get-set, and optional properties
 - Get-only and get-set subscripts
 - Variadic parameters (captured as arrays)
+- `@autoclosure` parameters (evaluated once per call, recorded by value)
 - `inout` parameters with write-back support
 - Generic methods (type-erased to `Any`)
 - Associated types (uses default type or `Any`)

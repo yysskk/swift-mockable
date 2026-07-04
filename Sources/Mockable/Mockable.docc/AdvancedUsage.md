@@ -51,6 +51,19 @@ associatedtype Value = Int   // -> typealias Value = Int
 associatedtype Value         // -> typealias Value = Any
 ```
 
+## `@autoclosure` Parameters
+
+`@autoclosure` arguments are evaluated exactly once per call, before the call is recorded. `CallArgs` and handlers observe the evaluated value, not the closure:
+
+```swift
+func log(_ message: @autoclosure () -> String)
+// generates:
+// var logCallArgs: [String] = []
+// var logHandler: (@Sendable (String) -> Void)? = nil
+```
+
+The argument is evaluated even when no handler is set. If evaluating a throwing autoclosure throws, the error propagates before the call is recorded. An autoclosure's own effects must be covered by the requirement (`throws`/`async`); effectful autoclosures are not supported in subscript requirements.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic

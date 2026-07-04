@@ -184,6 +184,7 @@ extension MockGenerator {
         genericParamNames: Set<String>
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
+        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         let incrementStmt = InfixOperatorExprSyntax(
             leftOperand: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallCount")),
@@ -249,6 +250,9 @@ extension MockGenerator {
         )
 
         var statements: [CodeBlockItemSyntax] = []
+        // Evaluate @autoclosure arguments before taking the lock so user-supplied
+        // expressions never run while the storage lock is held.
+        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
 let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
     storage.\(identifier)CallCount += 1

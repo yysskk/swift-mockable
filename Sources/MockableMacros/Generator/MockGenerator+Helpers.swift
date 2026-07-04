@@ -358,6 +358,13 @@ extension MockGenerator {
         for param: FunctionParameterSyntax,
         genericParamNames: Set<String>
     ) -> TypeSyntax {
+        // An @autoclosure argument is evaluated once when the mock is called, so
+        // storage and handlers observe the evaluated value, not the closure itself.
+        // (The closure could not be stored anyway: it is non-escaping by default and
+        // `@autoclosure` is invalid in stored-type positions.)
+        if let resultType = autoclosureResultType(of: param) {
+            return eraseGenericTypes(in: resultType, genericParamNames: genericParamNames)
+        }
         let normalizedType = stripInOutKeyword(from: param.type)
         let erasedType = eraseGenericTypes(in: normalizedType, genericParamNames: genericParamNames)
         guard param.ellipsis != nil else {
@@ -365,6 +372,51 @@ extension MockGenerator {
         }
 
         return TypeSyntax(ArrayTypeSyntax(element: erasedType))
+    }
+
+    /// Returns the function type of an `@autoclosure` parameter
+    /// (e.g. `() -> Int` for `@autoclosure () -> Int`), or `nil` when the
+    /// parameter is not an autoclosure.
+    static func autoclosureFunctionType(of param: FunctionParameterSyntax) -> FunctionTypeSyntax? {
+        guard let attributedType = param.type.as(AttributedTypeSyntax.self) else {
+            return nil
+        }
+        let isAutoclosure = attributedType.attributes.contains { element in
+            if case .attribute(let attr) = element {
+                return attr.attributeName.trimmedDescription == "autoclosure"
+            }
+            return false
+        }
+        guard isAutoclosure else {
+            return nil
+        }
+        return attributedType.baseType.as(FunctionTypeSyntax.self)
+    }
+
+    /// Returns the result type of an `@autoclosure` parameter
+    /// (e.g. `Int` for `@autoclosure () -> Int`), or `nil` when the parameter
+    /// is not an autoclosure.
+    static func autoclosureResultType(of param: FunctionParameterSyntax) -> TypeSyntax? {
+        autoclosureFunctionType(of: param)?.returnClause.type
+    }
+
+    /// Builds one `let <name> = [try ][await ]<name>()` statement per `@autoclosure`
+    /// parameter, shadowing the parameter with its evaluated value so call recording
+    /// and the handler observe the same value, evaluated exactly once per call.
+    /// The `try`/`await` prefix mirrors the autoclosure's own effect specifiers.
+    static func buildAutoclosureEvaluationStatements(
+        parameters: FunctionParameterListSyntax
+    ) -> [CodeBlockItemSyntax] {
+        parameters.compactMap { param in
+            guard let functionType = autoclosureFunctionType(of: param) else {
+                return nil
+            }
+            let name = (param.secondName ?? param.firstName).text
+            let isAsync = functionType.effectSpecifiers?.asyncSpecifier != nil
+            let isThrows = functionType.effectSpecifiers?.hasThrowsEffect ?? false
+            let prefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+            return CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let \(name) = \(prefix)\(name)()")))
+        }
     }
 
     private static func stripInOutKeyword(from type: TypeSyntax) -> TypeSyntax {

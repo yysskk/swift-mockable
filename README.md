@@ -102,6 +102,7 @@ Notes:
 - Access-level-aware generation (including `private` / `fileprivate` edge cases)
 - Sync / `async` / `throws` methods
 - Variadic parameters (captured as arrays)
+- `@autoclosure` parameters (evaluated once per call; handlers and `CallArgs` receive the evaluated value)
 - `inout` parameters with write-back support
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
@@ -118,6 +119,7 @@ Notes:
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
+- `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
 

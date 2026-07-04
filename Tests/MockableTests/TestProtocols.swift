@@ -134,6 +134,30 @@ protocol ActorOverloadedService: Actor {
     func fetch() async -> String
 }
 
+// MARK: - Autoclosure Protocols
+
+@Mockable
+protocol AutoclosureLoggingService {
+    func log(_ message: @autoclosure () -> String)
+    func combine(prefix: String, message: @autoclosure () -> String) -> String
+    func schedule(_ work: @autoclosure @escaping () -> Int)
+}
+
+@Mockable
+protocol AutoclosureThrowingService {
+    func compute(_ value: @autoclosure () throws -> Int) throws -> Int
+}
+
+@Mockable
+protocol AutoclosureSendableService: Sendable {
+    func record(_ value: @autoclosure () -> Int)
+}
+
+@Mockable
+protocol AutoclosureSubscriptService {
+    subscript(key: @autoclosure () -> String) -> Int { get }
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

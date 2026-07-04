@@ -186,6 +186,34 @@ mock.subscriptIntSetHandler = { index, newValue in
 }
 ```
 
+### `@autoclosure` Parameters
+
+`@autoclosure` arguments are evaluated exactly once per call, before the call is
+recorded. `CallArgs` and handlers observe the evaluated value, not the closure:
+
+```swift
+@Mockable
+protocol Logger {
+    func log(_ message: @autoclosure () -> String)
+}
+
+let mock = LoggerMock()
+mock.logHandler = { message in }  // handler: (String) -> Void
+
+mock.log("expensive" + " message")
+// mock.logCallArgs == ["expensive message"]
+```
+
+Notes:
+
+- The argument is evaluated even when no handler is set, so the call can be recorded.
+- If evaluating a throwing autoclosure throws, the error propagates before the call
+  is recorded (`CallCount` is not incremented).
+- An autoclosure's own effects must be covered by the requirement: a throwing
+  autoclosure requires a `throws` requirement and an async autoclosure requires an
+  `async` requirement; otherwise a compile-time diagnostic is emitted. Effectful
+  autoclosures are not supported in subscript requirements.
+
 ### Variadic Parameters
 
 Variadic parameters are captured as arrays in `CallArgs`:
