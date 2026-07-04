@@ -77,6 +77,17 @@ func run(label: String, _ body: () -> Void)
 
 Escaping (`@escaping`), optional, and variadic closures are storable and remain in `CallArgs` as before.
 
+## `rethrows` Methods
+
+A stored handler cannot satisfy a `rethrows` requirement on its own, so the mock keeps the `rethrows` signature but generates a **non-throwing** handler that receives the throwing closure arguments:
+
+```swift
+func run(_ body: () throws -> Void) rethrows
+// generates: var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
+```
+
+The handler decides whether to invoke those closures; because it is non-throwing, the mock does not itself re-throw their errors — verify behavior through the handler and the call count.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic

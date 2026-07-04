@@ -11,7 +11,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 
 ## Key Features
 
-- Sync, async, throws methods
+- Sync, async, throws, rethrows methods
 - Get-only, get-set, and optional properties
 - Effectful read-only properties (`get async` / `get throws`) mocked with handlers
 - Get-only and get-set subscripts (including effectful `get async` / `get throws` subscripts)

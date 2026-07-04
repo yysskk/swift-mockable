@@ -11,12 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for effectful read-only property accessors (`get async`, `get throws`, `get async throws`), mocked with a handler and a call counter.
 - Support for effectful read-only subscripts (`subscript(...) -> V { get async throws }`).
+- Support for `rethrows` methods: the mock keeps the `rethrows` signature and generates a non-throwing handler that receives the throwing closure arguments.
 - Evaluation of `@autoclosure` parameters when recording calls: the argument is evaluated once per call and its value is recorded and forwarded to the handler.
 - Handling of non-escaping closure parameters: the closure is forwarded to the handler and excluded from `CallArgs` (it cannot be stored), while the call is still counted.
 
 ### Fixed
 
-- `rethrows` protocol requirements now emit a clear diagnostic instead of generating code that does not compile.
 - Colliding overload identifier suffixes (e.g. nested generics that sanitize identically) are disambiguated with a deterministic ordinal.
 
 ### Changed

@@ -143,18 +143,6 @@ public struct MockableMacro: PeerMacro {
                 continue
             }
 
-            // A `rethrows` body may only throw by calling one of its own function
-            // parameters, so a mock that forwards to a stored handler can never
-            // satisfy a `rethrows` requirement.
-            if let functionDecl = member.decl.as(FunctionDeclSyntax.self),
-               functionDecl.signature.effectSpecifiers?.isRethrows == true {
-                context.diagnose(
-                    Diagnostic(node: Syntax(functionDecl), message: MockableError.rethrowsRequirementNotSupported)
-                )
-                hasError = true
-                continue
-            }
-
             // Generated mock members evaluate @autoclosure arguments to record them,
             // so an autoclosure's own effects must be covered by the requirement.
             if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {

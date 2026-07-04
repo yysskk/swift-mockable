@@ -220,6 +220,19 @@ protocol SendableAsyncThrowingStore: Sendable {
     subscript(key: String) -> Int { get async throws }
 }
 
+// MARK: - Rethrows Protocols
+
+@Mockable
+protocol RethrowingRunner {
+    func run(_ body: () throws -> Void) rethrows
+    func transform(_ body: (Int) throws -> Int) rethrows -> Int
+}
+
+@Mockable
+protocol SendableRethrowingRunner: Sendable {
+    func run(_ body: @Sendable () throws -> Void) rethrows
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable
