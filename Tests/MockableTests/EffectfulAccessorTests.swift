@@ -92,6 +92,17 @@ struct EffectfulAccessorTests {
         #expect(StaticKeyProvidingMock.apiKeyCallCount == 1)
     }
 
+    @Test("actor mock exposes the effectful property through actor isolation")
+    func actorMockHandlesEffectfulProperty() async throws {
+        let mock = ActorTokenStoreMock()
+        mock.tokenHandler = { "actor-secret" }
+
+        let token = try await mock.token
+
+        #expect(token == "actor-secret")
+        #expect(mock.tokenCallCount == 1)
+    }
+
     @Test("resetMock clears the effectful property state")
     func resetMockClearsEffectfulState() async throws {
         let mock = TokenProvidingMock()

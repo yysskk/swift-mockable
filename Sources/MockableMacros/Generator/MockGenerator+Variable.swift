@@ -182,13 +182,11 @@ guard let _handler = \(varName)Handler else {
             item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler()"))
         ))
 
-        var propertyModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-        if !isTypeMember {
-            propertyModifiers.append(contentsOf: storageBackedMemberModifiers())
-        }
-
+        // The protocol witness stays actor-isolated on actor mocks (like every other
+        // generated witness); only the auxiliary CallCount/Handler storage members are
+        // `nonisolated`, which they already get via `generateFunctionStorageProperty`.
         let property = VariableDeclSyntax(
-            modifiers: buildModifiers(additional: propertyModifiers),
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(

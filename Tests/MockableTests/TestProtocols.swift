@@ -185,6 +185,11 @@ protocol StaticKeyProviding {
     static var apiKey: String { get throws }
 }
 
+@Mockable
+protocol ActorTokenStore: Actor {
+    var token: String { get async throws }
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

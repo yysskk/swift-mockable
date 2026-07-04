@@ -194,6 +194,76 @@ struct EffectfulAccessorMacroTests {
         )
     }
 
+    @Test("actor mock keeps the effectful property witness actor-isolated")
+    func actorProtocolKeepsWitnessIsolated() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol TokenStore: Actor {
+                var token: String { get async throws }
+            }
+            """,
+            expandedSource: """
+            protocol TokenStore: Actor {
+                var token: String { get async throws }
+            }
+
+            #if DEBUG
+            actor TokenStoreMock: TokenStore {
+                private struct Storage {
+                    var tokenCallCount: Int = 0
+                    var tokenHandler: (@Sendable () async throws -> String)? = nil
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                nonisolated var tokenCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.tokenCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.tokenCallCount = newValue
+                        }
+                    }
+                }
+                nonisolated var tokenHandler: (@Sendable () async throws -> String)? {
+                    get {
+                        _storage.withLock {
+                            $0.tokenHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.tokenHandler = newValue
+                        }
+                    }
+                }
+                var token: String {
+                    get async throws {
+                        let _handler = _storage.withLock { storage -> (@Sendable () async throws -> String)? in
+                            storage.tokenCallCount += 1
+                            return storage.tokenHandler
+                        }
+                        guard let _handler else {
+                            fatalError("\\(Self.self).tokenHandler is not set")
+                        }
+                        return try await _handler()
+                    }
+                }
+                nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.tokenCallCount = 0
+                        storage.tokenHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("static effectful property uses the static storage lock")
     func staticEffectfulPropertyUsesStaticStorage() {
         assertMacroExpansionForTesting(
