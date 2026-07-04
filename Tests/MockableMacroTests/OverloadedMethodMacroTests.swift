@@ -344,4 +344,60 @@ struct OverloadedMethodMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Overloads whose sanitized suffixes collide are disambiguated with an ordinal")
+    func collidingSuffixesGetOrdinal() {
+        // `Pair<A, B>` and `Pair<AB>` both sanitize to `PairAB`, and both overloads
+        // are void/sync so the extended suffix collides too. The second overload gets
+        // a deterministic source-order ordinal to keep generated names unique.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Handler {
+                func handle(_ value: Pair<A, B>)
+                func handle(_ value: Pair<AB>)
+            }
+            """,
+            expandedSource: """
+            protocol Handler {
+                func handle(_ value: Pair<A, B>)
+                func handle(_ value: Pair<AB>)
+            }
+
+            #if DEBUG
+            class HandlerMock: Handler {
+                var handlePairABCallCount: Int = 0
+                var handlePairABCallArgs: [Pair<A, B>] = []
+                var handlePairABHandler: (@Sendable (Pair<A, B>) -> Void)? = nil
+                func handle(_ value: Pair<A, B>) {
+                    handlePairABCallCount += 1
+                    handlePairABCallArgs.append(value)
+                    if let _handler = handlePairABHandler {
+                        _handler(value)
+                    }
+                }
+                var handlePairAB2CallCount: Int = 0
+                var handlePairAB2CallArgs: [Pair<AB>] = []
+                var handlePairAB2Handler: (@Sendable (Pair<AB>) -> Void)? = nil
+                func handle(_ value: Pair<AB>) {
+                    handlePairAB2CallCount += 1
+                    handlePairAB2CallArgs.append(value)
+                    if let _handler = handlePairAB2Handler {
+                        _handler(value)
+                    }
+                }
+                func resetMock() {
+                    handlePairABCallCount = 0
+                    handlePairABCallArgs = []
+                    handlePairABHandler = nil
+                    handlePairAB2CallCount = 0
+                    handlePairAB2CallArgs = []
+                    handlePairAB2Handler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }
