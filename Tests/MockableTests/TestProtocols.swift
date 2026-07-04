@@ -190,6 +190,19 @@ protocol ActorTokenStore: Actor {
     var token: String { get async throws }
 }
 
+// MARK: - Non-Escaping Closure Protocols
+
+@Mockable
+protocol NonEscapingClosureService {
+    func run(_ body: () -> Void)
+    func compute(label: String, _ body: () -> Int) -> Int
+}
+
+@Mockable
+protocol SendableNonEscapingClosureService: Sendable {
+    func perform(_ body: @Sendable () -> Void)
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

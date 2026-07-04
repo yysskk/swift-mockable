@@ -23,7 +23,7 @@ extension MockGenerator {
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
-        let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+        let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let callArgsProperty = generateSubscriptStorageProperty(
             propertyName: "subscript\(suffix)CallArgs",
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
@@ -240,7 +240,7 @@ extension MockGenerator {
         )
         getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
 
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallArgs")),
@@ -309,7 +309,7 @@ if let _handler = subscript\(suffix)SetHandler {
         hasGenericReturn: Bool,
         suffix: String
     ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
 
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before taking the lock so user-supplied

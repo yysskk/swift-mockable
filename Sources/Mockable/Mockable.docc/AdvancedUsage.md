@@ -64,6 +64,19 @@ func log(_ message: @autoclosure () -> String)
 
 The argument is evaluated even when no handler is set. If evaluating a throwing autoclosure throws, the error propagates before the call is recorded. An autoclosure's own effects must be covered by the requirement (`throws`/`async`); effectful autoclosures are not supported in subscript requirements.
 
+## Non-Escaping Closure Parameters
+
+A non-escaping closure parameter cannot be stored, so it is excluded from `CallArgs`. The call is still counted, and the closure is still forwarded to the handler:
+
+```swift
+func run(label: String, _ body: () -> Void)
+// generates:
+// var runCallArgs: [String] = []                         // only the storable `label`
+// var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
+```
+
+Escaping (`@escaping`), optional, and variadic closures are storable and remain in `CallArgs` as before.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic

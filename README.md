@@ -103,6 +103,7 @@ Notes:
 - Sync / `async` / `throws` methods
 - Variadic parameters (captured as arrays)
 - `@autoclosure` parameters (evaluated once per call; handlers and `CallArgs` receive the evaluated value)
+- Non-escaping closure parameters (forwarded to the handler; excluded from `CallArgs`)
 - `inout` parameters with write-back support
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
@@ -122,6 +123,7 @@ Notes:
 - Properties with effectful getters (`get async`/`get throws`) generate `<name>CallCount` and `<name>Handler` instead of `_<name>` backing storage; the same unset-handler defaults apply.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
 - `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
+- Non-escaping closure arguments are forwarded to the handler but excluded from `CallArgs` (a non-escaping value cannot be stored); the call is still counted.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
 
