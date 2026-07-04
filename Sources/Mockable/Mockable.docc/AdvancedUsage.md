@@ -117,6 +117,8 @@ var token: String { get async throws }
 
 Configure it in tests like a method handler (`mock.tokenHandler = { "secret" }` or `{ throw AuthError.expired }`). If the handler is unset, the same defaults as methods apply (Optionals return `nil`, collections return empty values, other types call `fatalError`).
 
+Read-only subscripts with the same effects (`subscript(key: K) -> V { get async throws }`) work identically — the generated `subscript<suffix>Handler` gains the matching `async`/`throws` effects.
+
 ## `Sendable` and `Actor` Mocks
 
 ### `Sendable`

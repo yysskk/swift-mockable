@@ -203,6 +203,23 @@ protocol SendableNonEscapingClosureService: Sendable {
     func perform(_ body: @Sendable () -> Void)
 }
 
+// MARK: - Effectful Subscript Protocols
+
+@Mockable
+protocol AsyncThrowingStore {
+    subscript(key: String) -> Int { get async throws }
+}
+
+@Mockable
+protocol OptionalAsyncStore {
+    subscript(key: String) -> Int? { get async }
+}
+
+@Mockable
+protocol SendableAsyncThrowingStore: Sendable {
+    subscript(key: String) -> Int { get async throws }
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

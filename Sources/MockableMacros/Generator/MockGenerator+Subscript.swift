@@ -14,6 +14,7 @@ extension MockGenerator {
         let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
         let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
+        let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
 
         let callCountProperty = generateSubscriptStorageProperty(
             propertyName: "subscript\(suffix)CallCount",
@@ -35,7 +36,8 @@ extension MockGenerator {
         let getterClosureType = buildSubscriptGetterClosureType(
             parameters: parameters,
             returnType: returnType,
-            genericParamNames: genericParamNames
+            genericParamNames: genericParamNames,
+            effects: getterEffects
         )
         let handlerProperty = generateSubscriptStorageProperty(
             propertyName: "subscript\(suffix)Handler",
@@ -169,6 +171,10 @@ extension MockGenerator {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
         let hasGenericReturn = Self.typeContainsGeneric(returnType, genericParamNames: genericParamNames)
+        let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+        let isAsync = getterEffects?.asyncSpecifier != nil
+        let isThrows = getterEffects?.hasThrowsEffect ?? false
+        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
 
         let getterStatements: [CodeBlockItemSyntax]
         if usesInstanceStorageLock {
@@ -176,22 +182,38 @@ extension MockGenerator {
                 parameters: parameters,
                 returnType: returnType,
                 hasGenericReturn: hasGenericReturn,
-                suffix: suffix
+                suffix: suffix,
+                invokePrefix: invokePrefix
             )
         } else {
             getterStatements = buildDirectSubscriptGetterStatements(
                 parameters: parameters,
                 returnType: returnType,
                 hasGenericReturn: hasGenericReturn,
-                suffix: suffix
+                suffix: suffix,
+                invokePrefix: invokePrefix
             )
         }
 
         let accessors: AccessorBlockSyntax
         if isGetOnly {
-            accessors = AccessorBlockSyntax(
-                accessors: .getter(CodeBlockItemListSyntax(getterStatements))
-            )
+            if let getterEffects {
+                // Effectful subscripts must use an explicit `get async/throws` accessor
+                // rather than the getter shorthand.
+                accessors = AccessorBlockSyntax(
+                    accessors: .accessors(AccessorDeclListSyntax([
+                        AccessorDeclSyntax(
+                            accessorSpecifier: .keyword(.get),
+                            effectSpecifiers: getterEffects.trimmed,
+                            body: CodeBlockSyntax(statements: CodeBlockItemListSyntax(getterStatements))
+                        )
+                    ]))
+                )
+            } else {
+                accessors = AccessorBlockSyntax(
+                    accessors: .getter(CodeBlockItemListSyntax(getterStatements))
+                )
+            }
         } else {
             var setterStatements = Self.buildAutoclosureEvaluationStatements(parameters: parameters)
             if usesInstanceStorageLock {
@@ -228,7 +250,8 @@ extension MockGenerator {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
-        suffix: String
+        suffix: String,
+        invokePrefix: String = ""
     ) -> [CodeBlockItemSyntax] {
         var getterStatements: [CodeBlockItemSyntax] = []
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
@@ -258,7 +281,8 @@ extension MockGenerator {
             parameters: parameters,
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
-            suffix: suffix
+            suffix: suffix,
+            invokePrefix: invokePrefix
         ))
 
         return getterStatements
@@ -268,7 +292,8 @@ extension MockGenerator {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
-        suffix: String
+        suffix: String,
+        invokePrefix: String = ""
     ) -> [CodeBlockItemSyntax] {
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
 
@@ -281,7 +306,7 @@ guard let _handler = subscript\(suffix)Handler else {
     \(elseBody)
 }
 """)))
-        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
+        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))
         return [guardStmt, returnStmt]
     }
 
@@ -307,7 +332,8 @@ if let _handler = subscript\(suffix)SetHandler {
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
-        suffix: String
+        suffix: String,
+        invokePrefix: String = ""
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
 
@@ -336,7 +362,7 @@ guard let _handler else {
     \(elseBody)
 }
 """)))
-        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _handler(\(handlerCallArgs))\(castSuffix)")))
+        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))
 
         statements.append(guardStmt)
         statements.append(returnStmt)
@@ -376,19 +402,33 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
         return Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames).description
     }
 
+    /// The `get` accessor of a subscript when it carries `async`/`throws` effects
+    /// (e.g. `subscript(i: Int) -> T { get async throws }`), or `nil` otherwise.
+    static func effectfulSubscriptGetter(_ subscriptDecl: SubscriptDeclSyntax) -> AccessorDeclSyntax? {
+        guard let accessorBlock = subscriptDecl.accessorBlock,
+              case .accessors(let accessors) = accessorBlock.accessors else {
+            return nil
+        }
+        return accessors.first { accessor in
+            accessor.accessorSpecifier.tokenKind == .keyword(.get) && accessor.effectSpecifiers != nil
+        }
+    }
+
     func buildSubscriptGetterClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        effects: AccessorEffectSpecifiersSyntax? = nil
     ) -> String {
         let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
+        let effectsText = effects.map { " \($0.trimmedDescription)" } ?? ""
 
         if parameters.isEmpty {
-            return "() -> \(returnTypeStr)"
+            return "()\(effectsText) -> \(returnTypeStr)"
         }
         let paramList = subscriptHandlerParameterList(parameters: parameters, genericParamNames: genericParamNames)
-        return "(\(paramList)) -> \(returnTypeStr)"
+        return "(\(paramList))\(effectsText) -> \(returnTypeStr)"
     }
 
     func buildSubscriptSetterClosureType(

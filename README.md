@@ -111,7 +111,7 @@ Notes:
 - Static methods and static properties
 - Get-only / get-set / optional properties
 - Effectful read-only properties (`get async`, `get throws`, `get async throws`) mocked with handlers
-- Get-only / get-set subscripts
+- Get-only / get-set subscripts (including effectful `get async` / `get throws` subscripts)
 - `#if` / `#elseif` / `#else` conditional compilation inside protocols
 - Protocol inheritance (child mock inherits from first parent mock when applicable)
 - `Sendable` protocol support (`@unchecked Sendable` mock generation)

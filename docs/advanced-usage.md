@@ -206,6 +206,15 @@ If the handler is unset, the same defaults as methods apply: Optionals return
 `nil`, arrays and sets return an empty collection, dictionaries return an empty
 dictionary, and any other type calls `fatalError`.
 
+Read-only subscripts with the same effects work identically:
+
+```swift
+subscript(key: String) -> Int { get async throws }
+// generates:
+// var subscriptStringHandler: (@Sendable (String) async throws -> Int)? = nil
+// subscript(key: String) -> Int { get async throws { ... } }
+```
+
 ## `Sendable` and `Actor` Mocks
 
 ### `Sendable`
