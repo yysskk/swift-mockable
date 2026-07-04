@@ -46,6 +46,14 @@ extension MockGenerator {
 
                     let varName = identifier.identifier.text
                     let varType = typeAnnotation.type
+
+                    // Effectful read-only properties are handler-based (no `_name` backing).
+                    if Self.effectfulGetter(of: binding) != nil {
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName)CallCount = 0"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName)Handler = nil"))))
+                        continue
+                    }
+
                     let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
                     let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
@@ -147,6 +155,13 @@ extension MockGenerator {
                     for binding in varDecl.bindings {
                         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
                         let varName = identifier.identifier.text
+
+                        // Effectful read-only properties are handler-based (no `_name` backing).
+                        if Self.effectfulGetter(of: binding) != nil {
+                            generatedStatements.append("storage.\(varName)CallCount = 0")
+                            generatedStatements.append("storage.\(varName)Handler = nil")
+                            continue
+                        }
 
                         // Reset variable backing storage
                         generatedStatements.append("storage._\(varName) = nil")

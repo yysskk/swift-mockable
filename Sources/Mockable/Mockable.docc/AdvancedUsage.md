@@ -91,6 +91,19 @@ mock.removeFirstHandler = { array in
 }
 ```
 
+## Effectful Read-Only Properties
+
+Read-only properties with `get async`, `get throws`, or `get async throws` are mocked with a handler and a call counter instead of `_name` backing storage:
+
+```swift
+var token: String { get async throws }
+// generates:
+// var tokenCallCount: Int = 0
+// var tokenHandler: (@Sendable () async throws -> String)? = nil
+```
+
+Configure it in tests like a method handler (`mock.tokenHandler = { "secret" }` or `{ throw AuthError.expired }`). If the handler is unset, the same defaults as methods apply (Optionals return `nil`, collections return empty values, other types call `fatalError`).
+
 ## `Sendable` and `Actor` Mocks
 
 ### `Sendable`

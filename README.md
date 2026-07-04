@@ -109,6 +109,7 @@ Notes:
 - Associated types (generated as `typealias`, using default type when available, otherwise `Any`)
 - Static methods and static properties
 - Get-only / get-set / optional properties
+- Effectful read-only properties (`get async`, `get throws`, `get async throws`) mocked with handlers
 - Get-only / get-set subscripts
 - `#if` / `#elseif` / `#else` conditional compilation inside protocols
 - Protocol inheritance (child mock inherits from first parent mock when applicable)
@@ -118,6 +119,7 @@ Notes:
 ## Behavioral Notes
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
+- Properties with effectful getters (`get async`/`get throws`) generate `<name>CallCount` and `<name>Handler` instead of `_<name>` backing storage; the same unset-handler defaults apply.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
 - `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.

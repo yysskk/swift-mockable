@@ -65,7 +65,7 @@ extension MockGenerator {
         return members
     }
 
-    private func generateFunctionStorageProperty(
+    func generateFunctionStorageProperty(
         identifier: String,
         propertyName: String,
         type: TypeSyntax,
