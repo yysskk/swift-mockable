@@ -158,6 +158,38 @@ protocol AutoclosureSubscriptService {
     subscript(key: @autoclosure () -> String) -> Int { get }
 }
 
+// MARK: - Effectful Accessor Protocols
+
+@Mockable
+protocol TokenProviding {
+    var token: String { get async throws }
+}
+
+@Mockable
+protocol ThrowingConfigProviding {
+    var maxRetryCount: Int { get throws }
+}
+
+@Mockable
+protocol AsyncCacheProviding {
+    var cachedValue: String? { get async }
+}
+
+@Mockable
+protocol SendableRemoteConfig: Sendable {
+    var flag: Bool { get async throws }
+}
+
+@Mockable
+protocol StaticKeyProviding {
+    static var apiKey: String { get throws }
+}
+
+@Mockable
+protocol ActorTokenStore: Actor {
+    var token: String { get async throws }
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

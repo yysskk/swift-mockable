@@ -160,6 +160,29 @@ mock.age = 30              // set stored property directly
 mock._email = nil          // optional left as nil
 ```
 
+### Effectful Read-Only Properties
+
+Read-only properties with `get async`, `get throws`, or `get async throws` are
+mocked with a handler and a call counter instead of backing storage (a stored
+value cannot model a thrown error):
+
+```swift
+@Mockable
+protocol TokenProvider {
+    var token: String { get async throws }
+}
+
+let mock = TokenProviderMock()
+mock.tokenHandler = { "secret" }             // or: { throw AuthError.expired }
+
+let token = try await mock.token
+// mock.tokenCallCount == 1
+```
+
+If the handler is unset, the same defaults as methods apply: Optionals return
+`nil`, arrays/sets/dictionaries return empty collections, and any other type
+calls `fatalError`.
+
 ### Subscripts
 
 Get-only and get-set subscripts:

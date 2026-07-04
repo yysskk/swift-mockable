@@ -22,6 +22,19 @@ extension MockGenerator {
             let varType = typeAnnotation.type
             let isGetOnly = Self.isGetOnlyProperty(binding: binding)
 
+            // Effectful read-only properties (`get async`/`get throws`) are mocked with
+            // a handler and a call counter instead of backing storage: a stored value
+            // cannot model a thrown error, and the handler mirrors the function model.
+            if let effectfulGetter = Self.effectfulGetter(of: binding) {
+                members.append(contentsOf: generateEffectfulGetterMock(
+                    varName: varName,
+                    varType: varType,
+                    getter: effectfulGetter,
+                    isTypeMember: isTypeMember
+                ))
+                continue
+            }
+
             if shouldUseLockBasedStorage {
                 let backingProperty = generateLockBasedBackingSetterProperty(
                     varName: varName,
@@ -80,6 +93,124 @@ extension MockGenerator {
             let hasSetter = accessors.contains { $0.accessorSpecifier.tokenKind == .keyword(.set) }
             return hasGetter && !hasSetter
         }
+    }
+
+    /// Returns the `get` accessor of a binding when it carries `async`/`throws`
+    /// effects (e.g. `var token: String { get async throws }`), or `nil` otherwise.
+    /// Properties with an effectful getter cannot have a setter (SE-0310).
+    static func effectfulGetter(of binding: PatternBindingSyntax) -> AccessorDeclSyntax? {
+        guard let accessorBlock = binding.accessorBlock,
+              case .accessors(let accessors) = accessorBlock.accessors else {
+            return nil
+        }
+        return accessors.first { accessor in
+            accessor.accessorSpecifier.tokenKind == .keyword(.get) && accessor.effectSpecifiers != nil
+        }
+    }
+
+    /// The handler closure type for an effectful read-only property, preserving the
+    /// accessor's own effect specifiers (including typed throws), e.g.
+    /// `() async throws -> String`.
+    static func effectfulGetterClosureType(
+        varType: TypeSyntax,
+        effects: AccessorEffectSpecifiersSyntax?
+    ) -> String {
+        let effectsText = effects.map { " \($0.trimmedDescription)" } ?? ""
+        return "()\(effectsText) -> \(varType.trimmedDescription)"
+    }
+
+    private func generateEffectfulGetterMock(
+        varName: String,
+        varType: TypeSyntax,
+        getter: AccessorDeclSyntax,
+        isTypeMember: Bool
+    ) -> [MemberBlockItemSyntax] {
+        let effects = getter.effectSpecifiers
+        let isAsync = effects?.asyncSpecifier != nil
+        let isThrows = effects?.hasThrowsEffect ?? false
+        let closureType = Self.effectfulGetterClosureType(varType: varType, effects: effects)
+        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
+
+        var members: [MemberBlockItemSyntax] = []
+
+        let callCountProperty = generateFunctionStorageProperty(
+            identifier: varName,
+            propertyName: "CallCount",
+            type: TypeSyntax(stringLiteral: "Int"),
+            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
+            isTypeMember: isTypeMember
+        )
+        members.append(MemberBlockItemSyntax(decl: callCountProperty))
+
+        let handlerProperty = generateFunctionStorageProperty(
+            identifier: varName,
+            propertyName: "Handler",
+            type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
+            initializer: ExprSyntax(NilLiteralExprSyntax()),
+            isTypeMember: isTypeMember
+        )
+        members.append(MemberBlockItemSyntax(decl: handlerProperty))
+
+        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+        let elseBody = Self.defaultReturnStatement(for: varType)
+            ?? "fatalError(\"\\(Self.self).\(varName)Handler is not set\")"
+
+        var getterStatements: [CodeBlockItemSyntax] = []
+        if shouldUseLockBasedStorage {
+            let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
+            getterStatements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
+let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
+    storage.\(varName)CallCount += 1
+    return storage.\(varName)Handler
+}
+"""))))
+            getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
+guard let _handler else {
+    \(elseBody)
+}
+"""))))
+        } else {
+            getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName)CallCount += 1"))))
+            getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
+guard let _handler = \(varName)Handler else {
+    \(elseBody)
+}
+"""))))
+        }
+        getterStatements.append(CodeBlockItemSyntax(
+            leadingTrivia: .newline,
+            item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler()"))
+        ))
+
+        // The protocol witness stays actor-isolated on actor mocks (like every other
+        // generated witness); only the auxiliary CallCount/Handler storage members are
+        // `nonisolated`, which they already get via `generateFunctionStorageProperty`.
+        let property = VariableDeclSyntax(
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
+            bindingSpecifier: .keyword(.var),
+            bindings: PatternBindingListSyntax([
+                PatternBindingSyntax(
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
+                    typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
+                    accessorBlock: AccessorBlockSyntax(
+                        accessors: .accessors(AccessorDeclListSyntax([
+                            AccessorDeclSyntax(
+                                accessorSpecifier: .keyword(.get),
+                                effectSpecifiers: getter.effectSpecifiers?.trimmed,
+                                body: CodeBlockSyntax(
+                                    leftBrace: .leftBraceToken(trailingTrivia: .newline),
+                                    statements: CodeBlockItemListSyntax(getterStatements),
+                                    rightBrace: .rightBraceToken(leadingTrivia: .newline)
+                                )
+                            )
+                        ]))
+                    )
+                )
+            ])
+        )
+        members.append(MemberBlockItemSyntax(decl: property))
+
+        return members
     }
 
     private func generateLockBasedBackingSetterProperty(

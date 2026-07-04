@@ -141,6 +141,42 @@ extension MockGenerator {
 
                     let varName = identifier.identifier.text
                     let varType = typeAnnotation.type
+
+                    // Effectful read-only properties are handler-based (no `_name` backing).
+                    if let effectfulGetter = Self.effectfulGetter(of: binding) {
+                        let closureType = Self.effectfulGetterClosureType(
+                            varType: varType,
+                            effects: effectfulGetter.effectSpecifiers
+                        )
+
+                        let callCountDecl = VariableDeclSyntax(
+                            bindingSpecifier: .keyword(.var),
+                            bindings: PatternBindingListSyntax([
+                                PatternBindingSyntax(
+                                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(varName)CallCount")),
+                                    typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
+                                    initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
+                                )
+                            ])
+                        )
+                        generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
+
+                        let handlerDecl = VariableDeclSyntax(
+                            bindingSpecifier: .keyword(.var),
+                            bindings: PatternBindingListSyntax([
+                                PatternBindingSyntax(
+                                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(varName)Handler")),
+                                    typeAnnotation: TypeAnnotationSyntax(
+                                        type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
+                                    ),
+                                    initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
+                                )
+                            ])
+                        )
+                        generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
+                        continue
+                    }
+
                     let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
 
                     let storageType: TypeSyntax

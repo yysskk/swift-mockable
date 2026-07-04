@@ -39,6 +39,17 @@ extension TypeEffectSpecifiersSyntax {
     }
 }
 
+extension AccessorEffectSpecifiersSyntax {
+    /// Returns whether the accessor has a throws effect, compatible across swift-syntax versions.
+    var hasThrowsEffect: Bool {
+        #if canImport(SwiftSyntax600)
+        return throwsClause != nil
+        #else
+        return throwsSpecifier != nil
+        #endif
+    }
+}
+
 /// Creates a GenericArgumentSyntax with a type, compatible across swift-syntax versions.
 func makeGenericArgument(type: TypeSyntax) -> GenericArgumentSyntax {
     #if canImport(SwiftSyntax600)
