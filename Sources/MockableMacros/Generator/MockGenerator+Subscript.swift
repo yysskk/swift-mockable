@@ -193,11 +193,11 @@ extension MockGenerator {
                 accessors: .getter(CodeBlockItemListSyntax(getterStatements))
             )
         } else {
-            let setterStatements: [CodeBlockItemSyntax]
+            var setterStatements = Self.buildAutoclosureEvaluationStatements(parameters: parameters)
             if usesInstanceStorageLock {
-                setterStatements = [buildLockBasedSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)]
+                setterStatements.append(buildLockBasedSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix))
             } else {
-                setterStatements = [buildDirectSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix)]
+                setterStatements.append(buildDirectSubscriptSetHandlerCallStatement(parameters: parameters, suffix: suffix))
             }
 
             accessors = AccessorBlockSyntax(
@@ -231,6 +231,7 @@ extension MockGenerator {
         suffix: String
     ) -> [CodeBlockItemSyntax] {
         var getterStatements: [CodeBlockItemSyntax] = []
+        getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         let incrementStmt = InfixOperatorExprSyntax(
             leftOperand: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallCount")),
@@ -311,6 +312,9 @@ if let _handler = subscript\(suffix)SetHandler {
         let argsExpr = Self.buildArgsExpression(parameters: parameters)
 
         var statements: [CodeBlockItemSyntax] = []
+        // Evaluate @autoclosure arguments before taking the lock so user-supplied
+        // expressions never run while the storage lock is held.
+        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
 _storage.withLock { storage in
     storage.subscript\(suffix)CallCount += 1

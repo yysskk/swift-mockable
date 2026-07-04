@@ -5,6 +5,7 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     case unsupportedMember(String)
     case invalidMacroArgument(String)
     case rethrowsRequirementNotSupported
+    case unsupportedAutoclosureEffect(String)
 
     var message: String {
         switch self {
@@ -16,6 +17,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return "Invalid @Mockable argument: \(message)"
         case .rethrowsRequirementNotSupported:
             return "'rethrows' requirements are not supported by @Mockable; declare the requirement as 'throws' instead"
+        case .unsupportedAutoclosureEffect(let message):
+            return message
         }
     }
 
@@ -31,6 +34,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "invalidMacroArgument")
         case .rethrowsRequirementNotSupported:
             return MessageID(domain: "MockableMacro", id: "rethrowsRequirementNotSupported")
+        case .unsupportedAutoclosureEffect:
+            return MessageID(domain: "MockableMacro", id: "unsupportedAutoclosureEffect")
         }
     }
 

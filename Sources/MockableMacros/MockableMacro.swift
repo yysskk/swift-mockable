@@ -155,12 +155,89 @@ public struct MockableMacro: PeerMacro {
                 continue
             }
 
+            // Generated mock members evaluate @autoclosure arguments to record them,
+            // so an autoclosure's own effects must be covered by the requirement.
+            if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
+                let effects = functionDecl.signature.effectSpecifiers
+                if diagnoseAutoclosureParameters(
+                    functionDecl.signature.parameterClause.parameters,
+                    coversThrows: effects?.hasThrowsEffect ?? false,
+                    coversAsync: effects?.asyncSpecifier != nil,
+                    inSubscript: false,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+            }
+
+            if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
+                if diagnoseAutoclosureParameters(
+                    subscriptDecl.parameterClause.parameters,
+                    coversThrows: false,
+                    coversAsync: false,
+                    inSubscript: true,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+            }
+
             if memberIsSupported(member.decl) {
                 continue
             }
 
             context.diagnose(
                 Diagnostic(node: Syntax(member.decl), message: MockableError.unsupportedMember(member.decl.trimmedDescription))
+            )
+            hasError = true
+        }
+
+        return hasError
+    }
+
+    /// Diagnoses `@autoclosure` parameters whose own effects (`throws`/`async`)
+    /// are not covered by the enclosing requirement. The generated mock evaluates
+    /// autoclosure arguments once per call to record them, which is only possible
+    /// when the surrounding member can apply `try`/`await`.
+    private static func diagnoseAutoclosureParameters(
+        _ parameters: FunctionParameterListSyntax,
+        coversThrows: Bool,
+        coversAsync: Bool,
+        inSubscript: Bool,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        var hasError = false
+
+        for param in parameters {
+            guard let functionType = MockGenerator.autoclosureFunctionType(of: param) else {
+                continue
+            }
+            let isThrowing = functionType.effectSpecifiers?.hasThrowsEffect ?? false
+            let isAsync = functionType.effectSpecifiers?.asyncSpecifier != nil
+
+            var uncoveredEffects: [String] = []
+            if isThrowing && !coversThrows {
+                uncoveredEffects.append("throws")
+            }
+            if isAsync && !coversAsync {
+                uncoveredEffects.append("async")
+            }
+            guard !uncoveredEffects.isEmpty else {
+                continue
+            }
+
+            let name = (param.secondName ?? param.firstName).text
+            let message: String
+            if inSubscript {
+                message = "Cannot mock @autoclosure parameter '\(name)': effectful autoclosures are not supported in subscript requirements"
+            } else {
+                let effects = uncoveredEffects.joined(separator: "' and '")
+                message = "Cannot mock @autoclosure parameter '\(name)': the mock evaluates autoclosure arguments when called, so the requirement must be declared '\(effects)'"
+            }
+            context.diagnose(
+                Diagnostic(node: Syntax(param), message: MockableError.unsupportedAutoclosureEffect(message))
             )
             hasError = true
         }
