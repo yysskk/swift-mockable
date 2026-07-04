@@ -51,6 +51,47 @@ struct EffectfulSubscriptMacroTests {
         )
     }
 
+    @Test("get throws subscript emits a try prefix without await")
+    func throwingSubscriptEmitsTryWithoutAwait() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Store {
+                subscript(key: String) -> Int { get throws }
+            }
+            """,
+            expandedSource: """
+            protocol Store {
+                subscript(key: String) -> Int { get throws }
+            }
+
+            #if DEBUG
+            class StoreMock: Store {
+                var subscriptStringCallCount: Int = 0
+                var subscriptStringCallArgs: [String] = []
+                var subscriptStringHandler: (@Sendable (String) throws -> Int )? = nil
+                subscript(key: String) -> Int {
+                    get throws {
+                        subscriptStringCallCount += 1
+                        subscriptStringCallArgs.append(key)
+                        guard let _handler = subscriptStringHandler else {
+                            fatalError("\\(Self.self).subscriptStringHandler is not set")
+                        }
+                        return try _handler(key)
+                    }
+                }
+                func resetMock() {
+                    subscriptStringCallCount = 0
+                    subscriptStringCallArgs = []
+                    subscriptStringHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Sendable protocol stores the effectful subscript handler behind the lock")
     func sendableProtocolUsesLockBasedEffectfulSubscript() {
         assertMacroExpansionForTesting(
