@@ -17,6 +17,15 @@ extension FunctionEffectSpecifiersSyntax {
         return throwsSpecifier != nil
         #endif
     }
+
+    /// Returns whether the throws effect is `rethrows`, compatible across swift-syntax versions.
+    var isRethrows: Bool {
+        #if canImport(SwiftSyntax600)
+        return throwsClause?.throwsSpecifier.tokenKind == .keyword(.rethrows)
+        #else
+        return throwsSpecifier?.tokenKind == .keyword(.rethrows)
+        #endif
+    }
 }
 
 /// Creates a GenericArgumentSyntax with a type, compatible across swift-syntax versions.
