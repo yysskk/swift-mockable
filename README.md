@@ -1,5 +1,11 @@
 # swift-mockable
 
+[![Test](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml/badge.svg)](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/yysskk/swift-mockable)](https://github.com/yysskk/swift-mockable/releases)
+[![Swift](https://img.shields.io/badge/Swift-5.9%20%7C%205.10%20%7C%206.2-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS-blue.svg)](https://developer.apple.com)
+[![License](https://img.shields.io/github/license/yysskk/swift-mockable)](LICENSE)
+
 `swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
 
 - Generated mocks are emitted inside `#if DEBUG`.
@@ -12,7 +18,7 @@ Add the package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "0.1.0")
+    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "1.9.1")
 ]
 ```
 
@@ -24,6 +30,11 @@ Add `Mockable` to your target:
     dependencies: ["Mockable"]
 )
 ```
+
+> [!NOTE]
+> The first time you build a target that uses `@Mockable`, Xcode shows a
+> "trust macro" prompt. Choose **Trust & Enable** to allow the macro to run.
+> On the command line, `swift build` runs macros without prompting.
 
 ## Quick Start
 
@@ -135,10 +146,28 @@ Notes:
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
+## Troubleshooting
+
+- **The `<Protocol>Mock` type can't be found.** The generated mock lives inside
+  `#if DEBUG`, so it only exists in debug builds. Reference it from test targets
+  or debug configurations.
+- **"Macro expansion" / trust prompt in Xcode.** Choose **Trust & Enable** the
+  first time you build a target that uses `@Mockable` (see the note in
+  [Installation](#installation)).
+- **A handler is required.** A return-value method or get-only subscript with an
+  unset handler calls `fatalError`, unless the return type has a natural empty
+  value (see [Behavioral Notes](#behavioral-notes)). Set the corresponding
+  `<name>Handler` in your test setup.
+- **Overloaded calls need a type annotation.** For methods overloaded only by
+  return type, annotate the result (e.g. `let value: String = mock.get(...)`) so
+  Swift selects the right overload.
+
 ## Documentation
 
 - [Docs index](docs/README.md)
 - [Advanced usage and naming rules](docs/advanced-usage.md)
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Requirements
 
