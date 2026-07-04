@@ -209,6 +209,23 @@ mock.subscriptIntSetHandler = { index, newValue in
 }
 ```
 
+Read-only subscripts with effects (`get async`, `get throws`, `get async throws`)
+are supported too. The generated `subscript<suffix>Handler` gains the matching
+effects and the accessor is stubbed through it:
+
+```swift
+@Mockable
+protocol RemoteStore {
+    subscript(key: String) -> Int { get async throws }
+}
+
+let mock = RemoteStoreMock()
+mock.subscriptStringHandler = { key in key.count }   // or: { _ in throw StoreError.missing }
+
+let value = try await mock["swift"]
+// mock.subscriptStringCallCount == 1
+```
+
 ### `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is

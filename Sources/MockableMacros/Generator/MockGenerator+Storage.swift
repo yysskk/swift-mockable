@@ -233,10 +233,12 @@ extension MockGenerator {
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
                 // SubscriptHandler (getter)
+                let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
                 let closureType = buildSubscriptGetterClosureType(
                     parameters: parameters,
                     returnType: returnType,
-                    genericParamNames: genericParamNames
+                    genericParamNames: genericParamNames,
+                    effects: getterEffects
                 )
 
                 let handlerDecl = VariableDeclSyntax(
