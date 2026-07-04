@@ -277,6 +277,30 @@ mock.run(label: "task") { print("ran") }
 Escaping (`@escaping`), optional, and variadic closures are storable and remain
 in `CallArgs` as before.
 
+### `rethrows` Methods
+
+A stored handler cannot satisfy a `rethrows` requirement on its own (a `rethrows`
+body may only throw through the requirement's own closure parameters), so the mock
+keeps the `rethrows` signature but generates a non-throwing handler that receives
+the throwing closures:
+
+```swift
+@Mockable
+protocol Runner {
+    func run(_ body: () throws -> Void) rethrows
+}
+
+let mock = RunnerMock()
+mock.runHandler = { body in try? body() }   // handler: (() throws -> Void) -> Void
+
+try mock.run { /* ... */ }
+// mock.runCallCount == 1
+```
+
+The handler decides whether to invoke those closures. Because it is non-throwing,
+the mock does not itself re-throw their errors; verify behavior through the handler
+and the call count.
+
 ### Variadic Parameters
 
 Variadic parameters are captured as arrays in `CallArgs`:

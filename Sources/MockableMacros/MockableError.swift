@@ -4,7 +4,6 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     case notAProtocol
     case unsupportedMember(String)
     case invalidMacroArgument(String)
-    case rethrowsRequirementNotSupported
     case unsupportedAutoclosureEffect(String)
 
     var message: String {
@@ -15,8 +14,6 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return "Unsupported protocol member: \(member)"
         case .invalidMacroArgument(let message):
             return "Invalid @Mockable argument: \(message)"
-        case .rethrowsRequirementNotSupported:
-            return "'rethrows' requirements are not supported by @Mockable; declare the requirement as 'throws' instead"
         case .unsupportedAutoclosureEffect(let message):
             return message
         }
@@ -32,8 +29,6 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "unsupportedMember")
         case .invalidMacroArgument:
             return MessageID(domain: "MockableMacro", id: "invalidMacroArgument")
-        case .rethrowsRequirementNotSupported:
-            return MessageID(domain: "MockableMacro", id: "rethrowsRequirementNotSupported")
         case .unsupportedAutoclosureEffect:
             return MessageID(domain: "MockableMacro", id: "unsupportedAutoclosureEffect")
         }

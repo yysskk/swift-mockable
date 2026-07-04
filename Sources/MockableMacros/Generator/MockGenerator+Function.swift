@@ -16,7 +16,11 @@ extension MockGenerator {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-        let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
+        // A `rethrows` requirement gets a non-throwing handler: a stored handler cannot
+        // satisfy `rethrows` (it may only throw through the requirement's own closure
+        // parameters), so the handler receives those closures and never throws itself.
+        let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
+            && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
         let callCountProperty = generateFunctionStorageProperty(
@@ -42,7 +46,7 @@ extension MockGenerator {
             parameters: parameters,
             returnType: returnType,
             isAsync: isAsync,
-            isThrows: isThrows,
+            isThrows: handlerThrows,
             genericParamNames: genericParamNames
         )
         let handlerProperty = generateFunctionStorageProperty(
@@ -136,7 +140,10 @@ extension MockGenerator {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-        let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
+        // The handler is non-throwing for `rethrows` requirements, so the body invokes
+        // it without `try` even though the mock keeps the `rethrows` signature.
+        let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
+            && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
@@ -147,7 +154,7 @@ extension MockGenerator {
                 parameters: parameters,
                 returnType: returnType,
                 isAsync: isAsync,
-                isThrows: isThrows,
+                isThrows: handlerThrows,
                 isTypeMember: isTypeMember,
                 hasGenericReturn: hasGenericReturn,
                 genericParamNames: genericParamNames
@@ -158,7 +165,7 @@ extension MockGenerator {
                 parameters: parameters,
                 returnType: returnType,
                 isAsync: isAsync,
-                isThrows: isThrows,
+                isThrows: handlerThrows,
                 hasGenericReturn: hasGenericReturn,
                 genericParamNames: genericParamNames
             )

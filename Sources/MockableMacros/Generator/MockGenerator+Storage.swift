@@ -82,7 +82,9 @@ extension MockGenerator {
                 let parameters = funcDecl.signature.parameterClause.parameters
                 let returnType = funcDecl.signature.returnClause?.type
                 let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-                let isThrows = funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false
+                // `rethrows` requirements get a non-throwing handler (see MockGenerator+Function).
+                let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
+                    && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
                 let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
                 // CallCount
@@ -117,7 +119,7 @@ extension MockGenerator {
                     parameters: parameters,
                     returnType: returnType,
                     isAsync: isAsync,
-                    isThrows: isThrows,
+                    isThrows: handlerThrows,
                     genericParamNames: genericParamNames
                 )
 
