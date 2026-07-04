@@ -306,6 +306,59 @@ extension MockGenerator {
         return Set(genericClause.parameters.map { $0.name.text })
     }
 
+    /// The parameters that can be recorded in `CallArgs`. Non-escaping closure
+    /// parameters are excluded because a non-escaping value cannot be stored; the
+    /// call is still counted and the closure is still forwarded to the handler.
+    static func storableParameters(_ parameters: FunctionParameterListSyntax) -> FunctionParameterListSyntax {
+        FunctionParameterListSyntax(parameters.filter { !isNonEscapingClosureParameter($0) })
+    }
+
+    /// The element type of the `CallArgs` array, built from the storable parameters only.
+    static func buildCallArgsTupleType(
+        parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String> = []
+    ) -> TypeSyntax {
+        buildParameterTupleType(parameters: storableParameters(parameters), genericParamNames: genericParamNames)
+    }
+
+    /// The value appended to `CallArgs`, built from the storable parameters only.
+    static func buildCallArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
+        buildArgsExpression(parameters: storableParameters(parameters))
+    }
+
+    /// Whether a parameter is a non-escaping closure that cannot be stored in `CallArgs`.
+    /// Escaping, optional, `@autoclosure`, and variadic closures are all storable and
+    /// therefore excluded from this check.
+    static func isNonEscapingClosureParameter(_ param: FunctionParameterSyntax) -> Bool {
+        guard param.ellipsis == nil else {
+            return false
+        }
+        return isNonEscapingClosureType(param.type)
+    }
+
+    private static func isNonEscapingClosureType(_ type: TypeSyntax) -> Bool {
+        // Unwrap a single-element parenthesizing tuple, e.g. `(@escaping () -> Void)`.
+        if let tupleType = type.as(TupleTypeSyntax.self),
+           tupleType.elements.count == 1, let element = tupleType.elements.first,
+           element.firstName == nil, element.secondName == nil {
+            return isNonEscapingClosureType(element.type)
+        }
+        if let attributedType = type.as(AttributedTypeSyntax.self) {
+            let attributeNames = attributedType.attributes.compactMap { element -> String? in
+                if case .attribute(let attribute) = element {
+                    return attribute.attributeName.trimmedDescription
+                }
+                return nil
+            }
+            // `@escaping` closures are storable; `@autoclosure` is evaluated separately.
+            if attributeNames.contains("escaping") || attributeNames.contains("autoclosure") {
+                return false
+            }
+            return attributedType.baseType.is(FunctionTypeSyntax.self)
+        }
+        return type.is(FunctionTypeSyntax.self)
+    }
+
     static func buildParameterTupleType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String> = []

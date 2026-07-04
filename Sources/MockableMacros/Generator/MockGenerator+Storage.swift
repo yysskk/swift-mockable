@@ -99,7 +99,7 @@ extension MockGenerator {
                 generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // CallArgs
-                let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+                let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
                 let callArgsDecl = VariableDeclSyntax(
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
@@ -219,7 +219,7 @@ extension MockGenerator {
                 generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // SubscriptCallArgs
-                let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+                let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
                 let callArgsDecl = VariableDeclSyntax(
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([

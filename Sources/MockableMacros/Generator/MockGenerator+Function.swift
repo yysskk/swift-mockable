@@ -28,7 +28,7 @@ extension MockGenerator {
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
-        let tupleType = Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames)
+        let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let callArgsProperty = generateFunctionStorageProperty(
             identifier: identifier,
             propertyName: "CallArgs",
@@ -193,7 +193,7 @@ extension MockGenerator {
         )
         statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
 
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
                 base: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallArgs")),
@@ -235,7 +235,7 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         genericParamNames: Set<String>
     ) -> CodeBlockSyntax {
-        let argsExpr = Self.buildArgsExpression(parameters: parameters)
+        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let hasReturnValue = Self.hasReturnValue(returnType)
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)

@@ -120,6 +120,26 @@ Notes:
   `async` requirement; otherwise a compile-time diagnostic is emitted. Effectful
   autoclosures are not supported in subscript requirements.
 
+## Non-Escaping Closure Parameters
+
+A non-escaping closure parameter cannot be stored, so it is excluded from
+`CallArgs`. The call is still counted, and the closure is still forwarded to the
+handler:
+
+```swift
+func run(label: String, _ body: () -> Void)
+```
+
+Generates:
+
+```swift
+var runCallArgs: [String] = []                         // only the storable `label`
+var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
+```
+
+Escaping (`@escaping`), optional, and variadic closures are storable and remain
+in `CallArgs` as before.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic
