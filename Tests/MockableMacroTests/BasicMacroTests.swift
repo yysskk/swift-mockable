@@ -463,6 +463,29 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Static subscript requirements should produce diagnostics")
+    func staticSubscriptProducesDiagnostic() {
+        // `static subscript` is unsupported. This is why subscript backing storage is
+        // always an instance property and subscript resets are never prefixed with `Self.`.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol StaticSubscriptRequirement {
+                static subscript(index: Int) -> String { get }
+            }
+            """,
+            expandedSource: """
+            protocol StaticSubscriptRequirement {
+                static subscript(index: Int) -> String { get }
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "Unsupported protocol member: static subscript(index: Int) -> String { get }", line: 3, column: 5)
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Invalid macro arguments should produce diagnostics")
     func invalidMacroArgumentsProduceDiagnostics() {
         assertMacroExpansionForTesting(

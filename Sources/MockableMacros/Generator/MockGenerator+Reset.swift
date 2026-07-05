@@ -19,74 +19,15 @@ extension MockGenerator {
         let methodGroups = groupMethodsByNameIncludingConditional()
 
         let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
-            var generatedStatements: [CodeBlockItemSyntax] = []
-
-            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                let methodGroup = methodGroups[funcName] ?? []
-                let isOverloaded = methodGroup.count > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
-                let prefix = Self.isTypeMember(funcDecl.modifiers) ? "Self." : ""
-
-                // Reset call count
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callCount(identifier)) = 0"))))
-
-                // Reset call args
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callArgs(identifier)) = []"))))
-
-                // Reset handler
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.handler(identifier)) = nil"))))
-            } else if let varDecl = decl.as(VariableDeclSyntax.self) {
-                let prefix = Self.isTypeMember(varDecl.modifiers) ? "Self." : ""
-
-                for binding in varDecl.bindings {
-                    guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
-                          let typeAnnotation = binding.typeAnnotation else { continue }
-
-                    let varName = identifier.identifier.text
-                    let varType = typeAnnotation.type
-
-                    // Effectful read-only properties are handler-based (no `_name` backing).
-                    if Self.effectfulGetter(of: binding) != nil {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callCount(varName)) = 0"))))
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.handler(varName)) = nil"))))
-                        continue
-                    }
-
-                    let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-                    let isGetOnly = Self.isGetOnlyProperty(binding: binding)
-
-                    // For get-only properties, always use _varName
-                    // For get-set properties:
-                    //   - Optional types use varName directly (no backing storage)
-                    //   - Non-optional types use _varName backing storage
-                    if isGetOnly || !isOptional {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.variableBacking(varName)) = nil"))))
-                    } else {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName) = nil"))))
-                    }
-                }
-            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-                let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-                let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
-
-                // Reset subscript call count
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) = 0"))))
-
-                // Reset subscript call args
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))) = []"))))
-
-                // Reset subscript handler
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil"))))
-
-                // Reset subscript set handler if not get-only
-                if !isGetOnly {
-                    generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil"))))
-                }
+            // Subscript backing storage is always an instance property (`static subscript`
+            // is unsupported), so subscript resets are never prefixed. Only func/var members
+            // can be `static` and need the `Self.` prefix.
+            let prefix = decl.is(SubscriptDeclSyntax.self)
+                ? ""
+                : (Self.isTypeMember(decl) ? "Self." : "")
+            return resetTargets(for: decl, methodGroups: methodGroups, lockBased: false).map { target in
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(target.name) = \(target.resetValue)")))
             }
-
-            return generatedStatements
         }
 
         // Add super.resetMock() call if inheriting from parent mock
@@ -129,63 +70,12 @@ extension MockGenerator {
 
         func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {
             mapLinesPreservingIfConfig { decl in
-                var generatedStatements: [String] = []
-                let isTypeMember = Self.isTypeMember(decl)
-
-                guard isTypeMember == includeTypeMembers else {
-                    return generatedStatements
+                guard Self.isTypeMember(decl) == includeTypeMembers else {
+                    return []
                 }
-
-                if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-                    let funcName = funcDecl.name.text
-                    let methodGroup = methodGroups[funcName] ?? []
-                    let isOverloaded = methodGroup.count > 1
-                    let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                    let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
-
-                    // Reset call count
-                    generatedStatements.append("storage.\(MockNaming.callCount(identifier)) = 0")
-
-                    // Reset call args
-                    generatedStatements.append("storage.\(MockNaming.callArgs(identifier)) = []")
-
-                    // Reset handler
-                    generatedStatements.append("storage.\(MockNaming.handler(identifier)) = nil")
-                } else if let varDecl = decl.as(VariableDeclSyntax.self) {
-                    for binding in varDecl.bindings {
-                        guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
-                        let varName = identifier.identifier.text
-
-                        // Effectful read-only properties are handler-based (no `_name` backing).
-                        if Self.effectfulGetter(of: binding) != nil {
-                            generatedStatements.append("storage.\(MockNaming.callCount(varName)) = 0")
-                            generatedStatements.append("storage.\(MockNaming.handler(varName)) = nil")
-                            continue
-                        }
-
-                        // Reset variable backing storage
-                        generatedStatements.append("storage.\(MockNaming.variableBacking(varName)) = nil")
-                    }
-                } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-                    let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-                    let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
-
-                    // Reset subscript call count
-                    generatedStatements.append("storage.\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) = 0")
-
-                    // Reset subscript call args
-                    generatedStatements.append("storage.\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))) = []")
-
-                    // Reset subscript handler
-                    generatedStatements.append("storage.\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil")
-
-                    // Reset subscript set handler if not get-only
-                    if !isGetOnly {
-                        generatedStatements.append("storage.\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil")
-                    }
+                return resetTargets(for: decl, methodGroups: methodGroups, lockBased: true).map { target in
+                    "storage.\(target.name) = \(target.resetValue)"
                 }
-
-                return generatedStatements
             }
         }
 
@@ -256,5 +146,94 @@ extension MockGenerator {
             ),
             body: body
         )
+    }
+
+    /// A single `<member> = <value>` assignment emitted by `resetMock()`.
+    ///
+    /// `name` is the bare stored-property name; callers prefix it with the storage
+    /// accessor appropriate to their model (`Self.` for static members, `storage.`
+    /// for the lock-backed model, or nothing for regular instance members).
+    private struct ResetTarget {
+        let name: String
+        let resetValue: String
+    }
+
+    /// The reset assignments for a single requirement, shared by the regular and
+    /// lock-backed (`Sendable`/actor) reset methods.
+    ///
+    /// The two models differ only for stored get-set variables: the lock-backed model
+    /// always resets the `_name` backing storage, whereas the regular model resets an
+    /// optional get-set property directly (it has no backing storage). Pass `lockBased`
+    /// to select the model.
+    private func resetTargets(
+        for decl: DeclSyntax,
+        methodGroups: [String: [FunctionDeclSyntax]],
+        lockBased: Bool
+    ) -> [ResetTarget] {
+        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+            let funcName = funcDecl.name.text
+            let methodGroup = methodGroups[funcName] ?? []
+            let isOverloaded = methodGroup.count > 1
+            let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
+            let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
+            return [
+                ResetTarget(name: MockNaming.callCount(identifier), resetValue: "0"),
+                ResetTarget(name: MockNaming.callArgs(identifier), resetValue: "[]"),
+                ResetTarget(name: MockNaming.handler(identifier), resetValue: "nil"),
+            ]
+        }
+
+        if let varDecl = decl.as(VariableDeclSyntax.self) {
+            var targets: [ResetTarget] = []
+            for binding in varDecl.bindings {
+                guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
+                let varName = pattern.identifier.text
+
+                // Effectful read-only properties are handler-based (no `_name` backing).
+                if Self.effectfulGetter(of: binding) != nil {
+                    targets.append(ResetTarget(name: MockNaming.callCount(varName), resetValue: "0"))
+                    targets.append(ResetTarget(name: MockNaming.handler(varName), resetValue: "nil"))
+                    continue
+                }
+
+                // The lock-backed model always resets `_name` backing storage.
+                if lockBased {
+                    targets.append(ResetTarget(name: MockNaming.variableBacking(varName), resetValue: "nil"))
+                    continue
+                }
+
+                guard let typeAnnotation = binding.typeAnnotation else { continue }
+                let varType = typeAnnotation.type
+                let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+                let isGetOnly = Self.isGetOnlyProperty(binding: binding)
+
+                // For get-only properties, always use `_name`. For get-set properties,
+                // optional types are reset directly (no backing storage) and non-optional
+                // types reset the `_name` backing storage.
+                if isGetOnly || !isOptional {
+                    targets.append(ResetTarget(name: MockNaming.variableBacking(varName), resetValue: "nil"))
+                } else {
+                    targets.append(ResetTarget(name: varName, resetValue: "nil"))
+                }
+            }
+            return targets
+        }
+
+        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+            let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+            let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
+            let identifier = MockNaming.subscriptIdentifier(suffix: suffix)
+            var targets: [ResetTarget] = [
+                ResetTarget(name: MockNaming.callCount(identifier), resetValue: "0"),
+                ResetTarget(name: MockNaming.callArgs(identifier), resetValue: "[]"),
+                ResetTarget(name: MockNaming.handler(identifier), resetValue: "nil"),
+            ]
+            if !isGetOnly {
+                targets.append(ResetTarget(name: MockNaming.setHandler(identifier), resetValue: "nil"))
+            }
+            return targets
+        }
+
+        return []
     }
 }
