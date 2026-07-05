@@ -26,6 +26,16 @@ extension FunctionEffectSpecifiersSyntax {
         return throwsSpecifier?.tokenKind == .keyword(.rethrows)
         #endif
     }
+
+    /// The typed-throws error type (`throws(MyError)`), or `nil` for untyped or absent throws.
+    /// Typed throws (SE-0413) requires Swift 6, so this is always `nil` on swift-syntax 509/510.
+    var throwsErrorType: TypeSyntax? {
+        #if canImport(SwiftSyntax600)
+        return throwsClause?.type
+        #else
+        return nil
+        #endif
+    }
 }
 
 extension TypeEffectSpecifiersSyntax {
@@ -46,6 +56,15 @@ extension AccessorEffectSpecifiersSyntax {
         return throwsClause != nil
         #else
         return throwsSpecifier != nil
+        #endif
+    }
+
+    /// The typed-throws error type (`get throws(MyError)`), or `nil` for untyped or absent throws.
+    var throwsErrorType: TypeSyntax? {
+        #if canImport(SwiftSyntax600)
+        return throwsClause?.type
+        #else
+        return nil
         #endif
     }
 }

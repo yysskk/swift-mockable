@@ -144,6 +144,7 @@ extension MockGenerator {
         // it without `try` even though the mock keeps the `rethrows` signature.
         let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
+        let throwsErrorType = funcDecl.signature.effectSpecifiers?.throwsErrorType
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
@@ -157,7 +158,8 @@ extension MockGenerator {
                 isThrows: handlerThrows,
                 isTypeMember: isTypeMember,
                 hasGenericReturn: hasGenericReturn,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                throwsErrorType: throwsErrorType
             )
         } else {
             body = buildDirectFunctionBody(
@@ -167,7 +169,8 @@ extension MockGenerator {
                 isAsync: isAsync,
                 isThrows: handlerThrows,
                 hasGenericReturn: hasGenericReturn,
-                genericParamNames: genericParamNames
+                genericParamNames: genericParamNames,
+                throwsErrorType: throwsErrorType
             )
         }
 
@@ -188,7 +191,8 @@ extension MockGenerator {
         isAsync: Bool,
         isThrows: Bool,
         hasGenericReturn: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        throwsErrorType: TypeSyntax? = nil
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
@@ -221,7 +225,8 @@ extension MockGenerator {
             isAsync: isAsync,
             isThrows: isThrows,
             hasGenericReturn: hasGenericReturn,
-            genericParamNames: genericParamNames
+            genericParamNames: genericParamNames,
+            throwsErrorType: throwsErrorType
         )
         statements.append(contentsOf: handlerCallStmts)
 
@@ -240,7 +245,8 @@ extension MockGenerator {
         isThrows: Bool,
         isTypeMember: Bool,
         hasGenericReturn: Bool,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        throwsErrorType: TypeSyntax? = nil
     ) -> CodeBlockSyntax {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let hasReturnValue = Self.hasReturnValue(returnType)
@@ -255,6 +261,7 @@ extension MockGenerator {
             isThrows: isThrows,
             genericParamNames: genericParamNames
         )
+        let errorType = throwsErrorType?.trimmedDescription
 
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before taking the lock so user-supplied
@@ -285,14 +292,16 @@ guard let _handler else {
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
-                returnTypeStr: returnTypeStr
+                returnTypeStr: returnTypeStr,
+                errorType: errorType
             ))
         } else {
             statements.append(Self.buildOptionalHandlerCallStatement(
                 handlerBinding: "_handler",
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams
+                inOutParams: inOutParams,
+                errorType: errorType
             ))
         }
 
@@ -347,6 +356,10 @@ guard let _handler else {
             closureType += " async"
         }
         if isThrows {
+            // The handler is untyped-throwing even for typed-throws (`throws(E)`)
+            // requirements: a typed-throws function value would need the Swift 6 runtime
+            // (macOS 15+) and cannot name a method's generic error type at storage scope.
+            // The generated body re-throws the typed error via a `catch` (see buildTypedThrowsCatch).
             closureType += " throws"
         }
         closureType += " -> \(returnTypeStr)"
@@ -378,11 +391,13 @@ guard let _handler else {
         isAsync: Bool,
         isThrows: Bool,
         hasGenericReturn: Bool = false,
-        genericParamNames: Set<String>
+        genericParamNames: Set<String>,
+        throwsErrorType: TypeSyntax? = nil
     ) -> [CodeBlockItemSyntax] {
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+        let errorType = throwsErrorType?.trimmedDescription
 
         let hasReturnValue = Self.hasReturnValue(returnType)
 
@@ -401,7 +416,8 @@ guard let _handler = \(identifier)Handler else {
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
-                returnTypeStr: returnTypeStr
+                returnTypeStr: returnTypeStr,
+                errorType: errorType
             ))
             return result
         } else {
@@ -409,31 +425,60 @@ guard let _handler = \(identifier)Handler else {
                 handlerBinding: "_handler = \(identifier)Handler",
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams
+                inOutParams: inOutParams,
+                errorType: errorType
             )]
         }
     }
 
     /// Builds statements for invoking a handler and handling inout write-back (return value path).
     /// Used by both lock-based and direct paths after the handler variable is available.
+    /// When `errorType` is set (typed throws, SE-0413), the invocation is wrapped in a
+    /// `do`/`catch` that re-throws the caught error as the requirement's error type.
     private static func buildHandlerInvocationStatements(
         invokePrefix: String,
         handlerCallArgs: String,
         inOutParams: [(name: String, erasedType: String, originalType: String)],
         hasGenericReturn: Bool,
-        returnTypeStr: String
+        returnTypeStr: String,
+        errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
+        let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+
+        if let errorType {
+            var innerLines: [String] = []
+            if !inOutParams.isEmpty {
+                innerLines.append("let _result = \(invokePrefix)_handler(\(handlerCallArgs))")
+                innerLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "_result.inoutArgs"))
+                innerLines.append("return _result.returnValue\(castSuffix)")
+            } else {
+                innerLines.append("return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")
+            }
+            return [buildTypedThrowsCatch(innerLines: innerLines, errorType: errorType)]
+        }
+
         if !inOutParams.isEmpty {
             var result: [CodeBlockItemSyntax] = []
             result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _result = \(invokePrefix)_handler(\(handlerCallArgs))"))))
             result.append(contentsOf: buildInOutWriteBackStatements(inOutParams: inOutParams, source: "_result.inoutArgs"))
-            let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
             result.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _result.returnValue\(castSuffix)"))))
             return result
         }
 
-        let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
         return [CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))]
+    }
+
+    /// Wraps `innerLines` in a `do { ... } catch { throw error as! ErrorType }` statement,
+    /// used to re-throw a typed-throws error from an untyped-throwing handler.
+    static func buildTypedThrowsCatch(innerLines: [String], errorType: String) -> CodeBlockItemSyntax {
+        let body = innerLines.map { "    \($0)" }.joined(separator: "\n")
+        return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
+        do {
+        \(body)
+        } catch {
+            throw error as! \(errorType)
+        }
+        """)))
     }
 
     /// Builds an `if let _handler` statement for optional handler calls (void return).
@@ -444,24 +489,36 @@ guard let _handler = \(identifier)Handler else {
         handlerBinding: String,
         invokePrefix: String,
         handlerCallArgs: String,
-        inOutParams: [(name: String, erasedType: String, originalType: String)]
+        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        errorType: String? = nil
     ) -> CodeBlockItemSyntax {
+        var ifBodyLines: [String]
         if !inOutParams.isEmpty {
-            var ifBodyLines = [
-                "let _writeBack = \(invokePrefix)_handler(\(handlerCallArgs))"
-            ]
+            ifBodyLines = ["let _writeBack = \(invokePrefix)_handler(\(handlerCallArgs))"]
             ifBodyLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "_writeBack"))
-            let ifBody = ifBodyLines.map { "    \($0)" }.joined(separator: "\n")
+        } else {
+            ifBodyLines = ["\(invokePrefix)_handler(\(handlerCallArgs))"]
+        }
+
+        // Typed throws: wrap the handler call in a `do`/`catch` that re-throws the
+        // caught error as the requirement's error type.
+        if let errorType {
+            let doBody = ifBodyLines.map { "        \($0)" }.joined(separator: "\n")
             return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 if let \(handlerBinding) {
-\(ifBody)
+    do {
+\(doBody)
+    } catch {
+        throw error as! \(errorType)
+    }
 }
 """)))
         }
 
+        let ifBody = ifBodyLines.map { "    \($0)" }.joined(separator: "\n")
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 if let \(handlerBinding) {
-    \(invokePrefix)_handler(\(handlerCallArgs))
+\(ifBody)
 }
 """)))
     }

@@ -112,6 +112,7 @@ Notes:
 
 - Access-level-aware generation (including `private` / `fileprivate` edge cases)
 - Sync / `async` / `throws` / `rethrows` methods
+- Typed throws (`throws(MyError)`, SE-0413) on methods, properties, and subscripts
 - Variadic parameters (captured as arrays)
 - `@autoclosure` parameters (evaluated once per call; handlers and `CallArgs` receive the evaluated value)
 - Non-escaping closure parameters (forwarded to the handler; excluded from `CallArgs`)
@@ -136,6 +137,7 @@ Notes:
 - `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
 - Non-escaping closure arguments are forwarded to the handler but excluded from `CallArgs` (a non-escaping value cannot be stored); the call is still counted.
 - `rethrows` methods generate a non-throwing handler that receives the throwing closure arguments (a stored handler cannot satisfy `rethrows` on its own). The handler decides whether to invoke those closures; the mock itself does not re-throw their errors.
+- Typed throws (`throws(MyError)`) keeps the `throws(MyError)` signature and generates a plain untyped-throwing handler; the body re-throws the handler's error as the declared type. Configure the handler normally (`mock.loadHandler = { id in throw MyError() }`). If the handler throws a different error type, the mock traps.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
 

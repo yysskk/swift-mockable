@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for typed throws (`throws(MyError)`, SE-0413) on methods, properties, and subscripts. The mock keeps the typed-throws signature and re-throws the untyped-throwing handler's error as the declared type.
 - Support for effectful read-only property accessors (`get async`, `get throws`, `get async throws`), mocked with a handler and a call counter.
 - Support for effectful read-only subscripts (`subscript(...) -> V { get async throws }`).
 - Support for `rethrows` methods: the mock keeps the `rethrows` signature and generates a non-throwing handler that receives the throwing closure arguments.

@@ -480,6 +480,31 @@ extension MockGenerator {
         return TypeSyntax(stringLiteral: String(trimmed.dropFirst("inout ".count)))
     }
 
+    /// Erases a nested function type's typed-throws error type (`() throws(E) -> Void`) to
+    /// untyped `throws`. The stored handler is always untyped-throwing, so a typed-throws
+    /// function value must never be embedded in it: a generic error type would be out of the
+    /// method's generic scope, and even a concrete one would require the Swift 6 runtime
+    /// (typed-throws function values ship in macOS 15+).
+    private static func erasedEffectSpecifiers(
+        _ effects: TypeEffectSpecifiersSyntax?
+    ) -> TypeEffectSpecifiersSyntax? {
+        guard let effects else {
+            return nil
+        }
+        #if canImport(SwiftSyntax600)
+        guard let throwsClause = effects.throwsClause, throwsClause.type != nil else {
+            return effects
+        }
+        let untypedThrowsClause = throwsClause
+            .with(\.leftParen, nil)
+            .with(\.type, nil)
+            .with(\.rightParen, nil)
+        return effects.with(\.throwsClause, untypedThrowsClause)
+        #else
+        return effects
+        #endif
+    }
+
     static func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {
         // Handle attributed types FIRST (e.g., @escaping @Sendable (Event) -> Void)
         // This must be checked before the genericParamNames.isEmpty early return
@@ -538,6 +563,40 @@ extension MockGenerator {
             return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
         }
 
+        // Handle function types (closures) BEFORE the genericParamNames.isEmpty early return:
+        // a nested closure's typed-throws clause must always be erased to untyped `throws`
+        // (the stored handler is untyped-throwing) even when there are no generic parameters.
+        if let funcType = type.as(FunctionTypeSyntax.self) {
+            let processedParameters = TupleTypeElementListSyntax(
+                funcType.parameters.map { param in
+                    TupleTypeElementSyntax(
+                        firstName: param.firstName,
+                        secondName: param.secondName,
+                        colon: param.colon,
+                        type: eraseGenericTypes(in: param.type, genericParamNames: genericParamNames),
+                        ellipsis: param.ellipsis,
+                        trailingComma: param.trailingComma
+                    )
+                }
+            )
+
+            let processedReturnType = eraseGenericTypes(
+                in: funcType.returnClause.type,
+                genericParamNames: genericParamNames
+            )
+
+            return TypeSyntax(FunctionTypeSyntax(
+                leftParen: funcType.leftParen,
+                parameters: processedParameters,
+                rightParen: funcType.rightParen,
+                effectSpecifiers: erasedEffectSpecifiers(funcType.effectSpecifiers),
+                returnClause: ReturnClauseSyntax(
+                    arrow: funcType.returnClause.arrow,
+                    type: processedReturnType
+                )
+            ))
+        }
+
         if genericParamNames.isEmpty {
             return type
         }
@@ -575,38 +634,6 @@ extension MockGenerator {
             if erasedElement.description != arrayType.element.description {
                 return TypeSyntax(ArrayTypeSyntax(element: erasedElement))
             }
-        }
-
-        // Handle function types (closures) - recursively process parameter types and return type
-        if let funcType = type.as(FunctionTypeSyntax.self) {
-            let processedParameters = TupleTypeElementListSyntax(
-                funcType.parameters.map { param in
-                    TupleTypeElementSyntax(
-                        firstName: param.firstName,
-                        secondName: param.secondName,
-                        colon: param.colon,
-                        type: eraseGenericTypes(in: param.type, genericParamNames: genericParamNames),
-                        ellipsis: param.ellipsis,
-                        trailingComma: param.trailingComma
-                    )
-                }
-            )
-
-            let processedReturnType = eraseGenericTypes(
-                in: funcType.returnClause.type,
-                genericParamNames: genericParamNames
-            )
-
-            return TypeSyntax(FunctionTypeSyntax(
-                leftParen: funcType.leftParen,
-                parameters: processedParameters,
-                rightParen: funcType.rightParen,
-                effectSpecifiers: funcType.effectSpecifiers,
-                returnClause: ReturnClauseSyntax(
-                    arrow: funcType.returnClause.arrow,
-                    type: processedReturnType
-                )
-            ))
         }
 
         return type

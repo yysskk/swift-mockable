@@ -175,6 +175,7 @@ extension MockGenerator {
         let isAsync = getterEffects?.asyncSpecifier != nil
         let isThrows = getterEffects?.hasThrowsEffect ?? false
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
+        let errorType = getterEffects?.throwsErrorType?.trimmedDescription
 
         let getterStatements: [CodeBlockItemSyntax]
         if usesInstanceStorageLock {
@@ -183,7 +184,8 @@ extension MockGenerator {
                 returnType: returnType,
                 hasGenericReturn: hasGenericReturn,
                 suffix: suffix,
-                invokePrefix: invokePrefix
+                invokePrefix: invokePrefix,
+                errorType: errorType
             )
         } else {
             getterStatements = buildDirectSubscriptGetterStatements(
@@ -191,7 +193,8 @@ extension MockGenerator {
                 returnType: returnType,
                 hasGenericReturn: hasGenericReturn,
                 suffix: suffix,
-                invokePrefix: invokePrefix
+                invokePrefix: invokePrefix,
+                errorType: errorType
             )
         }
 
@@ -251,7 +254,8 @@ extension MockGenerator {
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         suffix: String,
-        invokePrefix: String = ""
+        invokePrefix: String = "",
+        errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
         var getterStatements: [CodeBlockItemSyntax] = []
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
@@ -282,7 +286,8 @@ extension MockGenerator {
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
             suffix: suffix,
-            invokePrefix: invokePrefix
+            invokePrefix: invokePrefix,
+            errorType: errorType
         ))
 
         return getterStatements
@@ -293,7 +298,8 @@ extension MockGenerator {
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         suffix: String,
-        invokePrefix: String = ""
+        invokePrefix: String = "",
+        errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
 
@@ -306,7 +312,9 @@ guard let _handler = subscript\(suffix)Handler else {
     \(elseBody)
 }
 """)))
-        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))
+        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
+        let returnStmt = errorType.map { Self.buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
+            ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
         return [guardStmt, returnStmt]
     }
 
@@ -333,7 +341,8 @@ if let _handler = subscript\(suffix)SetHandler {
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         suffix: String,
-        invokePrefix: String = ""
+        invokePrefix: String = "",
+        errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
 
@@ -362,7 +371,9 @@ guard let _handler else {
     \(elseBody)
 }
 """)))
-        let returnStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))
+        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
+        let returnStmt = errorType.map { Self.buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
+            ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
 
         statements.append(guardStmt)
         statements.append(returnStmt)
@@ -422,7 +433,16 @@ if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
     ) -> String {
         let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
-        let effectsText = effects.map { " \($0.trimmedDescription)" } ?? ""
+        // The handler is untyped-throwing even for a typed-throws accessor
+        // (`get throws(E)`) — the generated getter re-throws the typed error via a
+        // `catch` — so a typed error type is dropped here.
+        var effectsText = ""
+        if effects?.asyncSpecifier != nil {
+            effectsText += " async"
+        }
+        if effects?.hasThrowsEffect == true {
+            effectsText += " throws"
+        }
 
         if parameters.isEmpty {
             return "()\(effectsText) -> \(returnTypeStr)"

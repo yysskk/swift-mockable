@@ -233,6 +233,49 @@ protocol SendableRethrowingRunner: Sendable {
     func run(_ body: @Sendable () throws -> Void) rethrows
 }
 
+// MARK: - Typed Throws Protocols (Swift 6.0+)
+
+#if compiler(>=6.0)
+struct TypedThrowsError: Error, Equatable {
+    let code: Int
+}
+
+@Mockable
+protocol TypedThrowingLoader {
+    func load(id: Int) throws(TypedThrowsError) -> String
+}
+
+@Mockable
+protocol TypedThrowingConfigProvider {
+    var setting: Int { get throws(TypedThrowsError) }
+}
+
+@Mockable
+protocol SendableTypedThrowingStore: Sendable {
+    func value() throws(TypedThrowsError) -> Int
+}
+
+@Mockable
+protocol TypedThrowingBase {
+    func base() throws(TypedThrowsError) -> Int
+}
+
+@Mockable
+protocol TypedThrowingChild: TypedThrowingBase {
+    func child() -> String
+}
+
+@Mockable
+protocol GenericTypedThrowingRunner {
+    func run<E: Error>(_ body: () throws(E) -> Void) throws(E)
+}
+
+@Mockable
+protocol ConcreteTypedThrowingClosureService {
+    func perform(_ body: @escaping () throws(TypedThrowsError) -> Void)
+}
+#endif
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable
