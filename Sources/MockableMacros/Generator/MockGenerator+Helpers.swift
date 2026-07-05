@@ -505,138 +505,204 @@ extension MockGenerator {
         #endif
     }
 
+    /// Erases generic parameters (to `Any`) and normalizes nested types so a
+    /// requirement's types can be embedded in stored properties and handler closures.
+    ///
+    /// The categories are tried in a fixed order. Attributed types, tuples, implicitly
+    /// unwrapped optionals, and function types are normalized even when the declaration
+    /// is non-generic — they strip `@escaping`, unwrap parentheses, rewrite `T!` to `T?`,
+    /// and erase typed-throws clauses, all of which are required regardless of generics.
+    /// The remaining categories only substitute generic parameters, so they are skipped
+    /// entirely when `genericParamNames` is empty.
     static func eraseGenericTypes(in type: TypeSyntax, genericParamNames: Set<String>) -> TypeSyntax {
-        // Handle attributed types FIRST (e.g., @escaping @Sendable (Event) -> Void)
-        // This must be checked before the genericParamNames.isEmpty early return
-        // because we need to strip @escaping even when there are no generic parameters
         if let attributedType = type.as(AttributedTypeSyntax.self) {
-            let filteredAttributes = stripEscapingAttribute(from: attributedType.attributes)
-            let processedBaseType = eraseGenericTypes(in: attributedType.baseType, genericParamNames: genericParamNames)
-
-            if filteredAttributes.isEmpty && !attributedType.hasSpecifiers {
-                return processedBaseType
-            }
-
-            return TypeSyntax(AttributedTypeSyntax.makeAttributedType(
-                from: attributedType,
-                attributes: filteredAttributes,
-                baseType: processedBaseType
-            ))
+            return eraseAttributedType(attributedType, genericParamNames: genericParamNames)
         }
-
-        // Handle parenthesized types / tuple types BEFORE the genericParamNames.isEmpty early return
-        // A single-element tuple like `(@escaping (Error?) -> Void)` should be unwrapped
-        // so the inner attributed type can be properly processed (e.g., @escaping stripped)
-        if let tupleType = type.as(TupleTypeSyntax.self) {
-            if tupleType.elements.count == 1, let element = tupleType.elements.first,
-               element.firstName == nil, element.secondName == nil {
-                // Single-element tuple = parenthesized type; unwrap and recurse
-                return eraseGenericTypes(in: element.type, genericParamNames: genericParamNames)
-            }
-            if !genericParamNames.isEmpty {
-                // Multi-element tuple: recurse into each element
-                let processedElements = TupleTypeElementListSyntax(
-                    tupleType.elements.map { element in
-                        TupleTypeElementSyntax(
-                            firstName: element.firstName,
-                            secondName: element.secondName,
-                            colon: element.colon,
-                            type: eraseGenericTypes(in: element.type, genericParamNames: genericParamNames),
-                            ellipsis: element.ellipsis,
-                            trailingComma: element.trailingComma
-                        )
-                    }
-                )
-                return TypeSyntax(TupleTypeSyntax(
-                    leftParen: tupleType.leftParen,
-                    elements: processedElements,
-                    rightParen: tupleType.rightParen
-                ))
-            }
+        if let tupleType = type.as(TupleTypeSyntax.self),
+           let erased = eraseTupleType(tupleType, genericParamNames: genericParamNames) {
+            return erased
         }
-
-        // Convert implicitly unwrapped optionals `T!` to regular optionals `T?` BEFORE the
-        // genericParamNames.isEmpty early return. `T!` is not allowed in nested positions such
-        // as a handler closure type (`(@Sendable () -> T!)?` is rejected by the compiler).
         if let implicitOptional = type.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
-            let erasedWrapped = eraseGenericTypes(in: implicitOptional.wrappedType, genericParamNames: genericParamNames)
-            return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+            return eraseImplicitlyUnwrappedOptionalType(implicitOptional, genericParamNames: genericParamNames)
         }
-
-        // Handle function types (closures) BEFORE the genericParamNames.isEmpty early return:
-        // a nested closure's typed-throws clause must always be erased to untyped `throws`
-        // (the stored handler is untyped-throwing) even when there are no generic parameters.
         if let funcType = type.as(FunctionTypeSyntax.self) {
-            let processedParameters = TupleTypeElementListSyntax(
-                funcType.parameters.map { param in
-                    TupleTypeElementSyntax(
-                        firstName: param.firstName,
-                        secondName: param.secondName,
-                        colon: param.colon,
-                        type: eraseGenericTypes(in: param.type, genericParamNames: genericParamNames),
-                        ellipsis: param.ellipsis,
-                        trailingComma: param.trailingComma
-                    )
-                }
-            )
-
-            let processedReturnType = eraseGenericTypes(
-                in: funcType.returnClause.type,
-                genericParamNames: genericParamNames
-            )
-
-            return TypeSyntax(FunctionTypeSyntax(
-                leftParen: funcType.leftParen,
-                parameters: processedParameters,
-                rightParen: funcType.rightParen,
-                effectSpecifiers: erasedEffectSpecifiers(funcType.effectSpecifiers),
-                returnClause: ReturnClauseSyntax(
-                    arrow: funcType.returnClause.arrow,
-                    type: processedReturnType
-                )
-            ))
+            return eraseFunctionType(funcType, genericParamNames: genericParamNames)
         }
 
+        // The remaining categories only substitute generic parameters, so there is
+        // nothing to erase when the enclosing declaration is non-generic.
         if genericParamNames.isEmpty {
             return type
         }
 
-        // Check if type itself is a generic parameter
-        if let identifierType = type.as(IdentifierTypeSyntax.self) {
-            if genericParamNames.contains(identifierType.name.text) {
-                return TypeSyntax(stringLiteral: "Any")
-            }
-            // Check for generic arguments like UserDefaultsKey<T>
-            if let genericArgs = identifierType.genericArgumentClause {
-                let hasGenericParam = genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
-                    if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
-                        return genericParamNames.contains(innerIdent.name.text)
-                    }
-                    return false
-                }
-                if hasGenericParam {
-                    return TypeSyntax(stringLiteral: "Any")
-                }
-            }
+        if let identifierType = type.as(IdentifierTypeSyntax.self),
+           let erased = eraseIdentifierType(identifierType, genericParamNames: genericParamNames) {
+            return erased
         }
-
-        // Handle optional types
-        if let optionalType = type.as(OptionalTypeSyntax.self) {
-            let erasedWrapped = eraseGenericTypes(in: optionalType.wrappedType, genericParamNames: genericParamNames)
-            if erasedWrapped.description != optionalType.wrappedType.description {
-                return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
-            }
+        if let optionalType = type.as(OptionalTypeSyntax.self),
+           let erased = eraseOptionalType(optionalType, genericParamNames: genericParamNames) {
+            return erased
         }
-
-        // Handle array types
-        if let arrayType = type.as(ArrayTypeSyntax.self) {
-            let erasedElement = eraseGenericTypes(in: arrayType.element, genericParamNames: genericParamNames)
-            if erasedElement.description != arrayType.element.description {
-                return TypeSyntax(ArrayTypeSyntax(element: erasedElement))
-            }
+        if let arrayType = type.as(ArrayTypeSyntax.self),
+           let erased = eraseArrayType(arrayType, genericParamNames: genericParamNames) {
+            return erased
         }
 
         return type
+    }
+
+    /// Strips `@escaping` (invalid outside parameter position) and recurses into the
+    /// base type, e.g. `@escaping @Sendable (Event) -> Void`. Runs regardless of
+    /// `genericParamNames` so `@escaping` is removed even for non-generic closures.
+    private static func eraseAttributedType(
+        _ attributedType: AttributedTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax {
+        let filteredAttributes = stripEscapingAttribute(from: attributedType.attributes)
+        let processedBaseType = eraseGenericTypes(in: attributedType.baseType, genericParamNames: genericParamNames)
+
+        if filteredAttributes.isEmpty && !attributedType.hasSpecifiers {
+            return processedBaseType
+        }
+
+        return TypeSyntax(AttributedTypeSyntax.makeAttributedType(
+            from: attributedType,
+            attributes: filteredAttributes,
+            baseType: processedBaseType
+        ))
+    }
+
+    /// Erases a tuple type. A single-element unlabeled tuple is a parenthesized type
+    /// (e.g. `(@escaping (Error?) -> Void)`) and is unwrapped so the inner type is
+    /// processed — this runs even when non-generic. A multi-element tuple only needs
+    /// erasure when generic parameters are present; otherwise `nil` tells the caller
+    /// to leave it unchanged.
+    private static func eraseTupleType(
+        _ tupleType: TupleTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax? {
+        if tupleType.elements.count == 1, let element = tupleType.elements.first,
+           element.firstName == nil, element.secondName == nil {
+            return eraseGenericTypes(in: element.type, genericParamNames: genericParamNames)
+        }
+        guard !genericParamNames.isEmpty else {
+            return nil
+        }
+        let processedElements = TupleTypeElementListSyntax(
+            tupleType.elements.map { element in
+                TupleTypeElementSyntax(
+                    firstName: element.firstName,
+                    secondName: element.secondName,
+                    colon: element.colon,
+                    type: eraseGenericTypes(in: element.type, genericParamNames: genericParamNames),
+                    ellipsis: element.ellipsis,
+                    trailingComma: element.trailingComma
+                )
+            }
+        )
+        return TypeSyntax(TupleTypeSyntax(
+            leftParen: tupleType.leftParen,
+            elements: processedElements,
+            rightParen: tupleType.rightParen
+        ))
+    }
+
+    /// Converts an implicitly unwrapped optional `T!` to a regular optional `T?`
+    /// (erasing `T`). `T!` is rejected in nested positions such as a handler closure
+    /// type (`(@Sendable () -> T!)?` does not compile), so this runs even when non-generic.
+    private static func eraseImplicitlyUnwrappedOptionalType(
+        _ implicitOptional: ImplicitlyUnwrappedOptionalTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax {
+        let erasedWrapped = eraseGenericTypes(in: implicitOptional.wrappedType, genericParamNames: genericParamNames)
+        return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+    }
+
+    /// Erases a function (closure) type: recurses into every parameter and the return
+    /// type, and rewrites a typed-throws clause to untyped `throws` (the stored handler
+    /// is always untyped-throwing). Runs even when non-generic so the throws erasure applies.
+    private static func eraseFunctionType(
+        _ funcType: FunctionTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax {
+        let processedParameters = TupleTypeElementListSyntax(
+            funcType.parameters.map { param in
+                TupleTypeElementSyntax(
+                    firstName: param.firstName,
+                    secondName: param.secondName,
+                    colon: param.colon,
+                    type: eraseGenericTypes(in: param.type, genericParamNames: genericParamNames),
+                    ellipsis: param.ellipsis,
+                    trailingComma: param.trailingComma
+                )
+            }
+        )
+
+        let processedReturnType = eraseGenericTypes(
+            in: funcType.returnClause.type,
+            genericParamNames: genericParamNames
+        )
+
+        return TypeSyntax(FunctionTypeSyntax(
+            leftParen: funcType.leftParen,
+            parameters: processedParameters,
+            rightParen: funcType.rightParen,
+            effectSpecifiers: erasedEffectSpecifiers(funcType.effectSpecifiers),
+            returnClause: ReturnClauseSyntax(
+                arrow: funcType.returnClause.arrow,
+                type: processedReturnType
+            )
+        ))
+    }
+
+    /// Replaces a bare generic parameter (`T`) or a generic type that mentions one
+    /// (e.g. `UserDefaultsKey<T>`) with `Any`. Returns `nil` for identifiers that
+    /// reference no generic parameter, so the caller leaves them unchanged.
+    private static func eraseIdentifierType(
+        _ identifierType: IdentifierTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax? {
+        if genericParamNames.contains(identifierType.name.text) {
+            return TypeSyntax(stringLiteral: "Any")
+        }
+        if let genericArgs = identifierType.genericArgumentClause {
+            let hasGenericParam = genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
+                if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
+                    return genericParamNames.contains(innerIdent.name.text)
+                }
+                return false
+            }
+            if hasGenericParam {
+                return TypeSyntax(stringLiteral: "Any")
+            }
+        }
+        return nil
+    }
+
+    /// Erases the wrapped type of an optional `T?`, returning a new optional only when
+    /// the wrapped type actually changed (otherwise `nil` to leave it unchanged).
+    private static func eraseOptionalType(
+        _ optionalType: OptionalTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax? {
+        let erasedWrapped = eraseGenericTypes(in: optionalType.wrappedType, genericParamNames: genericParamNames)
+        guard erasedWrapped.description != optionalType.wrappedType.description else {
+            return nil
+        }
+        return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+    }
+
+    /// Erases the element type of an array `[T]`, returning a new array only when the
+    /// element type actually changed (otherwise `nil` to leave it unchanged).
+    private static func eraseArrayType(
+        _ arrayType: ArrayTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax? {
+        let erasedElement = eraseGenericTypes(in: arrayType.element, genericParamNames: genericParamNames)
+        guard erasedElement.description != arrayType.element.description else {
+            return nil
+        }
+        return TypeSyntax(ArrayTypeSyntax(element: erasedElement))
     }
 
     /// Strips the @escaping attribute from an AttributeListSyntax.
