@@ -17,7 +17,7 @@ extension MockGenerator {
         let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
 
         let callCountProperty = generateSubscriptStorageProperty(
-            propertyName: "\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))",
+            propertyName: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -26,7 +26,7 @@ extension MockGenerator {
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let callArgsProperty = generateSubscriptStorageProperty(
-            propertyName: "\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))",
+            propertyName: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -40,7 +40,7 @@ extension MockGenerator {
             effects: getterEffects
         )
         let handlerProperty = generateSubscriptStorageProperty(
-            propertyName: "\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)))",
+            propertyName: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "(@Sendable \(getterClosureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -54,7 +54,7 @@ extension MockGenerator {
                 genericParamNames: genericParamNames
             )
             let setHandlerProperty = generateSubscriptStorageProperty(
-                propertyName: "\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)))",
+                propertyName: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
                 type: TypeSyntax(stringLiteral: "(@Sendable \(setterClosureType))?"),
                 initializer: ExprSyntax(NilLiteralExprSyntax()),
                 usesLockBasedStorage: usesInstanceStorageLock
