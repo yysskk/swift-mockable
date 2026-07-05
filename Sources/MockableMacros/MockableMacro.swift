@@ -22,7 +22,7 @@ public struct MockableMacro: PeerMacro {
         }
 
         let protocolName = protocolDecl.name.text
-        let mockClassName = "\(protocolName)Mock"
+        let mockClassName = MockNaming.mockTypeName(forProtocol: protocolName)
 
         // Check if the protocol inherits from Sendable or has @Sendable attribute
         let isSendable = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
@@ -55,7 +55,7 @@ public struct MockableMacro: PeerMacro {
             .map { $0.type.trimmedDescription }
             .filter { !knownNonParentProtocols.contains($0) }
             ?? []
-        let parentMockClassName: String? = parentProtocolNames.first.map { "\($0)Mock" }
+        let parentMockClassName: String? = parentProtocolNames.first.map { MockNaming.mockTypeName(forProtocol: $0) }
 
         let members = protocolDecl.memberBlock.members
 

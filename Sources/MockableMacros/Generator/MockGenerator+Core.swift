@@ -77,8 +77,8 @@ struct MockGenerator {
             classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
             let staticMutexProperty = generateLockProperty(
-                propertyName: "_staticStorage",
-                storageTypeName: "StaticStorage",
+                propertyName: MockNaming.staticStorageName,
+                storageTypeName: MockNaming.staticStorageTypeName,
                 isStatic: true
             )
             classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
@@ -159,8 +159,8 @@ struct MockGenerator {
             actorMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
             let staticMutexProperty = generateLockProperty(
-                propertyName: "_staticStorage",
-                storageTypeName: "StaticStorage",
+                propertyName: MockNaming.staticStorageName,
+                storageTypeName: MockNaming.staticStorageTypeName,
                 isStatic: true
             )
             actorMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
