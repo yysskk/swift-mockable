@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-07-04
+
 ### Added
 
 - Support for typed throws (`throws(MyError)`, SE-0413) on methods, properties, and subscripts. The mock keeps the typed-throws signature and re-throws the untyped-throwing handler's error as the declared type.
@@ -121,7 +123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.9.1...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.10.0...HEAD
+[1.10.0]: https://github.com/yysskk/swift-mockable/compare/1.9.1...1.10.0
 [1.9.1]: https://github.com/yysskk/swift-mockable/compare/1.9.0...1.9.1
 [1.9.0]: https://github.com/yysskk/swift-mockable/compare/1.8.0...1.9.0
 [1.8.0]: https://github.com/yysskk/swift-mockable/compare/1.7.0...1.8.0
