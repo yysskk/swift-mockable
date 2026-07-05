@@ -60,7 +60,7 @@ extension MockGenerator {
     }
 
     static func storagePropertyName(isTypeMember: Bool) -> String {
-        isTypeMember ? "_staticStorage" : "_storage"
+        MockNaming.storageName(isTypeMember: isTypeMember)
     }
 
     var usesInstanceStorageLock: Bool {

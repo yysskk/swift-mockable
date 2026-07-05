@@ -5,8 +5,8 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     func generateLockProperty(
-        propertyName: String = "_storage",
-        storageTypeName: String = "Storage",
+        propertyName: String = MockNaming.instanceStorageName,
+        storageTypeName: String = MockNaming.storageTypeName,
         isStatic: Bool = false
     ) -> VariableDeclSyntax {
         var modifiers = [
@@ -51,11 +51,11 @@ extension MockGenerator {
     }
 
     func generateStorageStruct() -> StructDeclSyntax {
-        generateStorageStruct(named: "Storage", includeTypeMembers: false)
+        generateStorageStruct(named: MockNaming.storageTypeName, includeTypeMembers: false)
     }
 
     func generateStaticStorageStruct() -> StructDeclSyntax {
-        generateStorageStruct(named: "StaticStorage", includeTypeMembers: true)
+        generateStorageStruct(named: MockNaming.staticStorageTypeName, includeTypeMembers: true)
     }
 
     private func generateStorageStruct(
@@ -92,7 +92,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallCount")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(identifier))),
                             typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                             initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                         )
@@ -106,7 +106,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)CallArgs")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(identifier))),
                             typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                             initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                         )
@@ -127,7 +127,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("\(identifier)Handler")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(identifier))),
                             typeAnnotation: TypeAnnotationSyntax(
                                 type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                             ),
@@ -155,7 +155,7 @@ extension MockGenerator {
                             bindingSpecifier: .keyword(.var),
                             bindings: PatternBindingListSyntax([
                                 PatternBindingSyntax(
-                                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(varName)CallCount")),
+                                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(varName))),
                                     typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                                     initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                                 )
@@ -167,7 +167,7 @@ extension MockGenerator {
                             bindingSpecifier: .keyword(.var),
                             bindings: PatternBindingListSyntax([
                                 PatternBindingSyntax(
-                                    pattern: IdentifierPatternSyntax(identifier: .identifier("\(varName)Handler")),
+                                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(varName))),
                                     typeAnnotation: TypeAnnotationSyntax(
                                         type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                                     ),
@@ -192,7 +192,7 @@ extension MockGenerator {
                         bindingSpecifier: .keyword(.var),
                         bindings: PatternBindingListSyntax([
                             PatternBindingSyntax(
-                                pattern: IdentifierPatternSyntax(identifier: .identifier("_\(varName)")),
+                                pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
                                 typeAnnotation: TypeAnnotationSyntax(type: storageType),
                                 initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
                             )
@@ -212,7 +212,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallCount")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))),
                             typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
                             initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                         )
@@ -226,7 +226,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)CallArgs")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))),
                             typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
                             initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                         )
@@ -247,7 +247,7 @@ extension MockGenerator {
                     bindingSpecifier: .keyword(.var),
                     bindings: PatternBindingListSyntax([
                         PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)Handler")),
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)))),
                             typeAnnotation: TypeAnnotationSyntax(
                                 type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
                             ),
@@ -269,7 +269,7 @@ extension MockGenerator {
                         bindingSpecifier: .keyword(.var),
                         bindings: PatternBindingListSyntax([
                             PatternBindingSyntax(
-                                pattern: IdentifierPatternSyntax(identifier: .identifier("subscript\(suffix)SetHandler")),
+                                pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)))),
                                 typeAnnotation: TypeAnnotationSyntax(
                                     type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(setClosureType))"))
                                 ),

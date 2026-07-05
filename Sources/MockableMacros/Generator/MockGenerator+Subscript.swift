@@ -17,7 +17,7 @@ extension MockGenerator {
         let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
 
         let callCountProperty = generateSubscriptStorageProperty(
-            propertyName: "subscript\(suffix)CallCount",
+            propertyName: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -26,7 +26,7 @@ extension MockGenerator {
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let callArgsProperty = generateSubscriptStorageProperty(
-            propertyName: "subscript\(suffix)CallArgs",
+            propertyName: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -40,7 +40,7 @@ extension MockGenerator {
             effects: getterEffects
         )
         let handlerProperty = generateSubscriptStorageProperty(
-            propertyName: "subscript\(suffix)Handler",
+            propertyName: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "(@Sendable \(getterClosureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
             usesLockBasedStorage: usesInstanceStorageLock
@@ -54,7 +54,7 @@ extension MockGenerator {
                 genericParamNames: genericParamNames
             )
             let setHandlerProperty = generateSubscriptStorageProperty(
-                propertyName: "subscript\(suffix)SetHandler",
+                propertyName: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
                 type: TypeSyntax(stringLiteral: "(@Sendable \(setterClosureType))?"),
                 initializer: ExprSyntax(NilLiteralExprSyntax()),
                 usesLockBasedStorage: usesInstanceStorageLock
@@ -261,7 +261,7 @@ extension MockGenerator {
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallCount")),
+            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))),
             operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
             rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
         )
@@ -270,7 +270,7 @@ extension MockGenerator {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("subscript\(suffix)CallArgs")),
+                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))),
                 name: .identifier("append")
             ),
             leftParen: .leftParenToken(),
@@ -306,9 +306,9 @@ extension MockGenerator {
         let returnTypeStr = returnType.description
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
         let elseBody = Self.defaultReturnStatement(for: returnType)
-            ?? "fatalError(\"\\(Self.self).subscript\(suffix)Handler is not set\")"
+            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) is not set\")"
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = subscript\(suffix)Handler else {
+guard let _handler = \(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) else {
     \(elseBody)
 }
 """)))
@@ -330,7 +330,7 @@ guard let _handler = subscript\(suffix)Handler else {
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = subscript\(suffix)SetHandler {
+if let _handler = \(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) {
     _handler(\(handlerCallArgs))
 }
 """)))
@@ -352,12 +352,12 @@ if let _handler = subscript\(suffix)SetHandler {
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
 _storage.withLock { storage in
-    storage.subscript\(suffix)CallCount += 1
-    storage.subscript\(suffix)CallArgs.append(\(argsExpr))
+    storage.\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) += 1
+    storage.\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))).append(\(argsExpr))
 }
 """)))
         statements.append(recordCallStmt)
-        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = _storage.withLock { $0.subscript\(suffix)Handler }")))
+        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = _storage.withLock { $0.\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) }")))
         statements.append(getHandlerStmt)
 
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
@@ -365,7 +365,7 @@ _storage.withLock { storage in
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
 
         let elseBody = Self.defaultReturnStatement(for: returnType)
-            ?? "fatalError(\"\\(Self.self).subscript\(suffix)Handler is not set\")"
+            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) is not set\")"
         let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
     \(elseBody)
@@ -392,7 +392,7 @@ guard let _handler else {
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = _storage.withLock({ $0.subscript\(suffix)SetHandler }) {
+if let _handler = _storage.withLock({ $0.\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) }) {
     _handler(\(handlerCallArgs))
 }
 """)))

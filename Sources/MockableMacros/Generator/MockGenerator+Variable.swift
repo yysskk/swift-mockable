@@ -141,8 +141,7 @@ extension MockGenerator {
         var members: [MemberBlockItemSyntax] = []
 
         let callCountProperty = generateFunctionStorageProperty(
-            identifier: varName,
-            propertyName: "CallCount",
+            name: MockNaming.callCount(varName),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
             isTypeMember: isTypeMember
@@ -150,8 +149,7 @@ extension MockGenerator {
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let handlerProperty = generateFunctionStorageProperty(
-            identifier: varName,
-            propertyName: "Handler",
+            name: MockNaming.handler(varName),
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
             isTypeMember: isTypeMember
@@ -160,7 +158,7 @@ extension MockGenerator {
 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let elseBody = Self.defaultReturnStatement(for: varType)
-            ?? "fatalError(\"\\(Self.self).\(varName)Handler is not set\")"
+            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(varName)) is not set\")"
         let errorType = effects?.throwsErrorType?.trimmedDescription
 
         var getterStatements: [CodeBlockItemSyntax] = []
@@ -168,8 +166,8 @@ extension MockGenerator {
             let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
             getterStatements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
 let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
-    storage.\(varName)CallCount += 1
-    return storage.\(varName)Handler
+    storage.\(MockNaming.callCount(varName)) += 1
+    return storage.\(MockNaming.handler(varName))
 }
 """))))
             getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
@@ -178,9 +176,9 @@ guard let _handler else {
 }
 """))))
         } else {
-            getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(varName)CallCount += 1"))))
+            getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(varName)) += 1"))))
             getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(varName)Handler else {
+guard let _handler = \(MockNaming.handler(varName)) else {
     \(elseBody)
 }
 """))))
@@ -246,8 +244,8 @@ guard let _handler = \(varName)Handler else {
             storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
         }
 
-        let getterBody = "\(storageName).withLock { $0._\(varName) }"
-        let setterBody = "\(storageName).withLock { $0._\(varName) = newValue }"
+        let getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) }"
+        let setterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         if !isTypeMember {
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
@@ -258,7 +256,7 @@ guard let _handler = \(varName)Handler else {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("_\(varName)")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
                     typeAnnotation: TypeAnnotationSyntax(type: storageType),
                     accessorBlock: AccessorBlockSyntax(
                         accessors: .accessors(AccessorDeclListSyntax([
@@ -297,9 +295,9 @@ guard let _handler = \(varName)Handler else {
 
         let getterBody: String
         if isOptional {
-            getterBody = "\(storageName).withLock { $0._\(varName) }"
+            getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) }"
         } else {
-            getterBody = "\(storageName).withLock { $0._\(varName)! }"
+            getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName))! }"
         }
 
         if isGetOnly {
@@ -320,7 +318,7 @@ guard let _handler = \(varName)Handler else {
             )
         }
 
-        let setterBody = "\(storageName).withLock { $0._\(varName) = newValue }"
+        let setterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
         return VariableDeclSyntax(
             modifiers: buildModifiers(additional: additionalModifiers),
             bindingSpecifier: .keyword(.var),
@@ -377,7 +375,7 @@ guard let _handler = \(varName)Handler else {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("_\(varName)")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
                     typeAnnotation: TypeAnnotationSyntax(type: storageType),
                     initializer: initializer
                 )
@@ -395,9 +393,9 @@ guard let _handler = \(varName)Handler else {
 
         let getterBody: String
         if isOptional {
-            getterBody = "_\(varName)"
+            getterBody = "\(MockNaming.variableBacking(varName))"
         } else {
-            getterBody = "_\(varName)!"
+            getterBody = "\(MockNaming.variableBacking(varName))!"
         }
 
         return VariableDeclSyntax(
@@ -446,7 +444,7 @@ guard let _handler = \(varName)Handler else {
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier("_\(varName)")),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
                     typeAnnotation: TypeAnnotationSyntax(
                         type: TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
                     ),
@@ -468,7 +466,7 @@ guard let _handler = \(varName)Handler else {
                                 accessorSpecifier: .keyword(.get),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName)!")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.variableBacking(varName))!")))
                                     ])
                                 )
                             ),
@@ -476,7 +474,7 @@ guard let _handler = \(varName)Handler else {
                                 accessorSpecifier: .keyword(.set),
                                 body: CodeBlockSyntax(
                                     statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_\(varName) = newValue")))
+                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.variableBacking(varName)) = newValue")))
                                     ])
                                 )
                             )

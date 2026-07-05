@@ -24,8 +24,7 @@ extension MockGenerator {
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
         let callCountProperty = generateFunctionStorageProperty(
-            identifier: identifier,
-            propertyName: "CallCount",
+            name: MockNaming.callCount(identifier),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
             isTypeMember: isTypeMember
@@ -34,8 +33,7 @@ extension MockGenerator {
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
         let callArgsProperty = generateFunctionStorageProperty(
-            identifier: identifier,
-            propertyName: "CallArgs",
+            name: MockNaming.callArgs(identifier),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
             isTypeMember: isTypeMember
@@ -50,8 +48,7 @@ extension MockGenerator {
             genericParamNames: genericParamNames
         )
         let handlerProperty = generateFunctionStorageProperty(
-            identifier: identifier,
-            propertyName: "Handler",
+            name: MockNaming.handler(identifier),
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
             isTypeMember: isTypeMember
@@ -70,13 +67,11 @@ extension MockGenerator {
     }
 
     func generateFunctionStorageProperty(
-        identifier: String,
-        propertyName: String,
+        name fullName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
         isTypeMember: Bool
     ) -> VariableDeclSyntax {
-        let fullName = "\(identifier)\(propertyName)"
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
@@ -198,7 +193,7 @@ extension MockGenerator {
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallCount")),
+            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(identifier))),
             operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
             rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
         )
@@ -207,7 +202,7 @@ extension MockGenerator {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier("\(identifier)CallArgs")),
+                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(identifier))),
                 name: .identifier("append")
             ),
             leftParen: .leftParenToken(),
@@ -269,9 +264,9 @@ extension MockGenerator {
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
 let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
-    storage.\(identifier)CallCount += 1
-    storage.\(identifier)CallArgs.append(\(argsExpr))
-    return storage.\(identifier)Handler
+    storage.\(MockNaming.callCount(identifier)) += 1
+    storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
+    return storage.\(MockNaming.handler(identifier))
 }
 """)))
         statements.append(withLockStmt)
@@ -280,7 +275,7 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
             let elseBody = Self.defaultReturnStatement(for: returnType)
-                ?? "fatalError(\"\\(Self.self).\(identifier)Handler is not set\")"
+                ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 guard let _handler else {
     \(elseBody)
@@ -404,9 +399,9 @@ guard let _handler else {
         if hasReturnValue {
             let returnTypeStr = returnType?.description ?? "Void"
             let elseBody = Self.defaultReturnStatement(for: returnType)
-                ?? "fatalError(\"\\(Self.self).\(identifier)Handler is not set\")"
+                ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(identifier)Handler else {
+guard let _handler = \(MockNaming.handler(identifier)) else {
     \(elseBody)
 }
 """)))
@@ -422,7 +417,7 @@ guard let _handler = \(identifier)Handler else {
             return result
         } else {
             return [Self.buildOptionalHandlerCallStatement(
-                handlerBinding: "_handler = \(identifier)Handler",
+                handlerBinding: "_handler = \(MockNaming.handler(identifier))",
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,

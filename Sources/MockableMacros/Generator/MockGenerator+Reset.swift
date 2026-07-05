@@ -30,13 +30,13 @@ extension MockGenerator {
                 let prefix = Self.isTypeMember(funcDecl.modifiers) ? "Self." : ""
 
                 // Reset call count
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)CallCount = 0"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callCount(identifier)) = 0"))))
 
                 // Reset call args
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)CallArgs = []"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callArgs(identifier)) = []"))))
 
                 // Reset handler
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(identifier)Handler = nil"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.handler(identifier)) = nil"))))
             } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                 let prefix = Self.isTypeMember(varDecl.modifiers) ? "Self." : ""
 
@@ -49,8 +49,8 @@ extension MockGenerator {
 
                     // Effectful read-only properties are handler-based (no `_name` backing).
                     if Self.effectfulGetter(of: binding) != nil {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName)CallCount = 0"))))
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName)Handler = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.callCount(varName)) = 0"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.handler(varName)) = nil"))))
                         continue
                     }
 
@@ -62,7 +62,7 @@ extension MockGenerator {
                     //   - Optional types use varName directly (no backing storage)
                     //   - Non-optional types use _varName backing storage
                     if isGetOnly || !isOptional {
-                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)_\(varName) = nil"))))
+                        generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(MockNaming.variableBacking(varName)) = nil"))))
                     } else {
                         generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(varName) = nil"))))
                     }
@@ -72,17 +72,17 @@ extension MockGenerator {
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // Reset subscript call count
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallCount = 0"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) = 0"))))
 
                 // Reset subscript call args
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)CallArgs = []"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))) = []"))))
 
                 // Reset subscript handler
-                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)Handler = nil"))))
+                generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil"))))
 
                 // Reset subscript set handler if not get-only
                 if !isGetOnly {
-                    generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "subscript\(suffix)SetHandler = nil"))))
+                    generatedStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil"))))
                 }
             }
 
@@ -91,7 +91,7 @@ extension MockGenerator {
 
         // Add super.resetMock() call if inheriting from parent mock
         if hasParentMock {
-            statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.resetMock()"))))
+            statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()"))))
         }
 
         statements.append(contentsOf: resetStatements)
@@ -111,7 +111,7 @@ extension MockGenerator {
                 additional: additionalModifiers,
                 isOverridable: canBeSubclassedOutsideModule
             ),
-            name: .identifier("resetMock"),
+            name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     leftParen: .leftParenToken(),
@@ -144,13 +144,13 @@ extension MockGenerator {
                     let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
 
                     // Reset call count
-                    generatedStatements.append("storage.\(identifier)CallCount = 0")
+                    generatedStatements.append("storage.\(MockNaming.callCount(identifier)) = 0")
 
                     // Reset call args
-                    generatedStatements.append("storage.\(identifier)CallArgs = []")
+                    generatedStatements.append("storage.\(MockNaming.callArgs(identifier)) = []")
 
                     // Reset handler
-                    generatedStatements.append("storage.\(identifier)Handler = nil")
+                    generatedStatements.append("storage.\(MockNaming.handler(identifier)) = nil")
                 } else if let varDecl = decl.as(VariableDeclSyntax.self) {
                     for binding in varDecl.bindings {
                         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { continue }
@@ -158,30 +158,30 @@ extension MockGenerator {
 
                         // Effectful read-only properties are handler-based (no `_name` backing).
                         if Self.effectfulGetter(of: binding) != nil {
-                            generatedStatements.append("storage.\(varName)CallCount = 0")
-                            generatedStatements.append("storage.\(varName)Handler = nil")
+                            generatedStatements.append("storage.\(MockNaming.callCount(varName)) = 0")
+                            generatedStatements.append("storage.\(MockNaming.handler(varName)) = nil")
                             continue
                         }
 
                         // Reset variable backing storage
-                        generatedStatements.append("storage._\(varName) = nil")
+                        generatedStatements.append("storage.\(MockNaming.variableBacking(varName)) = nil")
                     }
                 } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
                     let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
                     let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                     // Reset subscript call count
-                    generatedStatements.append("storage.subscript\(suffix)CallCount = 0")
+                    generatedStatements.append("storage.\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) = 0")
 
                     // Reset subscript call args
-                    generatedStatements.append("storage.subscript\(suffix)CallArgs = []")
+                    generatedStatements.append("storage.\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))) = []")
 
                     // Reset subscript handler
-                    generatedStatements.append("storage.subscript\(suffix)Handler = nil")
+                    generatedStatements.append("storage.\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil")
 
                     // Reset subscript set handler if not get-only
                     if !isGetOnly {
-                        generatedStatements.append("storage.subscript\(suffix)SetHandler = nil")
+                        generatedStatements.append("storage.\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) = nil")
                     }
                 }
 
@@ -214,15 +214,15 @@ extension MockGenerator {
         var bodyStatements: [CodeBlockItemSyntax] = []
         if hasParentMock {
             bodyStatements.append(
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.resetMock()")))
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
             )
         }
         bodyStatements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "_storage", resetLines: instanceResetLines))))
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: MockNaming.instanceStorageName, resetLines: instanceResetLines))))
         )
         if !staticResetLines.isEmpty {
             bodyStatements.append(
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "Self._staticStorage", resetLines: staticResetLines))))
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "Self.\(MockNaming.staticStorageName)", resetLines: staticResetLines))))
             )
         }
 
@@ -246,7 +246,7 @@ extension MockGenerator {
                 additional: additionalModifiers,
                 isOverridable: canBeSubclassedOutsideModule
             ),
-            name: .identifier("resetMock"),
+            name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     leftParen: .leftParenToken(),
