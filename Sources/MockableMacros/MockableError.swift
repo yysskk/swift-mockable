@@ -1,9 +1,20 @@
 import SwiftDiagnostics
 
+/// A diagnostic emitted by `@Mockable` when it cannot generate a mock.
+///
+/// Each case is surfaced as a compile-time error at the offending declaration,
+/// carrying a `MessageID` in the `MockableMacro` domain so tools can identify it.
 enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
+    /// `@Mockable` was attached to something other than a protocol.
     case notAProtocol
+    /// A protocol member that the macro cannot mock (e.g. an initializer or a
+    /// `static subscript`). The associated value is the member's source text.
     case unsupportedMember(String)
+    /// `@Mockable` was given an argument; it does not accept any. The associated
+    /// value describes the offending argument.
     case invalidMacroArgument(String)
+    /// An `@autoclosure` parameter whose own `throws`/`async` effect is not covered
+    /// by the enclosing requirement. The associated value is the full explanation.
     case unsupportedAutoclosureEffect(String)
 
     var message: String {

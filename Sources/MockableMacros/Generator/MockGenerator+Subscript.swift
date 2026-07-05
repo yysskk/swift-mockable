@@ -4,6 +4,10 @@ import SwiftSyntaxBuilder
 // MARK: - Subscript Mock Generation
 
 extension MockGenerator {
+    /// Generates the members that mock a subscript requirement: the call-count and
+    /// captured-index properties, a get handler, a set handler (for get-set subscripts),
+    /// and the subscript witness. The identifier suffix encodes the index and element
+    /// types so overloaded subscripts get distinct members.
     func generateSubscriptMock(
         _ subscriptDecl: SubscriptDeclSyntax
     ) -> [MemberBlockItemSyntax] {
