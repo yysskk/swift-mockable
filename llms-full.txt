@@ -226,6 +226,30 @@ let value = try await mock["swift"]
 // mock.subscriptStringCallCount == 1
 ```
 
+### Typed Throws (SE-0413)
+
+Typed throws (`throws(MyError)`) on methods, effectful properties, and effectful
+subscripts is supported. The mock keeps the `throws(MyError)` signature, but the
+handler is a plain untyped-throwing closure and the generated body re-throws its
+error as the declared type:
+
+```swift
+@Mockable
+protocol Loader {
+    func load(id: Int) throws(LoadError) -> String
+}
+// generates: var loadHandler: (@Sendable (Int) throws -> String)? = nil
+//            do { return try _handler(id) } catch { throw error as! LoadError }
+
+let mock = LoaderMock()
+mock.loadHandler = { id in throw LoadError() }   // no error-type annotation needed
+```
+
+This keeps the package's full deployment range (an untyped handler avoids the
+Swift 6 runtime requirement for typed-throws function values) and supports generic
+error types (`func run<E: Error>(_ body: () throws(E) -> Void) throws(E)`). If a
+handler throws a different error type, the mock traps.
+
 ### `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is

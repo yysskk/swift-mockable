@@ -108,14 +108,21 @@ extension MockGenerator {
         }
     }
 
-    /// The handler closure type for an effectful read-only property, preserving the
-    /// accessor's own effect specifiers (including typed throws), e.g.
-    /// `() async throws -> String`.
+    /// The handler closure type for an effectful read-only property, e.g.
+    /// `() async throws -> String`. The handler is untyped-throwing even for a
+    /// typed-throws accessor (`get throws(E)`) — the generated getter re-throws the
+    /// typed error via a `catch` — so a typed error type is dropped here.
     static func effectfulGetterClosureType(
         varType: TypeSyntax,
         effects: AccessorEffectSpecifiersSyntax?
     ) -> String {
-        let effectsText = effects.map { " \($0.trimmedDescription)" } ?? ""
+        var effectsText = ""
+        if effects?.asyncSpecifier != nil {
+            effectsText += " async"
+        }
+        if effects?.hasThrowsEffect == true {
+            effectsText += " throws"
+        }
         return "()\(effectsText) -> \(varType.trimmedDescription)"
     }
 
@@ -154,6 +161,7 @@ extension MockGenerator {
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let elseBody = Self.defaultReturnStatement(for: varType)
             ?? "fatalError(\"\\(Self.self).\(varName)Handler is not set\")"
+        let errorType = effects?.throwsErrorType?.trimmedDescription
 
         var getterStatements: [CodeBlockItemSyntax] = []
         if shouldUseLockBasedStorage {
@@ -177,10 +185,20 @@ guard let _handler = \(varName)Handler else {
 }
 """))))
         }
-        getterStatements.append(CodeBlockItemSyntax(
-            leadingTrivia: .newline,
-            item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler()"))
-        ))
+        if let errorType {
+            getterStatements.append(CodeBlockItemSyntax(
+                leadingTrivia: .newline,
+                item: Self.buildTypedThrowsCatch(
+                    innerLines: ["return \(invokePrefix)_handler()"],
+                    errorType: errorType
+                ).item
+            ))
+        } else {
+            getterStatements.append(CodeBlockItemSyntax(
+                leadingTrivia: .newline,
+                item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler()"))
+            ))
+        }
 
         // The protocol witness stays actor-isolated on actor mocks (like every other
         // generated witness); only the auxiliary CallCount/Handler storage members are

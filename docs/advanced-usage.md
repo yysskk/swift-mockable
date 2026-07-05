@@ -158,6 +158,39 @@ The handler receives the throwing closures and decides whether to invoke them.
 Because the handler is non-throwing, the mock does not itself re-throw their
 errors; verify behavior through the handler and the call count.
 
+## Typed Throws (SE-0413)
+
+Typed throws (`throws(MyError)`) on methods, effectful properties, and effectful
+subscripts is supported. The mock keeps the `throws(MyError)` signature, but the
+handler is a plain untyped-throwing closure and the generated body re-throws its
+error as the requirement's type:
+
+```swift
+func load(id: Int) throws(LoadError) -> String
+// generates:
+// var loadHandler: (@Sendable (Int) throws -> String)? = nil
+// func load(id: Int) throws(LoadError) -> String {
+//     ...
+//     do { return try _handler(id) } catch { throw error as! LoadError }
+// }
+```
+
+Configure the handler as usual — no error-type annotation needed:
+
+```swift
+mock.loadHandler = { id in throw LoadError() }
+```
+
+This keeps the package's full deployment range (an untyped handler avoids the
+Swift 6 runtime requirement for typed-throws function values) and supports
+generic error types (`func run<E: Error>(_ body: () throws(E) -> Void) throws(E)`).
+If a handler throws an error of a different type, the mock traps — throwing the
+requirement's declared error type is a contract you control.
+
+A typed-throws closure *parameter* (`func run(_ body: () throws(MyError) -> Void)`)
+is likewise stored untyped: its `CallArgs`/handler entry uses `() throws -> Void`,
+so the mock never embeds a typed-throws function value.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic
