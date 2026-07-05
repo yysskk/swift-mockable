@@ -4,7 +4,19 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+/// The implementation of the `@Mockable` attached peer macro.
+///
+/// Applied to a protocol, it generates a `<Protocol>Mock` class (wrapped in `#if DEBUG`)
+/// that conforms to the protocol and records calls, captures arguments, and exposes a
+/// configurable handler for every requirement. The protocol's shape drives the output:
+/// `Sendable`/`Actor` conformances select a lock-backed storage model, an inherited
+/// protocol produces a subclassing mock, and unsupported members are reported as
+/// diagnostics (see ``MockableError``) instead of generating invalid code.
 public struct MockableMacro: PeerMacro {
+    /// Generates the mock class peer for a `@Mockable` protocol.
+    ///
+    /// Returns an empty array (emitting diagnostics) when the declaration is not a
+    /// protocol, when the macro is given arguments, or when a member cannot be mocked.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,

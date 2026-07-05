@@ -4,6 +4,11 @@ import SwiftSyntaxBuilder
 // MARK: - Variable Mock Generation
 
 extension MockGenerator {
+    /// Generates the members that mock a property requirement. A plain stored property is
+    /// backed by a settable `_name` (or the property itself, for optional get-set), while an
+    /// effectful read-only requirement (`get async`/`throws`) is handler-based like a method
+    /// (see `generateEffectfulGetterMock`). Handles one `VariableDeclSyntax`, which may
+    /// declare several bindings.
     func generateVariableMock(
         _ varDecl: VariableDeclSyntax
     ) -> [MemberBlockItemSyntax] {

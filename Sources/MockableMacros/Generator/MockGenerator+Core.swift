@@ -1,6 +1,15 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
+/// Builds the mock type for a single `@Mockable` protocol from its parsed shape.
+///
+/// `MockableMacro` extracts the protocol's name, members, conformances, and access level
+/// into a `MockGenerator`, then calls ``generate()``. The generator's responsibilities are
+/// split across `MockGenerator+*.swift` extensions by concern: `+Function`, `+Variable`,
+/// and `+Subscript` emit the per-requirement witnesses and their tracking members;
+/// `+Storage` builds the lock-backed storage structs used for `Sendable`/actor mocks;
+/// `+Reset` emits `resetMock()`; and `+Helpers` holds the shared type-erasure and naming
+/// utilities.
 struct MockGenerator {
     let protocolName: String
     let mockClassName: String
@@ -46,6 +55,9 @@ struct MockGenerator {
         accessLevel == .public && !isActor
     }
 
+    /// Builds the mock declaration: an `actor` for `Actor` protocols, otherwise a `class`.
+    /// `Sendable` and non-`Sendable` class mocks share the same builder; they differ only
+    /// in whether members are lock-backed, which the builder decides per member.
     func generate() throws -> DeclSyntax {
         if isActor {
             return DeclSyntax(try generateActorMock())

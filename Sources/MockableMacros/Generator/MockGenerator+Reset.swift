@@ -4,6 +4,10 @@ import SwiftSyntaxBuilder
 // MARK: - Reset Method Generation
 
 extension MockGenerator {
+    /// Generates `resetMock()`, which clears every requirement's call count, captured
+    /// arguments, and handler back to its initial state. The lock-backed variant (for
+    /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
+    /// `super.resetMock()` first when the mock inherits from a parent mock.
     func generateResetMethod() -> FunctionDeclSyntax {
         if isSendable || isActor {
             return generateSendableResetMethod()

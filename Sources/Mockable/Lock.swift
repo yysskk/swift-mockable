@@ -11,20 +11,20 @@ final class LegacyLock<Value>: @unchecked Sendable {
     private var _value: Value
     private let _lock = NSLock()
 
-    public init(_ initialValue: Value) {
+    init(_ initialValue: Value) {
         self._value = initialValue
     }
 
     #if compiler(>=6.0)
     @discardableResult
-    public func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
+    func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
         _lock.lock()
         defer { _lock.unlock() }
         return try body(&_value)
     }
     #else
     @discardableResult
-    public func withLock<Result>(_ body: (inout Value) throws -> Result) rethrows -> Result {
+    func withLock<Result>(_ body: (inout Value) throws -> Result) rethrows -> Result {
         _lock.lock()
         defer { _lock.unlock() }
         return try body(&_value)

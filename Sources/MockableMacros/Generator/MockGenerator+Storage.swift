@@ -4,6 +4,10 @@ import SwiftSyntaxBuilder
 // MARK: - Sendable Support
 
 extension MockGenerator {
+    /// Generates the private `MockableLock`-wrapped storage property (`_storage` or
+    /// `_staticStorage`) that guards a `Sendable`/actor mock's tracking state. The lock
+    /// wraps a `Storage`/`StaticStorage` value holding every requirement's counters,
+    /// captured arguments, and handlers.
     func generateLockProperty(
         propertyName: String = MockNaming.instanceStorageName,
         storageTypeName: String = MockNaming.storageTypeName,
@@ -50,10 +54,12 @@ extension MockGenerator {
         )
     }
 
+    /// The `Storage` struct holding the tracking state for the mock's instance members.
     func generateStorageStruct() -> StructDeclSyntax {
         generateStorageStruct(named: MockNaming.storageTypeName, includeTypeMembers: false)
     }
 
+    /// The `StaticStorage` struct holding the tracking state for the mock's `static` members.
     func generateStaticStorageStruct() -> StructDeclSyntax {
         generateStorageStruct(named: MockNaming.staticStorageTypeName, includeTypeMembers: true)
     }

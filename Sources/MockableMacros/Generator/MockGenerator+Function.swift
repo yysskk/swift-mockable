@@ -4,6 +4,10 @@ import SwiftSyntaxBuilder
 // MARK: - Function Mock Generation
 
 extension MockGenerator {
+    /// Generates the members that mock a single method requirement: the call-count and
+    /// captured-arguments properties, the configurable handler, and the witness that
+    /// records the call and forwards to the handler. `suffix` disambiguates overloads
+    /// that share a base name (see `functionIdentifierSuffix`).
     func generateFunctionMock(
         _ funcDecl: FunctionDeclSyntax,
         suffix: String = ""
