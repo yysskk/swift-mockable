@@ -19,7 +19,12 @@ extension MockGenerator {
         let methodGroups = groupMethodsByNameIncludingConditional()
 
         let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
-            let prefix = Self.isTypeMember(decl) ? "Self." : ""
+            // Subscript backing storage is always an instance property (`static subscript`
+            // is unsupported), so subscript resets are never prefixed. Only func/var members
+            // can be `static` and need the `Self.` prefix.
+            let prefix = decl.is(SubscriptDeclSyntax.self)
+                ? ""
+                : (Self.isTypeMember(decl) ? "Self." : "")
             return resetTargets(for: decl, methodGroups: methodGroups, lockBased: false).map { target in
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(target.name) = \(target.resetValue)")))
             }
