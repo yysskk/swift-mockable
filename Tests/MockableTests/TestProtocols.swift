@@ -311,6 +311,27 @@ protocol ActorInitService: Actor {
     init(identifier: Int)
 }
 
+@Mockable
+protocol InitBaseService {
+    init(token: String)
+    func baseMethod() -> String
+}
+
+@Mockable
+protocol InheritingInitService: InitBaseService {
+    func childMethod() -> Int
+}
+
+@Mockable
+public protocol PublicBaseService {
+    func baseValue() -> String
+}
+
+@Mockable
+public protocol PublicChildService: PublicBaseService {
+    func childValue() -> Int
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

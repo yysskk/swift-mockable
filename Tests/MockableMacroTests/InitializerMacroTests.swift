@@ -470,7 +470,7 @@ struct InitializerMacroTests {
         )
     }
 
-    @Test("Init requirement on an inheriting protocol is not yet supported")
+    @Test("An init declared directly on an inheriting protocol is not yet supported")
     func inheritedInitializerDiagnostic() {
         assertMacroExpansionForTesting(
             """
@@ -486,11 +486,52 @@ struct InitializerMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "init requirements are not yet supported for inheriting protocols",
+                    message: "init requirements declared on an inheriting protocol are not yet supported",
                     line: 3,
                     column: 5
                 )
             ],
+            macros: testMacros
+        )
+    }
+
+    @Test("A child mock inherits the parent mock's initializers instead of synthesizing its own")
+    func childMockInheritsParentInitializer() {
+        // The parent's `init` requirement is satisfied by the inherited `required init`; the
+        // child does not (and must not) re-declare it, so no synthesized `init()` is emitted.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            public protocol ChildOfInitBase: InitBase {
+                func childMethod()
+            }
+            """,
+            expandedSource: """
+            public protocol ChildOfInitBase: InitBase {
+                func childMethod()
+            }
+
+            #if DEBUG
+            open class ChildOfInitBaseMock: InitBaseMock, ChildOfInitBase {
+                public var childMethodCallCount: Int = 0
+                public var childMethodCallArgs: [()] = []
+                public var childMethodHandler: (@Sendable () -> Void)? = nil
+                public func childMethod() {
+                    childMethodCallCount += 1
+                    childMethodCallArgs.append(())
+                    if let _handler = childMethodHandler {
+                        _handler()
+                    }
+                }
+                open override func resetMock() {
+                    super.resetMock()
+                    childMethodCallCount = 0
+                    childMethodCallArgs = []
+                    childMethodHandler = nil
+                }
+            }
+            #endif
+            """,
             macros: testMacros
         )
     }

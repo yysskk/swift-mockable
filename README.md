@@ -144,14 +144,14 @@ Notes:
 - `rethrows` methods generate a non-throwing handler that receives the throwing closure arguments (a stored handler cannot satisfy `rethrows` on its own). The handler decides whether to invoke those closures; the mock itself does not re-throw their errors.
 - Typed throws (`throws(MyError)`) keeps the `throws(MyError)` signature and generates a plain untyped-throwing handler; the body re-throws the handler's error as the declared type. Configure the handler normally (`mock.loadHandler = { id in throw MyError() }`). If the handler throws a different error type, the mock traps.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
-- For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.
+- For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members, and the child mock inherits the parent mock's initializers (including a parent `init` requirement's `required init`).
 
 ## Diagnostics and Limitations
 
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
 - Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
-- `init` requirements are supported for standalone protocols, including `Sendable` and `actor` mocks; they are not yet supported for inheriting protocols, which emit a diagnostic.
+- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 

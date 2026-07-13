@@ -53,8 +53,10 @@ public struct MockableMacro: PeerMacro {
 
         let hasInvalidArguments = diagnoseArguments(from: node, in: context)
         let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
-        // `init` requirements are not yet mockable for protocols that inherit from another
-        // protocol, where the witness would need to chain through the parent mock's initializer.
+        // An `init` declared directly on an inheriting protocol is not yet mockable: the
+        // witness would need to chain through the parent mock's initializer, which the macro
+        // cannot see. Initializers inherited from the parent still work, since the child mock
+        // inherits the parent mock's `required init`.
         let hasUnsupportedInitializers = diagnoseInitializerContext(
             in: protocolDecl.memberBlock.members,
             isUnsupportedContext: !parentProtocolNames.isEmpty,
@@ -302,7 +304,7 @@ public struct MockableMacro: PeerMacro {
                     Diagnostic(
                         node: Syntax(member.decl),
                         message: MockableError.unsupportedInitializer(
-                            "init requirements are not yet supported for inheriting protocols"
+                            "init requirements declared on an inheriting protocol are not yet supported"
                         )
                     )
                 )
