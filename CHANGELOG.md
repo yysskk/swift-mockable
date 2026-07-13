@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Official visionOS support: the package now declares `.visionOS(.v1)`, and `MockableLock` prefers `Mutex` (`Synchronization`) on visionOS 2.0+, falling back to the `NSLock`-based lock on visionOS 1.0.
+
 ## [1.10.0] - 2026-07-04
 
 ### Added
