@@ -461,8 +461,9 @@ Notes:
 - `required` makes the initializer part of the mock's protocol conformance so subclasses of the (non-final) mock inherit it.
 - When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted.
 - `resetMock()` clears `initCallCount` and `initCallArgs`.
+- For `Sendable` and `actor` mocks the tracking is lock-backed like every other member (and `nonisolated` on actors); the `actor` witness omits `required`.
 
-Supported for plain protocols only; `Sendable`, `actor`, and inheriting protocols with `init` requirements emit a diagnostic.
+Supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with `init` requirements emit a diagnostic.
 
 ### Protocol Inheritance
 
@@ -544,7 +545,7 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
 - Unsupported protocol members (e.g. a `static subscript`) emit compile-time diagnostics.
-- `init` requirements are supported for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers emit a diagnostic (not yet supported).
+- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with initializers emit a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 

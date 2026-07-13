@@ -326,9 +326,12 @@ Notes:
   (normally generated for `public` / `package` mocks) is omitted — the `required init`
   witnesses already provide accessible initializers.
 - `resetMock()` clears `initCallCount` and `initCallArgs` alongside the other tracking state.
+- For `Sendable` and `actor` mocks the recording goes through `MockableLock` like every other
+  member, so `initCallCount` / `initCallArgs` are lock-backed (and `nonisolated` on actors).
+  An `actor` witness omits `required`, since actors are `final`.
 
-`init` requirements are currently supported for plain protocols only. `Sendable`, `actor`, and
-inheriting protocols with `init` requirements emit a diagnostic (see [Diagnostics](#diagnostics)).
+Inheriting protocols with `init` requirements are not yet supported and emit a diagnostic
+(see [Diagnostics](#diagnostics)).
 
 ## `Sendable` and `Actor` Mocks
 
@@ -378,11 +381,11 @@ Compilation errors are emitted when:
 
 - `@Mockable` is applied to non-protocol declarations
 - unsupported members are present (for example a `static subscript`)
-- an `init` requirement is declared on a `Sendable`, `actor`, or inheriting protocol (not yet supported)
+- an `init` requirement is declared on an inheriting protocol (not yet supported)
 - arguments are passed to `@Mockable` (it accepts none)
 
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- `init` requirements are supported only for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers are not yet supported.
+- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with initializers are not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

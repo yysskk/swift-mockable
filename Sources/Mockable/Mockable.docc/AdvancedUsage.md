@@ -176,9 +176,9 @@ init(configuration: Configuration)
 // }
 ```
 
-Initializers record only — there is no `initHandler`, because a per-instance handler could never be set before the initializer runs. `async`, `throws`, failability (`init?`), and generic clauses are preserved. When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted. `resetMock()` clears `initCallCount` and `initCallArgs`.
+Initializers record only — there is no `initHandler`, because a per-instance handler could never be set before the initializer runs. `async`, `throws`, failability (`init?`), and generic clauses are preserved. When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted. `resetMock()` clears `initCallCount` and `initCallArgs`. For `Sendable` and `actor` mocks the tracking is lock-backed like every other member, and the `actor` witness omits `required`.
 
-Supported for plain protocols only; `Sendable`, `actor`, and inheriting protocols with `init` requirements emit a diagnostic.
+Supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with `init` requirements emit a diagnostic.
 
 ## Inheritance and `resetMock()`
 
@@ -196,11 +196,11 @@ Compilation errors are emitted when:
 
 - `@Mockable` is applied to non-protocol declarations.
 - Unsupported members are present (for example a `static subscript`).
-- An `init` requirement is declared on a `Sendable`, `actor`, or inheriting protocol (not yet supported).
+- An `init` requirement is declared on an inheriting protocol (not yet supported).
 - Arguments are passed to `@Mockable` (it accepts none).
 
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- `init` requirements are supported only for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers are not yet supported.
+- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with initializers are not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

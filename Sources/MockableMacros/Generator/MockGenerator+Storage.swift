@@ -70,12 +70,48 @@ extension MockGenerator {
     ) -> StructDeclSyntax {
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
+        let initializers = collectInitializers()
 
         let storageMembers = mapMemberBlockItemsPreservingIfConfig { decl in
             var generatedMembers: [MemberBlockItemSyntax] = []
             let isTypeMember = Self.isTypeMember(decl)
 
             guard isTypeMember == includeTypeMembers else {
+                return generatedMembers
+            }
+
+            if let initDecl = decl.as(InitializerDeclSyntax.self) {
+                // Initializers are never type members, so their tracking fields live only in
+                // the instance `Storage` struct.
+                let identifier = Self.initializerIdentifier(for: initDecl, in: initializers)
+                let parameters = initDecl.signature.parameterClause.parameters
+                let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
+
+                let callCountDecl = VariableDeclSyntax(
+                    bindingSpecifier: .keyword(.var),
+                    bindings: PatternBindingListSyntax([
+                        PatternBindingSyntax(
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(identifier))),
+                            typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
+                            initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
+                        )
+                    ])
+                )
+                generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
+
+                let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
+                let callArgsDecl = VariableDeclSyntax(
+                    bindingSpecifier: .keyword(.var),
+                    bindings: PatternBindingListSyntax([
+                        PatternBindingSyntax(
+                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(identifier))),
+                            typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
+                            initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
+                        )
+                    ])
+                )
+                generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
+
                 return generatedMembers
             }
 

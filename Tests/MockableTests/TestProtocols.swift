@@ -301,6 +301,16 @@ protocol FailableInitService {
     init?(rawValue: String)
 }
 
+@Mockable
+protocol SendableInitService: Sendable {
+    init(configuration: String)
+}
+
+@Mockable
+protocol ActorInitService: Actor {
+    init(identifier: Int)
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

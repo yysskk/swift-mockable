@@ -342,8 +342,8 @@ struct InitializerMacroTests {
         )
     }
 
-    @Test("Init requirement on a Sendable protocol is not yet supported")
-    func sendableInitializerDiagnostic() {
+    @Test("Sendable protocol records the init call behind the lock")
+    func sendableInitializer() {
         assertMacroExpansionForTesting(
             """
             @Mockable
@@ -355,20 +355,59 @@ struct InitializerMacroTests {
             protocol SendableService: Sendable {
                 init(id: String)
             }
+
+            #if DEBUG
+            class SendableServiceMock: SendableService, @unchecked Sendable {
+                private struct Storage {
+                    var initCallCount: Int = 0
+                    var initCallArgs: [String] = []
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                var initCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.initCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.initCallCount = newValue
+                        }
+                    }
+                }
+                var initCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.initCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.initCallArgs = newValue
+                        }
+                    }
+                }
+                required init(id: String) {
+                    _storage.withLock { storage in
+                        storage.initCallCount += 1
+                        storage.initCallArgs.append(id)
+                    }
+                }
+                func resetMock() {
+                    _storage.withLock { storage in
+                        storage.initCallCount = 0
+                        storage.initCallArgs = []
+                    }
+                }
+            }
+            #endif
             """,
-            diagnostics: [
-                DiagnosticSpec(
-                    message: "init requirements are not yet supported for Sendable, actor, or inheriting protocols",
-                    line: 3,
-                    column: 5
-                )
-            ],
             macros: testMacros
         )
     }
 
-    @Test("Init requirement on an actor protocol is not yet supported")
-    func actorInitializerDiagnostic() {
+    @Test("Actor protocol records the init call without required")
+    func actorInitializer() {
         assertMacroExpansionForTesting(
             """
             @Mockable
@@ -380,14 +419,53 @@ struct InitializerMacroTests {
             protocol ActorService: Actor {
                 init(id: String)
             }
+
+            #if DEBUG
+            actor ActorServiceMock: ActorService {
+                private struct Storage {
+                    var initCallCount: Int = 0
+                    var initCallArgs: [String] = []
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                nonisolated var initCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.initCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.initCallCount = newValue
+                        }
+                    }
+                }
+                nonisolated var initCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.initCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.initCallArgs = newValue
+                        }
+                    }
+                }
+                init(id: String) {
+                    _storage.withLock { storage in
+                        storage.initCallCount += 1
+                        storage.initCallArgs.append(id)
+                    }
+                }
+                nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.initCallCount = 0
+                        storage.initCallArgs = []
+                    }
+                }
+            }
+            #endif
             """,
-            diagnostics: [
-                DiagnosticSpec(
-                    message: "init requirements are not yet supported for Sendable, actor, or inheriting protocols",
-                    line: 3,
-                    column: 5
-                )
-            ],
             macros: testMacros
         )
     }
@@ -408,7 +486,7 @@ struct InitializerMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "init requirements are not yet supported for Sendable, actor, or inheriting protocols",
+                    message: "init requirements are not yet supported for inheriting protocols",
                     line: 3,
                     column: 5
                 )

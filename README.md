@@ -123,7 +123,7 @@ Notes:
 - `inout` parameters with write-back support
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
-- Initializer requirements (`init(...)`) generated as recording `required init` witnesses (plain protocols; see limitations)
+- Initializer requirements (`init(...)`) generated as recording `required init` witnesses (`Sendable`/`actor` mocks record behind the lock)
 - Associated types (generated as `typealias`, using default type when available, otherwise `Any`)
 - Static methods and static properties
 - Get-only / get-set / optional properties
@@ -151,7 +151,7 @@ Notes:
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
 - Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
-- `init` requirements are supported for plain protocols; they are not yet supported for `Sendable`, `actor`, or inheriting protocols, which emit a diagnostic.
+- `init` requirements are supported for standalone protocols, including `Sendable` and `actor` mocks; they are not yet supported for inheriting protocols, which emit a diagnostic.
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
