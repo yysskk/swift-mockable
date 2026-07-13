@@ -85,4 +85,20 @@ struct InitializerRequirementTests {
         #expect(mock.initCallCount == 1)
         #expect(mock.initCallArgs == [7])
     }
+
+    @Test("Child mock inherits the parent's init requirement and its recording")
+    func childMockInheritsParentInitializer() {
+        let mock = InheritingInitServiceMock(token: "session")
+
+        #expect(mock.initCallCount == 1)
+        #expect(mock.initCallArgs == ["session"])
+    }
+
+    @Test("Child mock without an init requirement is constructible via the inherited init")
+    func childMockIsConstructibleThroughInheritedInit() {
+        let mock = PublicChildServiceMock()
+        mock.childValueHandler = { 42 }
+
+        #expect(mock.childValue() == 42)
+    }
 }

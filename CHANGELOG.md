@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Official visionOS support: the package now declares `.visionOS(.v1)`, and `MockableLock` prefers `Mutex` (`Synchronization`) on visionOS 2.0+, falling back to the `NSLock`-based lock on visionOS 1.0.
-- Support for `init` requirements: `@Mockable` now generates a recording `required init` (`initCallCount`, `initCallArgs`) instead of failing with a diagnostic, unlocking the `init(configuration:)` pattern. `Sendable` and `actor` mocks record behind `MockableLock`. Inheriting protocols with initializers are not yet supported and emit a diagnostic.
+- Support for `init` requirements: `@Mockable` now generates a recording `required init` (`initCallCount`, `initCallArgs`) instead of failing with a diagnostic, unlocking the `init(configuration:)` pattern. `Sendable` and `actor` mocks record behind `MockableLock`, and child mocks inherit a parent's `init` requirement through the inherited `required init`. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
+
+### Changed
+
+- Child mocks now inherit their parent mock's initializers instead of synthesizing their own parameterless `init()`. Construction is unchanged for existing mocks, and this lets a child mock inherit a parent's `required init`.
 
 ## [1.10.0] - 2026-07-04
 

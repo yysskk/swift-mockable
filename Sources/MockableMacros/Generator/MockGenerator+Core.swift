@@ -98,9 +98,13 @@ struct MockGenerator {
 
         // Generate explicit init when access level requires it (e.g., public/open)
         // Without this, the default init is internal, making the mock unusable across modules.
-        // Skipped when the protocol declares its own `init` requirements: those generate
-        // `required init` witnesses that already provide accessible initializers.
-        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements {
+        // Skipped when:
+        // - the protocol declares its own `init` requirements: those generate `required init`
+        //   witnesses that already provide accessible initializers; or
+        // - the mock subclasses a parent mock: it inherits the parent's initializers, so
+        //   synthesizing its own would shadow an inherited `required init` and break protocols
+        //   whose parent declares an `init` requirement.
+        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements && !hasParentMock {
             let initDecl = generateInit()
             classMembers.append(MemberBlockItemSyntax(decl: initDecl))
         }
@@ -244,33 +248,21 @@ struct MockGenerator {
         }
     }
 
-    /// Generates an explicit initializer for the mock class.
-    /// For `public` protocols, the default synthesized initializer is `internal`,
-    /// which prevents the mock from being instantiated across module boundaries.
-    /// When the mock inherits from a parent mock, the init uses `override`.
+    /// Generates an explicit parameterless initializer for the mock class.
+    /// For `public` / `package` protocols, the default synthesized initializer is `internal`,
+    /// which prevents the mock from being instantiated across module boundaries. This is only
+    /// emitted for root mocks; a mock that subclasses a parent mock inherits the parent's
+    /// initializers instead.
     private func generateInit() -> DeclSyntax {
-        let isOverride = hasParentMock
-        let modifiers = buildModifiers(
-            additional: isOverride ? [DeclModifierSyntax(name: .keyword(.override))] : [],
-            isOverridable: false
-        )
-
-        var bodyStatements: [CodeBlockItemSyntax] = []
-        if isOverride {
-            bodyStatements.append(
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.init()")))
-            )
-        }
-
         let initDecl = InitializerDeclSyntax(
-            modifiers: modifiers,
+            modifiers: buildModifiers(isOverridable: false),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     parameters: FunctionParameterListSyntax([])
                 )
             ),
             body: CodeBlockSyntax(
-                statements: CodeBlockItemListSyntax(bodyStatements)
+                statements: CodeBlockItemListSyntax([])
             )
         )
 

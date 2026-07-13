@@ -463,7 +463,7 @@ Notes:
 - `resetMock()` clears `initCallCount` and `initCallArgs`.
 - For `Sendable` and `actor` mocks the tracking is lock-backed like every other member (and `nonisolated` on actors); the `actor` witness omits `required`.
 
-Supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with `init` requirements emit a diagnostic.
+A child mock inherits its parent mock's initializers, so a protocol whose parent declares an `init` requirement is mockable through the inherited `required init`. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 
 ### Protocol Inheritance
 
@@ -545,7 +545,7 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
 - Unsupported protocol members (e.g. a `static subscript`) emit compile-time diagnostics.
-- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks); inheriting protocols with initializers emit a diagnostic (not yet supported).
+- `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol emits a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
