@@ -3,7 +3,7 @@
 [![Test](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml/badge.svg)](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/yysskk/swift-mockable)](https://github.com/yysskk/swift-mockable/releases)
 [![Swift](https://img.shields.io/badge/Swift-5.9%20%7C%205.10%20%7C%206.2-orange.svg)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS-blue.svg)](https://developer.apple.com)
+[![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue.svg)](https://developer.apple.com)
 [![License](https://img.shields.io/github/license/yysskk/swift-mockable)](LICENSE)
 
 `swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
@@ -175,9 +175,9 @@ Notes:
 ## Requirements
 
 - Swift 5.9, 5.10, and 6.2+
-- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+
 - `MockableLock` lock strategy:
-  - iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+: prefers `Mutex` (`Synchronization`)
+  - iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+: prefers `Mutex` (`Synchronization`)
   - Older OS versions: falls back to `LegacyLock` (`NSLock`-based)
 
 ## License
