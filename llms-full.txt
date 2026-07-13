@@ -82,6 +82,12 @@ For get-set properties, the generated property is a stored property, not compute
 - `subscript<suffix>Handler` -- configurable closure for get subscripts
 - `subscript<suffix>SetHandler` -- configurable closure for set subscripts (get-set only)
 
+### Initializers
+
+- `initCallCount` -- number of times the `init` requirement was invoked
+- `initCallArgs` -- array of captured initializer arguments
+- Overloaded `init`s append a parameter-type suffix (e.g. `initStringCallCount`)
+
 ### Utility
 
 - `resetMock()` -- clears all handlers, call counts, call arguments, and backing properties
@@ -123,6 +129,17 @@ subscript(index: Int) -> String { get }
 Generates: `subscriptIntCallCount`, `subscriptIntCallArgs`, `subscriptIntHandler`.
 
 Get-set subscripts also generate `subscript<suffix>SetHandler`.
+
+### Initializers
+
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArgs`). Overloaded initializers append a parameter-type suffix, matching the method scheme:
+
+```swift
+init(host: String)
+init(host: String, port: Int)
+```
+
+Generates: `initStringCallCount` / `initStringCallArgs` and `initStringIntCallCount` / `initStringIntCallArgs`.
 
 ## Supported Features
 
@@ -413,6 +430,40 @@ protocol Configuration {
 
 `resetMock()` also resets static generated members.
 
+### Initializer Requirements
+
+A protocol `init` requirement is satisfied by a generated `required init` witness that mirrors the requirement's signature and records the call:
+
+```swift
+@Mockable
+protocol Repository {
+    init(configuration: Configuration)
+}
+// generates:
+// var initCallCount: Int = 0
+// var initCallArgs: [Configuration] = []
+// required init(configuration: Configuration) {
+//     initCallCount += 1
+//     initCallArgs.append(configuration)
+// }
+
+let mock = RepositoryMock(configuration: config)
+// mock.initCallCount == 1
+// mock.initCallArgs == [config]
+```
+
+This unlocks protocols built around the `init(configuration:)` pattern, including code that constructs a conformer generically (`Service(configuration:)` where `Service` is a generic constraint).
+
+Notes:
+
+- Initializers record only -- there is no `initHandler`, because a per-instance handler could never be set before the initializer runs.
+- `async`, `throws`, failability (`init?`), and generic clauses are preserved on the witness. A throwing initializer keeps its `throws` signature but never throws.
+- `required` makes the initializer part of the mock's protocol conformance so subclasses of the (non-final) mock inherit it.
+- When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted.
+- `resetMock()` clears `initCallCount` and `initCallArgs`.
+
+Supported for plain protocols only; `Sendable`, `actor`, and inheriting protocols with `init` requirements emit a diagnostic.
+
 ### Protocol Inheritance
 
 If a protocol inherits from another `@Mockable` protocol, the child mock inherits from the parent mock:
@@ -492,7 +543,8 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
-- Unsupported protocol members (e.g. `init`) emit compile-time diagnostics.
+- Unsupported protocol members (e.g. a `static subscript`) emit compile-time diagnostics.
+- `init` requirements are supported for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers emit a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 

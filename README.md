@@ -84,6 +84,10 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
   - `subscript<suffix>CallArgs`
   - `subscript<suffix>Handler`
   - `subscript<suffix>SetHandler` for get/set subscripts
+- Initializers:
+  - `initCallCount`
+  - `initCallArgs`
+  - (overloaded `init`s add a parameter-type suffix, e.g. `initStringCallCount`)
 - Utility:
   - `resetMock()`
 
@@ -119,6 +123,7 @@ Notes:
 - `inout` parameters with write-back support
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
+- Initializer requirements (`init(...)`) generated as recording `required init` witnesses (plain protocols; see limitations)
 - Associated types (generated as `typealias`, using default type when available, otherwise `Any`)
 - Static methods and static properties
 - Get-only / get-set / optional properties
@@ -145,7 +150,8 @@ Notes:
 
 - `@Mockable` can only be applied to protocols.
 - `@Mockable` does not accept arguments.
-- Unsupported protocol members (for example `init`) emit compile-time diagnostics.
+- Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
+- `init` requirements are supported for plain protocols; they are not yet supported for `Sendable`, `actor`, or inheriting protocols, which emit a diagnostic.
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 

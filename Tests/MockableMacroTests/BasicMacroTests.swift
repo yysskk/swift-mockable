@@ -442,27 +442,6 @@ struct BasicMacroTests {
         )
     }
 
-    @Test("Unsupported protocol members should produce diagnostics")
-    func unsupportedMembersProduceDiagnostics() {
-        assertMacroExpansionForTesting(
-            """
-            @Mockable
-            protocol UnsupportedRequirements {
-                init(token: String)
-            }
-            """,
-            expandedSource: """
-            protocol UnsupportedRequirements {
-                init(token: String)
-            }
-            """,
-            diagnostics: [
-                DiagnosticSpec(message: "Unsupported protocol member: init(token: String)", line: 3, column: 5)
-            ],
-            macros: testMacros
-        )
-    }
-
     @Test("Static subscript requirements should produce diagnostics")
     func staticSubscriptProducesDiagnostic() {
         // `static subscript` is unsupported. This is why subscript backing storage is

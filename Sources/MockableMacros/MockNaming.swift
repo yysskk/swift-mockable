@@ -54,6 +54,12 @@ enum MockNaming {
         "subscript\(suffix)"
     }
 
+    /// The base identifier for an initializer with the given overload suffix, e.g. `init`
+    /// for the sole initializer, `initString` for an overload taking a `String`.
+    static func initializerIdentifier(suffix: String) -> String {
+        "init\(suffix)"
+    }
+
     /// The lock-backed storage property name for instance or static members.
     static func storageName(isTypeMember: Bool) -> String {
         isTypeMember ? staticStorageName : instanceStorageName

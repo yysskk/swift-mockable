@@ -97,8 +97,10 @@ struct MockGenerator {
         }
 
         // Generate explicit init when access level requires it (e.g., public/open)
-        // Without this, the default init is internal, making the mock unusable across modules
-        if accessLevel == .public || accessLevel == .package {
+        // Without this, the default init is internal, making the mock unusable across modules.
+        // Skipped when the protocol declares its own `init` requirements: those generate
+        // `required init` witnesses that already provide accessible initializers.
+        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements {
             let initDecl = generateInit()
             classMembers.append(MemberBlockItemSyntax(decl: initDecl))
         }
@@ -179,8 +181,9 @@ struct MockGenerator {
         }
 
         // Generate explicit init when access level requires it (e.g., public/package)
-        // Without this, the default synthesized init is internal, making the mock unusable across modules
-        if accessLevel == .public || accessLevel == .package {
+        // Without this, the default synthesized init is internal, making the mock unusable across modules.
+        // Skipped when the protocol declares its own `init` requirements (see the class mock).
+        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements {
             let initDecl = generateInit()
             actorMembers.append(MemberBlockItemSyntax(decl: initDecl))
         }
@@ -213,8 +216,14 @@ struct MockGenerator {
 
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
         let methodGroups = groupMethodsByNameIncludingConditional()
+        let initializers = collectInitializers()
 
         return mapMemberBlockItemsPreservingIfConfig { decl in
+            if let initDecl = decl.as(InitializerDeclSyntax.self) {
+                let identifier = Self.initializerIdentifier(for: initDecl, in: initializers)
+                return generateInitializerMock(initDecl, identifier: identifier)
+            }
+
             if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 let methodGroup = methodGroups[funcName] ?? []

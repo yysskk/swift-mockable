@@ -306,6 +306,32 @@ extension MockGenerator {
         return Set(genericClause.parameters.map { $0.name.text })
     }
 
+    static func extractGenericParameterNames(from initDecl: InitializerDeclSyntax) -> Set<String> {
+        guard let genericClause = initDecl.genericParameterClause else {
+            return []
+        }
+        return Set(genericClause.parameters.map { $0.name.text })
+    }
+
+    /// All initializer requirements declared by the protocol, including those nested in
+    /// conditional-compilation blocks. Used to detect `init` overloads and to decide
+    /// whether the mock declares its own initializers.
+    func collectInitializers() -> [InitializerDeclSyntax] {
+        collectDeclsIncludingConditional().compactMap { $0.as(InitializerDeclSyntax.self) }
+    }
+
+    /// Whether the protocol declares at least one `init` requirement.
+    var hasInitializerRequirements: Bool {
+        collectDeclsIncludingConditional().contains { $0.is(InitializerDeclSyntax.self) }
+    }
+
+    /// The tracking identifier for an initializer within its overload group, e.g. `init`
+    /// for a sole initializer or `initString` for an overload taking a `String`.
+    static func initializerIdentifier(for initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
+        let suffix = group.count > 1 ? initializerIdentifierSuffix(from: initDecl, in: group) : ""
+        return MockNaming.initializerIdentifier(suffix: suffix)
+    }
+
     /// The parameters that can be recorded in `CallArgs`. Non-escaping closure
     /// parameters are excluded because a non-escaping value cannot be stored; the
     /// call is still counted and the closure is still forwarded to the handler.
@@ -916,6 +942,66 @@ extension MockGenerator {
 
         // Add throws modifier
         if funcDecl.signature.effectSpecifiers?.hasThrowsEffect == true {
+            suffix += "Throwing"
+        }
+
+        return suffix
+    }
+
+    // MARK: - Initializer Identifier Suffix
+
+    /// Generates a suffix based on parameter types to distinguish overloaded initializers,
+    /// mirroring `functionIdentifierSuffix(from:)`. Example: `init(host: String, port: Int)`
+    /// -> "StringInt".
+    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax) -> String {
+        let parameters = initDecl.signature.parameterClause.parameters
+        if parameters.isEmpty {
+            return ""
+        }
+
+        return parameters
+            .map { sanitizeTypeName($0.type.trimmedDescription) }
+            .joined()
+    }
+
+    /// Generates a unique suffix for an overloaded initializer within a group of `init`
+    /// requirements. Mirrors the function overload logic: parameter types first, then
+    /// `async`/`throws` modifiers, then a deterministic source-order ordinal if overloads
+    /// still collide. Initializers have no return type, so that disambiguator does not apply.
+    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
+        let baseSuffix = initializerIdentifierSuffix(from: initDecl)
+
+        let baseCollisions = group.filter { initializerIdentifierSuffix(from: $0) == baseSuffix }
+        if baseCollisions.count <= 1 {
+            return baseSuffix
+        }
+
+        let extendedSuffix = extendedInitializerIdentifierSuffix(from: initDecl, baseSuffix: baseSuffix)
+        let extendedCollisions = baseCollisions.filter {
+            extendedInitializerIdentifierSuffix(from: $0, baseSuffix: initializerIdentifierSuffix(from: $0)) == extendedSuffix
+        }
+        guard extendedCollisions.count > 1 else {
+            return extendedSuffix
+        }
+
+        // Still colliding: append a deterministic 1-based ordinal by source order. The first
+        // colliding overload keeps the extended suffix for stability.
+        guard let index = extendedCollisions.firstIndex(where: { $0.id == initDecl.id }), index > 0 else {
+            return extendedSuffix
+        }
+        return "\(extendedSuffix)\(index + 1)"
+    }
+
+    /// Extends an initializer suffix with `async`/`throws` modifiers to disambiguate overloads
+    /// whose parameter types sanitize identically.
+    private static func extendedInitializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, baseSuffix: String) -> String {
+        var suffix = baseSuffix
+
+        if initDecl.signature.effectSpecifiers?.asyncSpecifier != nil {
+            suffix += "Async"
+        }
+
+        if initDecl.signature.effectSpecifiers?.hasThrowsEffect == true {
             suffix += "Throwing"
         }
 

@@ -21,6 +21,7 @@ extension MockGenerator {
 
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
+        let initializers = collectInitializers()
 
         let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
             // Subscript backing storage is always an instance property (`static subscript`
@@ -29,7 +30,7 @@ extension MockGenerator {
             let prefix = decl.is(SubscriptDeclSyntax.self)
                 ? ""
                 : (Self.isTypeMember(decl) ? "Self." : "")
-            return resetTargets(for: decl, methodGroups: methodGroups, lockBased: false).map { target in
+            return resetTargets(for: decl, methodGroups: methodGroups, initializers: initializers, lockBased: false).map { target in
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(target.name) = \(target.resetValue)")))
             }
         }
@@ -71,13 +72,14 @@ extension MockGenerator {
     private func generateSendableResetMethod() -> FunctionDeclSyntax {
         // Group methods by name to detect overloads (including conditional members)
         let methodGroups = groupMethodsByNameIncludingConditional()
+        let initializers = collectInitializers()
 
         func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {
             mapLinesPreservingIfConfig { decl in
                 guard Self.isTypeMember(decl) == includeTypeMembers else {
                     return []
                 }
-                return resetTargets(for: decl, methodGroups: methodGroups, lockBased: true).map { target in
+                return resetTargets(for: decl, methodGroups: methodGroups, initializers: initializers, lockBased: true).map { target in
                     "storage.\(target.name) = \(target.resetValue)"
                 }
             }
@@ -172,8 +174,17 @@ extension MockGenerator {
     private func resetTargets(
         for decl: DeclSyntax,
         methodGroups: [String: [FunctionDeclSyntax]],
+        initializers: [InitializerDeclSyntax],
         lockBased: Bool
     ) -> [ResetTarget] {
+        if let initDecl = decl.as(InitializerDeclSyntax.self) {
+            let identifier = Self.initializerIdentifier(for: initDecl, in: initializers)
+            return [
+                ResetTarget(name: MockNaming.callCount(identifier), resetValue: "0"),
+                ResetTarget(name: MockNaming.callArgs(identifier), resetValue: "[]"),
+            ]
+        }
+
         if let funcDecl = decl.as(FunctionDeclSyntax.self) {
             let funcName = funcDecl.name.text
             let methodGroup = methodGroups[funcName] ?? []

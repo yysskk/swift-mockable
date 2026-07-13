@@ -36,6 +36,10 @@ subscript(index: Int) -> String { get }
 
 Generates `subscriptIntCallCount`, `subscriptIntCallArgs`, and `subscriptIntHandler`. Get/set subscripts also generate `subscript<suffix>SetHandler`.
 
+### Initializers
+
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArgs`). Overloaded initializers append a parameter-type suffix, matching the method scheme (`initStringCallCount`, `initStringIntCallCount`).
+
 ## Generic and Associated Types
 
 ### Generic Methods
@@ -157,6 +161,25 @@ If a protocol inherits from `Actor`, the generated mock type is an actor. Helper
 
 Static methods and properties are lock-backed through a shared static storage. `resetMock()` also resets static generated members.
 
+## Initializer Requirements
+
+A protocol `init` requirement is satisfied by a generated `required init` witness that mirrors the requirement's signature and records the call:
+
+```swift
+init(configuration: Configuration)
+// generates:
+// var initCallCount: Int = 0
+// var initCallArgs: [Configuration] = []
+// required init(configuration: Configuration) {
+//     initCallCount += 1
+//     initCallArgs.append(configuration)
+// }
+```
+
+Initializers record only — there is no `initHandler`, because a per-instance handler could never be set before the initializer runs. `async`, `throws`, failability (`init?`), and generic clauses are preserved. When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted. `resetMock()` clears `initCallCount` and `initCallArgs`.
+
+Supported for plain protocols only; `Sendable`, `actor`, and inheriting protocols with `init` requirements emit a diagnostic.
+
 ## Inheritance and `resetMock()`
 
 If a protocol inherits from another protocol and a parent mock exists, the child mock inherits from the parent mock. Child `resetMock()` calls `super.resetMock()` first.
@@ -172,10 +195,12 @@ Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated m
 Compilation errors are emitted when:
 
 - `@Mockable` is applied to non-protocol declarations.
-- Unsupported members are present (for example initializers).
+- Unsupported members are present (for example a `static subscript`).
+- An `init` requirement is declared on a `Sendable`, `actor`, or inheriting protocol (not yet supported).
 - Arguments are passed to `@Mockable` (it accepts none).
 
 ## Current Constraints
 
 - Static/class subscripts are not supported.
+- `init` requirements are supported only for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers are not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.
