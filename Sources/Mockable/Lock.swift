@@ -65,7 +65,7 @@ private final class LegacyLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendab
 }
 
 #if compiler(>=6.0) && canImport(Synchronization)
-@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
 private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendable {
     private let _lock: Mutex<Value>
 
@@ -86,7 +86,7 @@ private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendabl
 /// `MockableLock` is used in generated mocks for `Sendable` protocols to provide
 /// thread-safe access to mutable state.
 ///
-/// - On iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, uses `Mutex` from the `Synchronization` module.
+/// - On iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+, uses `Mutex` from the `Synchronization` module.
 /// - On older deployment targets, falls back to an `NSLock`-based implementation.
 public final class MockableLock<Value>: @unchecked Sendable {
     private let _box: _LockBoxBase<Value>
@@ -96,7 +96,7 @@ public final class MockableLock<Value>: @unchecked Sendable {
     /// - Parameter initialValue: The value to protect with the lock.
     public init(_ initialValue: Value) {
         #if compiler(>=6.0) && canImport(Synchronization)
-        if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) {
+        if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             self._box = MutexLockBox(initialValue)
         } else {
             self._box = LegacyLockBox(initialValue)
