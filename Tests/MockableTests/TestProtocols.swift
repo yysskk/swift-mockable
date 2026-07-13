@@ -276,6 +276,31 @@ protocol ConcreteTypedThrowingClosureService {
 }
 #endif
 
+// MARK: - Initializer Requirement Protocols
+
+@Mockable
+protocol ConfigurableService {
+    init(configuration: String)
+    func run() -> Int
+}
+
+@Mockable
+protocol MultiInitService {
+    init(host: String)
+    init(host: String, port: Int)
+}
+
+@Mockable
+protocol ThrowingInitService {
+    init(path: String) throws
+    func load() -> String
+}
+
+@Mockable
+protocol FailableInitService {
+    init?(rawValue: String)
+}
+
 // MARK: - Unset-Handler Default Return Protocols
 
 @Mockable

@@ -51,6 +51,25 @@ Generates:
 
 Get/set subscripts also generate `subscript<suffix>SetHandler`.
 
+### Initializers
+
+A sole `init` requirement generates members based on the identifier `init`:
+
+- `initCallCount`
+- `initCallArgs`
+
+Overloaded initializers append a parameter-type suffix, matching the method scheme:
+
+```swift
+init(host: String)
+init(host: String, port: Int)
+```
+
+Generates:
+
+- `initStringCallCount` / `initStringCallArgs`
+- `initStringIntCallCount` / `initStringIntCallArgs`
+
 ## Generic and Associated Types
 
 ### Generic Methods
@@ -266,6 +285,51 @@ subscript(key: String) -> Int { get async throws }
 // subscript(key: String) -> Int { get async throws { ... } }
 ```
 
+## Initializer Requirements
+
+A protocol `init` requirement is satisfied by a generated `required init` witness that
+mirrors the requirement's signature and records the call:
+
+```swift
+@Mockable
+protocol Repository {
+    init(configuration: Configuration)
+}
+```
+
+Generates:
+
+```swift
+var initCallCount: Int = 0
+var initCallArgs: [Configuration] = []
+required init(configuration: Configuration) {
+    initCallCount += 1
+    initCallArgs.append(configuration)
+}
+```
+
+This unlocks protocols built around the `init(configuration:)` pattern — for example code
+that constructs a conformer generically (`Service(configuration:)` where `Service` is a
+generic constraint), which previously could not be mocked at all.
+
+Notes:
+
+- Initializers **record only** — there is no `initHandler`. The recording state lives on the
+  instance being created, so a per-instance handler could never be set before the initializer
+  runs. Inspect `initCallCount` / `initCallArgs` (or the arguments you passed) to verify
+  construction.
+- `async`, `throws`, failability (`init?`), and generic clauses are preserved on the witness.
+  A throwing initializer keeps its `throws` signature but never throws.
+- The `required` keyword makes the initializer part of the mock's protocol conformance so that
+  subclasses of the (non-final) mock inherit it.
+- When a protocol declares its own `init` requirements, the synthesized parameterless `init()`
+  (normally generated for `public` / `package` mocks) is omitted — the `required init`
+  witnesses already provide accessible initializers.
+- `resetMock()` clears `initCallCount` and `initCallArgs` alongside the other tracking state.
+
+`init` requirements are currently supported for plain protocols only. `Sendable`, `actor`, and
+inheriting protocols with `init` requirements emit a diagnostic (see [Diagnostics](#diagnostics)).
+
 ## `Sendable` and `Actor` Mocks
 
 ### `Sendable`
@@ -313,10 +377,12 @@ Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated m
 Compilation errors are emitted when:
 
 - `@Mockable` is applied to non-protocol declarations
-- unsupported members are present (for example initializers)
+- unsupported members are present (for example a `static subscript`)
+- an `init` requirement is declared on a `Sendable`, `actor`, or inheriting protocol (not yet supported)
 - arguments are passed to `@Mockable` (it accepts none)
 
 ## Current Constraints
 
 - Static/class subscripts are not supported.
+- `init` requirements are supported only for plain protocols; `Sendable`, `actor`, and inheriting protocols with initializers are not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

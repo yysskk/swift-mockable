@@ -16,6 +16,10 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// An `@autoclosure` parameter whose own `throws`/`async` effect is not covered
     /// by the enclosing requirement. The associated value is the full explanation.
     case unsupportedAutoclosureEffect(String)
+    /// An `init` requirement in a context the macro cannot yet mock (for example a
+    /// `Sendable`, `actor`, or inheriting protocol). The associated value is the full
+    /// explanation.
+    case unsupportedInitializer(String)
 
     var message: String {
         switch self {
@@ -26,6 +30,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
         case .invalidMacroArgument(let message):
             return "Invalid @Mockable argument: \(message)"
         case .unsupportedAutoclosureEffect(let message):
+            return message
+        case .unsupportedInitializer(let message):
             return message
         }
     }
@@ -42,6 +48,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "invalidMacroArgument")
         case .unsupportedAutoclosureEffect:
             return MessageID(domain: "MockableMacro", id: "unsupportedAutoclosureEffect")
+        case .unsupportedInitializer:
+            return MessageID(domain: "MockableMacro", id: "unsupportedInitializer")
         }
     }
 

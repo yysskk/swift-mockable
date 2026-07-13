@@ -585,7 +585,7 @@ if let \(handlerBinding) {
         }
     }
 
-    private static func ensureNewlinesBetweenStatements(_ statements: [CodeBlockItemSyntax]) -> [CodeBlockItemSyntax] {
+    static func ensureNewlinesBetweenStatements(_ statements: [CodeBlockItemSyntax]) -> [CodeBlockItemSyntax] {
         statements.enumerated().map { index, stmt in
             guard index > 0 else { return stmt }
             var s = stmt

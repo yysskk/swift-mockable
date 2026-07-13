@@ -27,16 +27,7 @@ public struct MockableMacro: PeerMacro {
             return []
         }
 
-        let hasInvalidArguments = diagnoseArguments(from: node, in: context)
-        let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
-        guard !hasInvalidArguments, !hasUnsupportedMembers else {
-            return []
-        }
-
-        let protocolName = protocolDecl.name.text
-        let mockClassName = MockNaming.mockTypeName(forProtocol: protocolName)
-
-        // Check if the protocol inherits from Sendable or has @Sendable attribute
+        // Protocol-level conformance flags drive both diagnostics and code generation.
         let isSendable = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
             inherited.type.trimmedDescription == "Sendable"
         } ?? false
@@ -53,6 +44,29 @@ public struct MockableMacro: PeerMacro {
             inherited.type.trimmedDescription == "Actor"
         } ?? false
 
+        // Extract parent protocol names (excluding well-known non-protocol types)
+        let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
+        let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
+            .map { $0.type.trimmedDescription }
+            .filter { !knownNonParentProtocols.contains($0) }
+            ?? []
+
+        let hasInvalidArguments = diagnoseArguments(from: node, in: context)
+        let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
+        // `init` requirements are currently only mockable for plain (non-Sendable, non-actor)
+        // protocols that do not inherit from another protocol.
+        let hasUnsupportedInitializers = diagnoseInitializerContext(
+            in: protocolDecl.memberBlock.members,
+            isUnsupportedContext: isSendable || hasSendableAttribute || isActor || !parentProtocolNames.isEmpty,
+            context: context
+        )
+        guard !hasInvalidArguments, !hasUnsupportedMembers, !hasUnsupportedInitializers else {
+            return []
+        }
+
+        let protocolName = protocolDecl.name.text
+        let mockClassName = MockNaming.mockTypeName(forProtocol: protocolName)
+
         // Check if the protocol has @MainActor attribute
         let isMainActor = protocolDecl.attributes.contains { attr in
             if case .attribute(let attributeSyntax) = attr {
@@ -61,12 +75,6 @@ public struct MockableMacro: PeerMacro {
             return false
         }
 
-        // Extract parent protocol names (excluding well-known non-protocol types)
-        let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
-        let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
-            .map { $0.type.trimmedDescription }
-            .filter { !knownNonParentProtocols.contains($0) }
-            ?? []
         let parentMockClassName: String? = parentProtocolNames.first.map { MockNaming.mockTypeName(forProtocol: $0) }
 
         let members = protocolDecl.memberBlock.members
@@ -184,6 +192,22 @@ public struct MockableMacro: PeerMacro {
                 }
             }
 
+            // Initializer witnesses evaluate @autoclosure arguments to record them, so an
+            // autoclosure's own effects must be covered by the requirement, as for methods.
+            if let initDecl = member.decl.as(InitializerDeclSyntax.self) {
+                let effects = initDecl.signature.effectSpecifiers
+                if diagnoseAutoclosureParameters(
+                    initDecl.signature.parameterClause.parameters,
+                    coversThrows: effects?.hasThrowsEffect ?? false,
+                    coversAsync: effects?.asyncSpecifier != nil,
+                    inSubscript: false,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+            }
+
             if memberIsSupported(member.decl) {
                 continue
             }
@@ -245,6 +269,50 @@ public struct MockableMacro: PeerMacro {
         return hasError
     }
 
+    /// Diagnoses `init` requirements that appear in a context the macro cannot yet mock.
+    /// When `isUnsupportedContext` is `false` (a plain, non-inheriting protocol) no
+    /// diagnostics are emitted and initializers are generated normally.
+    private static func diagnoseInitializerContext(
+        in members: MemberBlockItemListSyntax,
+        isUnsupportedContext: Bool,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        guard isUnsupportedContext else {
+            return false
+        }
+
+        var hasError = false
+
+        for member in members {
+            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
+                for clause in ifConfigDecl.clauses {
+                    guard let elements = clause.elements,
+                          case .decls(let decls) = elements else {
+                        continue
+                    }
+                    if diagnoseInitializerContext(in: decls, isUnsupportedContext: true, context: context) {
+                        hasError = true
+                    }
+                }
+                continue
+            }
+
+            if member.decl.is(InitializerDeclSyntax.self) {
+                context.diagnose(
+                    Diagnostic(
+                        node: Syntax(member.decl),
+                        message: MockableError.unsupportedInitializer(
+                            "init requirements are not yet supported for Sendable, actor, or inheriting protocols"
+                        )
+                    )
+                )
+                hasError = true
+            }
+        }
+
+        return hasError
+    }
+
     private static func diagnoseUnsupportedMembers(
         in ifConfigDecl: IfConfigDeclSyntax,
         context: some MacroExpansionContext
@@ -266,6 +334,10 @@ public struct MockableMacro: PeerMacro {
     }
 
     private static func memberIsSupported(_ decl: DeclSyntax) -> Bool {
+        if decl.is(InitializerDeclSyntax.self) {
+            return true
+        }
+
         if decl.is(AssociatedTypeDeclSyntax.self) {
             return true
         }
