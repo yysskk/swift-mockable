@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-07-13
+
 ### Added
 
 - Official visionOS support: the package now declares `.visionOS(.v1)`, and `MockableLock` prefers `Mutex` (`Synchronization`) on visionOS 2.0+, falling back to the `NSLock`-based lock on visionOS 1.0.
@@ -132,7 +134,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.10.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.11.0...HEAD
+[1.11.0]: https://github.com/yysskk/swift-mockable/compare/1.10.0...1.11.0
 [1.10.0]: https://github.com/yysskk/swift-mockable/compare/1.9.1...1.10.0
 [1.9.1]: https://github.com/yysskk/swift-mockable/compare/1.9.0...1.9.1
 [1.9.0]: https://github.com/yysskk/swift-mockable/compare/1.8.0...1.9.0
