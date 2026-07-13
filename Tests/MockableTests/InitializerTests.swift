@@ -65,4 +65,24 @@ struct InitializerRequirementTests {
         #expect(mock.initCallCount == 0)
         #expect(mock.initCallArgs == [])
     }
+
+    @Test("Sendable protocol init requirement is recorded behind the lock")
+    func sendableInitializerRecordsCall() {
+        let mock = SendableInitServiceMock(configuration: "prod")
+
+        #expect(mock.initCallCount == 1)
+        #expect(mock.initCallArgs == ["prod"])
+
+        mock.resetMock()
+        #expect(mock.initCallCount == 0)
+        #expect(mock.initCallArgs == [])
+    }
+
+    @Test("Actor protocol init requirement is recorded through nonisolated tracking")
+    func actorInitializerRecordsCall() {
+        let mock = ActorInitServiceMock(identifier: 7)
+
+        #expect(mock.initCallCount == 1)
+        #expect(mock.initCallArgs == [7])
+    }
 }

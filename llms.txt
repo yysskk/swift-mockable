@@ -7,7 +7,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - `<method>CallCount` / `<method>CallArgs` / `<method>Handler` for every method
 - `_<property>` backing storage and protocol-conforming computed properties
 - `subscript<suffix>CallCount` / `CallArgs` / `Handler` / `SetHandler` for subscripts
-- `initCallCount` / `initCallArgs` for `init` requirements (recording `required init`, plain protocols)
+- `initCallCount` / `initCallArgs` for `init` requirements (recording `required init`; lock-backed on `Sendable`/`actor` mocks)
 - `resetMock()` to clear all tracking state
 
 ## Key Features
@@ -24,7 +24,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - Generic methods (type-erased to `Any`)
 - Associated types (uses default type or `Any`)
 - Overloaded methods (unique suffixes auto-generated)
-- Initializer requirements (`init(...)`) as recording `required init` (plain protocols)
+- Initializer requirements (`init(...)`) as recording `required init` (including `Sendable`/`actor` mocks)
 - Static methods and properties
 - `Sendable` protocol support (`@unchecked Sendable` + `MockableLock`)
 - `Actor` protocol support (actor mock with `nonisolated` helpers)
