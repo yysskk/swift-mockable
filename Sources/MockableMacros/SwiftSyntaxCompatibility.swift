@@ -4,7 +4,8 @@ import SwiftSyntax
 
 /// Provides compatibility helpers for swift-syntax API differences between versions.
 /// - swift-syntax 509/510 (Swift 5.9/5.10): Uses `throwsSpecifier`, `specifier` (singular), direct type in GenericArgumentSyntax
-/// - swift-syntax 600+ (Swift 6.x): Uses `throwsClause`, `specifiers` (plural), `GenericArgumentSyntax(argument: .type(...))`
+/// - swift-syntax 600+ (Swift 6.x): Uses `throwsClause`, `specifiers` (plural)
+/// - swift-syntax 601+: `GenericArgumentSyntax.argument` is an enum (`.type(...)`; `.expr` is public only in 602+)
 ///
 /// SwiftSyntax provides empty marker modules (e.g., SwiftSyntax509, SwiftSyntax600) for version detection.
 
@@ -71,7 +72,7 @@ extension AccessorEffectSpecifiersSyntax {
 
 /// Creates a GenericArgumentSyntax with a type, compatible across swift-syntax versions.
 func makeGenericArgument(type: TypeSyntax) -> GenericArgumentSyntax {
-    #if canImport(SwiftSyntax600)
+    #if canImport(SwiftSyntax601)
     return GenericArgumentSyntax(argument: .type(type))
     #else
     return GenericArgumentSyntax(argument: type)
@@ -80,11 +81,12 @@ func makeGenericArgument(type: TypeSyntax) -> GenericArgumentSyntax {
 
 /// Extracts the type from a GenericArgumentSyntax, compatible across swift-syntax versions.
 func extractType(from argument: GenericArgumentSyntax) -> TypeSyntax? {
-    #if canImport(SwiftSyntax600)
+    #if canImport(SwiftSyntax601)
     switch argument.argument {
     case .type(let typeSyntax):
         return typeSyntax
-    case .expr:
+    default:
+        // `.expr` (value generics) is @_spi in 601 and public only in 602+, so it must not be named here.
         return nil
     }
     #else
