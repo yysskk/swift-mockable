@@ -89,13 +89,15 @@ struct SwiftSyntaxCompatibilityTests {
         #expect(extractType(from: argument)?.trimmedDescription == "String")
     }
 
+    #if canImport(SwiftSyntax602)
     @Test("extractType is nil for a value generic argument")
     func extractTypeIsNilForExpressionArgument() {
-        // `.expr` is public API in the swift-syntax version this package resolves,
-        // even though the shim itself avoids naming it (it is @_spi in 601).
+        // `.expr` is absent before 601 and @_spi there, so this test only
+        // compiles where the case is public API (swift-syntax 602+).
         let argument = GenericArgumentSyntax(argument: .expr("3"))
         #expect(extractType(from: argument) == nil)
     }
+    #endif
 
     @Test("extractType round-trips through a parsed generic clause")
     func extractTypeFromParsedGenericClause() {
