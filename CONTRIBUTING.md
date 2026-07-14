@@ -29,16 +29,22 @@ builds but the test suite is Swift 6 only.
 
 ### Swift version compatibility
 
-The package supports Swift 5.9, 5.10, and 6.2+. Each toolchain resolves a
-different swift-syntax major version, so there are three manifests:
-
-- `Package.swift` (Swift 6.2+, swift-syntax 603)
-- `Package@swift-5.10.swift` (swift-syntax 510)
-- `Package@swift-5.9.swift` (swift-syntax 509)
+The package supports Swift 5.9, 5.10, and 6.2+ through three manifests:
+`Package.swift` (Swift 6.2+), `Package@swift-5.10.swift`, and
+`Package@swift-5.9.swift`. All three accept swift-syntax
+`509.0.0..<604.0.0`, so dependency resolution can agree with whatever
+swift-syntax major the other packages in a consuming project pin. When a new
+swift-syntax major is released, bump the upper bound in all three manifests
+and add the new major to the `swift-syntax-compat` CI matrix.
 
 Any use of a version-sensitive swift-syntax API must go through a shim in
 `Sources/MockableMacros/SwiftSyntaxCompatibility.swift` so it compiles against
-all three.
+every version in the range. swift-syntax ships empty marker modules
+(`SwiftSyntax600`, `SwiftSyntax601`, ...) that `#if canImport` checks use to
+detect the version; gate each API on the major that actually introduced it.
+CI builds the package against the floor of the range and the latest patch of
+every other swift-syntax major, while tests always run against the version in
+`Package.resolved`.
 
 ## Writing tests
 

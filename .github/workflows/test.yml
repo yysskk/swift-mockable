@@ -38,6 +38,45 @@ jobs:
         if: startsWith(matrix.swift-version, '6.')
         run: swift test
 
+  # The regular jobs build and test against the swift-syntax version in
+  # Package.resolved. This job proves the whole accepted range stays buildable:
+  # the floor of the range and the latest patch of every other swift-syntax
+  # major, plus the floor/oldest-toolchain pairings the manifests advertise.
+  # Tests need the resolved swift-syntax (SwiftSyntaxMacrosGenericTestSupport
+  # exists only from 600 and the pinned expansions assume the resolved
+  # formatting), so like the Swift 5.9/5.10 jobs this is build-only.
+  swift-syntax-compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-version: ['6.2']
+        swift-syntax-version: ['509.0.0', '510.0.3', '600.0.1', '601.0.1', '602.0.0']
+        include:
+          - swift-version: '5.9'
+            swift-syntax-version: '509.0.0'
+          - swift-version: '5.10'
+            swift-syntax-version: '510.0.3'
+    container: swift:${{ matrix.swift-version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show Swift version
+        run: swift --version
+
+      # Rewrite the manifests to an exact pin instead of using
+      # `swift package resolve swift-syntax --version ...`, whose dependency
+      # lookup fails on Swift 5.9's SwiftPM ("dependency 'swift-syntax' was
+      # not found").
+      - name: Pin swift-syntax ${{ matrix.swift-syntax-version }}
+        run: |
+          sed -i 's|"509.0.0"..<"604.0.0"|exact: "${{ matrix.swift-syntax-version }}"|' \
+            Package.swift Package@swift-5.9.swift Package@swift-5.10.swift
+          swift package resolve
+
+      - name: Build
+        run: swift build
+
   macos:
     runs-on: macos-latest
     steps:
@@ -57,12 +96,12 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: [build, macos]
+    needs: [build, swift-syntax-compat, macos]
     if: always()
     steps:
       - name: Check build results
         run: |
-          if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.macos.result }}" != "success" ]; then
+          if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs['swift-syntax-compat'].result }}" != "success" ] || [ "${{ needs.macos.result }}" != "success" ]; then
             echo "Build failed"
             exit 1
           fi

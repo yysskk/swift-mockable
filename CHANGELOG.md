@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Widened the accepted swift-syntax versions from a single major to `509.0.0..<604.0.0` in every manifest, so adding swift-mockable no longer causes a dependency-resolution conflict in projects whose other packages pin a different swift-syntax major.
+
 ## [1.11.0] - 2026-07-13
 
 ### Added
