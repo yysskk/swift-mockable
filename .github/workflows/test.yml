@@ -48,6 +48,7 @@ jobs:
   swift-syntax-compat:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         swift-version: ['6.2']
         swift-syntax-version: ['509.0.0', '510.0.3', '600.0.1', '601.0.1', '602.0.0']
@@ -63,8 +64,15 @@ jobs:
       - name: Show Swift version
         run: swift --version
 
+      # Rewrite the manifests to an exact pin instead of using
+      # `swift package resolve swift-syntax --version ...`, whose dependency
+      # lookup fails on Swift 5.9's SwiftPM ("dependency 'swift-syntax' was
+      # not found").
       - name: Pin swift-syntax ${{ matrix.swift-syntax-version }}
-        run: swift package resolve swift-syntax --version ${{ matrix.swift-syntax-version }}
+        run: |
+          sed -i 's|"509.0.0"..<"604.0.0"|exact: "${{ matrix.swift-syntax-version }}"|' \
+            Package.swift Package@swift-5.9.swift Package@swift-5.10.swift
+          swift package resolve
 
       - name: Build
         run: swift build
