@@ -23,7 +23,7 @@ Add `Mockable` to your target:
 
 ## Basic Usage
 
-Apply the ``Mockable()`` macro to a protocol:
+Apply the ``Mockable(condition:)`` macro to a protocol:
 
 ```swift
 import Mockable
@@ -37,7 +37,10 @@ protocol UserService {
 }
 ```
 
-This generates a `UserServiceMock` class with test-friendly members.
+This generates a `UserServiceMock` class with test-friendly members. The mock is
+wrapped in `#if DEBUG` by default; pass a ``MockCompilationCondition`` (for
+example `@Mockable(condition: .custom("MOCKING"))`) when the mock must be
+available in other build configurations.
 
 ## Using the Mock
 

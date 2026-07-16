@@ -480,7 +480,7 @@ struct BasicMacroTests {
             }
             """,
             diagnostics: [
-                DiagnosticSpec(message: "Invalid @Mockable argument: unexpected argument label 'debug'; @Mockable does not accept arguments", line: 1, column: 11)
+                DiagnosticSpec(message: "Invalid @Mockable argument: unexpected argument label 'debug'; the only supported argument is 'condition:'", line: 1, column: 11)
             ],
             macros: testMacros
         )

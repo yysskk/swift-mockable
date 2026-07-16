@@ -6,17 +6,19 @@ import SwiftSyntaxMacros
 
 /// The implementation of the `@Mockable` attached peer macro.
 ///
-/// Applied to a protocol, it generates a `<Protocol>Mock` class (wrapped in `#if DEBUG`)
-/// that conforms to the protocol and records calls, captures arguments, and exposes a
-/// configurable handler for every requirement. The protocol's shape drives the output:
-/// `Sendable`/`Actor` conformances select a lock-backed storage model, an inherited
-/// protocol produces a subclassing mock, and unsupported members are reported as
-/// diagnostics (see ``MockableError``) instead of generating invalid code.
+/// Applied to a protocol, it generates a `<Protocol>Mock` class (wrapped in `#if DEBUG`
+/// by default; the `condition:` argument selects a different guard, see
+/// ``CompilationCondition``) that conforms to the protocol and records calls, captures
+/// arguments, and exposes a configurable handler for every requirement. The protocol's
+/// shape drives the output: `Sendable`/`Actor` conformances select a lock-backed storage
+/// model, an inherited protocol produces a subclassing mock, and unsupported members are
+/// reported as diagnostics (see ``MockableError``) instead of generating invalid code.
 public struct MockableMacro: PeerMacro {
     /// Generates the mock class peer for a `@Mockable` protocol.
     ///
     /// Returns an empty array (emitting diagnostics) when the declaration is not a
-    /// protocol, when the macro is given arguments, or when a member cannot be mocked.
+    /// protocol, when the macro's arguments are invalid, or when a member cannot be
+    /// mocked.
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -51,7 +53,9 @@ public struct MockableMacro: PeerMacro {
             .filter { !knownNonParentProtocols.contains($0) }
             ?? []
 
-        let hasInvalidArguments = diagnoseArguments(from: node, in: context)
+        // `nil` means the arguments were invalid and diagnostics were emitted; the
+        // member diagnostics below still run so all problems surface in one pass.
+        let condition = CompilationCondition.parse(from: node, in: context)
         let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
         // An `init` declared directly on an inheriting protocol is not yet mockable: the
         // witness would need to chain through the parent mock's initializer, which the macro
@@ -62,7 +66,7 @@ public struct MockableMacro: PeerMacro {
             isUnsupportedContext: !parentProtocolNames.isEmpty,
             context: context
         )
-        guard !hasInvalidArguments, !hasUnsupportedMembers, !hasUnsupportedInitializers else {
+        guard let condition, !hasUnsupportedMembers, !hasUnsupportedInitializers else {
             return []
         }
 
@@ -97,58 +101,7 @@ public struct MockableMacro: PeerMacro {
 
         let mockClass = try generator.generate()
 
-        // Wrap in #if DEBUG
-        let ifConfigDecl = IfConfigDeclSyntax(
-            clauses: IfConfigClauseListSyntax([
-                IfConfigClauseSyntax(
-                    poundKeyword: .poundIfToken(),
-                    condition: DeclReferenceExprSyntax(baseName: .identifier("DEBUG")),
-                    elements: .decls(MemberBlockItemListSyntax([
-                        MemberBlockItemSyntax(decl: mockClass)
-                    ]))
-                )
-            ])
-        )
-
-        return [DeclSyntax(ifConfigDecl)]
-    }
-
-    /// Validates that `@Mockable` is used without arguments.
-    private static func diagnoseArguments(
-        from node: AttributeSyntax,
-        in context: some MacroExpansionContext
-    ) -> Bool {
-        guard let arguments = node.arguments,
-              case .argumentList(let argList) = arguments else {
-            return false
-        }
-
-        var hasError = false
-
-        for argument in argList {
-            guard let label = argument.label?.text else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument("@Mockable does not accept unlabeled arguments")
-                    )
-                )
-                hasError = true
-                continue
-            }
-
-            context.diagnose(
-                Diagnostic(
-                    node: Syntax(argument),
-                    message: MockableError.invalidMacroArgument(
-                        "unexpected argument label '\(label)'; @Mockable does not accept arguments"
-                    )
-                )
-            )
-            hasError = true
-        }
-
-        return hasError
+        return [condition.wrapping(mockClass)]
     }
 
     private static func diagnoseUnsupportedMembers(

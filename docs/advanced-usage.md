@@ -380,6 +380,43 @@ Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated m
 
 `resetMock()` includes matching conditional branches so reset behavior stays aligned with active compilation conditions.
 
+## Choosing When Mocks Are Compiled
+
+By default the generated mock is wrapped in `#if DEBUG`. The `condition:`
+argument selects a different compilation condition, or removes the guard:
+
+```swift
+@Mockable                                    // #if DEBUG (default)
+protocol UserService { ... }
+
+@Mockable(condition: .custom("MOCKING"))     // #if MOCKING
+protocol PaymentService { ... }
+
+@Mockable(condition: .always)                // no #if guard
+protocol PreviewDataService { ... }
+```
+
+This unlocks setups where `#if DEBUG` is too narrow:
+
+- a **test-support module** that is built in the release configuration,
+- **SwiftUI preview stubs** that should not depend on the build configuration,
+- a **UI-test host app** built for release.
+
+Notes:
+
+- `.custom("FLAG")` requires a single compilation condition identifier (a letter
+  or underscore followed by letters, digits, or underscores), spelled as a string
+  literal. Define the flag in every target that references the mock, via
+  `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in
+  `swiftSettings` (SwiftPM).
+- `.always` emits the mock in **every** build configuration, including release.
+  Use it deliberately — typically in a module that never ships.
+- The condition must be written literally at the attachment site. Macro
+  expansion happens at compile time, so runtime values (`condition: myFlag`) and
+  interpolated strings emit a diagnostic.
+- The condition only controls the `#if` wrapper around the mock; members of the
+  protocol that sit inside their own `#if` blocks keep those inner guards.
+
 ## Diagnostics
 
 Compilation errors are emitted when:
@@ -387,7 +424,8 @@ Compilation errors are emitted when:
 - `@Mockable` is applied to non-protocol declarations
 - unsupported members are present (for example a `static subscript`)
 - a **new** `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work)
-- arguments are passed to `@Mockable` (it accepts none)
+- an argument other than `condition:` is passed to `@Mockable`
+- the `condition:` value is not written literally as `.debug`, `.always`, or `.custom("FLAG")`, or the custom flag is not a single compilation condition identifier
 
 ## Current Constraints
 

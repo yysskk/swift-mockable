@@ -8,7 +8,7 @@
 
 `swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
 
-- Generated mocks are emitted inside `#if DEBUG`.
+- Generated mocks are emitted inside `#if DEBUG` by default; the `condition:` argument selects a different compilation condition, or none (see [Choosing When Mocks Are Compiled](#choosing-when-mocks-are-compiled)).
 - Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`).
 - `resetMock()` is generated to clear all tracking state.
 
@@ -112,6 +112,38 @@ Notes:
 - Zero- and single-parameter members pass their argument directly.
 - `<name>CallArgs` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
 
+## Choosing When Mocks Are Compiled
+
+By default, generated mocks are wrapped in `#if DEBUG`, so they never ship in
+release builds. When a mock must exist elsewhere — a test-support module built in
+the release configuration, SwiftUI preview stubs, or a UI-test host app — pass a
+`condition:` to `@Mockable`:
+
+```swift
+@Mockable                                    // #if DEBUG (default)
+protocol UserService { ... }
+
+@Mockable(condition: .custom("MOCKING"))     // #if MOCKING
+protocol PaymentService { ... }
+
+@Mockable(condition: .always)                // no #if guard
+protocol PreviewDataService { ... }
+```
+
+- `.debug` — wraps the mock in `#if DEBUG`. This is the default and matches the
+  previous behavior.
+- `.custom("FLAG")` — wraps the mock in `#if FLAG`. The flag must be a single
+  compilation condition identifier, spelled as a string literal. Define it in
+  every target that needs the mock: `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in
+  Xcode, or `.define("FLAG")` under `swiftSettings` in a package manifest.
+- `.always` — emits the mock with no `#if` guard, in every build configuration.
+  Use this deliberately, for example in a dedicated test-support module that is
+  never linked into a shipping product.
+
+The condition must be written literally at the attachment site (`.debug`,
+`.always`, or `.custom("FLAG")` with a string literal) — the macro expands at
+compile time and cannot read runtime values.
+
 ## Supported Features
 
 - Access-level-aware generation (including `private` / `fileprivate` edge cases)
@@ -130,6 +162,7 @@ Notes:
 - Effectful read-only properties (`get async`, `get throws`, `get async throws`) mocked with handlers
 - Get-only / get-set subscripts (including effectful `get async` / `get throws` subscripts)
 - `#if` / `#elseif` / `#else` conditional compilation inside protocols
+- Configurable compilation condition for the generated mock (`condition:` — `#if DEBUG` by default, a custom flag, or no guard)
 - Protocol inheritance (child mock inherits from first parent mock when applicable)
 - `Sendable` protocol support (`@unchecked Sendable` mock generation)
 - `Actor` protocol support (actor mock generation with nonisolated helper members)
@@ -149,7 +182,7 @@ Notes:
 ## Diagnostics and Limitations
 
 - `@Mockable` can only be applied to protocols.
-- `@Mockable` does not accept arguments.
+- The only argument `@Mockable` accepts is `condition:`, and its value must be written literally as `.debug`, `.always`, or `.custom("FLAG")` where `FLAG` is a single compilation condition identifier. Anything else emits a compile-time diagnostic.
 - Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
@@ -157,9 +190,13 @@ Notes:
 
 ## Troubleshooting
 
-- **The `<Protocol>Mock` type can't be found.** The generated mock lives inside
-  `#if DEBUG`, so it only exists in debug builds. Reference it from test targets
-  or debug configurations.
+- **The `<Protocol>Mock` type can't be found.** By default the generated mock
+  lives inside `#if DEBUG`, so it only exists in debug builds. Reference it from
+  test targets or debug configurations — or pass a `condition:` to `@Mockable`
+  when the mock is needed in other configurations (see
+  [Choosing When Mocks Are Compiled](#choosing-when-mocks-are-compiled)).
+  For `.custom("FLAG")`, make sure `FLAG` is defined in the target that
+  references the mock.
 - **"Macro expansion" / trust prompt in Xcode.** Choose **Trust & Enable** the
   first time you build a target that uses `@Mockable` (see the note in
   [Installation](#installation)).
