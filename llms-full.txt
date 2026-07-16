@@ -1,6 +1,6 @@
 # swift-mockable: Complete Documentation
 
-> swift-mockable is a Swift testing library that provides a `@Mockable` macro for generating protocol mocks using compile-time code generation (Swift macros). It produces a `<ProtocolName>Mock` class with call tracking, argument capture, configurable handlers, and property stubs. All generated mocks are wrapped in `#if DEBUG`. MIT licensed.
+> swift-mockable is a Swift testing library that provides a `@Mockable` macro for generating protocol mocks using compile-time code generation (Swift macros). It produces a `<ProtocolName>Mock` class with call tracking, argument capture, configurable handlers, and property stubs. Generated mocks are wrapped in `#if DEBUG` by default; the `condition:` argument selects a custom compilation condition or removes the guard. MIT licensed.
 
 ## Installation
 
@@ -503,6 +503,27 @@ protocol PlatformService {
 }
 ```
 
+### Compilation Condition of the Generated Mock
+
+By default the generated mock is wrapped in `#if DEBUG`. The `condition:` argument selects a different compilation condition, or removes the guard — for a test-support module built in the release configuration, SwiftUI preview stubs, or a UI-test host app:
+
+```swift
+@Mockable                                    // #if DEBUG (default)
+protocol UserService { ... }
+
+@Mockable(condition: .custom("MOCKING"))     // #if MOCKING
+protocol PaymentService { ... }
+
+@Mockable(condition: .always)                // no #if guard
+protocol PreviewDataService { ... }
+```
+
+- `.debug` — wraps the mock in `#if DEBUG` (default, matches the previous behavior).
+- `.custom("FLAG")` — wraps the mock in `#if FLAG`. `FLAG` must be a single compilation condition identifier spelled as a string literal; define it via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM) in every target that references the mock.
+- `.always` — emits the mock with no `#if` guard, in every build configuration (use deliberately, e.g. in a module that never ships).
+
+The condition must be written literally at the attachment site; runtime values and interpolated strings emit a diagnostic.
+
 ### `Sendable` Protocol Support
 
 If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock` for thread safety:
@@ -543,7 +564,7 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 ## Diagnostics and Limitations
 
 - `@Mockable` can only be applied to protocols.
-- `@Mockable` does not accept arguments.
+- The only argument `@Mockable` accepts is `condition:`; its value must be written literally as `.debug`, `.always`, or `.custom("FLAG")` where `FLAG` is a single compilation condition identifier.
 - Unsupported protocol members (e.g. a `static subscript`) emit compile-time diagnostics.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol emits a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
@@ -563,10 +584,25 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 
 ```swift
 @attached(peer, names: suffixed(Mock))
-public macro Mockable()
+public macro Mockable(condition: MockCompilationCondition = .debug)
 ```
 
-Attach to a protocol to generate a `<ProtocolName>Mock` class.
+Attach to a protocol to generate a `<ProtocolName>Mock` class. The `condition:`
+argument controls the `#if` guard around the generated mock.
+
+### `MockCompilationCondition`
+
+```swift
+public enum MockCompilationCondition: Equatable, Sendable {
+    case debug            // #if DEBUG (default)
+    case always           // no #if guard
+    case custom(String)   // #if <flag>
+}
+```
+
+The compilation condition that guards a generated mock. The value must be
+written literally at the attachment site (`.debug`, `.always`, or
+`.custom("FLAG")` with a string literal).
 
 ### `MockableLock`
 

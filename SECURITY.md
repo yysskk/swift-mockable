@@ -25,7 +25,9 @@ progress toward a fix.
 ## Scope
 
 swift-mockable is a test-only code generation tool: the mocks it generates are
-wrapped in `#if DEBUG` and are not intended to ship in production builds.
+wrapped in `#if DEBUG` by default and are not intended to ship in production
+builds. (The `condition:` argument can opt a mock out of that guard; doing so is
+an explicit, per-protocol decision by the adopting project.)
 Reports that are most relevant include issues in the macro implementation that
 could lead to unexpected code generation, or problems in the runtime `Mockable`
 module (for example `MockableLock`).

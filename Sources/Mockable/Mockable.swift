@@ -23,5 +23,25 @@
 /// - Call tracking for verification
 /// - Property stubs
 ///
+/// ## Choosing When the Mock Is Compiled
+///
+/// By default the generated mock is wrapped in `#if DEBUG`. Pass a
+/// ``MockCompilationCondition`` to guard it with a custom flag instead, or to
+/// emit it unconditionally:
+///
+/// ```swift
+/// @Mockable(condition: .custom("MOCKING"))
+/// protocol PaymentService { ... }   // mock wrapped in #if MOCKING
+///
+/// @Mockable(condition: .always)
+/// protocol PreviewDataService { ... }   // mock has no #if guard
+/// ```
+///
+/// - Parameter condition: The compilation condition that guards the generated
+///   mock. Defaults to ``MockCompilationCondition/debug``. The value must be
+///   written literally at the attachment site (`.debug`, `.always`, or
+///   `.custom("FLAG")` with a string literal).
 @attached(peer, names: suffixed(Mock))
-public macro Mockable() = #externalMacro(module: "MockableMacros", type: "MockableMacro")
+public macro Mockable(
+    condition: MockCompilationCondition = .debug
+) = #externalMacro(module: "MockableMacros", type: "MockableMacro")

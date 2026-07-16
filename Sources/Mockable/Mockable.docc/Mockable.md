@@ -4,9 +4,9 @@ A Swift macro that generates protocol mocks for tests.
 
 ## Overview
 
-`swift-mockable` provides the ``Mockable()`` macro that automatically generates mock implementations of protocols. Generated mocks include call tracking, configurable handlers, and property stubs.
+`swift-mockable` provides the ``Mockable(condition:)`` macro that automatically generates mock implementations of protocols. Generated mocks include call tracking, configurable handlers, and property stubs.
 
-- Generated mocks are emitted inside `#if DEBUG`.
+- Generated mocks are emitted inside `#if DEBUG` by default; pass a ``MockCompilationCondition`` to guard them with a custom flag, or to emit them unconditionally.
 - Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`).
 - `resetMock()` is generated to clear all tracking state.
 
@@ -34,7 +34,8 @@ assert(mock.fetchUserCallCount == 1)
 ### Essentials
 
 - <doc:GettingStarted>
-- ``Mockable()``
+- ``Mockable(condition:)``
+- ``MockCompilationCondition``
 
 ### Advanced
 

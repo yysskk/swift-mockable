@@ -40,7 +40,12 @@ let package = Package(
         ),
         .testTarget(
             name: "MockableTests",
-            dependencies: ["Mockable"]
+            dependencies: ["Mockable"],
+            swiftSettings: [
+                // Exercises @Mockable(condition: .custom(...)) end to end; the runtime
+                // tests reference a mock that only exists when this flag is defined.
+                .define("MOCKABLE_RUNTIME_TEST_CONDITION")
+            ]
         ),
         .testTarget(
             name: "MockableMacroTests",

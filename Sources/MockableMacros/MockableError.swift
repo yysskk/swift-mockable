@@ -10,8 +10,10 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// A protocol member that the macro cannot mock (e.g. an initializer or a
     /// `static subscript`). The associated value is the member's source text.
     case unsupportedMember(String)
-    /// `@Mockable` was given an argument; it does not accept any. The associated
-    /// value describes the offending argument.
+    /// `@Mockable` was given an argument it cannot understand — an unknown label,
+    /// or a `condition:` value that is not written literally as `.debug`,
+    /// `.always`, or `.custom("FLAG")`. The associated value describes the
+    /// offending argument.
     case invalidMacroArgument(String)
     /// An `@autoclosure` parameter whose own `throws`/`async` effect is not covered
     /// by the enclosing requirement. The associated value is the full explanation.
