@@ -132,17 +132,21 @@ protocol PreviewDataService { ... }
 
 - `.debug` — wraps the mock in `#if DEBUG`. This is the default and matches the
   previous behavior.
-- `.custom("FLAG")` — wraps the mock in `#if FLAG`. The flag must be a single
-  compilation condition identifier, spelled as a string literal. Define it in
-  every target that needs the mock: `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in
-  Xcode, or `.define("FLAG")` under `swiftSettings` in a package manifest.
+- `.custom("CONDITION")` — wraps the mock in `#if CONDITION`. The condition is
+  any compilation condition expression, spelled as a string literal: a flag
+  (`"MOCKING"`), or a compound condition built from identifiers, `true`/`false`,
+  `!`, `&&`, `||`, parentheses, and platform checks
+  (`"DEBUG || UITESTS"`, `"os(iOS) && !RELEASE"`, `"canImport(XCTest)"`).
+  Define each flag in every target that needs the mock:
+  `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or `.define("FLAG")` under
+  `swiftSettings` in a package manifest.
 - `.always` — emits the mock with no `#if` guard, in every build configuration.
   Use this deliberately, for example in a dedicated test-support module that is
   never linked into a shipping product.
 
 The condition must be written literally at the attachment site (`.debug`,
-`.always`, or `.custom("FLAG")` with a string literal) — the macro expands at
-compile time and cannot read runtime values.
+`.always`, or `.custom("CONDITION")` with a string literal) — the macro expands
+at compile time and cannot read runtime values.
 
 ## Supported Features
 
@@ -182,7 +186,7 @@ compile time and cannot read runtime values.
 ## Diagnostics and Limitations
 
 - `@Mockable` can only be applied to protocols.
-- The only argument `@Mockable` accepts is `condition:`, and its value must be written literally as `.debug`, `.always`, or `.custom("FLAG")` where `FLAG` is a single compilation condition identifier. Anything else emits a compile-time diagnostic.
+- The only argument `@Mockable` accepts is `condition:`, and its value must be written literally as `.debug`, `.always`, or `.custom("CONDITION")` where `CONDITION` is a compilation condition expression (identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks such as `os(iOS)` or `canImport(UIKit)`). Anything else emits a compile-time diagnostic.
 - Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
@@ -195,8 +199,8 @@ compile time and cannot read runtime values.
   test targets or debug configurations — or pass a `condition:` to `@Mockable`
   when the mock is needed in other configurations (see
   [Choosing When Mocks Are Compiled](#choosing-when-mocks-are-compiled)).
-  For `.custom("FLAG")`, make sure `FLAG` is defined in the target that
-  references the mock.
+  For `.custom("CONDITION")`, make sure every flag the condition references is
+  defined in the target that uses the mock.
 - **"Macro expansion" / trust prompt in Xcode.** Choose **Trust & Enable** the
   first time you build a target that uses `@Mockable` (see the note in
   [Installation](#installation)).

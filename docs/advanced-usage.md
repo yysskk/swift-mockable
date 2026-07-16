@@ -404,11 +404,14 @@ This unlocks setups where `#if DEBUG` is too narrow:
 
 Notes:
 
-- `.custom("FLAG")` requires a single compilation condition identifier (a letter
-  or underscore followed by letters, digits, or underscores), spelled as a string
-  literal. Define the flag in every target that references the mock, via
-  `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in
-  `swiftSettings` (SwiftPM).
+- `.custom("CONDITION")` accepts any compilation condition expression, spelled
+  as a string literal: a flag (`"MOCKING"`), or a compound condition built from
+  identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks
+  such as `os(...)`, `arch(...)`, `swift(...)`, `compiler(...)`,
+  `canImport(...)`, and `targetEnvironment(...)` — for example
+  `"DEBUG || UITESTS"` or `"os(iOS) && !RELEASE"`. Define each flag in every
+  target that references the mock, via `SWIFT_ACTIVE_COMPILATION_CONDITIONS`
+  (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM).
 - `.always` emits the mock in **every** build configuration, including release.
   Use it deliberately — typically in a module that never ships.
 - The condition must be written literally at the attachment site. Macro
@@ -425,7 +428,7 @@ Compilation errors are emitted when:
 - unsupported members are present (for example a `static subscript`)
 - a **new** `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work)
 - an argument other than `condition:` is passed to `@Mockable`
-- the `condition:` value is not written literally as `.debug`, `.always`, or `.custom("FLAG")`, or the custom flag is not a single compilation condition identifier
+- the `condition:` value is not written literally as `.debug`, `.always`, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression (identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks)
 
 ## Current Constraints
 

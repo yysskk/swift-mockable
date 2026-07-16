@@ -31,6 +31,19 @@ protocol CustomConditionService {
     var identifier: String { get }
 }
 
+// DEBUG is active in test builds, so this compound condition holds even before
+// the custom flag is considered.
+@Mockable(condition: .custom("DEBUG || MOCKABLE_RUNTIME_TEST_CONDITION"))
+protocol CompoundConditionService {
+    func compute(x: Int) -> Int
+}
+
+// The negated flag is never defined, so this condition holds in every build.
+@Mockable(condition: .custom("!MOCKABLE_UNDEFINED_CONDITION"))
+protocol NegatedConditionService {
+    func check() -> Bool
+}
+
 @Suite("Compilation Condition Argument Tests")
 struct CompilationConditionArgumentTests {
     @Test("Explicit .debug mock behaves like a default mock")
@@ -85,6 +98,27 @@ struct CompilationConditionArgumentTests {
         mock.resetMock()
         #expect(mock.isEnabledCallCount == 0)
         #expect(mock._identifier == nil)
+    }
+
+    @Test(".custom mock with a compound condition works")
+    func compoundConditionMock() {
+        let mock = CompoundConditionServiceMock()
+
+        mock.computeHandler = { x in x * 2 }
+
+        #expect(mock.compute(x: 21) == 42)
+        #expect(mock.computeCallCount == 1)
+        #expect(mock.computeCallArgs == [21])
+    }
+
+    @Test(".custom mock with a negated condition works")
+    func negatedConditionMock() {
+        let mock = NegatedConditionServiceMock()
+
+        mock.checkHandler = { true }
+
+        #expect(mock.check())
+        #expect(mock.checkCallCount == 1)
     }
 
     @Test(".always mock conforms to the protocol")

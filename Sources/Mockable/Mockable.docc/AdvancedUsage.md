@@ -205,7 +205,7 @@ protocol PaymentService { ... }
 protocol PreviewDataService { ... }
 ```
 
-- ``MockCompilationCondition/custom(_:)`` requires a single compilation condition identifier, spelled as a string literal. Define the flag in every target that references the mock, via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM).
+- ``MockCompilationCondition/custom(_:)`` accepts any compilation condition expression, spelled as a string literal: a flag (`"MOCKING"`), or a compound condition built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks — for example `"DEBUG || UITESTS"` or `"os(iOS) && !RELEASE"`. Define each flag in every target that references the mock, via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM).
 - ``MockCompilationCondition/always`` emits the mock in every build configuration, including release. Use it deliberately — typically in a module that never ships.
 - The condition must be written literally at the attachment site; runtime values and interpolated strings emit a diagnostic.
 - The condition only controls the `#if` wrapper around the mock; members of the protocol that sit inside their own `#if` blocks keep those inner guards.
@@ -218,7 +218,7 @@ Compilation errors are emitted when:
 - Unsupported members are present (for example a `static subscript`).
 - A new `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work).
 - An argument other than `condition:` is passed to `@Mockable`.
-- The `condition:` value is not written literally as `.debug`, `.always`, or `.custom("FLAG")`, or the custom flag is not a single compilation condition identifier.
+- The `condition:` value is not written literally as `.debug`, `.always`, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression.
 
 ## Current Constraints
 

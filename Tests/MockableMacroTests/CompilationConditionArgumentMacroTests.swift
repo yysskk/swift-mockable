@@ -163,6 +163,94 @@ struct CompilationConditionArgumentMacroTests {
         )
     }
 
+    @Test(
+        ".custom accepts compilation condition expressions",
+        arguments: [
+            "DEBUG || MOCKING",
+            "!RELEASE",
+            "os(iOS) && DEBUG",
+            "(DEBUG || STAGING) && !SKIP_MOCKS",
+            "canImport(XCTest)",
+            "swift(>=6.0)",
+            "targetEnvironment(simulator)",
+            "true",
+        ]
+    )
+    func customConditionExpressions(expression: String) {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: .custom("\(expression)"))
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+
+            #if \(expression)
+            class CacheServiceMock: CacheService {
+                var clearCallCount: Int = 0
+                var clearCallArgs: [()] = []
+                var clearHandler: (@Sendable () -> Void)? = nil
+                func clear() {
+                    clearCallCount += 1
+                    clearCallArgs.append(())
+                    if let _handler = clearHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    clearCallCount = 0
+                    clearCallArgs = []
+                    clearHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test(".custom trims surrounding whitespace from the condition")
+    func customConditionTrimsWhitespace() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: .custom("  DEBUG  "))
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+
+            #if DEBUG
+            class CacheServiceMock: CacheService {
+                var clearCallCount: Int = 0
+                var clearCallArgs: [()] = []
+                var clearHandler: (@Sendable () -> Void)? = nil
+                func clear() {
+                    clearCallCount += 1
+                    clearCallArgs.append(())
+                    if let _handler = clearHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    clearCallCount = 0
+                    clearCallArgs = []
+                    clearHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Type-qualified condition value is accepted")
     func typeQualifiedCondition() {
         assertMacroExpansionForTesting(
@@ -370,7 +458,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"FLAG\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 )
@@ -395,7 +483,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"FLAG\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 )
@@ -470,32 +558,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: '' is not a valid compilation condition flag; use a single identifier such as 'MOCKING'",
-                    line: 1,
-                    column: 30
-                )
-            ],
-            macros: testMacros
-        )
-    }
-
-    @Test(".custom with a compound expression produces a diagnostic")
-    func customWithCompoundExpressionProducesDiagnostic() {
-        assertMacroExpansionForTesting(
-            """
-            @Mockable(condition: .custom("DEBUG || MOCKING"))
-            protocol CacheService {
-                func clear()
-            }
-            """,
-            expandedSource: """
-            protocol CacheService {
-                func clear()
-            }
-            """,
-            diagnostics: [
-                DiagnosticSpec(
-                    message: "Invalid @Mockable argument: 'DEBUG || MOCKING' is not a valid compilation condition flag; use a single identifier such as 'MOCKING'",
+                    message: "Invalid @Mockable argument: the custom compilation condition must not be empty",
                     line: 1,
                     column: 30
                 )
@@ -520,7 +583,68 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: '1MOCKING' is not a valid compilation condition flag; use a single identifier such as 'MOCKING'",
+                    message: "Invalid @Mockable argument: '1MOCKING' is not a valid compilation condition expression",
+                    line: 1,
+                    column: 30
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test(".custom with a malformed expression produces a diagnostic")
+    func customWithMalformedExpressionProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: .custom("DEBUG ||"))
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: 'DEBUG ||' is not a valid compilation condition expression",
+                    line: 1,
+                    column: 30
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test(
+        ".custom with an unsupported construct produces a diagnostic",
+        arguments: [
+            "1 + 1",
+            "A ? B : C",
+            "unknownCheck(iOS)",
+            "A & B",
+            "Configuration.debug",
+        ]
+    )
+    func customWithUnsupportedConstructProducesDiagnostic(expression: String) {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: .custom("\(expression)"))
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: '\(expression)' is not a supported compilation condition; "
+                        + "use identifiers, 'true'/'false', '!', '&&', '||', parentheses, and platform checks "
+                        + "such as 'os(iOS)', 'canImport(UIKit)', or 'swift(>=6.0)'",
                     line: 1,
                     column: 30
                 )
@@ -545,7 +669,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"FLAG\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 ),

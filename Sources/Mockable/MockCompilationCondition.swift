@@ -32,10 +32,19 @@ public enum MockCompilationCondition: Equatable, Sendable {
 
     /// Wraps the generated mock in `#if` with a custom compilation condition.
     ///
-    /// The associated value must be a single compilation condition identifier
-    /// (such as `"MOCKING"`), spelled as a string literal. Define the flag in the
-    /// build settings of every target that needs the mock — via
-    /// `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or
+    /// The associated value must be a compilation condition expression, spelled
+    /// as a string literal — a flag such as `"MOCKING"`, or a compound condition
+    /// built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and
+    /// platform checks:
+    ///
+    /// ```swift
+    /// @Mockable(condition: .custom("MOCKING"))
+    /// @Mockable(condition: .custom("DEBUG || UITESTS"))
+    /// @Mockable(condition: .custom("os(iOS) && !RELEASE"))
+    /// ```
+    ///
+    /// Define each flag in the build settings of every target that needs the
+    /// mock — via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or
     /// `.define("MOCKING")` in a package manifest's `swiftSettings`.
     case custom(String)
 }
