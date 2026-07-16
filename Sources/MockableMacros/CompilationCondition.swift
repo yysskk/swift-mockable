@@ -215,6 +215,14 @@ enum CompilationCondition: Equatable {
             return nil
         }
 
+        // A newline (possible through a multi-line string literal) would let
+        // everything after the first line fall out of the probe's condition
+        // position and be dropped silently instead of rejected.
+        guard !source.contains(where: \.isNewline) else {
+            diagnose("the custom compilation condition must be a single line")
+            return nil
+        }
+
         // Parse a probe `#if` block so the string is read in exactly the
         // position it will occupy in the expansion. A string that fails to
         // parse here would otherwise surface as a confusing error inside the
@@ -226,7 +234,9 @@ enum CompilationCondition: Equatable {
             probeFile.statements.count == 1,
             let ifConfigDecl = probeFile.statements.first?.item.as(IfConfigDeclSyntax.self),
             ifConfigDecl.clauses.count == 1,
-            let condition = ifConfigDecl.clauses.first?.condition
+            let clause = ifConfigDecl.clauses.first,
+            let condition = clause.condition,
+            clauseBodyIsEmpty(clause)
         else {
             diagnose("'\(source)' is not a valid compilation condition expression")
             return nil
@@ -242,6 +252,16 @@ enum CompilationCondition: Equatable {
         }
 
         return condition.trimmed
+    }
+
+    /// Whether nothing of the probe source leaked past the condition into the
+    /// clause body — the guard that anything after the condition (for example
+    /// content smuggled onto the `#if` line) is rejected rather than dropped.
+    private static func clauseBodyIsEmpty(_ clause: IfConfigClauseSyntax) -> Bool {
+        guard let elements = clause.elements else {
+            return true
+        }
+        return elements.trimmedDescription.isEmpty
     }
 
     /// Whether `expression` uses only constructs the compiler allows in an

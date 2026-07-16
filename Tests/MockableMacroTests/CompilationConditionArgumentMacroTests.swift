@@ -653,6 +653,62 @@ struct CompilationConditionArgumentMacroTests {
         )
     }
 
+    @Test(".custom with a multi-line string produces a diagnostic")
+    func customWithMultiLineStringProducesDiagnostic() {
+        // A multi-line literal could otherwise smuggle content past the
+        // condition into the probe's (discarded) clause body, silently
+        // truncating the condition to its first line.
+        assertMacroExpansionForTesting(
+            #"""
+            @Mockable(condition: .custom("""
+            DEBUG
+            struct Evil {}
+            """))
+            protocol CacheService {
+                func clear()
+            }
+            """#,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: the custom compilation condition must be a single line",
+                    line: 1,
+                    column: 30
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test(".custom with trailing content after the condition produces a diagnostic")
+    func customWithTrailingContentProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: .custom("DEBUG struct Evil {}"))
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: 'DEBUG struct Evil {}' is not a valid compilation condition expression",
+                    line: 1,
+                    column: 30
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Invalid condition does not suppress member diagnostics")
     func invalidConditionAndUnsupportedMemberBothDiagnose() {
         assertMacroExpansionForTesting(
