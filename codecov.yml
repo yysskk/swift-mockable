@@ -1,0 +1,23 @@
+# Codecov configuration. See https://docs.codecov.com/docs/codecov-yaml
+coverage:
+  status:
+    # Coverage may drift by a little without failing the check, but a real drop
+    # in the project total is reported.
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    # New and changed lines are held to a fixed bar of their own.
+    patch:
+      default:
+        target: 80%
+
+comment:
+  layout: condensed_header, diff, files
+  require_changes: true
+
+# Mirrors the exclusions in scripts/export-coverage.sh so a local run and the
+# service report the same numbers.
+ignore:
+  - .build
+  - Tests

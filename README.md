@@ -1,6 +1,7 @@
 # swift-mockable
 
 [![Test](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml/badge.svg)](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/yysskk/swift-mockable/graph/badge.svg)](https://codecov.io/gh/yysskk/swift-mockable)
 [![Release](https://img.shields.io/github/v/release/yysskk/swift-mockable)](https://github.com/yysskk/swift-mockable/releases)
 [![Swift](https://img.shields.io/badge/Swift-5.9%20%7C%205.10%20%7C%206.2-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue.svg)](https://developer.apple.com)
