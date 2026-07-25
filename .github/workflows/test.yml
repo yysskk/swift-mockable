@@ -33,10 +33,11 @@ jobs:
         run: swift build
 
       # Tests use swift-testing, which is bundled with Swift 6 toolchains only,
-      # so Swift 5.9 and 5.10 are build-only.
+      # so Swift 5.9 and 5.10 are build-only. The script runs the suite with
+      # coverage enabled and exports coverage.lcov.
       - name: Run tests
         if: startsWith(matrix.swift-version, '6.')
-        run: swift test
+        run: scripts/export-coverage.sh
 
   # The regular jobs build and test against the swift-syntax version in
   # Package.resolved. This job proves the whole accepted range stays buildable:
@@ -92,7 +93,7 @@ jobs:
         run: swift build
 
       - name: Run tests
-        run: swift test
+        run: scripts/export-coverage.sh
 
   test:
     runs-on: ubuntu-latest
