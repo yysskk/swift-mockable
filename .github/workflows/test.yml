@@ -95,6 +95,16 @@ jobs:
       - name: Run tests
         run: scripts/export-coverage.sh
 
+      # Both test jobs export a report, but the two platforms exercise nearly
+      # the same lines, so one upload is enough to describe the package.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
+          disable_search: true
+          fail_ci_if_error: true
+
   test:
     runs-on: ubuntu-latest
     needs: [build, swift-syntax-compat, macos]

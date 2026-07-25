@@ -39,6 +39,12 @@ and writes `coverage.lcov` to the repository root. Coverage is measured over
 in the report are relative to the repository root. It works with both the macOS
 and Linux toolchains, so it produces the same report locally as it does in CI.
 
+CI runs the same script and uploads the macOS report to
+[Codecov](https://codecov.io/gh/yysskk/swift-mockable), which comments on pull
+requests with the resulting change. `codecov.yml` holds the thresholds: the
+project total may drift by 1%, while new and changed lines are expected to reach
+80%.
+
 ### Swift version compatibility
 
 The package supports Swift 5.9, 5.10, and 6.2+ through three manifests:
