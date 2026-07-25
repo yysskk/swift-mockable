@@ -97,7 +97,12 @@ jobs:
 
       # Both test jobs export a report, but the two platforms exercise nearly
       # the same lines, so one upload is enough to describe the package.
+      #
+      # Pull requests from forks cannot read CODECOV_TOKEN, so they skip the
+      # upload instead of failing over a secret they were never given. Pushes
+      # to main still upload, which is what later pull requests compare against.
       - name: Upload coverage to Codecov
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
