@@ -27,6 +27,18 @@ Tests use [swift-testing](https://github.com/swiftlang/swift-testing) (`@Test` /
 `#expect`), which ships with Swift 6 toolchains. On Swift 5.9 / 5.10 the package
 builds but the test suite is Swift 6 only.
 
+### Code coverage
+
+```sh
+scripts/export-coverage.sh
+```
+
+The script runs the test suite with coverage enabled, prints a per-file summary,
+and writes `coverage.lcov` to the repository root. Coverage is measured over
+`Sources/` only — test code and dependency sources are excluded — and the paths
+in the report are relative to the repository root. It works with both the macOS
+and Linux toolchains, so it produces the same report locally as it does in CI.
+
 ### Swift version compatibility
 
 The package supports Swift 5.9, 5.10, and 6.2+ through three manifests:
