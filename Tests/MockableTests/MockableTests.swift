@@ -248,6 +248,49 @@ struct MockableIntegrationTests {
         #expect(mock.transformCallCount == 1)
     }
 
+    @Test("Generic method with a nested generic argument")
+    func genericMethodWithNestedGenericArgument() {
+        let mock = GenericNominalServiceMock()
+
+        mock.rewrapHandler = { @Sendable box in
+            box
+        }
+
+        let rewrapped: Box<[Int]> = mock.rewrap(Box(value: [1, 2]))
+
+        #expect(rewrapped.value == [1, 2])
+        #expect(mock.rewrapCallCount == 1)
+        #expect((mock.rewrapCallArgs.first as? Box<[Int]>)?.value == [1, 2])
+    }
+
+    @Test("Generic method with a module-qualified type")
+    func genericMethodWithQualifiedType() {
+        let mock = GenericNominalServiceMock()
+
+        mock.reverseHandler = { @Sendable values in
+            Array((values as! [Int]).reversed())
+        }
+
+        let reversed: Swift.Array<Int> = mock.reverse([1, 2, 3])
+
+        #expect(reversed == [3, 2, 1])
+        #expect(mock.reverseCallCount == 1)
+    }
+
+    @Test("Generic method returning a type nested in a generic parameter")
+    func genericMethodWithDependentMemberType() {
+        let mock = GenericNominalServiceMock()
+
+        mock.firstElementHandler = { @Sendable collection in
+            (collection as! [String])[0]
+        }
+
+        let first: String = mock.firstElement(["a", "b"])
+
+        #expect(first == "a")
+        #expect(mock.firstElementCallCount == 1)
+    }
+
     @Test("Mock conforms to protocol")
     func mockConformsToProtocol() {
         func useService(_ service: SimpleService) -> String {
