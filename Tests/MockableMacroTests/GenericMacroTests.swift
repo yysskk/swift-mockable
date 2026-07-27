@@ -234,6 +234,122 @@ struct GenericMacroTests {
         )
     }
 
+    @Test("Generic method with a nested generic argument erases the wrapper to Any")
+    func genericNestedGenericArgumentErasesWrapper() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func rewrap<T>(_ box: Box<[T]>) -> Box<[T]>
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func rewrap<T>(_ box: Box<[T]>) -> Box<[T]>
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var rewrapCallCount: Int = 0
+                var rewrapCallArgs: [Any] = []
+                var rewrapHandler: (@Sendable (Any) -> Any)? = nil
+                func rewrap<T>(_ box: Box<[T]>) -> Box<[T]> {
+                    rewrapCallCount += 1
+                    rewrapCallArgs.append(box)
+                    guard let _handler = rewrapHandler else {
+                        fatalError("\\(Self.self).rewrapHandler is not set")
+                    }
+                    return _handler(box) as! Box<[T]>
+                }
+                func resetMock() {
+                    rewrapCallCount = 0
+                    rewrapCallArgs = []
+                    rewrapHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method with module-qualified types erases only the generic ones")
+    func genericQualifiedTypeErasesToAny() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func store<T>(_ box: MyModule.Box<T>, in container: MyModule.Container)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func store<T>(_ box: MyModule.Box<T>, in container: MyModule.Container)
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var storeCallCount: Int = 0
+                var storeCallArgs: [(box: Any, container: MyModule.Container)] = []
+                var storeHandler: (@Sendable (Any, MyModule.Container) -> Void)? = nil
+                func store<T>(_ box: MyModule.Box<T>, in container: MyModule.Container) {
+                    storeCallCount += 1
+                    storeCallArgs.append((box: box, container: container))
+                    if let _handler = storeHandler {
+                        _handler(box, container)
+                    }
+                }
+                func resetMock() {
+                    storeCallCount = 0
+                    storeCallArgs = []
+                    storeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method with a type nested in a generic parameter erases to Any")
+    func genericDependentMemberTypeErasesToAny() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func firstElement<T: Collection>(_ collection: T) -> T.Element
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func firstElement<T: Collection>(_ collection: T) -> T.Element
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var firstElementCallCount: Int = 0
+                var firstElementCallArgs: [Any] = []
+                var firstElementHandler: (@Sendable (Any) -> Any)? = nil
+                func firstElement<T: Collection>(_ collection: T) -> T.Element {
+                    firstElementCallCount += 1
+                    firstElementCallArgs.append(collection)
+                    guard let _handler = firstElementHandler else {
+                        fatalError("\\(Self.self).firstElementHandler is not set")
+                    }
+                    return _handler(collection) as! T.Element
+                }
+                func resetMock() {
+                    firstElementCallCount = 0
+                    firstElementCallArgs = []
+                    firstElementHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Generic method with dictionary value erases the value type to Any")
     func genericDictionaryValueErasesToAny() {
         assertMacroExpansionForTesting(

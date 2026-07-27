@@ -561,8 +561,8 @@ extension MockGenerator {
             return type
         }
 
-        if let identifierType = type.as(IdentifierTypeSyntax.self),
-           let erased = eraseIdentifierType(identifierType, genericParamNames: genericParamNames) {
+        if type.is(IdentifierTypeSyntax.self) || type.is(MemberTypeSyntax.self),
+           let erased = eraseNominalType(type, genericParamNames: genericParamNames) {
             return erased
         }
         if let optionalType = type.as(OptionalTypeSyntax.self),
@@ -685,28 +685,23 @@ extension MockGenerator {
         ))
     }
 
-    /// Replaces a bare generic parameter (`T`) or a generic type that mentions one
-    /// (e.g. `UserDefaultsKey<T>`) with `Any`. Returns `nil` for identifiers that
-    /// reference no generic parameter, so the caller leaves them unchanged.
-    private static func eraseIdentifierType(
-        _ identifierType: IdentifierTypeSyntax,
+    /// Replaces a nominal type that mentions a generic parameter with `Any`: a bare
+    /// parameter (`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`),
+    /// a qualified spelling of either (`MyModule.Box<T>`), or a type nested in a parameter
+    /// (`T.Element`). Returns `nil` when no generic parameter is mentioned, so the caller
+    /// leaves the type unchanged.
+    ///
+    /// Unlike the sugared collection types, a nominal type cannot be erased in place —
+    /// rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own
+    /// generic constraints may forbid — so the whole type collapses to `Any`.
+    private static func eraseNominalType(
+        _ type: TypeSyntax,
         genericParamNames: Set<String>
     ) -> TypeSyntax? {
-        if genericParamNames.contains(identifierType.name.text) {
-            return TypeSyntax(stringLiteral: "Any")
+        guard typeContainsGeneric(type, genericParamNames: genericParamNames) else {
+            return nil
         }
-        if let genericArgs = identifierType.genericArgumentClause {
-            let hasGenericParam = genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
-                if let innerIdent = typeSyntax.as(IdentifierTypeSyntax.self) {
-                    return genericParamNames.contains(innerIdent.name.text)
-                }
-                return false
-            }
-            if hasGenericParam {
-                return TypeSyntax(stringLiteral: "Any")
-            }
-        }
-        return nil
+        return TypeSyntax(stringLiteral: "Any")
     }
 
     /// Erases the wrapped type of an optional `T?`, returning a new optional only when
@@ -768,6 +763,10 @@ extension MockGenerator {
         return filteredAttributes
     }
 
+    /// Whether `type` mentions one of the enclosing declaration's generic parameters, and so
+    /// cannot be referenced from the mock's class-scope storage and handlers. This is the
+    /// single source of truth for erasure: `eraseGenericTypes` erases exactly the types this
+    /// reports, and the generated method casts its result back when the return type is one.
     static func typeContainsGeneric(_ type: TypeSyntax, genericParamNames: Set<String>) -> Bool {
         if genericParamNames.isEmpty {
             return false
@@ -777,11 +776,20 @@ extension MockGenerator {
             if genericParamNames.contains(identifierType.name.text) {
                 return true
             }
-            if let genericArgs = identifierType.genericArgumentClause {
-                return genericArgumentsContainType(genericArgs.arguments) { typeSyntax in
-                    typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
-                }
-            }
+            return genericArgumentsContainGeneric(
+                identifierType.genericArgumentClause,
+                genericParamNames: genericParamNames
+            )
+        }
+
+        // A qualified type (`MyModule.Box<T>`) or a type nested in a generic parameter
+        // (`T.Element`) mentions a generic parameter through its base or its arguments.
+        if let memberType = type.as(MemberTypeSyntax.self) {
+            return typeContainsGeneric(memberType.baseType, genericParamNames: genericParamNames)
+                || genericArgumentsContainGeneric(
+                    memberType.genericArgumentClause,
+                    genericParamNames: genericParamNames
+                )
         }
 
         if let optionalType = type.as(OptionalTypeSyntax.self) {
@@ -798,6 +806,20 @@ extension MockGenerator {
         }
 
         return false
+    }
+
+    /// Whether any argument of a generic argument clause mentions a generic parameter,
+    /// at any depth (`Box<T>`, `Box<[T]>`, `Box<Inner<T>>`).
+    private static func genericArgumentsContainGeneric(
+        _ genericArgumentClause: GenericArgumentClauseSyntax?,
+        genericParamNames: Set<String>
+    ) -> Bool {
+        guard let genericArgumentClause else {
+            return false
+        }
+        return genericArgumentsContainType(genericArgumentClause.arguments) { typeSyntax in
+            typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
+        }
     }
 
     /// Returns the statement to place inside the `else` branch of the unset-handler guard

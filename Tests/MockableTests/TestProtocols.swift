@@ -44,6 +44,17 @@ protocol GenericDictionaryService {
     func lookup<T>(_ map: [String: [T]]?) -> [String: T]?
 }
 
+struct Box<Value> {
+    let value: Value
+}
+
+@Mockable
+protocol GenericNominalService {
+    func rewrap<T>(_ box: Box<[T]>) -> Box<[T]>
+    func reverse<T>(_ values: Swift.Array<T>) -> Swift.Array<T>
+    func firstElement<T: Collection>(_ collection: T) -> T.Element
+}
+
 @Mockable
 protocol EventHandlerService {
     func subscribe(eventHandler: @escaping (String) -> Void)

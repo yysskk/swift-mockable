@@ -93,8 +93,14 @@ func transform<T>(_ map: [String: T]) -> [String: T]
 ```
 
 A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]`
-becomes `Any`), because `Any` is not `Hashable`. Any other type that mentions a generic
-parameter is erased to `Any`, including generic wrappers such as `UserDefaultsKey<T>`.
+becomes `Any`), because `Any` is not `Hashable`.
+
+Any other type that mentions a generic parameter is erased to `Any`: a bare parameter
+(`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`), a qualified
+spelling of either (`MyModule.Box<T>`, `Swift.Array<T>`), and a type nested in a parameter
+(`T.Element`). Such a type cannot be erased in place the way the sugared collections are:
+rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own
+generic constraints may forbid.
 
 ### Associated Types
 
