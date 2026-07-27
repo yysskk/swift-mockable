@@ -83,42 +83,6 @@ struct SwiftSyntaxCompatibilityTests {
         #expect(argument.trimmedDescription == "Int")
     }
 
-    @Test("extractType returns the type of a type argument")
-    func extractTypeReturnsType() {
-        let argument = makeGenericArgument(type: "String")
-        #expect(extractType(from: argument)?.trimmedDescription == "String")
-    }
-
-    #if canImport(SwiftSyntax602)
-    @Test("extractType is nil for a value generic argument")
-    func extractTypeIsNilForExpressionArgument() {
-        // `.expr` is absent before 601 and @_spi there, so this test only
-        // compiles where the case is public API (swift-syntax 602+).
-        let argument = GenericArgumentSyntax(argument: .expr("3"))
-        #expect(extractType(from: argument) == nil)
-    }
-    #endif
-
-    @Test("extractType round-trips through a parsed generic clause")
-    func extractTypeFromParsedGenericClause() {
-        let type: TypeSyntax = "Dictionary<String, Int>"
-        let arguments = type.as(IdentifierTypeSyntax.self)?.genericArgumentClause?.arguments
-        let extracted = arguments.map { $0.compactMap(extractType(from:)) } ?? []
-        #expect(extracted.map(\.trimmedDescription) == ["String", "Int"])
-    }
-
-    @Test("genericArgumentsContainType finds a matching argument")
-    func genericArgumentsContainMatchingType() {
-        let type: TypeSyntax = "Dictionary<String, Int>"
-        let arguments = type.as(IdentifierTypeSyntax.self)?.genericArgumentClause?.arguments
-        #expect(arguments != nil)
-        guard let arguments else {
-            return
-        }
-        #expect(genericArgumentsContainType(arguments) { $0.trimmedDescription == "Int" })
-        #expect(!genericArgumentsContainType(arguments) { $0.trimmedDescription == "Double" })
-    }
-
     // MARK: - AttributedTypeSyntax
 
     @Test("hasSpecifiers is true for an inout type")

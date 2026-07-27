@@ -189,6 +189,7 @@ at compile time and cannot read runtime values.
 - `@Mockable` can only be applied to protocols.
 - The only argument `@Mockable` accepts is `condition:`, and its value must be written literally as `.debug`, `.always`, or `.custom("CONDITION")` where `CONDITION` is a compilation condition expression (identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks such as `os(iOS)` or `canImport(UIKit)`). Anything else emits a compile-time diagnostic.
 - Unsupported protocol members (for example a `static subscript`) emit compile-time diagnostics.
+- A requirement whose return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`) is not supported and emits a diagnostic: Swift cannot convert between function types at runtime, so the mock cannot cast its erased handler result back.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.

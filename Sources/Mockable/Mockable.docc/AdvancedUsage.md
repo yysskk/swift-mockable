@@ -57,7 +57,9 @@ func transform<T>(_ map: [String: T]) -> [String: T]
 
 A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]` becomes `Any`), because `Any` is not `Hashable`.
 
-Any other type that mentions a generic parameter is erased to `Any`: a bare parameter (`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`), a qualified spelling of either (`MyModule.Box<T>`, `Swift.Array<T>`), and a type nested in a parameter (`T.Element`). Such a type cannot be erased in place the way the sugared collections are: rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own generic constraints may forbid.
+Any other type that mentions a generic parameter is erased to `Any`: a bare parameter (`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`), a qualified spelling of either (`MyModule.Box<T>`, `Swift.Array<T>`), a type nested in a parameter (`T.Element`), an existential (`any Sequence<T>`), and a metatype (`T.Type`). Such a type cannot be erased in place the way the sugared collections are: rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own generic constraints may forbid.
+
+A return type that mentions a generic parameter *inside a function type*, such as `func makeSetter<T>() -> (T) -> Void`, cannot be mocked and emits a diagnostic: the mock casts the erased handler result back to the declared type, and Swift cannot convert between function types at runtime. A function type reached through another type (`Box<() -> T>`) is unaffected, because that type is erased and cast back as a whole.
 
 ### Associated Types
 
@@ -230,6 +232,7 @@ Compilation errors are emitted when:
 - `@Mockable` is applied to non-protocol declarations.
 - Unsupported members are present (for example a `static subscript`).
 - A new `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work).
+- A requirement's return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`).
 - An argument other than `condition:` is passed to `@Mockable`.
 - The `condition:` value is not written literally as `.debug`, `.always`, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression.
 

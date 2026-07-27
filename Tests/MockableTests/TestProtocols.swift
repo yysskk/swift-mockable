@@ -56,6 +56,14 @@ protocol GenericNominalService {
 }
 
 @Mockable
+protocol GenericStructuralService {
+    func rewrapPair<T>(_ box: Box<(T, String)>) -> Box<(T, String)>
+    func decode<T>(_ type: T.Type) -> any Sequence<T>
+    func pair<T>(_ key: String) -> (T, String)
+    func get<T>(_ key: String) -> T!
+}
+
+@Mockable
 protocol EventHandlerService {
     func subscribe(eventHandler: @escaping (String) -> Void)
     func onEvent(callback: @escaping @Sendable (Int) -> Void)
