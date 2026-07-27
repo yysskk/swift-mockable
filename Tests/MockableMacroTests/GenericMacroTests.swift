@@ -350,6 +350,153 @@ struct GenericMacroTests {
         )
     }
 
+    @Test("Generic method with an existential or metatype erases it to Any")
+    func genericExistentialAndMetatypeEraseToAny() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func decode<T>(_ type: T.Type) -> any Sequence<T>
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func decode<T>(_ type: T.Type) -> any Sequence<T>
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var decodeCallCount: Int = 0
+                var decodeCallArgs: [Any] = []
+                var decodeHandler: (@Sendable (Any) -> Any)? = nil
+                func decode<T>(_ type: T.Type) -> any Sequence<T> {
+                    decodeCallCount += 1
+                    decodeCallArgs.append(type)
+                    guard let _handler = decodeHandler else {
+                        fatalError("\\(Self.self).decodeHandler is not set")
+                    }
+                    return _handler(type) as! any Sequence<T>
+                }
+                func resetMock() {
+                    decodeCallCount = 0
+                    decodeCallArgs = []
+                    decodeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic tuple return is erased in place and cast back")
+    func genericTupleReturnErasesInPlace() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func pair<T>(_ key: String) -> (T, String)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func pair<T>(_ key: String) -> (T, String)
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var pairCallCount: Int = 0
+                var pairCallArgs: [String] = []
+                var pairHandler: (@Sendable (String) -> (Any, String))? = nil
+                func pair<T>(_ key: String) -> (T, String) {
+                    pairCallCount += 1
+                    pairCallArgs.append(key)
+                    guard let _handler = pairHandler else {
+                        fatalError("\\(Self.self).pairHandler is not set")
+                    }
+                    return _handler(key) as! (T, String)
+                }
+                func resetMock() {
+                    pairCallCount = 0
+                    pairCallArgs = []
+                    pairHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic implicitly unwrapped optional return casts back as a regular optional")
+    func genericImplicitlyUnwrappedOptionalReturnCastsAsOptional() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func get<T>(_ key: String) -> T!
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func get<T>(_ key: String) -> T!
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var getCallCount: Int = 0
+                var getCallArgs: [String] = []
+                var getHandler: (@Sendable (String) -> Any?)? = nil
+                func get<T>(_ key: String) -> T! {
+                    getCallCount += 1
+                    getCallArgs.append(key)
+                    guard let _handler = getHandler else {
+                        return nil
+                    }
+                    return _handler(key) as! T?
+                }
+                func resetMock() {
+                    getCallCount = 0
+                    getCallArgs = []
+                    getHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method returning a closure is diagnosed as unsupported")
+    func genericClosureReturnIsDiagnosed() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func makeSetter<T>() -> (T) -> Void
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func makeSetter<T>() -> (T) -> Void
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        Cannot mock 'makeSetter': its return type '(T) -> Void' mentions a generic \
+                        parameter inside a function type. The mock erases generic parameters in its \
+                        handler and casts the result back, and Swift cannot convert between function \
+                        types at runtime
+                        """,
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Generic method with dictionary value erases the value type to Any")
     func genericDictionaryValueErasesToAny() {
         assertMacroExpansionForTesting(

@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A diagnostic for a requirement whose return type mentions a generic parameter inside a function type (`func makeSetter<T>() -> (T) -> Void`). The mock casts its erased handler result back to the declared return type, and Swift cannot convert between function types at runtime, so the requirement cannot be mocked; it now reports that instead of expanding to code that does not compile.
+
 ### Fixed
 
+- Type erasure for the remaining spellings that mention a generic parameter: a nested generic argument that is a tuple or a function type (`Box<(T, String)>`, `Callback<() -> T>`), an existential (`any Sequence<T>`), and a metatype (`T.Type`). Detection now walks the type instead of enumerating type kinds, so no spelling is missed. A generic return type spelled as a tuple (`(T, String)`) or an implicitly unwrapped optional (`T!`) is also cast back correctly; the latter previously produced `as! T!`, which Swift rejects.
 - Type erasure for generic parameters mentioned through a nested generic argument (`Box<[T]>`), a module-qualified type (`MyModule.Box<T>`, `Swift.Array<T>`), or a type nested in a generic parameter (`T.Element`). These reached the mock's stored property and handler verbatim and failed to compile with "cannot find type 'T' in scope"; they are now erased to `Any` like every other type that mentions a generic parameter. Detection and erasure now share a single implementation, so a type is erased exactly when the generated method casts the handler's result back.
 - Type erasure for generic parameters nested in a dictionary literal type. A requirement such as `func transform<T>(_ map: [String: T]) -> [String: T]` kept `[String: T]` verbatim in the mock's stored property and handler, which referenced the method-level generic parameter at class scope and failed to compile with "cannot find type 'T' in scope". The dictionary value is now erased in place (`[String: Any]`), and a dictionary whose key mentions a generic parameter is erased as a whole to `Any` because `Any` is not `Hashable`. The unsugared `Dictionary<String, T>` spelling was already handled.
 

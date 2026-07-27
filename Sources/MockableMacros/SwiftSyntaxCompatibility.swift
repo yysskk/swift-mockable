@@ -79,34 +79,6 @@ func makeGenericArgument(type: TypeSyntax) -> GenericArgumentSyntax {
     #endif
 }
 
-/// Extracts the type from a GenericArgumentSyntax, compatible across swift-syntax versions.
-func extractType(from argument: GenericArgumentSyntax) -> TypeSyntax? {
-    #if canImport(SwiftSyntax601)
-    switch argument.argument {
-    case .type(let typeSyntax):
-        return typeSyntax
-    default:
-        // `.expr` (value generics) is @_spi in 601 and public only in 602+, so it must not be named here.
-        return nil
-    }
-    #else
-    return argument.argument
-    #endif
-}
-
-/// Checks if GenericArgumentListSyntax contains any type matching the predicate.
-func genericArgumentsContainType(
-    _ arguments: GenericArgumentListSyntax,
-    where predicate: (TypeSyntax) -> Bool
-) -> Bool {
-    for arg in arguments {
-        if let typeSyntax = extractType(from: arg), predicate(typeSyntax) {
-            return true
-        }
-    }
-    return false
-}
-
 // MARK: - AttributedTypeSyntax Compatibility
 
 extension AttributedTypeSyntax {

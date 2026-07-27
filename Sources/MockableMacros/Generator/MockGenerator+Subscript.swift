@@ -307,7 +307,7 @@ extension MockGenerator {
     ) -> [CodeBlockItemSyntax] {
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
 
-        let returnTypeStr = returnType.description
+        let returnTypeStr = Self.castTargetType(for: returnType)
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
         let elseBody = Self.defaultReturnStatement(for: returnType)
             ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) is not set\")"
@@ -365,7 +365,7 @@ _storage.withLock { storage in
         statements.append(getHandlerStmt)
 
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
-        let returnTypeStr = returnType.description
+        let returnTypeStr = Self.castTargetType(for: returnType)
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
 
         let elseBody = Self.defaultReturnStatement(for: returnType)

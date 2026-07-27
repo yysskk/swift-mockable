@@ -132,6 +132,16 @@ public struct MockableMacro: PeerMacro {
                     hasError = true
                     continue
                 }
+                if diagnoseGenericFunctionReturn(
+                    returnType: functionDecl.signature.returnClause?.type,
+                    genericParamNames: MockGenerator.extractGenericParameterNames(from: functionDecl),
+                    node: Syntax(functionDecl),
+                    name: functionDecl.name.text,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
             }
 
             if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
@@ -140,6 +150,16 @@ public struct MockableMacro: PeerMacro {
                     coversThrows: false,
                     coversAsync: false,
                     inSubscript: true,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+                if diagnoseGenericFunctionReturn(
+                    returnType: subscriptDecl.returnClause.type,
+                    genericParamNames: MockGenerator.extractGenericParameterNames(from: subscriptDecl),
+                    node: Syntax(subscriptDecl),
+                    name: "subscript",
                     context: context
                 ) {
                     hasError = true
@@ -222,6 +242,40 @@ public struct MockableMacro: PeerMacro {
         }
 
         return hasError
+    }
+
+    /// Diagnoses a requirement whose return type mentions a generic parameter inside a
+    /// function type, such as `func makeSetter<T>() -> (T) -> Void`. The mock stores an
+    /// erased handler and casts its result back to the declared return type, and the Swift
+    /// runtime cannot convert between function types, so no cast can produce the closure the
+    /// requirement promises.
+    private static func diagnoseGenericFunctionReturn(
+        returnType: TypeSyntax?,
+        genericParamNames: Set<String>,
+        node: Syntax,
+        name: String,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        guard let returnType,
+              MockGenerator.typeContainsGeneric(returnType, genericParamNames: genericParamNames),
+              !MockGenerator.erasedResultCanBeCast(to: returnType, genericParamNames: genericParamNames) else {
+            return false
+        }
+
+        context.diagnose(
+            Diagnostic(
+                node: node,
+                message: MockableError.unsupportedGenericReturn(
+                    """
+                    Cannot mock '\(name)': its return type '\(returnType.trimmedDescription)' mentions a \
+                    generic parameter inside a function type. The mock erases generic parameters in its \
+                    handler and casts the result back, and Swift cannot convert between function types \
+                    at runtime
+                    """
+                )
+            )
+        )
+        return true
     }
 
     /// Diagnoses `init` requirements that appear in a context the macro cannot yet mock.

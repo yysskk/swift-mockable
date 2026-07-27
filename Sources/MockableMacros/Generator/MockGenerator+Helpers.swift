@@ -561,10 +561,6 @@ extension MockGenerator {
             return type
         }
 
-        if type.is(IdentifierTypeSyntax.self) || type.is(MemberTypeSyntax.self),
-           let erased = eraseNominalType(type, genericParamNames: genericParamNames) {
-            return erased
-        }
         if let optionalType = type.as(OptionalTypeSyntax.self),
            let erased = eraseOptionalType(optionalType, genericParamNames: genericParamNames) {
             return erased
@@ -576,6 +572,15 @@ extension MockGenerator {
         if let dictionaryType = type.as(DictionaryTypeSyntax.self),
            let erased = eraseDictionaryType(dictionaryType, genericParamNames: genericParamNames) {
             return erased
+        }
+
+        // Every other spelling that mentions a generic parameter — a bare parameter (`T`),
+        // a generic type applied to one (`Box<[T]>`), a qualified or nested spelling
+        // (`MyModule.Box<T>`, `T.Element`), an existential (`any Sequence<T>`), a metatype
+        // (`T.Type`) — has no in-place erasure: rewriting `Box<T>` to `Box<Any>` would
+        // require `Box` to accept `Any`, which its own constraints may forbid. Collapse it.
+        if typeContainsGeneric(type, genericParamNames: genericParamNames) {
+            return TypeSyntax(stringLiteral: "Any")
         }
 
         return type
@@ -685,25 +690,6 @@ extension MockGenerator {
         ))
     }
 
-    /// Replaces a nominal type that mentions a generic parameter with `Any`: a bare
-    /// parameter (`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`),
-    /// a qualified spelling of either (`MyModule.Box<T>`), or a type nested in a parameter
-    /// (`T.Element`). Returns `nil` when no generic parameter is mentioned, so the caller
-    /// leaves the type unchanged.
-    ///
-    /// Unlike the sugared collection types, a nominal type cannot be erased in place —
-    /// rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own
-    /// generic constraints may forbid — so the whole type collapses to `Any`.
-    private static func eraseNominalType(
-        _ type: TypeSyntax,
-        genericParamNames: Set<String>
-    ) -> TypeSyntax? {
-        guard typeContainsGeneric(type, genericParamNames: genericParamNames) else {
-            return nil
-        }
-        return TypeSyntax(stringLiteral: "Any")
-    }
-
     /// Erases the wrapped type of an optional `T?`, returning a new optional only when
     /// the wrapped type actually changed (otherwise `nil` to leave it unchanged).
     private static func eraseOptionalType(
@@ -771,55 +757,77 @@ extension MockGenerator {
         if genericParamNames.isEmpty {
             return false
         }
-
-        if let identifierType = type.as(IdentifierTypeSyntax.self) {
-            if genericParamNames.contains(identifierType.name.text) {
-                return true
-            }
-            return genericArgumentsContainGeneric(
-                identifierType.genericArgumentClause,
-                genericParamNames: genericParamNames
-            )
-        }
-
-        // A qualified type (`MyModule.Box<T>`) or a type nested in a generic parameter
-        // (`T.Element`) mentions a generic parameter through its base or its arguments.
-        if let memberType = type.as(MemberTypeSyntax.self) {
-            return typeContainsGeneric(memberType.baseType, genericParamNames: genericParamNames)
-                || genericArgumentsContainGeneric(
-                    memberType.genericArgumentClause,
-                    genericParamNames: genericParamNames
-                )
-        }
-
-        if let optionalType = type.as(OptionalTypeSyntax.self) {
-            return typeContainsGeneric(optionalType.wrappedType, genericParamNames: genericParamNames)
-        }
-
-        if let arrayType = type.as(ArrayTypeSyntax.self) {
-            return typeContainsGeneric(arrayType.element, genericParamNames: genericParamNames)
-        }
-
-        if let dictionaryType = type.as(DictionaryTypeSyntax.self) {
-            return typeContainsGeneric(dictionaryType.key, genericParamNames: genericParamNames)
-                || typeContainsGeneric(dictionaryType.value, genericParamNames: genericParamNames)
-        }
-
-        return false
+        return mentionsGenericParameter(Syntax(type), genericParamNames: genericParamNames)
     }
 
-    /// Whether any argument of a generic argument clause mentions a generic parameter,
-    /// at any depth (`Box<T>`, `Box<[T]>`, `Box<Inner<T>>`).
-    private static func genericArgumentsContainGeneric(
-        _ genericArgumentClause: GenericArgumentClauseSyntax?,
+    /// Searches a type for an identifier naming a generic parameter.
+    ///
+    /// Walking the syntax tree covers every spelling at any depth — `Box<[T]>`, `(T, String)`,
+    /// `() -> T`, `T.Element`, `any Sequence<T>`, `T.Type` — where enumerating type kinds
+    /// silently misses whichever one it forgets. Matching `IdentifierTypeSyntax` rather than
+    /// raw tokens keeps a name that merely spells a parameter without referring to it, such
+    /// as a tuple element label or the member name in `Container.T`, from counting.
+    private static func mentionsGenericParameter(
+        _ node: Syntax,
         genericParamNames: Set<String>
     ) -> Bool {
-        guard let genericArgumentClause else {
-            return false
+        if let identifierType = node.as(IdentifierTypeSyntax.self),
+           genericParamNames.contains(identifierType.name.text) {
+            return true
         }
-        return genericArgumentsContainType(genericArgumentClause.arguments) { typeSyntax in
-            typeContainsGeneric(typeSyntax, genericParamNames: genericParamNames)
+        return node.children(viewMode: .sourceAccurate).contains { child in
+            mentionsGenericParameter(child, genericParamNames: genericParamNames)
         }
+    }
+
+    /// The spelling used as the target of the `as!` that casts an erased handler result back
+    /// to a requirement's return type. An implicitly unwrapped optional cannot appear in a
+    /// cast — `as! T!` is rejected with "using '!' is not allowed here" — so it is written as
+    /// a regular optional, which converts back to `T!` at the return.
+    static func castTargetType(for returnType: TypeSyntax) -> String {
+        guard let implicitOptional = returnType.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) else {
+            return returnType.description
+        }
+        return OptionalTypeSyntax(wrappedType: implicitOptional.wrappedType.trimmed).description
+    }
+
+    /// Whether the mock can cast an erased handler result back to `returnType`.
+    ///
+    /// The cast rebuilds the structural types that erasure rebuilt in place — optionals,
+    /// arrays, dictionaries, tuples — but the Swift runtime cannot convert between function
+    /// types, so a closure erased to `(Any) -> Void` can never be cast back to `(T) -> Void`.
+    /// A function type reached through a nominal type (`Box<() -> T>`) is unaffected: that
+    /// type erases as a whole, so casting the whole value back is an ordinary type check.
+    static func erasedResultCanBeCast(to returnType: TypeSyntax, genericParamNames: Set<String>) -> Bool {
+        if let attributedType = returnType.as(AttributedTypeSyntax.self) {
+            return erasedResultCanBeCast(to: attributedType.baseType, genericParamNames: genericParamNames)
+        }
+        if let functionType = returnType.as(FunctionTypeSyntax.self) {
+            return !typeContainsGeneric(TypeSyntax(functionType), genericParamNames: genericParamNames)
+        }
+        if let tupleType = returnType.as(TupleTypeSyntax.self) {
+            return tupleType.elements.allSatisfy {
+                erasedResultCanBeCast(to: $0.type, genericParamNames: genericParamNames)
+            }
+        }
+        if let optionalType = returnType.as(OptionalTypeSyntax.self) {
+            return erasedResultCanBeCast(to: optionalType.wrappedType, genericParamNames: genericParamNames)
+        }
+        if let implicitOptional = returnType.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
+            return erasedResultCanBeCast(to: implicitOptional.wrappedType, genericParamNames: genericParamNames)
+        }
+        if let arrayType = returnType.as(ArrayTypeSyntax.self) {
+            return erasedResultCanBeCast(to: arrayType.element, genericParamNames: genericParamNames)
+        }
+        if let dictionaryType = returnType.as(DictionaryTypeSyntax.self) {
+            // A key mentioning a generic parameter erases the dictionary as a whole, leaving
+            // the cast nothing to rebuild.
+            if typeContainsGeneric(dictionaryType.key, genericParamNames: genericParamNames) {
+                return true
+            }
+            return erasedResultCanBeCast(to: dictionaryType.value, genericParamNames: genericParamNames)
+        }
+        return true
     }
 
     /// Returns the statement to place inside the `else` branch of the unset-handler guard

@@ -291,6 +291,67 @@ struct MockableIntegrationTests {
         #expect(mock.firstElementCallCount == 1)
     }
 
+    @Test("Generic method with a tuple inside a generic wrapper")
+    func genericMethodWithTupleInsideWrapper() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.rewrapPairHandler = { @Sendable box in
+            box
+        }
+
+        let rewrapped: Box<(Int, String)> = mock.rewrapPair(Box(value: (1, "a")))
+
+        #expect(rewrapped.value.0 == 1)
+        #expect(rewrapped.value.1 == "a")
+        #expect(mock.rewrapPairCallCount == 1)
+    }
+
+    @Test("Generic method returning an existential")
+    func genericMethodReturningExistential() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.decodeHandler = { @Sendable _ in
+            [1, 2]
+        }
+
+        let values: any Sequence<Int> = mock.decode(Int.self)
+
+        #expect(Array(values) == [1, 2])
+        #expect(mock.decodeCallCount == 1)
+        #expect(mock.decodeCallArgs.first is Int.Type)
+    }
+
+    @Test("Generic method returning a tuple")
+    func genericMethodReturningTuple() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.pairHandler = { @Sendable key in
+            (42, key)
+        }
+
+        let pair: (Int, String) = mock.pair("answer")
+
+        #expect(pair.0 == 42)
+        #expect(pair.1 == "answer")
+        #expect(mock.pairCallArgs == ["answer"])
+    }
+
+    @Test("Generic method returning an implicitly unwrapped optional")
+    func genericMethodReturningImplicitlyUnwrappedOptional() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.getHandler = { @Sendable key in
+            key == "known" ? 7 : nil
+        }
+
+        let known: Int! = mock.get("known")
+        let unknown: Int? = mock.get("unknown")
+
+        #expect(known == 7)
+        #expect(unknown == nil)
+        #expect(mock.getCallCount == 2)
+    }
+
     @Test("Mock conforms to protocol")
     func mockConformsToProtocol() {
         func useService(_ service: SimpleService) -> String {

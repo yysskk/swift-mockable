@@ -277,7 +277,7 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if hasReturnValue {
-            let returnTypeStr = returnType?.description ?? "Void"
+            let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
             let elseBody = Self.defaultReturnStatement(for: returnType)
                 ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
@@ -401,7 +401,7 @@ guard let _handler else {
         let hasReturnValue = Self.hasReturnValue(returnType)
 
         if hasReturnValue {
-            let returnTypeStr = returnType?.description ?? "Void"
+            let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
             let elseBody = Self.defaultReturnStatement(for: returnType)
                 ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
             let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
