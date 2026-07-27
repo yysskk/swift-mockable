@@ -658,12 +658,22 @@ extension MockGenerator {
     /// types are returned unchanged — erasure never produces another spelling that binds
     /// more loosely than `?`, since existentials and compositions collapse to `Any`.
     private static func parenthesized(_ type: TypeSyntax) -> TypeSyntax {
-        guard type.is(FunctionTypeSyntax.self) else {
+        guard isFunctionType(type) else {
             return type
         }
         return TypeSyntax(TupleTypeSyntax(
             elements: TupleTypeElementListSyntax([TupleTypeElementSyntax(type: type)])
         ))
+    }
+
+    /// Whether `type` is a function type, looking through attributes so a closure that keeps
+    /// one — `@Sendable () -> Any` — is recognized as needing the same parentheses as a bare
+    /// one. The attributes stay inside the parentheses, where they belong.
+    private static func isFunctionType(_ type: TypeSyntax) -> Bool {
+        if let attributedType = type.as(AttributedTypeSyntax.self) {
+            return isFunctionType(attributedType.baseType)
+        }
+        return type.is(FunctionTypeSyntax.self)
     }
 
     /// Erases a function (closure) type: recurses into every parameter and the return

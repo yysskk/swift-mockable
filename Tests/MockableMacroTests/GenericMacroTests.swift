@@ -535,6 +535,44 @@ struct GenericMacroTests {
         )
     }
 
+    @Test("Attributed closure inside an optional keeps its parentheses")
+    func attributedOptionalClosureParameterKeepsParentheses() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?)
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [(make: (@Sendable () -> Any)?, fallback: (@Sendable () -> Int)?)] = []
+                var loadHandler: (@Sendable ((@Sendable () -> Any)?, (@Sendable () -> Int)?) -> Void)? = nil
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?) {
+                    loadCallCount += 1
+                    loadCallArgs.append((make: make, fallback: fallback))
+                    if let _handler = loadHandler {
+                        _handler(make, fallback)
+                    }
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Generic method taking a closure over a generic parameter is diagnosed as unsupported")
     func genericClosureParameterIsDiagnosed() {
         assertMacroExpansionForTesting(

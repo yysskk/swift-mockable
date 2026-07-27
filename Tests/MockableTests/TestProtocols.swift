@@ -62,6 +62,7 @@ protocol GenericStructuralService {
     func pair<T>(_ key: String) -> (T, String)
     func get<T>(_ key: String) -> T!
     func load<T>(_ make: (() -> T)?) -> T?
+    func loadSendable<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?) -> T?
 }
 
 @Mockable
