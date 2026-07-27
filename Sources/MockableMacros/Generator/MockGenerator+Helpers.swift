@@ -650,7 +650,20 @@ extension MockGenerator {
         genericParamNames: Set<String>
     ) -> TypeSyntax {
         let erasedWrapped = eraseGenericTypes(in: implicitOptional.wrappedType, genericParamNames: genericParamNames)
-        return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+        return TypeSyntax(OptionalTypeSyntax(wrappedType: parenthesized(erasedWrapped)))
+    }
+
+    /// Parenthesizes a function type so it can be wrapped in an optional: `(() -> Any)?`
+    /// rather than `() -> Any?`, which parses as a function returning an optional. Other
+    /// types are returned unchanged — erasure never produces another spelling that binds
+    /// more loosely than `?`, since existentials and compositions collapse to `Any`.
+    private static func parenthesized(_ type: TypeSyntax) -> TypeSyntax {
+        guard type.is(FunctionTypeSyntax.self) else {
+            return type
+        }
+        return TypeSyntax(TupleTypeSyntax(
+            elements: TupleTypeElementListSyntax([TupleTypeElementSyntax(type: type)])
+        ))
     }
 
     /// Erases a function (closure) type: recurses into every parameter and the return
@@ -700,7 +713,7 @@ extension MockGenerator {
         guard erasedWrapped.description != optionalType.wrappedType.description else {
             return nil
         }
-        return TypeSyntax(OptionalTypeSyntax(wrappedType: erasedWrapped))
+        return TypeSyntax(OptionalTypeSyntax(wrappedType: parenthesized(erasedWrapped)))
     }
 
     /// Erases the element type of an array `[T]`, returning a new array only when the
@@ -793,39 +806,72 @@ extension MockGenerator {
 
     /// Whether the mock can cast an erased handler result back to `returnType`.
     ///
-    /// The cast rebuilds the structural types that erasure rebuilt in place — optionals,
-    /// arrays, dictionaries, tuples — but the Swift runtime cannot convert between function
-    /// types, so a closure erased to `(Any) -> Void` can never be cast back to `(T) -> Void`.
-    /// A function type reached through a nominal type (`Box<() -> T>`) is unaffected: that
-    /// type erases as a whole, so casting the whole value back is an ordinary type check.
+    /// The cast rebuilds the types that erasure rebuilt in place, but the Swift runtime
+    /// cannot convert between function types, so a closure erased to `(Any) -> Void` can
+    /// never be cast back to `(T) -> Void`.
     static func erasedResultCanBeCast(to returnType: TypeSyntax, genericParamNames: Set<String>) -> Bool {
-        if let attributedType = returnType.as(AttributedTypeSyntax.self) {
-            return erasedResultCanBeCast(to: attributedType.baseType, genericParamNames: genericParamNames)
+        functionTypesErasedInPlace(in: returnType, genericParamNames: genericParamNames) { functionType in
+            !typeContainsGeneric(TypeSyntax(functionType), genericParamNames: genericParamNames)
         }
-        if let functionType = returnType.as(FunctionTypeSyntax.self) {
-            return !typeContainsGeneric(TypeSyntax(functionType), genericParamNames: genericParamNames)
-        }
-        if let tupleType = returnType.as(TupleTypeSyntax.self) {
-            return tupleType.elements.allSatisfy {
-                erasedResultCanBeCast(to: $0.type, genericParamNames: genericParamNames)
+    }
+
+    /// Whether an argument can be forwarded to the erased handler parameter for `parameterType`.
+    ///
+    /// A closure's own parameters are contravariant, so erasing them widens the type in the
+    /// unusable direction: `(T) -> Void` cannot be passed where `(Any) -> Void` is expected.
+    /// Erasing a closure's *result* is fine, since `() -> T` can be passed as `() -> Any`.
+    static func erasedArgumentCanBeForwarded(for parameterType: TypeSyntax, genericParamNames: Set<String>) -> Bool {
+        functionTypesErasedInPlace(in: parameterType, genericParamNames: genericParamNames) { functionType in
+            !functionType.parameters.contains { parameter in
+                typeContainsGeneric(parameter.type, genericParamNames: genericParamNames)
             }
         }
-        if let optionalType = returnType.as(OptionalTypeSyntax.self) {
-            return erasedResultCanBeCast(to: optionalType.wrappedType, genericParamNames: genericParamNames)
+    }
+
+    /// Whether every function type that erasure rebuilds in place satisfies `isSupported`.
+    ///
+    /// Only the positions erasure rebuilds are visited — optionals, arrays, dictionary values,
+    /// tuples, and other function types. A function type inside a nominal type
+    /// (`Box<() -> T>`) is not reached, because that type erases to `Any` as a whole and is
+    /// forwarded and cast back as one value.
+    private static func functionTypesErasedInPlace(
+        in type: TypeSyntax,
+        genericParamNames: Set<String>,
+        allSatisfy isSupported: (FunctionTypeSyntax) -> Bool
+    ) -> Bool {
+        func recurse(into nested: TypeSyntax) -> Bool {
+            functionTypesErasedInPlace(in: nested, genericParamNames: genericParamNames, allSatisfy: isSupported)
         }
-        if let implicitOptional = returnType.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
-            return erasedResultCanBeCast(to: implicitOptional.wrappedType, genericParamNames: genericParamNames)
+
+        if let attributedType = type.as(AttributedTypeSyntax.self) {
+            return recurse(into: attributedType.baseType)
         }
-        if let arrayType = returnType.as(ArrayTypeSyntax.self) {
-            return erasedResultCanBeCast(to: arrayType.element, genericParamNames: genericParamNames)
+        if let functionType = type.as(FunctionTypeSyntax.self) {
+            guard isSupported(functionType) else {
+                return false
+            }
+            return functionType.parameters.allSatisfy { recurse(into: $0.type) }
+                && recurse(into: functionType.returnClause.type)
         }
-        if let dictionaryType = returnType.as(DictionaryTypeSyntax.self) {
-            // A key mentioning a generic parameter erases the dictionary as a whole, leaving
-            // the cast nothing to rebuild.
+        if let tupleType = type.as(TupleTypeSyntax.self) {
+            return tupleType.elements.allSatisfy { recurse(into: $0.type) }
+        }
+        if let optionalType = type.as(OptionalTypeSyntax.self) {
+            return recurse(into: optionalType.wrappedType)
+        }
+        if let implicitOptional = type.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
+            return recurse(into: implicitOptional.wrappedType)
+        }
+        if let arrayType = type.as(ArrayTypeSyntax.self) {
+            return recurse(into: arrayType.element)
+        }
+        if let dictionaryType = type.as(DictionaryTypeSyntax.self) {
+            // A key mentioning a generic parameter erases the dictionary as a whole, so
+            // nothing inside it is rebuilt in place.
             if typeContainsGeneric(dictionaryType.key, genericParamNames: genericParamNames) {
                 return true
             }
-            return erasedResultCanBeCast(to: dictionaryType.value, genericParamNames: genericParamNames)
+            return recurse(into: dictionaryType.value)
         }
         return true
     }

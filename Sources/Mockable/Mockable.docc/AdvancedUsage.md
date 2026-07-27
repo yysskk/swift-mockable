@@ -59,7 +59,9 @@ A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T:
 
 Any other type that mentions a generic parameter is erased to `Any`: a bare parameter (`T`), a generic type applied to one (`UserDefaultsKey<T>`, `Box<[T]>`), a qualified spelling of either (`MyModule.Box<T>`, `Swift.Array<T>`), a type nested in a parameter (`T.Element`), an existential (`any Sequence<T>`), and a metatype (`T.Type`). Such a type cannot be erased in place the way the sugared collections are: rewriting `Box<T>` to `Box<Any>` would require `Box` to accept `Any`, which its own generic constraints may forbid.
 
-A return type that mentions a generic parameter *inside a function type*, such as `func makeSetter<T>() -> (T) -> Void`, cannot be mocked and emits a diagnostic: the mock casts the erased handler result back to the declared type, and Swift cannot convert between function types at runtime. A function type reached through another type (`Box<() -> T>`) is unaffected, because that type is erased and cast back as a whole.
+A closure that mentions a generic parameter is erased like any other type, and keeps its parentheses when it is nested in an optional: `(() -> T)?` becomes `(() -> Any)?`.
+
+Two closure positions cannot be mocked and emit a diagnostic: a return type that mentions a generic parameter inside a function type (`func makeSetter<T>() -> (T) -> Void`), because Swift cannot convert between function types at runtime; and a closure parameter whose *own* parameters mention a generic parameter (`func observe<T>(_ handler: (T) -> Void)`), because a closure's parameters are contravariant, so `(T) -> Void` cannot be passed where `(Any) -> Void` is expected. Erasing a closure's result is fine, so `func load<T>(_ make: () -> T)` is mocked normally. A function type reached through another type (`Box<() -> T>`) is unaffected in either position, because that type is erased, forwarded, and cast back as a whole.
 
 ### Associated Types
 
@@ -233,6 +235,7 @@ Compilation errors are emitted when:
 - Unsupported members are present (for example a `static subscript`).
 - A new `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work).
 - A requirement's return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`).
+- A requirement takes a closure whose own parameters mention a generic parameter (for example `func observe<T>(_ handler: (T) -> Void)`).
 - An argument other than `condition:` is passed to `@Mockable`.
 - The `condition:` value is not written literally as `.debug`, `.always`, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression.
 

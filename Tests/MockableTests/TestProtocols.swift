@@ -61,6 +61,7 @@ protocol GenericStructuralService {
     func decode<T>(_ type: T.Type) -> any Sequence<T>
     func pair<T>(_ key: String) -> (T, String)
     func get<T>(_ key: String) -> T!
+    func load<T>(_ make: (() -> T)?) -> T?
 }
 
 @Mockable

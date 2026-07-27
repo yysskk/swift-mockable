@@ -26,6 +26,10 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// which the mock cannot rebuild from its erased handler result. The associated value is
     /// the full explanation.
     case unsupportedGenericReturn(String)
+    /// A requirement with a closure parameter whose own parameters mention a generic
+    /// parameter, which the mock cannot forward to its erased handler. The associated value
+    /// is the full explanation.
+    case unsupportedGenericParameter(String)
 
     var message: String {
         switch self {
@@ -40,6 +44,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
         case .unsupportedInitializer(let message):
             return message
         case .unsupportedGenericReturn(let message):
+            return message
+        case .unsupportedGenericParameter(let message):
             return message
         }
     }
@@ -60,6 +66,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "unsupportedInitializer")
         case .unsupportedGenericReturn:
             return MessageID(domain: "MockableMacro", id: "unsupportedGenericReturn")
+        case .unsupportedGenericParameter:
+            return MessageID(domain: "MockableMacro", id: "unsupportedGenericParameter")
         }
     }
 
