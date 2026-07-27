@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Type erasure for generic parameters nested in a dictionary literal type. A requirement such as `func transform<T>(_ map: [String: T]) -> [String: T]` kept `[String: T]` verbatim in the mock's stored property and handler, which referenced the method-level generic parameter at class scope and failed to compile with "cannot find type 'T' in scope". The dictionary value is now erased in place (`[String: Any]`), and a dictionary whose key mentions a generic parameter is erased as a whole to `Any` because `Any` is not `Hashable`. The unsugared `Dictionary<String, T>` spelling was already handled.
+
 ### Added
 
 - A `condition:` argument on `@Mockable` that controls the `#if` guard around the generated mock: `.debug` (the default, matching the previous always-`#if DEBUG` behavior), `.custom("CONDITION")` for a custom compilation condition, and `.always` for no guard. This makes mocks usable in test-support modules built in the release configuration, SwiftUI previews, and UI-test host apps. The custom condition accepts a flag (`"MOCKING"`) or a compound compilation condition expression built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks (`"DEBUG || UITESTS"`, `"os(iOS) && !RELEASE"`). Invalid arguments (non-literal values, interpolated strings, or unsupported condition constructs) emit compile-time diagnostics.

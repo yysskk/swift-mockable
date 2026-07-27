@@ -191,6 +191,63 @@ struct MockableIntegrationTests {
         #expect(mock.setCallArgs[1].value as? String == "hello")
     }
 
+    @Test("Generic method with dictionary parameter and return")
+    func genericMethodWithDictionary() {
+        let mock = GenericDictionaryServiceMock()
+
+        mock.transformHandler = { @Sendable map in
+            map.mapValues { value -> Any in
+                ((value as? Int) ?? 0) * 2
+            }
+        }
+
+        let doubled: [String: Int] = mock.transform(["a": 1, "b": 2])
+
+        #expect(doubled == ["a": 2, "b": 4])
+        #expect(mock.transformCallCount == 1)
+        #expect(mock.transformCallArgs.first?["a"] as? Int == 1)
+    }
+
+    @Test("Generic method with dictionary key")
+    func genericMethodWithDictionaryKey() {
+        let mock = GenericDictionaryServiceMock()
+
+        mock.indexHandler = { @Sendable map in
+            map
+        }
+
+        let indexed: [Int: String] = mock.index([1: "one"])
+
+        #expect(indexed == [1: "one"])
+        #expect(mock.indexCallCount == 1)
+        #expect(mock.indexCallArgs.first as? [Int: String] == [1: "one"])
+    }
+
+    @Test("Generic method with dictionary nested in an optional")
+    func genericMethodWithNestedDictionary() {
+        let mock = GenericDictionaryServiceMock()
+
+        mock.lookupHandler = { @Sendable map in
+            map?.compactMapValues { $0.first }
+        }
+
+        let first: [String: Int]? = mock.lookup(["a": [1, 2]])
+
+        #expect(first == ["a": 1])
+        #expect(mock.lookupCallCount == 1)
+        #expect(mock.lookupCallArgs.first??["a"] as? [Int] == [1, 2])
+    }
+
+    @Test("Generic method with dictionary return defaults to empty dictionary")
+    func genericDictionaryReturnDefaultsToEmptyDictionary() {
+        let mock = GenericDictionaryServiceMock()
+
+        let empty: [String: Int] = mock.transform(["a": 1])
+
+        #expect(empty.isEmpty)
+        #expect(mock.transformCallCount == 1)
+    }
+
     @Test("Mock conforms to protocol")
     func mockConformsToProtocol() {
         func useService(_ service: SimpleService) -> String {

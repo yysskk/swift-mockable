@@ -46,6 +46,17 @@ A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCall
 
 Generic type parameters are type-erased to `Any` in `CallArgs` storage and handlers. Generated method implementations cast generic returns back to the requested type.
 
+A generic parameter nested in a collection is erased in place, so the erased type keeps its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
+
+```swift
+func transform<T>(_ map: [String: T]) -> [String: T]
+// generates:
+// var transformCallArgs: [[String: Any]] = []
+// var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+```
+
+A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]` becomes `Any`), because `Any` is not `Hashable`.
+
 ### Associated Types
 
 Each associated type generates a `typealias` in the mock. If the protocol provides a default type, that type is used; otherwise `Any` is used.

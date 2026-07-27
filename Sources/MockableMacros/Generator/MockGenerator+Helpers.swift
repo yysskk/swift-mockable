@@ -573,6 +573,10 @@ extension MockGenerator {
            let erased = eraseArrayType(arrayType, genericParamNames: genericParamNames) {
             return erased
         }
+        if let dictionaryType = type.as(DictionaryTypeSyntax.self),
+           let erased = eraseDictionaryType(dictionaryType, genericParamNames: genericParamNames) {
+            return erased
+        }
 
         return type
     }
@@ -731,6 +735,25 @@ extension MockGenerator {
         return TypeSyntax(ArrayTypeSyntax(element: erasedElement))
     }
 
+    /// Erases the value type of a dictionary `[String: T]`, returning a new dictionary only
+    /// when the value type actually changed (otherwise `nil` to leave it unchanged).
+    /// A key that mentions a generic parameter cannot be erased in place — `Any` is not
+    /// `Hashable`, so `[Any: String]` would not compile — so the whole dictionary collapses
+    /// to `Any`, matching how the unsugared `Dictionary<T, String>` spelling is erased.
+    private static func eraseDictionaryType(
+        _ dictionaryType: DictionaryTypeSyntax,
+        genericParamNames: Set<String>
+    ) -> TypeSyntax? {
+        if typeContainsGeneric(dictionaryType.key, genericParamNames: genericParamNames) {
+            return TypeSyntax(stringLiteral: "Any")
+        }
+        let erasedValue = eraseGenericTypes(in: dictionaryType.value, genericParamNames: genericParamNames)
+        guard erasedValue.description != dictionaryType.value.description else {
+            return nil
+        }
+        return TypeSyntax(DictionaryTypeSyntax(key: dictionaryType.key, value: erasedValue))
+    }
+
     /// Strips the @escaping attribute from an AttributeListSyntax.
     /// @escaping is only valid in function parameter position, not in property types.
     private static func stripEscapingAttribute(from attributes: AttributeListSyntax) -> AttributeListSyntax {
@@ -767,6 +790,11 @@ extension MockGenerator {
 
         if let arrayType = type.as(ArrayTypeSyntax.self) {
             return typeContainsGeneric(arrayType.element, genericParamNames: genericParamNames)
+        }
+
+        if let dictionaryType = type.as(DictionaryTypeSyntax.self) {
+            return typeContainsGeneric(dictionaryType.key, genericParamNames: genericParamNames)
+                || typeContainsGeneric(dictionaryType.value, genericParamNames: genericParamNames)
         }
 
         return false
