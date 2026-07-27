@@ -132,10 +132,20 @@ public struct MockableMacro: PeerMacro {
                     hasError = true
                     continue
                 }
+                let genericParamNames = MockGenerator.extractGenericParameterNames(from: functionDecl)
                 if diagnoseGenericFunctionReturn(
                     returnType: functionDecl.signature.returnClause?.type,
-                    genericParamNames: MockGenerator.extractGenericParameterNames(from: functionDecl),
+                    genericParamNames: genericParamNames,
                     node: Syntax(functionDecl),
+                    name: functionDecl.name.text,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+                if diagnoseGenericClosureParameters(
+                    functionDecl.signature.parameterClause.parameters,
+                    genericParamNames: genericParamNames,
                     name: functionDecl.name.text,
                     context: context
                 ) {
@@ -155,10 +165,20 @@ public struct MockableMacro: PeerMacro {
                     hasError = true
                     continue
                 }
+                let genericParamNames = MockGenerator.extractGenericParameterNames(from: subscriptDecl)
                 if diagnoseGenericFunctionReturn(
                     returnType: subscriptDecl.returnClause.type,
-                    genericParamNames: MockGenerator.extractGenericParameterNames(from: subscriptDecl),
+                    genericParamNames: genericParamNames,
                     node: Syntax(subscriptDecl),
+                    name: "subscript",
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+                if diagnoseGenericClosureParameters(
+                    subscriptDecl.parameterClause.parameters,
+                    genericParamNames: genericParamNames,
                     name: "subscript",
                     context: context
                 ) {
@@ -176,6 +196,15 @@ public struct MockableMacro: PeerMacro {
                     coversThrows: effects?.hasThrowsEffect ?? false,
                     coversAsync: effects?.asyncSpecifier != nil,
                     inSubscript: false,
+                    context: context
+                ) {
+                    hasError = true
+                    continue
+                }
+                if diagnoseGenericClosureParameters(
+                    initDecl.signature.parameterClause.parameters,
+                    genericParamNames: MockGenerator.extractGenericParameterNames(from: initDecl),
+                    name: "init",
                     context: context
                 ) {
                     hasError = true
@@ -237,6 +266,43 @@ public struct MockableMacro: PeerMacro {
             }
             context.diagnose(
                 Diagnostic(node: Syntax(param), message: MockableError.unsupportedAutoclosureEffect(message))
+            )
+            hasError = true
+        }
+
+        return hasError
+    }
+
+    /// Diagnoses a closure parameter whose own parameters mention a generic parameter, such
+    /// as `func observe<T>(_ handler: (T) -> Void)`. The mock forwards the argument to a
+    /// handler that erases generic parameters, and a closure's parameters are contravariant,
+    /// so `(T) -> Void` cannot be passed where `(Any) -> Void` is expected.
+    private static func diagnoseGenericClosureParameters(
+        _ parameters: FunctionParameterListSyntax,
+        genericParamNames: Set<String>,
+        name: String,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        var hasError = false
+
+        for parameter in parameters
+        where !MockGenerator.erasedArgumentCanBeForwarded(
+            for: parameter.type,
+            genericParamNames: genericParamNames
+        ) {
+            let parameterName = (parameter.secondName ?? parameter.firstName).text
+            context.diagnose(
+                Diagnostic(
+                    node: Syntax(parameter),
+                    message: MockableError.unsupportedGenericParameter(
+                        """
+                        Cannot mock '\(name)': the parameter '\(parameterName)' is a closure whose own \
+                        parameters mention a generic parameter. The mock forwards it to a handler that \
+                        erases generic parameters, and a closure taking '\(parameter.type.trimmedDescription)' \
+                        cannot be passed where one taking erased parameters is expected
+                        """
+                    )
+                )
             )
             hasError = true
         }

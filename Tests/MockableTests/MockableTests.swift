@@ -352,6 +352,40 @@ struct MockableIntegrationTests {
         #expect(mock.getCallCount == 2)
     }
 
+    @Test("Generic method taking an optional closure over a generic parameter")
+    func genericMethodWithOptionalClosureParameter() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.loadHandler = { @Sendable make in
+            make?()
+        }
+
+        let loaded: Int? = mock.load({ 3 })
+        let missing: Int? = mock.load(nil)
+
+        #expect(loaded == 3)
+        #expect(missing == nil)
+        #expect(mock.loadCallCount == 2)
+        #expect(mock.loadCallArgs.first??() as? Int == 3)
+    }
+
+    @Test("Generic method taking an optional Sendable closure over a generic parameter")
+    func genericMethodWithOptionalSendableClosureParameter() {
+        let mock = GenericStructuralServiceMock()
+
+        mock.loadSendableHandler = { @Sendable make, fallback in
+            make?() ?? fallback?()
+        }
+
+        let made: Int? = mock.loadSendable({ 3 }, fallback: { 5 })
+        let fellBack: Int? = mock.loadSendable(nil, fallback: { 5 })
+
+        #expect(made == 3)
+        #expect(fellBack == 5)
+        #expect(mock.loadSendableCallCount == 2)
+        #expect(mock.loadSendableCallArgs.first?.fallback?() == 5)
+    }
+
     @Test("Mock conforms to protocol")
     func mockConformsToProtocol() {
         func useService(_ service: SimpleService) -> String {

@@ -497,6 +497,112 @@ struct GenericMacroTests {
         )
     }
 
+    @Test("Erased closure inside an optional keeps its parentheses")
+    func genericOptionalClosureParameterKeepsParentheses() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func load<T>(_ make: (() -> T)?)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func load<T>(_ make: (() -> T)?)
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [(() -> Any)?] = []
+                var loadHandler: (@Sendable ((() -> Any)?) -> Void)? = nil
+                func load<T>(_ make: (() -> T)?) {
+                    loadCallCount += 1
+                    loadCallArgs.append(make)
+                    if let _handler = loadHandler {
+                        _handler(make)
+                    }
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Attributed closure inside an optional keeps its parentheses")
+    func attributedOptionalClosureParameterKeepsParentheses() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?)
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [(make: (@Sendable () -> Any)?, fallback: (@Sendable () -> Int)?)] = []
+                var loadHandler: (@Sendable ((@Sendable () -> Any)?, (@Sendable () -> Int)?) -> Void)? = nil
+                func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?) {
+                    loadCallCount += 1
+                    loadCallArgs.append((make: make, fallback: fallback))
+                    if let _handler = loadHandler {
+                        _handler(make, fallback)
+                    }
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method taking a closure over a generic parameter is diagnosed as unsupported")
+    func genericClosureParameterIsDiagnosed() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func observe<T>(_ handler: (T) -> Void)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func observe<T>(_ handler: (T) -> Void)
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        Cannot mock 'observe': the parameter 'handler' is a closure whose own parameters \
+                        mention a generic parameter. The mock forwards it to a handler that erases generic \
+                        parameters, and a closure taking '(T) -> Void' cannot be passed where one taking \
+                        erased parameters is expected
+                        """,
+                    line: 3,
+                    column: 21
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Generic method with dictionary value erases the value type to Any")
     func genericDictionaryValueErasesToAny() {
         assertMacroExpansionForTesting(
