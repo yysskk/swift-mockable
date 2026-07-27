@@ -38,6 +38,13 @@ protocol GenericService {
 }
 
 @Mockable
+protocol GenericDictionaryService {
+    func transform<T>(_ map: [String: T]) -> [String: T]
+    func index<T: Hashable>(_ map: [T: String]) -> [T: String]
+    func lookup<T>(_ map: [String: [T]]?) -> [String: T]?
+}
+
+@Mockable
 protocol EventHandlerService {
     func subscribe(eventHandler: @escaping (String) -> Void)
     func onEvent(callback: @escaping @Sendable (Int) -> Void)

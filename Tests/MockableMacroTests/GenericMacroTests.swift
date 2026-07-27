@@ -234,6 +234,161 @@ struct GenericMacroTests {
         )
     }
 
+    @Test("Generic method with dictionary value erases the value type to Any")
+    func genericDictionaryValueErasesToAny() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func transform<T>(_ map: [String: T]) -> [String: T]
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func transform<T>(_ map: [String: T]) -> [String: T]
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var transformCallCount: Int = 0
+                var transformCallArgs: [[String: Any]] = []
+                var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+                func transform<T>(_ map: [String: T]) -> [String: T] {
+                    transformCallCount += 1
+                    transformCallArgs.append(map)
+                    guard let _handler = transformHandler else {
+                        return [:]
+                    }
+                    return _handler(map) as! [String: T]
+                }
+                func resetMock() {
+                    transformCallCount = 0
+                    transformCallArgs = []
+                    transformHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method with dictionary key erases the whole dictionary to Any")
+    func genericDictionaryKeyErasesWholeDictionary() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func index<T: Hashable>(_ map: [T: String]) -> [T: String]
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func index<T: Hashable>(_ map: [T: String]) -> [T: String]
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var indexCallCount: Int = 0
+                var indexCallArgs: [Any] = []
+                var indexHandler: (@Sendable (Any) -> Any)? = nil
+                func index<T: Hashable>(_ map: [T: String]) -> [T: String] {
+                    indexCallCount += 1
+                    indexCallArgs.append(map)
+                    guard let _handler = indexHandler else {
+                        return [:]
+                    }
+                    return _handler(map) as! [T: String]
+                }
+                func resetMock() {
+                    indexCallCount = 0
+                    indexCallArgs = []
+                    indexHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic method with dictionary nested in optionals and arrays erases the generic type")
+    func genericDictionaryNestedInOptionalAndArray() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func lookup<T>(_ map: [String: [T]]?) -> [String: T]?
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func lookup<T>(_ map: [String: [T]]?) -> [String: T]?
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var lookupCallCount: Int = 0
+                var lookupCallArgs: [[String: [Any]]?] = []
+                var lookupHandler: (@Sendable ([String: [Any]]?) -> [String: Any]?)? = nil
+                func lookup<T>(_ map: [String: [T]]?) -> [String: T]? {
+                    lookupCallCount += 1
+                    lookupCallArgs.append(map)
+                    guard let _handler = lookupHandler else {
+                        return nil
+                    }
+                    return _handler(map) as! [String: T]?
+                }
+                func resetMock() {
+                    lookupCallCount = 0
+                    lookupCallArgs = []
+                    lookupHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Dictionary without generic parameters is kept verbatim in a generic method")
+    func nonGenericDictionaryIsKeptVerbatim() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func store<T>(_ value: T, metadata: [String: Int])
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func store<T>(_ value: T, metadata: [String: Int])
+            }
+
+            #if DEBUG
+            class CacheMock: Cache {
+                var storeCallCount: Int = 0
+                var storeCallArgs: [(value: Any, metadata: [String: Int])] = []
+                var storeHandler: (@Sendable (Any, [String: Int]) -> Void)? = nil
+                func store<T>(_ value: T, metadata: [String: Int]) {
+                    storeCallCount += 1
+                    storeCallArgs.append((value: value, metadata: metadata))
+                    if let _handler = storeHandler {
+                        _handler(value, metadata)
+                    }
+                }
+                func resetMock() {
+                    storeCallCount = 0
+                    storeCallArgs = []
+                    storeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("Generic method with array return returns empty array when handler is unset")
     func genericArrayReturnDefaultsToEmptyArray() {
         assertMacroExpansionForTesting(

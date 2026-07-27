@@ -82,6 +82,20 @@ When method signatures contain generic type parameters:
 
 This keeps generated mocks concrete while preserving call tracking.
 
+A generic parameter nested in a collection is erased in place, so the erased type keeps
+its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
+
+```swift
+func transform<T>(_ map: [String: T]) -> [String: T]
+// generates:
+// var transformCallArgs: [[String: Any]] = []
+// var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+```
+
+A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]`
+becomes `Any`), because `Any` is not `Hashable`. Any other type that mentions a generic
+parameter is erased to `Any`, including generic wrappers such as `UserDefaultsKey<T>`.
+
 ### Associated Types
 
 Each associated type generates a `typealias` in the mock:
