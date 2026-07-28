@@ -517,6 +517,35 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Operator requirements inside a conditional compilation block should produce diagnostics")
+    func conditionalOperatorRequirementProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Comparablish {
+                #if DEBUG
+                static func == (lhs: Self, rhs: Self) -> Bool
+                #endif
+            }
+            """,
+            expandedSource: """
+            protocol Comparablish {
+                #if DEBUG
+                static func == (lhs: Self, rhs: Self) -> Bool
+                #endif
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '==': operator requirements are not supported",
+                    line: 4,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Backtick-escaped method names should produce diagnostics")
     func backtickEscapedMethodNameProducesDiagnostic() {
         assertMacroExpansionForTesting(
