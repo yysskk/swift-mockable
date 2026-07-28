@@ -192,6 +192,7 @@ at compile time and cannot read runtime values.
 - A requirement whose return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`), or that takes a closure whose own parameters mention one (for example `func observe<T>(_ handler: (T) -> Void)`), is not supported and emits a diagnostic: Swift cannot convert between function types at runtime, and a closure's parameters are contravariant. Erasing a closure's result is fine, so `func load<T>(_ make: () -> T)` is mocked normally.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
+- Operator requirements (for example `static func == (lhs: Self, rhs: Self) -> Bool`) and method names that need backtick escaping (`` func `repeat`() ``) are not supported and emit a diagnostic. The generated members are named after the requirement (`fetch` becomes `fetchCallCount`), so such names cannot produce legal identifiers.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
 ## Troubleshooting

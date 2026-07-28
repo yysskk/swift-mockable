@@ -465,6 +465,83 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Operator requirements should produce diagnostics")
+    func operatorRequirementProducesDiagnostic() {
+        // Tracking identifiers are built by appending to the requirement's name, so an
+        // operator would generate `==CallCount` and friends instead of legal identifiers.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Comparablish {
+                static func == (lhs: Self, rhs: Self) -> Bool
+            }
+            """,
+            expandedSource: """
+            protocol Comparablish {
+                static func == (lhs: Self, rhs: Self) -> Bool
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '==': operator requirements are not supported",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Prefix operator requirements should produce diagnostics")
+    func prefixOperatorRequirementProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Negatable {
+                static prefix func - (value: Self) -> Self
+            }
+            """,
+            expandedSource: """
+            protocol Negatable {
+                static prefix func - (value: Self) -> Self
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '-': operator requirements are not supported",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Backtick-escaped method names should produce diagnostics")
+    func backtickEscapedMethodNameProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repeater {
+                func `repeat`() -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Repeater {
+                func `repeat`() -> Int
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`repeat`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Invalid macro arguments should produce diagnostics")
     func invalidMacroArgumentsProduceDiagnostics() {
         assertMacroExpansionForTesting(

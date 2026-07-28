@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A diagnostic for a requirement whose return type mentions a generic parameter inside a function type (`func makeSetter<T>() -> (T) -> Void`). The mock casts its erased handler result back to the declared return type, and Swift cannot convert between function types at runtime, so the requirement cannot be mocked; it now reports that instead of expanding to code that does not compile.
 - A diagnostic for a requirement that takes a closure whose own parameters mention a generic parameter (`func observe<T>(_ handler: (T) -> Void)`). A closure's parameters are contravariant, so the argument cannot be forwarded to the erased handler. Erasing a closure's result is unaffected, so `func load<T>(_ make: () -> T)` is mocked normally.
+- A diagnostic for a method requirement whose name is not a plain identifier: an operator (`static func == (lhs: Self, rhs: Self) -> Bool`) or a name that needs backtick escaping (`` func `repeat`() ``). Generated members are named after the requirement, so these expanded to `==CallCount` and `` `repeat`CallCount `` and the build failed with parse errors inside the expansion; the unsupported name is now reported at the declaration instead.
 
 ### Fixed
 

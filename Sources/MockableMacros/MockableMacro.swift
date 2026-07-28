@@ -118,9 +118,14 @@ public struct MockableMacro: PeerMacro {
                 continue
             }
 
-            // Generated mock members evaluate @autoclosure arguments to record them,
-            // so an autoclosure's own effects must be covered by the requirement.
             if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
+                if diagnoseFunctionName(functionDecl, context: context) {
+                    hasError = true
+                    continue
+                }
+
+                // Generated mock members evaluate @autoclosure arguments to record them,
+                // so an autoclosure's own effects must be covered by the requirement.
                 let effects = functionDecl.signature.effectSpecifiers
                 if diagnoseAutoclosureParameters(
                     functionDecl.signature.parameterClause.parameters,
@@ -223,6 +228,34 @@ public struct MockableMacro: PeerMacro {
         }
 
         return hasError
+    }
+
+    /// Diagnoses a function requirement whose name cannot be mocked. Every generated
+    /// member is named by appending a suffix to the requirement's name (`fetch` becomes
+    /// `fetchCallCount`), so a name that is not a plain identifier — an operator such as
+    /// `==`, or a name written with backticks — would only produce illegal identifiers.
+    private static func diagnoseFunctionName(
+        _ functionDecl: FunctionDeclSyntax,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        let name = functionDecl.name
+        let reason: String
+        switch name.tokenKind {
+        case .identifier(let text) where !text.contains("`"):
+            return false
+        case .binaryOperator, .prefixOperator, .postfixOperator:
+            reason = "operator requirements are not supported"
+        default:
+            reason = "only requirements whose name is a plain identifier can be mocked"
+        }
+
+        context.diagnose(
+            Diagnostic(
+                node: Syntax(functionDecl),
+                message: MockableError.unsupportedMemberName("Cannot mock '\(name.text)': \(reason)")
+            )
+        )
+        return true
     }
 
     /// Diagnoses `@autoclosure` parameters whose own effects (`throws`/`async`)
