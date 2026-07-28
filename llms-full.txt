@@ -585,6 +585,7 @@ Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
 - Unsupported protocol members (e.g. a `static subscript`) emit compile-time diagnostics.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol emits a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
+- Operator requirements (e.g. `static func == (lhs: Self, rhs: Self) -> Bool`) and method or property names that need backtick escaping (e.g. a member named `repeat`) emit a diagnostic: generated members are named after the requirement (`fetch` -> `fetchCallCount`, `name` -> `_name`), so such names cannot produce legal identifiers.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
 ## Requirements

@@ -465,6 +465,166 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Operator requirements should produce diagnostics")
+    func operatorRequirementProducesDiagnostic() {
+        // Tracking identifiers are built by appending to the requirement's name, so an
+        // operator would generate `==CallCount` and friends instead of legal identifiers.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Comparablish {
+                static func == (lhs: Self, rhs: Self) -> Bool
+            }
+            """,
+            expandedSource: """
+            protocol Comparablish {
+                static func == (lhs: Self, rhs: Self) -> Bool
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '==': operator requirements are not supported",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Prefix operator requirements should produce diagnostics")
+    func prefixOperatorRequirementProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Negatable {
+                static prefix func - (value: Self) -> Self
+            }
+            """,
+            expandedSource: """
+            protocol Negatable {
+                static prefix func - (value: Self) -> Self
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '-': operator requirements are not supported",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Operator requirements inside a conditional compilation block should produce diagnostics")
+    func conditionalOperatorRequirementProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Comparablish {
+                #if DEBUG
+                static func == (lhs: Self, rhs: Self) -> Bool
+                #endif
+            }
+            """,
+            expandedSource: """
+            protocol Comparablish {
+                #if DEBUG
+                static func == (lhs: Self, rhs: Self) -> Bool
+                #endif
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '==': operator requirements are not supported",
+                    line: 4,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Backtick-escaped method names should produce diagnostics")
+    func backtickEscapedMethodNameProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repeater {
+                func `repeat`() -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Repeater {
+                func `repeat`() -> Int
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`repeat`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Backtick-escaped property names should produce diagnostics")
+    func backtickEscapedPropertyNameProducesDiagnostic() {
+        // A property's backing storage takes the property's name (`name` becomes `_name`),
+        // so a backtick-escaped name is as unusable there as it is for a method.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Defaults {
+                var `default`: Int { get set }
+            }
+            """,
+            expandedSource: """
+            protocol Defaults {
+                var `default`: Int { get set }
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`default`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Backtick-escaped effectful property names should produce diagnostics")
+    func backtickEscapedEffectfulPropertyNameProducesDiagnostic() {
+        // Effectful read-only properties are handler-based, so they hit the same naming
+        // scheme methods do (`token` becomes `tokenHandler`).
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol TokenProvider {
+                var `class`: String { get async throws }
+            }
+            """,
+            expandedSource: """
+            protocol TokenProvider {
+                var `class`: String { get async throws }
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`class`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Invalid macro arguments should produce diagnostics")
     func invalidMacroArgumentsProduceDiagnostics() {
         assertMacroExpansionForTesting(
