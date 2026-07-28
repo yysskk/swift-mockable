@@ -571,6 +571,60 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Backtick-escaped property names should produce diagnostics")
+    func backtickEscapedPropertyNameProducesDiagnostic() {
+        // A property's backing storage takes the property's name (`name` becomes `_name`),
+        // so a backtick-escaped name is as unusable there as it is for a method.
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Defaults {
+                var `default`: Int { get set }
+            }
+            """,
+            expandedSource: """
+            protocol Defaults {
+                var `default`: Int { get set }
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`default`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Backtick-escaped effectful property names should produce diagnostics")
+    func backtickEscapedEffectfulPropertyNameProducesDiagnostic() {
+        // Effectful read-only properties are handler-based, so they hit the same naming
+        // scheme methods do (`token` becomes `tokenHandler`).
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol TokenProvider {
+                var `class`: String { get async throws }
+            }
+            """,
+            expandedSource: """
+            protocol TokenProvider {
+                var `class`: String { get async throws }
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock '`class`': only requirements whose name is a plain identifier can be mocked",
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Invalid macro arguments should produce diagnostics")
     func invalidMacroArgumentsProduceDiagnostics() {
         assertMacroExpansionForTesting(

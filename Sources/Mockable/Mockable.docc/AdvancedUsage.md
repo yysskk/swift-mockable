@@ -233,7 +233,7 @@ Compilation errors are emitted when:
 
 - `@Mockable` is applied to non-protocol declarations.
 - Unsupported members are present (for example a `static subscript`).
-- A requirement is named with an operator (`static func == (lhs: Self, rhs: Self) -> Bool`) or with a backtick-escaped identifier (a method named `repeat`, for example).
+- A method or property requirement is named with an operator (`static func == (lhs: Self, rhs: Self) -> Bool`) or with a backtick-escaped identifier (a member named `repeat` or `default`, for example).
 - A new `init` requirement is declared directly on an inheriting protocol (not yet supported; inherited initializers still work).
 - A requirement's return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`).
 - A requirement takes a closure whose own parameters mention a generic parameter (for example `func observe<T>(_ handler: (T) -> Void)`).
@@ -243,6 +243,6 @@ Compilation errors are emitted when:
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- Operator requirements and method names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`), so a name that is not a plain identifier cannot produce legal identifiers.
+- Operator requirements and method or property names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`, `name` becomes `_name`), so a name that is not a plain identifier cannot produce legal identifiers.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

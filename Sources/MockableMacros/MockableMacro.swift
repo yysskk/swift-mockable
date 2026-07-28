@@ -119,7 +119,7 @@ public struct MockableMacro: PeerMacro {
             }
 
             if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
-                if diagnoseFunctionName(functionDecl, context: context) {
+                if diagnoseUnsupportedName(functionDecl.name, of: Syntax(functionDecl), context: context) {
                     hasError = true
                     continue
                 }
@@ -217,6 +217,13 @@ public struct MockableMacro: PeerMacro {
                 }
             }
 
+            if let variableDecl = member.decl.as(VariableDeclSyntax.self) {
+                if diagnoseVariableNames(variableDecl, context: context) {
+                    hasError = true
+                    continue
+                }
+            }
+
             if memberIsSupported(member.decl) {
                 continue
             }
@@ -230,15 +237,16 @@ public struct MockableMacro: PeerMacro {
         return hasError
     }
 
-    /// Diagnoses a function requirement whose name cannot be mocked. Every generated
-    /// member is named by appending a suffix to the requirement's name (`fetch` becomes
-    /// `fetchCallCount`), so a name that is not a plain identifier — an operator such as
-    /// `==`, or a name written with backticks — would only produce illegal identifiers.
-    private static func diagnoseFunctionName(
-        _ functionDecl: FunctionDeclSyntax,
+    /// Diagnoses a requirement whose name cannot be mocked. Generated members are named
+    /// after the requirement — a method's tracking members append a suffix (`fetch` becomes
+    /// `fetchCallCount`) and a property's backing storage takes a prefix (`name` becomes
+    /// `_name`) — so a name that is not a plain identifier, such as an operator or a name
+    /// written with backticks, would only produce illegal identifiers.
+    private static func diagnoseUnsupportedName(
+        _ name: TokenSyntax,
+        of node: Syntax,
         context: some MacroExpansionContext
     ) -> Bool {
-        let name = functionDecl.name
         let reason: String
         switch name.tokenKind {
         case .identifier(let text) where !text.contains("`"):
@@ -251,11 +259,32 @@ public struct MockableMacro: PeerMacro {
 
         context.diagnose(
             Diagnostic(
-                node: Syntax(functionDecl),
+                node: node,
                 message: MockableError.unsupportedMemberName("Cannot mock '\(name.text)': \(reason)")
             )
         )
         return true
+    }
+
+    /// Diagnoses the property requirements declared by one `var`, which may bind several
+    /// names. Bindings the generator skips (those without a plain identifier pattern) are
+    /// skipped here too, so the check covers exactly the names it would generate from.
+    private static func diagnoseVariableNames(
+        _ variableDecl: VariableDeclSyntax,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        var hasError = false
+
+        for binding in variableDecl.bindings {
+            guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
+                continue
+            }
+            if diagnoseUnsupportedName(identifier, of: Syntax(variableDecl), context: context) {
+                hasError = true
+            }
+        }
+
+        return hasError
     }
 
     /// Diagnoses `@autoclosure` parameters whose own effects (`throws`/`async`)
