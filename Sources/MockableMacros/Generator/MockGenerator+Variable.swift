@@ -17,68 +17,64 @@ extension MockGenerator {
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
-            guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
-                  let typeAnnotation = binding.typeAnnotation
-            else {
+            guard let requirement = variableTrackingRequirement(for: binding, isTypeMember: isTypeMember) else {
                 continue
             }
 
-            let varName = identifier.identifier.text
-            let varType = typeAnnotation.type
-            let isGetOnly = Self.isGetOnlyProperty(binding: binding)
-
+            switch requirement.kind {
             // Effectful read-only properties (`get async`/`get throws`) are mocked with
             // a handler and a call counter instead of backing storage: a stored value
             // cannot model a thrown error, and the handler mirrors the function model.
-            if let effectfulGetter = Self.effectfulGetter(of: binding) {
-                members.append(contentsOf: generateEffectfulGetterMock(
-                    varName: varName,
-                    varType: varType,
-                    getter: effectfulGetter,
-                    isTypeMember: isTypeMember
-                ))
+            case .effectfulVariable:
+                if let effectfulGetter = Self.effectfulGetter(of: binding) {
+                    members.append(contentsOf: generateEffectfulGetterMock(
+                        requirement: requirement,
+                        getter: effectfulGetter
+                    ))
+                }
+
+            case .storedVariable(let varType, let isOptional, let isGetOnly):
+                if shouldUseLockBasedStorage {
+                    let field = requirement.trackingFields(model: .lockBacked)[0]
+                    members.append(MemberBlockItemSyntax(decl: generateLockBackedBackingProperty(
+                        field: field,
+                        isTypeMember: isTypeMember
+                    )))
+                    members.append(MemberBlockItemSyntax(decl: generateLockBasedVariableProperty(
+                        varName: requirement.identifier,
+                        varType: varType,
+                        isGetOnly: isGetOnly,
+                        isTypeMember: isTypeMember
+                    )))
+                    continue
+                }
+
+                let field = requirement.trackingFields(model: .direct)[0]
+                members.append(MemberBlockItemSyntax(decl: Self.makeStoredProperty(
+                    modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
+                    name: field.name,
+                    type: field.type,
+                    initializer: field.initialValue
+                )))
+
+                if isGetOnly {
+                    members.append(MemberBlockItemSyntax(decl: generateComputedGetProperty(
+                        varName: requirement.identifier,
+                        varType: varType,
+                        isTypeMember: isTypeMember
+                    )))
+                } else if !isOptional {
+                    members.append(MemberBlockItemSyntax(decl: generateComputedGetSetProperty(
+                        varName: requirement.identifier,
+                        varType: varType,
+                        isTypeMember: isTypeMember
+                    )))
+                }
+                // An optional get-set property is its own storage: the stored
+                // property above already satisfies the requirement.
+
+            default:
                 continue
-            }
-
-            if shouldUseLockBasedStorage {
-                let backingProperty = generateLockBasedBackingSetterProperty(
-                    varName: varName,
-                    varType: varType,
-                    isTypeMember: isTypeMember
-                )
-                members.append(MemberBlockItemSyntax(decl: backingProperty))
-
-                let computedProperty = generateLockBasedVariableProperty(
-                    varName: varName,
-                    varType: varType,
-                    isGetOnly: isGetOnly,
-                    isTypeMember: isTypeMember
-                )
-                members.append(MemberBlockItemSyntax(decl: computedProperty))
-                continue
-            }
-
-            if isGetOnly {
-                let storageProperty = generateGetOnlyStorageProperty(
-                    varName: varName,
-                    varType: varType,
-                    isTypeMember: isTypeMember
-                )
-                members.append(MemberBlockItemSyntax(decl: storageProperty))
-
-                let computedProperty = generateComputedGetProperty(
-                    varName: varName,
-                    varType: varType,
-                    isTypeMember: isTypeMember
-                )
-                members.append(MemberBlockItemSyntax(decl: computedProperty))
-            } else {
-                let storedPropertyMembers = generateStoredProperty(
-                    varName: varName,
-                    varType: varType,
-                    isTypeMember: isTypeMember
-                )
-                members.append(contentsOf: storedPropertyMembers)
             }
         }
 
@@ -107,34 +103,22 @@ extension MockGenerator {
     }
 
     private func generateEffectfulGetterMock(
-        varName: String,
-        varType: TypeSyntax,
-        getter: AccessorDeclSyntax,
-        isTypeMember: Bool
+        requirement: TrackingRequirement,
+        getter: AccessorDeclSyntax
     ) -> [MemberBlockItemSyntax] {
+        guard case .effectfulVariable(let varType) = requirement.kind else {
+            return []
+        }
+
+        let varName = requirement.identifier
+        let isTypeMember = requirement.isTypeMember
         let effects = getter.effectSpecifiers
         let isAsync = effects?.asyncSpecifier != nil
         let isThrows = effects?.hasThrowsEffect ?? false
-        let closureType = Self.effectfulGetterClosureType(varType: varType, effects: effects)
+        let closureType = requirement.handlerClosureType ?? "() -> Void"
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
-        var members: [MemberBlockItemSyntax] = []
-
-        let callCountProperty = generateTrackingStorageProperty(
-            name: MockNaming.callCount(varName),
-            type: TypeSyntax(stringLiteral: "Int"),
-            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            isTypeMember: isTypeMember
-        )
-        members.append(MemberBlockItemSyntax(decl: callCountProperty))
-
-        let handlerProperty = generateTrackingStorageProperty(
-            name: MockNaming.handler(varName),
-            type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
-            initializer: ExprSyntax(NilLiteralExprSyntax()),
-            isTypeMember: isTypeMember
-        )
-        members.append(MemberBlockItemSyntax(decl: handlerProperty))
+        var members = trackingMemberItems(for: requirement)
 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let elseBody = Self.unsetHandlerElseBody(returnType: varType, handlerName: MockNaming.handler(varName))
@@ -200,21 +184,12 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         return members
     }
 
-    private func generateLockBasedBackingSetterProperty(
-        varName: String,
-        varType: TypeSyntax,
+    /// The public write-through accessor of a lock-backed `_name` slot: reads and
+    /// writes the storage-struct field of the same name inside the lock.
+    private func generateLockBackedBackingProperty(
+        field: TrackingField,
         isTypeMember: Bool
     ) -> VariableDeclSyntax {
-        let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
-
-        let storageType: TypeSyntax
-        if isOptional {
-            storageType = varType.trimmed
-        } else {
-            storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
-        }
-
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         if !isTypeMember {
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
@@ -222,10 +197,10 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
 
         return Self.makeLockBackedProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            name: MockNaming.variableBacking(varName),
-            type: storageType,
-            storageName: storageName,
-            storedName: MockNaming.variableBacking(varName)
+            name: field.name,
+            type: field.type,
+            storageName: Self.storagePropertyName(isTypeMember: isTypeMember),
+            storedName: field.name
         )
     }
 
@@ -264,29 +239,6 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         )
     }
 
-    private func generateGetOnlyStorageProperty(
-        varName: String,
-        varType: TypeSyntax,
-        isTypeMember: Bool
-    ) -> VariableDeclSyntax {
-        let isOptional = varType.is(OptionalTypeSyntax.self) ||
-                         varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-
-        let storageType: TypeSyntax
-        if isOptional {
-            storageType = varType.trimmed
-        } else {
-            storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
-        }
-
-        return Self.makeStoredProperty(
-            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-            name: MockNaming.variableBacking(varName),
-            type: storageType,
-            initializer: ExprSyntax(NilLiteralExprSyntax())
-        )
-    }
-
     private func generateComputedGetProperty(
         varName: String,
         varType: TypeSyntax,
@@ -310,43 +262,19 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         )
     }
 
-    private func generateStoredProperty(
+    /// The get-set witness of a non-optional stored property, reading and writing
+    /// its `_name` backing storage.
+    private func generateComputedGetSetProperty(
         varName: String,
         varType: TypeSyntax,
         isTypeMember: Bool
-    ) -> [MemberBlockItemSyntax] {
-        let isOptional = varType.is(OptionalTypeSyntax.self) ||
-                         varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-        let additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-
-        if isOptional {
-            let storedProperty = Self.makeStoredProperty(
-                modifiers: buildModifiers(additional: additionalModifiers),
-                name: varName,
-                type: varType.trimmed,
-                initializer: ExprSyntax(NilLiteralExprSyntax())
-            )
-            return [MemberBlockItemSyntax(decl: storedProperty)]
-        }
-
-        let backingProperty = Self.makeStoredProperty(
-            modifiers: buildModifiers(additional: additionalModifiers),
-            name: MockNaming.variableBacking(varName),
-            type: TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed)),
-            initializer: ExprSyntax(NilLiteralExprSyntax())
-        )
-
-        let computedProperty = Self.makeGetSetProperty(
-            modifiers: buildModifiers(additional: additionalModifiers),
+    ) -> VariableDeclSyntax {
+        Self.makeGetSetProperty(
+            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             name: varName,
             type: varType.trimmed,
             getterBody: "\(MockNaming.variableBacking(varName))!",
             setterBody: "\(MockNaming.variableBacking(varName)) = newValue"
         )
-
-        return [
-            MemberBlockItemSyntax(decl: backingProperty),
-            MemberBlockItemSyntax(decl: computedProperty)
-        ]
     }
 }

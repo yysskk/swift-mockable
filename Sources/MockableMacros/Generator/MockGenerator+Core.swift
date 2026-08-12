@@ -184,21 +184,21 @@ struct MockGenerator {
     }
 
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
-        let methodGroups = groupMethodsByNameIncludingConditional()
-        let initializers = collectInitializers()
+        let overloads = makeOverloadContext()
 
         return mapMemberBlockItemsPreservingIfConfig { decl in
             if let initDecl = decl.as(InitializerDeclSyntax.self) {
-                let identifier = Self.initializerIdentifier(for: initDecl, in: initializers)
-                return generateInitializerMock(initDecl, identifier: identifier)
+                return generateInitializerMock(
+                    initDecl,
+                    requirement: initializerTrackingRequirement(for: initDecl, overloads: overloads)
+                )
             }
 
             if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                let methodGroup = methodGroups[funcName] ?? []
-                let isOverloaded = methodGroup.count > 1
-                let suffix = isOverloaded ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-                return generateFunctionMock(funcDecl, suffix: suffix)
+                return generateFunctionMock(
+                    funcDecl,
+                    requirement: functionTrackingRequirement(for: funcDecl, overloads: overloads)
+                )
             }
 
             if let varDecl = decl.as(VariableDeclSyntax.self) {
@@ -206,7 +206,10 @@ struct MockGenerator {
             }
 
             if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-                return generateSubscriptMock(subscriptDecl)
+                return generateSubscriptMock(
+                    subscriptDecl,
+                    requirement: subscriptTrackingRequirement(for: subscriptDecl)
+                )
             }
 
             return []
