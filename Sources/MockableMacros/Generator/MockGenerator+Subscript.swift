@@ -198,6 +198,34 @@ extension MockGenerator {
         return getterStatements
     }
 
+    /// Builds the unset-handler guard and the handler invocation shared by the direct
+    /// and lock-based subscript getters, which differ only in how `_handler` is bound.
+    private func buildGuardedSubscriptHandlerReturn(
+        guardBinding: String,
+        parameters: FunctionParameterListSyntax,
+        returnType: TypeSyntax,
+        hasGenericReturn: Bool,
+        suffix: String,
+        invokePrefix: String,
+        errorType: String?
+    ) -> [CodeBlockItemSyntax] {
+        let returnTypeStr = Self.castTargetType(for: returnType)
+        let guardStmt = Self.makeUnsetHandlerGuard(
+            binding: guardBinding,
+            elseBody: Self.unsetHandlerElseBody(
+                returnType: returnType,
+                handlerName: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))
+            )
+        )
+        let returnStmt = Self.makeHandlerReturnStatement(
+            invokePrefix: invokePrefix,
+            handlerCallArgs: buildHandlerCallArguments(parameters: parameters),
+            castSuffix: hasGenericReturn ? " as! \(returnTypeStr)" : "",
+            errorType: errorType
+        )
+        return [guardStmt, returnStmt]
+    }
+
     private func buildSubscriptHandlerCallStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
@@ -206,21 +234,15 @@ extension MockGenerator {
         invokePrefix: String = "",
         errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
-        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
-
-        let returnTypeStr = Self.castTargetType(for: returnType)
-        let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
-        let elseBody = Self.defaultReturnStatement(for: returnType)
-            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) is not set\")"
-        let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) else {
-    \(elseBody)
-}
-""")))
-        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
-        let returnStmt = errorType.map { Self.buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
-            ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
-        return [guardStmt, returnStmt]
+        buildGuardedSubscriptHandlerReturn(
+            guardBinding: "_handler = \(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)))",
+            parameters: parameters,
+            returnType: returnType,
+            hasGenericReturn: hasGenericReturn,
+            suffix: suffix,
+            invokePrefix: invokePrefix,
+            errorType: errorType
+        )
     }
 
     private func buildDirectSubscriptSetHandlerCallStatement(
@@ -256,32 +278,24 @@ if let _handler = \(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix:
         // expressions never run while the storage lock is held.
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
-_storage.withLock { storage in
+\(MockNaming.instanceStorageName).withLock { storage in
     storage.\(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix))) += 1
     storage.\(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix))).append(\(argsExpr))
 }
 """)))
         statements.append(recordCallStmt)
-        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = _storage.withLock { $0.\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) }")))
+        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = \(MockNaming.instanceStorageName).withLock { $0.\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) }")))
         statements.append(getHandlerStmt)
 
-        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
-        let returnTypeStr = Self.castTargetType(for: returnType)
-        let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
-
-        let elseBody = Self.defaultReturnStatement(for: returnType)
-            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix))) is not set\")"
-        let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler else {
-    \(elseBody)
-}
-""")))
-        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
-        let returnStmt = errorType.map { Self.buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
-            ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
-
-        statements.append(guardStmt)
-        statements.append(returnStmt)
+        statements.append(contentsOf: buildGuardedSubscriptHandlerReturn(
+            guardBinding: "_handler",
+            parameters: parameters,
+            returnType: returnType,
+            hasGenericReturn: hasGenericReturn,
+            suffix: suffix,
+            invokePrefix: invokePrefix,
+            errorType: errorType
+        ))
         return statements
     }
 
@@ -297,7 +311,7 @@ guard let _handler else {
         }
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = _storage.withLock({ $0.\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) }) {
+if let _handler = \(MockNaming.instanceStorageName).withLock({ $0.\(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix))) }) {
     _handler(\(handlerCallArgs))
 }
 """)))

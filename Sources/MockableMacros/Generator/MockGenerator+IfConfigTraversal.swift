@@ -95,9 +95,14 @@ extension MockGenerator {
         return result
     }
 
-    private func mapIfConfigDeclToMembers(
+    /// Maps every `.decls` clause of a conditional-compilation block through
+    /// `mapDecls`, rebuilding the block with `makeElements` and normalized clause
+    /// keywords. Returns `nil` when no clause produced content, so the caller drops
+    /// the empty `#if` entirely.
+    private func mapIfConfigDeclClauses<Item>(
         _ ifConfigDecl: IfConfigDeclSyntax,
-        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+        mapDecls: (MemberBlockItemListSyntax) -> [Item],
+        makeElements: ([Item]) -> IfConfigClauseSyntax.Elements
     ) -> IfConfigDeclSyntax? {
         var hasGeneratedContent = false
 
@@ -106,11 +111,11 @@ extension MockGenerator {
                 let mappedElements: IfConfigClauseSyntax.Elements?
                 if let elements = clause.elements,
                    case .decls(let decls) = elements {
-                    let mappedMembers = mapMemberBlockItemsPreservingIfConfig(from: decls, transform: transform)
-                    if !mappedMembers.isEmpty {
+                    let mappedItems = mapDecls(decls)
+                    if !mappedItems.isEmpty {
                         hasGeneratedContent = true
                     }
-                    mappedElements = .decls(MemberBlockItemListSyntax(mappedMembers))
+                    mappedElements = makeElements(mappedItems)
                 } else {
                     mappedElements = clause.elements
                 }
@@ -130,39 +135,26 @@ extension MockGenerator {
         return IfConfigDeclSyntax(clauses: clauses)
     }
 
+    private func mapIfConfigDeclToMembers(
+        _ ifConfigDecl: IfConfigDeclSyntax,
+        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+    ) -> IfConfigDeclSyntax? {
+        mapIfConfigDeclClauses(
+            ifConfigDecl,
+            mapDecls: { mapMemberBlockItemsPreservingIfConfig(from: $0, transform: transform) },
+            makeElements: { .decls(MemberBlockItemListSyntax($0)) }
+        )
+    }
+
     private func mapIfConfigDeclToStatements(
         _ ifConfigDecl: IfConfigDeclSyntax,
         transform: (DeclSyntax) -> [CodeBlockItemSyntax]
     ) -> IfConfigDeclSyntax? {
-        var hasGeneratedContent = false
-
-        let clauses = IfConfigClauseListSyntax(
-            ifConfigDecl.clauses.map { clause in
-                let mappedElements: IfConfigClauseSyntax.Elements?
-                if let elements = clause.elements,
-                   case .decls(let decls) = elements {
-                    let mappedStatements = mapCodeBlockItemsPreservingIfConfig(from: decls, transform: transform)
-                    if !mappedStatements.isEmpty {
-                        hasGeneratedContent = true
-                    }
-                    mappedElements = .statements(CodeBlockItemListSyntax(mappedStatements))
-                } else {
-                    mappedElements = clause.elements
-                }
-
-                return IfConfigClauseSyntax(
-                    poundKeyword: normalizedPoundKeyword(for: clause),
-                    condition: clause.condition,
-                    elements: mappedElements
-                )
-            }
+        mapIfConfigDeclClauses(
+            ifConfigDecl,
+            mapDecls: { mapCodeBlockItemsPreservingIfConfig(from: $0, transform: transform) },
+            makeElements: { .statements(CodeBlockItemListSyntax($0)) }
         )
-
-        guard hasGeneratedContent else {
-            return nil
-        }
-
-        return IfConfigDeclSyntax(clauses: clauses)
     }
 
     private func mapIfConfigDeclToLines(

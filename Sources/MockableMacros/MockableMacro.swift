@@ -73,7 +73,7 @@ public struct MockableMacro: PeerMacro {
 
         for member in members {
             if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                if diagnoseUnsupportedMembers(in: ifConfigDecl, context: context) {
+                for clauseMembers in declClauses(of: ifConfigDecl) where diagnoseUnsupportedMembers(in: clauseMembers, context: context) {
                     hasError = true
                 }
                 continue
@@ -383,14 +383,8 @@ public struct MockableMacro: PeerMacro {
 
         for member in members {
             if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                for clause in ifConfigDecl.clauses {
-                    guard let elements = clause.elements,
-                          case .decls(let decls) = elements else {
-                        continue
-                    }
-                    if diagnoseInitializerContext(in: decls, isUnsupportedContext: true, context: context) {
-                        hasError = true
-                    }
+                for clauseMembers in declClauses(of: ifConfigDecl) where diagnoseInitializerContext(in: clauseMembers, isUnsupportedContext: true, context: context) {
+                    hasError = true
                 }
                 continue
             }
@@ -411,24 +405,18 @@ public struct MockableMacro: PeerMacro {
         return hasError
     }
 
-    private static func diagnoseUnsupportedMembers(
-        in ifConfigDecl: IfConfigDeclSyntax,
-        context: some MacroExpansionContext
-    ) -> Bool {
-        var hasError = false
-
-        for clause in ifConfigDecl.clauses {
+    /// The member lists of every `.decls` clause in a conditional-compilation block,
+    /// including `#else` and `#elseif` clauses. Diagnostics must visit every branch;
+    /// this deliberately differs from generation-time collection, which only reads
+    /// condition-bearing clauses.
+    private static func declClauses(of ifConfigDecl: IfConfigDeclSyntax) -> [MemberBlockItemListSyntax] {
+        ifConfigDecl.clauses.compactMap { clause in
             guard let elements = clause.elements,
-                  case .decls(let members) = elements else {
-                continue
+                  case .decls(let decls) = elements else {
+                return nil
             }
-
-            if diagnoseUnsupportedMembers(in: members, context: context) {
-                hasError = true
-            }
+            return decls
         }
-
-        return hasError
     }
 
     private static func memberIsSupported(_ decl: DeclSyntax) -> Bool {
