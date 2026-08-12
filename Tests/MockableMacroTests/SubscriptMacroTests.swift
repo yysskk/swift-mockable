@@ -346,12 +346,10 @@ struct SubscriptMacroTests {
                     }
                 }
                 subscript(key: String) -> Int {
-                    _storage.withLock { storage in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Int )? in
                         storage.subscriptStringCallCount += 1
                         storage.subscriptStringCallArgs.append(key)
-                    }
-                    let _handler = _storage.withLock {
-                        $0.subscriptStringHandler
+                        return storage.subscriptStringHandler
                     }
                     guard let _handler else {
                         fatalError("\\(Self.self).subscriptStringHandler is not set")
@@ -445,12 +443,10 @@ struct SubscriptMacroTests {
                 }
                 subscript(index: Int) -> String {
                     get {
-                        _storage.withLock { storage in
+                        let _handler = _storage.withLock { storage -> (@Sendable (Int) -> String )? in
                             storage.subscriptIntCallCount += 1
                             storage.subscriptIntCallArgs.append(index)
-                        }
-                        let _handler = _storage.withLock {
-                            $0.subscriptIntHandler
+                            return storage.subscriptIntHandler
                         }
                         guard let _handler else {
                             fatalError("\\(Self.self).subscriptIntHandler is not set")
@@ -538,12 +534,10 @@ struct SubscriptMacroTests {
                     }
                 }
                 subscript(key: String) -> Int {
-                    _storage.withLock { storage in
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Int )? in
                         storage.subscriptStringCallCount += 1
                         storage.subscriptStringCallArgs.append(key)
-                    }
-                    let _handler = _storage.withLock {
-                        $0.subscriptStringHandler
+                        return storage.subscriptStringHandler
                     }
                     guard let _handler else {
                         fatalError("\\(Self.self).subscriptStringHandler is not set")
@@ -637,12 +631,10 @@ struct SubscriptMacroTests {
                 }
                 subscript(index: Int) -> String {
                     get {
-                        _storage.withLock { storage in
+                        let _handler = _storage.withLock { storage -> (@Sendable (Int) -> String )? in
                             storage.subscriptIntCallCount += 1
                             storage.subscriptIntCallArgs.append(index)
-                        }
-                        let _handler = _storage.withLock {
-                            $0.subscriptIntHandler
+                            return storage.subscriptIntHandler
                         }
                         guard let _handler else {
                             fatalError("\\(Self.self).subscriptIntHandler is not set")
