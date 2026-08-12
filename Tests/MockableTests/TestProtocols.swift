@@ -302,6 +302,26 @@ protocol GenericTypedThrowingRunner {
 protocol ConcreteTypedThrowingClosureService {
     func perform(_ body: @escaping () throws(TypedThrowsError) -> Void)
 }
+
+@Mockable
+protocol NeverThrowingLoader {
+    func load(id: Int) throws(Never) -> String
+}
+
+@Mockable
+protocol NeverThrowingConfigProvider {
+    var setting: Int { get throws(Never) }
+}
+
+@Mockable
+protocol SendableNeverThrowingStore: Sendable {
+    func value() throws(Never) -> Int
+}
+
+@Mockable
+protocol AnyErrorThrowingLoader {
+    func load(id: Int) throws(any Error) -> String
+}
 #endif
 
 // MARK: - Initializer Requirement Protocols

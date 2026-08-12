@@ -58,11 +58,55 @@ struct SwiftSyntaxCompatibilityTests {
         #expect(effectSpecifiers(of: decl)?.throwsErrorType == nil)
     }
 
+    @Test(
+        "hasThrowsEffect is false for a function throwing Never",
+        arguments: ["Never", "Swift.Never"]
+    )
+    func neverThrowingFunctionHasNoThrowsEffect(errorType: String) {
+        let decl: DeclSyntax = "func fetch() throws(\(raw: errorType)) -> Int { 0 }"
+        #expect(effectSpecifiers(of: decl)?.hasThrowsEffect == false)
+    }
+
+    @Test("hasThrowsEffect is true for a function throwing a type merely named like Never")
+    func neverLookalikeThrowingFunctionHasThrowsEffect() {
+        let decl: DeclSyntax = "func fetch() throws(NeverError) -> Int { 0 }"
+        #expect(effectSpecifiers(of: decl)?.hasThrowsEffect == true)
+    }
+
+    @Test(
+        "throwsErrorType is nil for error types untyped throws already describes",
+        arguments: ["Never", "Swift.Never", "any Error", "Error", "any Swift.Error", "Swift.Error"]
+    )
+    func untypedEquivalentThrowsHasNoErrorType(errorType: String) {
+        let decl: DeclSyntax = "func fetch() throws(\(raw: errorType)) -> Int { 0 }"
+        #expect(effectSpecifiers(of: decl)?.throwsErrorType == nil)
+    }
+
+    @Test("throwsErrorType is the declared type for an error type merely named like Error")
+    func errorLookalikeThrowsErrorType() {
+        let decl: DeclSyntax = "func fetch() throws(ErrorBox) -> Int { 0 }"
+        #expect(effectSpecifiers(of: decl)?.throwsErrorType?.trimmedDescription == "ErrorBox")
+    }
+
     // MARK: - TypeEffectSpecifiersSyntax
 
     @Test("hasThrowsEffect is true for a throwing function type")
     func functionTypeHasThrowsEffect() {
         let type: TypeSyntax = "() throws -> Void"
+        let specifiers = type.as(FunctionTypeSyntax.self)?.effectSpecifiers
+        #expect(specifiers?.hasThrowsEffect == true)
+    }
+
+    @Test("hasThrowsEffect is false for a function type throwing Never")
+    func neverThrowingFunctionTypeHasNoThrowsEffect() {
+        let type: TypeSyntax = "() throws(Never) -> Void"
+        let specifiers = type.as(FunctionTypeSyntax.self)?.effectSpecifiers
+        #expect(specifiers?.hasThrowsEffect == false)
+    }
+
+    @Test("hasThrowsEffect is true for a function type with a typed throws clause")
+    func typedThrowingFunctionTypeHasThrowsEffect() {
+        let type: TypeSyntax = "() throws(FetchError) -> Void"
         let specifiers = type.as(FunctionTypeSyntax.self)?.effectSpecifiers
         #expect(specifiers?.hasThrowsEffect == true)
     }
@@ -73,6 +117,27 @@ struct SwiftSyntaxCompatibilityTests {
     func accessorHasThrowsEffect() {
         let decl: DeclSyntax = "var value: Int { get throws { 0 } }"
         #expect(accessorEffectSpecifiers(of: decl)?.hasThrowsEffect == true)
+    }
+
+    @Test("hasThrowsEffect is false for an accessor throwing Never")
+    func neverThrowingAccessorHasNoThrowsEffect() {
+        let decl: DeclSyntax = "var value: Int { get throws(Never) { 0 } }"
+        #expect(accessorEffectSpecifiers(of: decl)?.hasThrowsEffect == false)
+    }
+
+    @Test("throwsErrorType is the declared type for a typed throwing accessor")
+    func typedThrowingAccessorErrorType() {
+        let decl: DeclSyntax = "var value: Int { get throws(ConfigError) { 0 } }"
+        #expect(accessorEffectSpecifiers(of: decl)?.throwsErrorType?.trimmedDescription == "ConfigError")
+    }
+
+    @Test(
+        "throwsErrorType is nil for an accessor whose error type untyped throws already describes",
+        arguments: ["Never", "any Error"]
+    )
+    func untypedEquivalentThrowingAccessorHasNoErrorType(errorType: String) {
+        let decl: DeclSyntax = "var value: Int { get throws(\(raw: errorType)) { 0 } }"
+        #expect(accessorEffectSpecifiers(of: decl)?.throwsErrorType == nil)
     }
 
     // MARK: - GenericArgumentSyntax

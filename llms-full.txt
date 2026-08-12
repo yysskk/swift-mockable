@@ -267,6 +267,27 @@ Swift 6 runtime requirement for typed-throws function values) and supports gener
 error types (`func run<E: Error>(_ body: () throws(E) -> Void) throws(E)`). If a
 handler throws a different error type, the mock traps.
 
+Two error types describe what an untyped clause already says, so the mock skips
+the re-throw for them. `throws(Never)` keeps its signature but is mocked as
+non-throwing — a non-throwing handler, called without `try`:
+
+```swift
+@Mockable
+protocol Loader {
+    func load(id: Int) throws(Never) -> String
+}
+// generates: var loadHandler: (@Sendable (Int) -> String)? = nil
+//            return _handler(id)
+
+let value = LoaderMock().load(id: 1)   // no `try` needed
+```
+
+The same applies to a `get throws(Never)` property or subscript, and to an
+`@autoclosure () throws(Never) -> T` parameter, which is evaluated without `try`.
+`throws(any Error)` (and the bare `throws(Error)` spelling) is mocked exactly like
+untyped `throws`. Both types are recognized by spelling, so a generic parameter or
+type alias named `Never` or `Error` is classified by its name.
+
 ### `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is

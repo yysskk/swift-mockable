@@ -95,5 +95,57 @@ struct TypedThrowsTests {
         #expect(handlerRan)
         #expect(mock.performCallCount == 1)
     }
+
+    @Test("throws(Never) method is called without try")
+    func neverThrowsMethodReturnsHandlerValue() {
+        let mock = NeverThrowingLoaderMock()
+        mock.loadHandler = { id in "item-\(id)" }
+
+        let value = mock.load(id: 7)
+
+        #expect(value == "item-7")
+        #expect(mock.loadCallCount == 1)
+        #expect(mock.loadCallArgs == [7])
+    }
+
+    @Test("throws(Never) property is read without try")
+    func neverThrowsPropertyReturnsHandlerValue() {
+        let mock = NeverThrowingConfigProviderMock()
+        mock.settingHandler = { 99 }
+
+        #expect(mock.setting == 99)
+        #expect(mock.settingCallCount == 1)
+    }
+
+    @Test("Sendable throws(Never) method is called without try")
+    func sendableNeverThrowsMethodReturnsHandlerValue() {
+        let mock = SendableNeverThrowingStoreMock()
+        mock.valueHandler = { 5 }
+
+        #expect(mock.value() == 5)
+        #expect(mock.valueCallCount == 1)
+    }
+
+    @Test("throws(any Error) method returns the handler value")
+    func anyErrorThrowsMethodReturnsHandlerValue() throws {
+        let mock = AnyErrorThrowingLoaderMock()
+        mock.loadHandler = { id in "item-\(id)" }
+
+        let value = try mock.load(id: 3)
+
+        #expect(value == "item-3")
+        #expect(mock.loadCallCount == 1)
+        #expect(mock.loadCallArgs == [3])
+    }
+
+    @Test("throws(any Error) method re-throws the handler error unchanged")
+    func anyErrorThrowsMethodReThrowsHandlerError() {
+        let mock = AnyErrorThrowingLoaderMock()
+        mock.loadHandler = { _ in throw TypedThrowsError(code: 11) }
+
+        #expect(throws: TypedThrowsError(code: 11)) {
+            try mock.load(id: 1)
+        }
+    }
 }
 #endif

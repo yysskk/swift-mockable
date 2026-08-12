@@ -250,6 +250,70 @@ struct AutoclosureMacroTests {
         )
     }
 
+    @Test("@autoclosure parameter throwing Never is evaluated without try")
+    func neverThrowingAutoclosureParameterIsEvaluatedWithoutTry() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Logger {
+                func log(_ message: @autoclosure () throws(Never) -> String)
+            }
+            """,
+            expandedSource: """
+            protocol Logger {
+                func log(_ message: @autoclosure () throws(Never) -> String)
+            }
+
+            #if DEBUG
+            class LoggerMock: Logger {
+                var logCallCount: Int = 0
+                var logCallArgs: [String] = []
+                var logHandler: (@Sendable (String) -> Void)? = nil
+                func log(_ message: @autoclosure () throws(Never) -> String) {
+                    let message = message()
+                    logCallCount += 1
+                    logCallArgs.append(message)
+                    if let _handler = logHandler {
+                        _handler(message)
+                    }
+                }
+                func resetMock() {
+                    logCallCount = 0
+                    logCallArgs = []
+                    logHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throwing @autoclosure in a throws(Never) requirement produces a diagnostic")
+    func throwingAutoclosureInNeverThrowingRequirementProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Cache {
+                func store(_ value: @autoclosure () throws -> Int) throws(Never)
+            }
+            """,
+            expandedSource: """
+            protocol Cache {
+                func store(_ value: @autoclosure () throws -> Int) throws(Never)
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Cannot mock @autoclosure parameter 'value': the mock evaluates autoclosure arguments when called, so the requirement must be declared 'throws'",
+                    line: 3,
+                    column: 16
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("throwing @autoclosure in a non-throwing requirement produces a diagnostic")
     func throwingAutoclosureInNonThrowingRequirementProducesDiagnostic() {
         assertMacroExpansionForTesting(
