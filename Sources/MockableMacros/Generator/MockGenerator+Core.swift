@@ -66,55 +66,63 @@ struct MockGenerator {
         return DeclSyntax(generateClassMock())
     }
 
-    private func generateClassMock() -> ClassDeclSyntax {
-        var classMembers: [MemberBlockItemSyntax] = []
-        let needsStaticStorage = hasTypeMembers()
+    /// Builds the members shared by class and actor mocks, in emission order:
+    /// associated-type aliases, lock-backed storage (instance, then static), an
+    /// explicit initializer where the access level requires one, the per-requirement
+    /// mock members, and `resetMock()`. Instance lock storage is emitted for every
+    /// actor mock and for `Sendable` class mocks (`usesInstanceStorageLock` covers both).
+    private func buildMockMemberBlock() -> MemberBlockSyntax {
+        var members: [MemberBlockItemSyntax] = []
 
-        classMembers.append(contentsOf: generateAssociatedTypeMembers())
+        members.append(contentsOf: generateAssociatedTypeMembers())
 
         if usesInstanceStorageLock {
             let storageStruct = generateStorageStruct()
-            classMembers.append(MemberBlockItemSyntax(decl: storageStruct))
+            members.append(MemberBlockItemSyntax(decl: storageStruct))
 
             let mutexProperty = generateLockProperty()
-            classMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
+            members.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
-        if needsStaticStorage {
+        if hasTypeMembers() {
             let staticStorageStruct = generateStaticStorageStruct()
-            classMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
+            members.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
             let staticMutexProperty = generateLockProperty(
                 propertyName: MockNaming.staticStorageName,
                 storageTypeName: MockNaming.staticStorageTypeName,
                 isStatic: true
             )
-            classMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
+            members.append(MemberBlockItemSyntax(decl: staticMutexProperty))
         }
 
-        // Generate explicit init when access level requires it (e.g., public/open)
+        // Generate explicit init when access level requires it (e.g., public/package)
         // Without this, the default init is internal, making the mock unusable across modules.
         // Skipped when:
         // - the protocol declares its own `init` requirements: those generate `required init`
         //   witnesses that already provide accessible initializers; or
         // - the mock subclasses a parent mock: it inherits the parent's initializers, so
         //   synthesizing its own would shadow an inherited `required init` and break protocols
-        //   whose parent declares an `init` requirement.
+        //   whose parent declares an `init` requirement. (An actor mock never has a parent.)
         if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements && !hasParentMock {
             let initDecl = generateInit()
-            classMembers.append(MemberBlockItemSyntax(decl: initDecl))
+            members.append(MemberBlockItemSyntax(decl: initDecl))
         }
 
-        classMembers.append(contentsOf: generateMockMembers())
+        members.append(contentsOf: generateMockMembers())
 
         let resetMethod = generateResetMethod()
-        classMembers.append(MemberBlockItemSyntax(decl: resetMethod))
+        members.append(MemberBlockItemSyntax(decl: resetMethod))
 
-        let memberBlock = MemberBlockSyntax(
+        return MemberBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            members: MemberBlockItemListSyntax(classMembers),
+            members: MemberBlockItemListSyntax(members),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
+    }
+
+    private func generateClassMock() -> ClassDeclSyntax {
+        let memberBlock = buildMockMemberBlock()
 
         var inheritedTypes: [InheritedTypeSyntax] = []
 
@@ -158,46 +166,7 @@ struct MockGenerator {
     }
 
     private func generateActorMock() -> ActorDeclSyntax {
-        var actorMembers: [MemberBlockItemSyntax] = []
-
-        actorMembers.append(contentsOf: generateAssociatedTypeMembers())
-
-        let storageStruct = generateStorageStruct()
-        actorMembers.append(MemberBlockItemSyntax(decl: storageStruct))
-
-        let mutexProperty = generateLockProperty()
-        actorMembers.append(MemberBlockItemSyntax(decl: mutexProperty))
-
-        if hasTypeMembers() {
-            let staticStorageStruct = generateStaticStorageStruct()
-            actorMembers.append(MemberBlockItemSyntax(decl: staticStorageStruct))
-
-            let staticMutexProperty = generateLockProperty(
-                propertyName: MockNaming.staticStorageName,
-                storageTypeName: MockNaming.staticStorageTypeName,
-                isStatic: true
-            )
-            actorMembers.append(MemberBlockItemSyntax(decl: staticMutexProperty))
-        }
-
-        // Generate explicit init when access level requires it (e.g., public/package)
-        // Without this, the default synthesized init is internal, making the mock unusable across modules.
-        // Skipped when the protocol declares its own `init` requirements (see the class mock).
-        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements {
-            let initDecl = generateInit()
-            actorMembers.append(MemberBlockItemSyntax(decl: initDecl))
-        }
-
-        actorMembers.append(contentsOf: generateMockMembers())
-
-        let resetMethod = generateResetMethod()
-        actorMembers.append(MemberBlockItemSyntax(decl: resetMethod))
-
-        let memberBlock = MemberBlockSyntax(
-            leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            members: MemberBlockItemListSyntax(actorMembers),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
+        let memberBlock = buildMockMemberBlock()
 
         let inheritedTypes: [InheritedTypeSyntax] = [
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
