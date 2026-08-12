@@ -94,6 +94,7 @@ struct TrackingRequirement {
         }
     }
 
+    /// The `<name>CallCount` slot.
     private var callCountField: TrackingField {
         TrackingField(
             role: .callCount,
@@ -104,6 +105,7 @@ struct TrackingRequirement {
         )
     }
 
+    /// The `<name>CallArgs` slot, an array of the requirement's argument tuple.
     private var callArgsField: TrackingField {
         TrackingField(
             role: .callArgs,
@@ -114,6 +116,7 @@ struct TrackingRequirement {
         )
     }
 
+    /// The `<name>Handler` slot, an optional `@Sendable` closure.
     private var handlerField: TrackingField {
         TrackingField(
             role: .handler,
@@ -124,6 +127,7 @@ struct TrackingRequirement {
         )
     }
 
+    /// The `<name>SetHandler` slot of a get-set subscript.
     private var setHandlerField: TrackingField {
         TrackingField(
             role: .setHandler,
@@ -134,6 +138,10 @@ struct TrackingRequirement {
         )
     }
 
+    /// The stored slot behind a property requirement. It is always optional so an
+    /// unset non-optional property traps on read rather than needing a placeholder,
+    /// and it is named `_name` except for an optional get-set property on the direct
+    /// path, where the property itself is the storage.
     private func backingField(
         model: StorageModel,
         varType: TypeSyntax,
@@ -168,6 +176,8 @@ struct OverloadContext {
 }
 
 extension MockGenerator {
+    /// Collects the protocol's overload groups once, so each consumer can disambiguate
+    /// identifiers without re-walking the member tree.
     func makeOverloadContext() -> OverloadContext {
         let decls = collectDeclsIncludingConditional()
         return OverloadContext(
@@ -206,6 +216,8 @@ extension MockGenerator {
         return []
     }
 
+    /// The tracking requirement of an `init` requirement. Initializers record calls but
+    /// have no handler, and are never type members.
     func initializerTrackingRequirement(
         for initDecl: InitializerDeclSyntax,
         overloads: OverloadContext
@@ -224,6 +236,8 @@ extension MockGenerator {
         )
     }
 
+    /// The tracking requirement of a method, with its identifier disambiguated against
+    /// the protocol's other methods of the same name.
     func functionTrackingRequirement(
         for funcDecl: FunctionDeclSyntax,
         overloads: OverloadContext
@@ -296,6 +310,9 @@ extension MockGenerator {
         )
     }
 
+    /// The tracking requirement of a subscript. Generated members cannot be named after
+    /// a subscript's (absent) base name, so the identifier always carries a type suffix,
+    /// disambiguated against the protocol's other subscripts.
     func subscriptTrackingRequirement(
         for subscriptDecl: SubscriptDeclSyntax,
         overloads: OverloadContext

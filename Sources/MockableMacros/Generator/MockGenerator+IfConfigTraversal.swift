@@ -4,10 +4,20 @@ import SwiftSyntaxBuilder
 // MARK: - Conditional Compilation Traversal
 
 extension MockGenerator {
+    /// Every requirement the protocol declares, flattened out of any
+    /// conditional-compilation blocks, for analyses that need the whole set at once
+    /// (overload grouping, type-member detection, initializer collection).
+    ///
+    /// Flattening loses the `#if` structure, so this is only for analysis: generation
+    /// goes through the `map*PreservingIfConfig` drivers below, which keep it. Note
+    /// that flattening also skips `#else` clauses (see `collectDecls(from:)`).
     func collectDeclsIncludingConditional(from members: MemberBlockItemListSyntax? = nil) -> [DeclSyntax] {
         collectDecls(from: members ?? self.members)
     }
 
+    /// Maps each requirement to mock members, re-emitting any `#if` block around the
+    /// members generated from its clauses, so a conditionally declared requirement's
+    /// mock is guarded by the same condition.
     func mapMemberBlockItemsPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
         transform: (DeclSyntax) -> [MemberBlockItemSyntax]
@@ -28,6 +38,9 @@ extension MockGenerator {
         return result
     }
 
+    /// The statement-producing counterpart of `mapMemberBlockItemsPreservingIfConfig`,
+    /// used for `resetMock()`'s body: the `#if` block is re-emitted around the
+    /// statements generated from its clauses.
     func mapCodeBlockItemsPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
         transform: (DeclSyntax) -> [CodeBlockItemSyntax]
@@ -48,6 +61,9 @@ extension MockGenerator {
         return result
     }
 
+    /// The raw-line counterpart, used for the lock-backed `resetMock()` body: its
+    /// assignments live inside a `withLock` closure built as a string, so the `#if`
+    /// clauses are emitted as literal `#if`/`#elseif`/`#else`/`#endif` lines.
     func mapLinesPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
         transform: (DeclSyntax) -> [String]
@@ -65,6 +81,7 @@ extension MockGenerator {
         return result
     }
 
+    /// Flattens a member list, recursing into conditional-compilation blocks.
     private func collectDecls(from members: MemberBlockItemListSyntax) -> [DeclSyntax] {
         var result: [DeclSyntax] = []
 
@@ -79,6 +96,12 @@ extension MockGenerator {
         return result
     }
 
+    /// Flattens the clauses of a conditional-compilation block.
+    ///
+    /// Only condition-bearing clauses (`#if`/`#elseif`) are collected: a `#else`
+    /// member is generated (the mapping drivers visit every clause) but is excluded
+    /// from these whole-protocol analyses. Diagnostics deliberately differ and visit
+    /// every clause — see `MockableMacro.declClauses(of:)`.
     private func collectDecls(from ifConfigDecl: IfConfigDeclSyntax) -> [DeclSyntax] {
         var result: [DeclSyntax] = []
 
@@ -135,6 +158,7 @@ extension MockGenerator {
         return IfConfigDeclSyntax(clauses: clauses)
     }
 
+    /// The member-producing case of `mapIfConfigDeclClauses`.
     private func mapIfConfigDeclToMembers(
         _ ifConfigDecl: IfConfigDeclSyntax,
         transform: (DeclSyntax) -> [MemberBlockItemSyntax]
@@ -146,6 +170,7 @@ extension MockGenerator {
         )
     }
 
+    /// The statement-producing case of `mapIfConfigDeclClauses`.
     private func mapIfConfigDeclToStatements(
         _ ifConfigDecl: IfConfigDeclSyntax,
         transform: (DeclSyntax) -> [CodeBlockItemSyntax]
@@ -157,6 +182,10 @@ extension MockGenerator {
         )
     }
 
+    /// The raw-line variant: emits each clause's keyword and condition as literal
+    /// lines around its mapped content, closing with `#endif`. Kept separate from
+    /// `mapIfConfigDeclClauses` because it produces flat strings rather than a
+    /// rebuilt syntax node. Returns an empty array when no clause produced lines.
     private func mapIfConfigDeclToLines(
         _ ifConfigDecl: IfConfigDeclSyntax,
         transform: (DeclSyntax) -> [String]
@@ -193,6 +222,9 @@ extension MockGenerator {
         return lines
     }
 
+    /// Rebuilds a clause keyword without the source's surrounding trivia, so the
+    /// re-emitted `#if` block is laid out by the formatter rather than inheriting
+    /// the protocol's indentation.
     private func normalizedPoundKeyword(for clause: IfConfigClauseSyntax) -> TokenSyntax {
         switch clause.poundKeyword.text {
         case "#if":

@@ -16,6 +16,9 @@ extension MockGenerator {
         }
     }
 
+    /// The plain `resetMock()`: one assignment per tracking slot, addressed through the
+    /// mock's own members (`Self.` for type members). Overridden and chained to the
+    /// parent's implementation when the mock subclasses one.
     private func generateRegularResetMethod() -> FunctionDeclSyntax {
         var statements: [CodeBlockItemSyntax] = []
         let overloads = makeOverloadContext()
@@ -66,6 +69,9 @@ extension MockGenerator {
         )
     }
 
+    /// The lock-backed `resetMock()`: instance slots are cleared in one `withLock` and
+    /// static slots in another, so each storage struct is reset atomically. On an actor
+    /// mock the method is `nonisolated`, so a test can reset without awaiting.
     private func generateSendableResetMethod() -> FunctionDeclSyntax {
         let overloads = makeOverloadContext()
 

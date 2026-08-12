@@ -65,6 +65,9 @@ public struct MockableMacro: PeerMacro {
         return [condition.wrapping(mockClass)]
     }
 
+    /// Reports every member the macro cannot mock, returning whether any was found.
+    /// All members are visited so one expansion surfaces every problem, rather than
+    /// making the author fix them one build at a time.
     private static func diagnoseUnsupportedMembers(
         in members: MemberBlockItemListSyntax,
         context: some MacroExpansionContext
@@ -419,6 +422,9 @@ public struct MockableMacro: PeerMacro {
         }
     }
 
+    /// Whether the macro can mock a member kind at all. Anything else — a nested type,
+    /// an operator declaration, a static subscript (which has no storage to track) —
+    /// is reported rather than silently dropped from the mock.
     private static func memberIsSupported(_ decl: DeclSyntax) -> Bool {
         if decl.is(InitializerDeclSyntax.self) {
             return true

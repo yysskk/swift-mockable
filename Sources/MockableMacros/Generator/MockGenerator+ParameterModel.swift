@@ -34,6 +34,8 @@ extension MockGenerator {
         return isNonEscapingClosureType(param.type)
     }
 
+    /// Whether a type is a closure that Swift treats as non-escaping in parameter
+    /// position, looking through parentheses and attributes.
     private static func isNonEscapingClosureType(_ type: TypeSyntax) -> Bool {
         // Unwrap a single-element parenthesizing tuple, e.g. `(@escaping () -> Void)`.
         if let tupleType = type.as(TupleTypeSyntax.self),
@@ -57,6 +59,9 @@ extension MockGenerator {
         return type.is(FunctionTypeSyntax.self)
     }
 
+    /// The element type of the `CallArgs` array: an empty tuple for no parameters, the
+    /// bare storage type for one, and a labeled tuple (`(a: Int, b: String)`) for several,
+    /// so recorded calls keep their argument labels.
     static func buildParameterTupleType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String> = []
@@ -105,6 +110,9 @@ extension MockGenerator {
         "(\(buildSeparateParameterTypeList(parameters: parameters, genericParamNames: genericParamNames)))"
     }
 
+    /// The type a parameter is stored and forwarded as: an `@autoclosure`'s evaluated
+    /// result type, a variadic's array type, and otherwise the parameter type with
+    /// `inout` stripped and generic parameters erased.
     private static func parameterStorageType(
         for param: FunctionParameterSyntax,
         genericParamNames: Set<String>
@@ -181,6 +189,9 @@ extension MockGenerator {
         }
     }
 
+    /// Removes an `inout` specifier, which is invalid in a stored-property or
+    /// closure-parameter position. The write-back machinery reintroduces the
+    /// mutation separately (see `buildInOutWriteBackType`).
     private static func stripInOutKeyword(from type: TypeSyntax) -> TypeSyntax {
         let trimmed = type.trimmedDescription
         guard trimmed.hasPrefix("inout ") else {
@@ -189,6 +200,8 @@ extension MockGenerator {
         return TypeSyntax(stringLiteral: String(trimmed.dropFirst("inout ".count)))
     }
 
+    /// The recorded-arguments value, shaped to match `buildParameterTupleType`:
+    /// `()` for no parameters, the bare name for one, and a labeled tuple for several.
     static func buildArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
         if parameters.isEmpty {
             return ExprSyntax(TupleExprSyntax(elements: LabeledExprListSyntax([])))

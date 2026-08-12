@@ -71,6 +71,9 @@ extension MockGenerator {
         )
     }
 
+    /// Builds the method witness: the requirement's own signature (generics, effects,
+    /// and `where` clause preserved so it satisfies the protocol) with a generated body
+    /// that records the call and forwards to the handler.
     private func generateMockFunction(
         _ funcDecl: FunctionDeclSyntax,
         identifier: String,
@@ -124,6 +127,8 @@ extension MockGenerator {
         )
     }
 
+    /// The witness body for plain mocks: evaluate `@autoclosure` arguments, record the
+    /// call into the stored tracking properties, then invoke the handler.
     private func buildDirectFunctionBody(
         identifier: String,
         parameters: FunctionParameterListSyntax,
@@ -169,6 +174,9 @@ extension MockGenerator {
         )
     }
 
+    /// The witness body for `Sendable`/actor mocks and type members: record the call and
+    /// read the handler in a single `withLock`, then invoke the handler outside the lock
+    /// so a user-supplied handler never runs while it is held.
     private func buildLockBasedFunctionBody(
         identifier: String,
         parameters: FunctionParameterListSyntax,
@@ -250,6 +258,9 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         )
     }
 
+    /// The handler's closure type, e.g. `(Int, String) async throws -> User`. Parameters
+    /// are stored individually (so handlers read as `{ a, b in ... }`), generic parameters
+    /// are erased, and `inout` write-back values are folded into the return type.
     func buildFunctionClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
@@ -314,6 +325,9 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         return Self.buildArgsExpression(parameters: parameters).description
     }
 
+    /// The direct path's handler invocation: a guard binding the stored handler (falling
+    /// back to a default return or `fatalError`) plus the call itself, or a plain
+    /// `if let` no-op when the requirement returns nothing.
     private func buildHandlerCallStatements(
         identifier: String,
         parameters: FunctionParameterListSyntax,
@@ -464,6 +478,9 @@ if let \(handlerBinding) {
 """)))
     }
 
+    /// Whether the requirement returns something the witness must produce. A `Void`
+    /// return (however spelled) takes the no-return-value path, where an unset handler
+    /// is simply a no-op rather than a `fatalError`.
     private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
         guard let returnType else {
             return false
@@ -472,6 +489,10 @@ if let \(handlerBinding) {
         return trimmed != "Void" && trimmed != "()"
     }
 
+    /// The requirement's `inout` parameters, with both the erased type the handler
+    /// works in and the original type the witness writes back to. A stored handler
+    /// cannot take `inout`, so the mock instead has the handler *return* the new
+    /// values and assigns them after the call.
     private static func extractInOutParameters(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
@@ -489,6 +510,9 @@ if let \(handlerBinding) {
         }
     }
 
+    /// The type the handler returns so the witness can write back `inout` arguments:
+    /// the bare type for one such parameter, a labeled tuple for several, and `nil`
+    /// when the requirement has none.
     private static func buildInOutWriteBackType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
@@ -504,6 +528,8 @@ if let \(handlerBinding) {
         return "(\(elements))"
     }
 
+    /// The assignments that copy the handler's returned values back into the `inout`
+    /// arguments, casting back from the erased type where erasure changed it.
     private static func buildInOutWriteBackAssignments(
         inOutParams: [(name: String, erasedType: String, originalType: String)],
         source: String
@@ -518,6 +544,7 @@ if let \(handlerBinding) {
         }
     }
 
+    /// The write-back assignments as statements.
     private static func buildInOutWriteBackStatements(
         inOutParams: [(name: String, erasedType: String, originalType: String)],
         source: String
@@ -527,6 +554,9 @@ if let \(handlerBinding) {
         }
     }
 
+    /// Puts each statement after the first on its own line. Statements assembled from
+    /// separate builders carry no leading trivia, so without this the formatter would
+    /// run them together.
     static func ensureNewlinesBetweenStatements(_ statements: [CodeBlockItemSyntax]) -> [CodeBlockItemSyntax] {
         statements.enumerated().map { index, stmt in
             guard index > 0 else { return stmt }

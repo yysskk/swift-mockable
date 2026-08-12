@@ -31,6 +31,9 @@ extension MockGenerator {
         isGetOnly(subscriptDecl.accessorBlock, defaultWhenAbsent: true)
     }
 
+    /// Builds the subscript witness, mirroring the requirement's parameter and return
+    /// clauses. A get-only requirement uses the getter shorthand unless its getter is
+    /// effectful, which needs an explicit `get async`/`get throws` accessor.
     private func generateSubscriptImplementation(
         _ subscriptDecl: SubscriptDeclSyntax,
         isGetOnly: Bool,
@@ -124,6 +127,8 @@ extension MockGenerator {
         )
     }
 
+    /// The getter body for plain mocks: evaluate `@autoclosure` indices, record the
+    /// call into the stored tracking properties, then invoke the handler.
     private func buildDirectSubscriptGetterStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
@@ -180,6 +185,8 @@ extension MockGenerator {
         return [guardStmt, returnStmt]
     }
 
+    /// The direct path's guard and handler invocation, binding `_handler` from the
+    /// stored handler property.
     private func buildSubscriptHandlerCallStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
@@ -199,6 +206,9 @@ extension MockGenerator {
         )
     }
 
+    /// The setter body for plain mocks. A setter has no return value, so an unset
+    /// handler is a no-op rather than a `fatalError`; the handler receives the indices
+    /// followed by `newValue`.
     private func buildDirectSubscriptSetHandlerCallStatement(
         parameters: FunctionParameterListSyntax,
         identifier: String
@@ -217,6 +227,8 @@ if let _handler = \(MockNaming.setHandler(identifier)) {
 """)))
     }
 
+    /// The getter body for `Sendable`/actor mocks: record the call and read the handler
+    /// in a single `withLock`, then invoke the handler outside the lock.
     private func buildLockBasedSubscriptGetterStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
@@ -255,6 +267,8 @@ let _handler = \(MockNaming.instanceStorageName).withLock { storage -> (@Sendabl
         return statements
     }
 
+    /// The setter body for `Sendable`/actor mocks: read the handler under the lock and
+    /// invoke it outside. Setters record nothing, so there is no counter to update.
     private func buildLockBasedSubscriptSetHandlerCallStatement(
         parameters: FunctionParameterListSyntax,
         identifier: String
@@ -294,6 +308,8 @@ if let _handler = \(MockNaming.instanceStorageName).withLock({ $0.\(MockNaming.s
         effectfulGetAccessor(in: subscriptDecl.accessorBlock)
     }
 
+    /// The get handler's closure type, e.g. `(Int) async throws -> String`. Like a
+    /// method handler, it takes the indices as individual parameters.
     func buildSubscriptGetterClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
@@ -311,6 +327,8 @@ if let _handler = \(MockNaming.instanceStorageName).withLock({ $0.\(MockNaming.s
         return "(\(paramList))\(effectsText) -> \(returnTypeStr)"
     }
 
+    /// The set handler's closure type: the indices followed by the new value, e.g.
+    /// `(Int, String) -> Void`. Setters are never effectful (SE-0310).
     func buildSubscriptSetterClosureType(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
