@@ -176,6 +176,216 @@ struct TypedThrowsMacroTests {
         )
     }
 
+    @Test("typed throws subscript re-throws the typed error")
+    func typedThrowsSubscriptReThrowsTypedError() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Catalog {
+                subscript(id: Int) -> String { get throws(LookupError) }
+            }
+            """,
+            expandedSource: """
+            protocol Catalog {
+                subscript(id: Int) -> String { get throws(LookupError) }
+            }
+
+            #if DEBUG
+            class CatalogMock: Catalog {
+                var subscriptIntCallCount: Int = 0
+                var subscriptIntCallArgs: [Int] = []
+                var subscriptIntHandler: (@Sendable (Int) throws -> String )? = nil
+                subscript(id: Int) -> String {
+                    get throws(LookupError) {
+                        subscriptIntCallCount += 1
+                        subscriptIntCallArgs.append(id)
+                        guard let _handler = subscriptIntHandler else {
+                            fatalError("\\(Self.self).subscriptIntHandler is not set")
+                        }
+                        do {
+                            return try _handler(id)
+                        } catch {
+                            throw error as! LookupError
+                        }
+                    }
+                }
+                func resetMock() {
+                    subscriptIntCallCount = 0
+                    subscriptIntCallArgs = []
+                    subscriptIntHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("typed throws init requirement keeps its signature and records the call")
+    func typedThrowsInitializerKeepsSignature() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Repository {
+                init(id: String) throws(SetupError)
+            }
+            """,
+            expandedSource: """
+            protocol Repository {
+                init(id: String) throws(SetupError)
+            }
+
+            #if DEBUG
+            class RepositoryMock: Repository {
+                var initCallCount: Int = 0
+                var initCallArgs: [String] = []
+                required init(id: String) throws(SetupError) {
+                    initCallCount += 1
+                    initCallArgs.append(id)
+                }
+                func resetMock() {
+                    initCallCount = 0
+                    initCallArgs = []
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("typed throws method writes inout arguments back inside the catch")
+    func typedThrowsInoutParameterWritesBack() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Parser {
+                func parse(_ buffer: inout [UInt8]) throws(ParseError) -> String
+            }
+            """,
+            expandedSource: """
+            protocol Parser {
+                func parse(_ buffer: inout [UInt8]) throws(ParseError) -> String
+            }
+
+            #if DEBUG
+            class ParserMock: Parser {
+                var parseCallCount: Int = 0
+                var parseCallArgs: [[UInt8]] = []
+                var parseHandler: (@Sendable ([UInt8]) throws -> (returnValue: String, inoutArgs: [UInt8]))? = nil
+                func parse(_ buffer: inout [UInt8]) throws(ParseError) -> String {
+                    parseCallCount += 1
+                    parseCallArgs.append(buffer)
+                    guard let _handler = parseHandler else {
+                        fatalError("\\(Self.self).parseHandler is not set")
+                    }
+                    do {
+                        let _result = try _handler(buffer)
+                        buffer = _result.inoutArgs
+                        return _result.returnValue
+                    } catch {
+                        throw error as! ParseError
+                    }
+                }
+                func resetMock() {
+                    parseCallCount = 0
+                    parseCallArgs = []
+                    parseHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Sendable typed throws method re-throws from behind the lock")
+    func sendableTypedThrowsMethodReThrowsFromBehindLock() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Store: Sendable {
+                func value() throws(StoreError) -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Store: Sendable {
+                func value() throws(StoreError) -> Int
+            }
+
+            #if DEBUG
+            class StoreMock: Store, @unchecked Sendable {
+                private struct Storage {
+                    var valueCallCount: Int = 0
+                    var valueCallArgs: [()] = []
+                    var valueHandler: (@Sendable () throws -> Int)? = nil
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                var valueCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.valueCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.valueCallCount = newValue
+                        }
+                    }
+                }
+                var valueCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.valueCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.valueCallArgs = newValue
+                        }
+                    }
+                }
+                var valueHandler: (@Sendable () throws -> Int)? {
+                    get {
+                        _storage.withLock {
+                            $0.valueHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.valueHandler = newValue
+                        }
+                    }
+                }
+                func value() throws(StoreError) -> Int {
+                    let _handler = _storage.withLock { storage -> (@Sendable () throws -> Int)? in
+                        storage.valueCallCount += 1
+                        storage.valueCallArgs.append(())
+                        return storage.valueHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).valueHandler is not set")
+                    }
+                    do {
+                        return try _handler()
+                    } catch {
+                        throw error as! StoreError
+                    }
+                }
+                func resetMock() {
+                    _storage.withLock { storage in
+                        storage.valueCallCount = 0
+                        storage.valueCallArgs = []
+                        storage.valueHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("throws(Never) method is mocked with a non-throwing handler")
     func neverThrowsMethodUsesNonThrowingHandler() {
         assertMacroExpansionForTesting(

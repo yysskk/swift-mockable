@@ -322,6 +322,21 @@ protocol SendableNeverThrowingStore: Sendable {
 protocol AnyErrorThrowingLoader {
     func load(id: Int) throws(any Error) -> String
 }
+
+@Mockable
+protocol TypedThrowingCatalog {
+    subscript(id: Int) -> String { get throws(TypedThrowsError) }
+}
+
+@Mockable
+protocol TypedThrowingRepository {
+    init(id: String) throws(TypedThrowsError)
+}
+
+@Mockable
+protocol TypedThrowingParser {
+    func parse(_ buffer: inout [UInt8]) throws(TypedThrowsError) -> String
+}
 #endif
 
 // MARK: - Initializer Requirement Protocols
