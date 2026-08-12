@@ -40,7 +40,3 @@ assert(mock.fetchUserCallCount == 1)
 ### Advanced
 
 - <doc:AdvancedUsage>
-
-### Supporting Types
-
-- ``MockableLock``

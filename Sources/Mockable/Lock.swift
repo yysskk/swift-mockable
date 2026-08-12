@@ -86,8 +86,12 @@ private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendabl
 /// `MockableLock` is used in generated mocks for `Sendable` protocols to provide
 /// thread-safe access to mutable state.
 ///
+/// This type is `public` only so that macro-generated code can reference it from
+/// the client module; it is not intended to be used directly.
+///
 /// - On iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+, uses `Mutex` from the `Synchronization` module.
 /// - On older deployment targets, falls back to an `NSLock`-based implementation.
+@_documentation(visibility: internal)
 public final class MockableLock<Value>: @unchecked Sendable {
     private let _box: _LockBoxBase<Value>
 
@@ -106,16 +110,20 @@ public final class MockableLock<Value>: @unchecked Sendable {
         #endif
     }
 
+    #if compiler(>=6.0)
     /// Calls the given closure while holding the lock, providing mutable access to the protected value.
     ///
     /// - Parameter body: A closure that can read and modify the protected value.
     /// - Returns: The value returned by the closure.
-    #if compiler(>=6.0)
     @discardableResult
     public func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
         try _box.withLock(body)
     }
     #else
+    /// Calls the given closure while holding the lock, providing mutable access to the protected value.
+    ///
+    /// - Parameter body: A closure that can read and modify the protected value.
+    /// - Returns: The value returned by the closure.
     @discardableResult
     public func withLock<Result>(_ body: (inout Value) throws -> Result) rethrows -> Result {
         try _box.withLock(body)

@@ -36,7 +36,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 ## Requirements
 
 - Swift 5.9, 5.10, 6.2+
-- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+ / macCatalyst 13+
 - MIT License
 
 ## Documentation

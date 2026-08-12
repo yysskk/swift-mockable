@@ -19,7 +19,7 @@ Add the package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "1.9.1")
+    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "1.11.1")
 ]
 ```
 
@@ -227,10 +227,8 @@ at compile time and cannot read runtime values.
 ## Requirements
 
 - Swift 5.9, 5.10, and 6.2+
-- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+
-- `MockableLock` lock strategy:
-  - iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+: prefers `Mutex` (`Synchronization`)
-  - Older OS versions: falls back to `LegacyLock` (`NSLock`-based)
+- macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+ / macCatalyst 13+
+- Generated `Sendable` and `actor` mocks synchronize their state with `Mutex` (`Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+, falling back to an `NSLock`-based lock on older OS versions
 
 ## License
 
