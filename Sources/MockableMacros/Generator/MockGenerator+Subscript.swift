@@ -233,26 +233,10 @@ extension MockGenerator {
         var getterStatements: [CodeBlockItemSyntax] = []
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
-        let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))),
-            operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
-            rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
-        )
-        getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
-
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        let appendExpr = FunctionCallExprSyntax(
-            calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                name: .identifier("append")
-            ),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: argsExpr)
-            ]),
-            rightParen: .rightParenToken()
-        )
-        getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(appendExpr))))
+        getterStatements.append(contentsOf: Self.makeCallRecordingStatements(
+            identifier: MockNaming.subscriptIdentifier(suffix: suffix),
+            parameters: parameters
+        ))
 
         getterStatements.append(contentsOf: buildSubscriptHandlerCallStatements(
             parameters: parameters,

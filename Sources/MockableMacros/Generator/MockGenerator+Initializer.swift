@@ -21,7 +21,7 @@ extension MockGenerator {
         let parameters = initDecl.signature.parameterClause.parameters
         let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
 
-        let callCountProperty = generateFunctionStorageProperty(
+        let callCountProperty = generateTrackingStorageProperty(
             name: MockNaming.callCount(identifier),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
@@ -30,7 +30,7 @@ extension MockGenerator {
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateFunctionStorageProperty(
+        let callArgsProperty = generateTrackingStorageProperty(
             name: MockNaming.callArgs(identifier),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),

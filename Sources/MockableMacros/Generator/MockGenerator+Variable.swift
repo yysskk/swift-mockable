@@ -120,7 +120,7 @@ extension MockGenerator {
 
         var members: [MemberBlockItemSyntax] = []
 
-        let callCountProperty = generateFunctionStorageProperty(
+        let callCountProperty = generateTrackingStorageProperty(
             name: MockNaming.callCount(varName),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
@@ -128,7 +128,7 @@ extension MockGenerator {
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
-        let handlerProperty = generateFunctionStorageProperty(
+        let handlerProperty = generateTrackingStorageProperty(
             name: MockNaming.handler(varName),
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
@@ -180,7 +180,7 @@ guard let _handler = \(MockNaming.handler(varName)) else {
 
         // The protocol witness stays actor-isolated on actor mocks (like every other
         // generated witness); only the auxiliary CallCount/Handler storage members are
-        // `nonisolated`, which they already get via `generateFunctionStorageProperty`.
+        // `nonisolated`, which they already get via `generateTrackingStorageProperty`.
         let property = VariableDeclSyntax(
             modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             bindingSpecifier: .keyword(.var),
@@ -224,42 +224,17 @@ guard let _handler = \(MockNaming.handler(varName)) else {
             storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
         }
 
-        let getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) }"
-        let setterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         if !isTypeMember {
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
         }
 
-        return VariableDeclSyntax(
+        return Self.makeLockBackedProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
-                    typeAnnotation: TypeAnnotationSyntax(type: storageType),
-                    accessorBlock: AccessorBlockSyntax(
-                        accessors: .accessors(AccessorDeclListSyntax([
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.get),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: getterBody)))
-                                    ])
-                                )
-                            ),
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.set),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: setterBody)))
-                                    ])
-                                )
-                            )
-                        ]))
-                    )
-                )
-            ])
+            name: MockNaming.variableBacking(varName),
+            type: storageType,
+            storageName: storageName,
+            storedName: MockNaming.variableBacking(varName)
         )
     }
 
@@ -281,53 +256,20 @@ guard let _handler = \(MockNaming.handler(varName)) else {
         }
 
         if isGetOnly {
-            return VariableDeclSyntax(
+            return Self.makeGetOnlyProperty(
                 modifiers: buildModifiers(additional: additionalModifiers),
-                bindingSpecifier: .keyword(.var),
-                bindings: PatternBindingListSyntax([
-                    PatternBindingSyntax(
-                        pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                        typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
-                        accessorBlock: AccessorBlockSyntax(
-                            accessors: .getter(CodeBlockItemListSyntax([
-                                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: getterBody)))
-                            ]))
-                        )
-                    )
-                ])
+                name: varName,
+                type: varType.trimmed,
+                getterBody: getterBody
             )
         }
 
-        let setterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
-        return VariableDeclSyntax(
+        return Self.makeGetSetProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
-                    accessorBlock: AccessorBlockSyntax(
-                        accessors: .accessors(AccessorDeclListSyntax([
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.get),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: getterBody)))
-                                    ])
-                                )
-                            ),
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.set),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: setterBody)))
-                                    ])
-                                )
-                            )
-                        ]))
-                    )
-                )
-            ])
+            name: varName,
+            type: varType.trimmed,
+            getterBody: getterBody,
+            setterBody: "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
         )
     }
 
@@ -340,26 +282,17 @@ guard let _handler = \(MockNaming.handler(varName)) else {
                          varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
 
         let storageType: TypeSyntax
-        let initializer: InitializerClauseSyntax?
-
         if isOptional {
             storageType = varType.trimmed
-            initializer = InitializerClauseSyntax(value: NilLiteralExprSyntax())
         } else {
             storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
-            initializer = InitializerClauseSyntax(value: NilLiteralExprSyntax())
         }
 
-        return VariableDeclSyntax(
+        return Self.makeStoredProperty(
             modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
-                    typeAnnotation: TypeAnnotationSyntax(type: storageType),
-                    initializer: initializer
-                )
-            ])
+            name: MockNaming.variableBacking(varName),
+            type: storageType,
+            initializer: ExprSyntax(NilLiteralExprSyntax())
         )
     }
 
@@ -378,20 +311,11 @@ guard let _handler = \(MockNaming.handler(varName)) else {
             getterBody = "\(MockNaming.variableBacking(varName))!"
         }
 
-        return VariableDeclSyntax(
+        return Self.makeGetOnlyProperty(
             modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
-                    accessorBlock: AccessorBlockSyntax(
-                        accessors: .getter(CodeBlockItemListSyntax([
-                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: getterBody)))
-                        ]))
-                    )
-                )
-            ])
+            name: varName,
+            type: varType.trimmed,
+            getterBody: getterBody
         )
     }
 
@@ -405,63 +329,28 @@ guard let _handler = \(MockNaming.handler(varName)) else {
         let additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
         if isOptional {
-            let storedProperty = VariableDeclSyntax(
+            let storedProperty = Self.makeStoredProperty(
                 modifiers: buildModifiers(additional: additionalModifiers),
-                bindingSpecifier: .keyword(.var),
-                bindings: PatternBindingListSyntax([
-                    PatternBindingSyntax(
-                        pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                        typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
-                        initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                    )
-                ])
+                name: varName,
+                type: varType.trimmed,
+                initializer: ExprSyntax(NilLiteralExprSyntax())
             )
             return [MemberBlockItemSyntax(decl: storedProperty)]
         }
 
-        let backingProperty = VariableDeclSyntax(
+        let backingProperty = Self.makeStoredProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
-                    typeAnnotation: TypeAnnotationSyntax(
-                        type: TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
-                    ),
-                    initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                )
-            ])
+            name: MockNaming.variableBacking(varName),
+            type: TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed)),
+            initializer: ExprSyntax(NilLiteralExprSyntax())
         )
 
-        let computedProperty = VariableDeclSyntax(
+        let computedProperty = Self.makeGetSetProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(varName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: varType.trimmed),
-                    accessorBlock: AccessorBlockSyntax(
-                        accessors: .accessors(AccessorDeclListSyntax([
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.get),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.variableBacking(varName))!")))
-                                    ])
-                                )
-                            ),
-                            AccessorDeclSyntax(
-                                accessorSpecifier: .keyword(.set),
-                                body: CodeBlockSyntax(
-                                    statements: CodeBlockItemListSyntax([
-                                        CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.variableBacking(varName)) = newValue")))
-                                    ])
-                                )
-                            )
-                        ]))
-                    )
-                )
-            ])
+            name: varName,
+            type: varType.trimmed,
+            getterBody: "\(MockNaming.variableBacking(varName))!",
+            setterBody: "\(MockNaming.variableBacking(varName)) = newValue"
         )
 
         return [
