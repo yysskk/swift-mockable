@@ -65,6 +65,15 @@ extension MockGenerator {
             self.hasThrowsEffect = initDecl.signature.effectSpecifiers?.hasThrowsEffect == true
             self.returnType = nil
         }
+
+        init(_ subscriptDecl: SubscriptDeclSyntax) {
+            let getterEffects = MockGenerator.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+            self.id = subscriptDecl.id
+            self.parameters = subscriptDecl.parameterClause.parameters
+            self.isAsync = getterEffects?.asyncSpecifier != nil
+            self.hasThrowsEffect = getterEffects?.hasThrowsEffect == true
+            self.returnType = subscriptDecl.returnClause.type
+        }
     }
 
     /// The suffix built from the parameter types alone, e.g. "BoolKey" for
@@ -173,6 +182,13 @@ extension MockGenerator {
     /// members cannot be named after a subscript's missing base name.
     static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax) -> String {
         overloadBaseSuffix(parameters: subscriptDecl.parameterClause.parameters)
+    }
+
+    /// Generates a unique suffix for a subscript within the protocol's subscript group.
+    /// See `overloadSuffix(for:in:)` for the disambiguation stages; a sole subscript
+    /// keeps the plain parameter-type suffix.
+    static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax, in group: [SubscriptDeclSyntax]) -> String {
+        overloadSuffix(for: OverloadSignature(subscriptDecl), in: group.map(OverloadSignature.init))
     }
 
     /// Sanitizes a type name for use in an identifier.

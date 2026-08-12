@@ -164,13 +164,16 @@ struct TrackingRequirement {
 struct OverloadContext {
     let methodGroups: [String: [FunctionDeclSyntax]]
     let initializers: [InitializerDeclSyntax]
+    let subscripts: [SubscriptDeclSyntax]
 }
 
 extension MockGenerator {
     func makeOverloadContext() -> OverloadContext {
-        OverloadContext(
+        let decls = collectDeclsIncludingConditional()
+        return OverloadContext(
             methodGroups: groupMethodsByNameIncludingConditional(),
-            initializers: collectInitializers()
+            initializers: decls.compactMap { $0.as(InitializerDeclSyntax.self) },
+            subscripts: decls.compactMap { $0.as(SubscriptDeclSyntax.self) }
         )
     }
 
@@ -197,7 +200,7 @@ extension MockGenerator {
         }
 
         if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return [subscriptTrackingRequirement(for: subscriptDecl)]
+            return [subscriptTrackingRequirement(for: subscriptDecl, overloads: overloads)]
         }
 
         return []
@@ -293,12 +296,15 @@ extension MockGenerator {
         )
     }
 
-    func subscriptTrackingRequirement(for subscriptDecl: SubscriptDeclSyntax) -> TrackingRequirement {
+    func subscriptTrackingRequirement(
+        for subscriptDecl: SubscriptDeclSyntax,
+        overloads: OverloadContext
+    ) -> TrackingRequirement {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
         let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
+        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl, in: overloads.subscripts)
         return TrackingRequirement(
             identifier: MockNaming.subscriptIdentifier(suffix: suffix),
             isTypeMember: false,

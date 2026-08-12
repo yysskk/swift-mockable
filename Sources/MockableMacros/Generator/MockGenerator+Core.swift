@@ -208,7 +208,7 @@ struct MockGenerator {
             if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
                 return generateSubscriptMock(
                     subscriptDecl,
-                    requirement: subscriptTrackingRequirement(for: subscriptDecl)
+                    requirement: subscriptTrackingRequirement(for: subscriptDecl, overloads: overloads)
                 )
             }
 
