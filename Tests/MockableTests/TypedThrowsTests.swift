@@ -96,6 +96,63 @@ struct TypedThrowsTests {
         #expect(mock.performCallCount == 1)
     }
 
+    @Test("typed throws subscript returns the handler value")
+    func typedThrowsSubscriptReturnsHandlerValue() throws {
+        let mock = TypedThrowingCatalogMock()
+        mock.subscriptIntHandler = { id in "item-\(id)" }
+
+        let value = try mock[4]
+
+        #expect(value == "item-4")
+        #expect(mock.subscriptIntCallCount == 1)
+        #expect(mock.subscriptIntCallArgs == [4])
+    }
+
+    @Test("typed throws subscript re-throws the typed error")
+    func typedThrowsSubscriptReThrowsTypedError() {
+        let mock = TypedThrowingCatalogMock()
+        mock.subscriptIntHandler = { _ in throw TypedThrowsError(code: 5) }
+
+        #expect(throws: TypedThrowsError(code: 5)) {
+            try mock[1]
+        }
+    }
+
+    @Test("typed throws init requirement records the call")
+    func typedThrowsInitializerRecordsCall() throws {
+        let mock = try TypedThrowingRepositoryMock(id: "repo")
+
+        #expect(mock.initCallCount == 1)
+        #expect(mock.initCallArgs == ["repo"])
+    }
+
+    @Test("typed throws method writes inout arguments back")
+    func typedThrowsInoutParameterWritesBack() throws {
+        let mock = TypedThrowingParserMock()
+        mock.parseHandler = { @Sendable buffer in
+            (returnValue: String(decoding: buffer, as: UTF8.self), inoutArgs: [])
+        }
+
+        var buffer: [UInt8] = Array("hello".utf8)
+        let value = try mock.parse(&buffer)
+
+        #expect(value == "hello")
+        #expect(buffer == [])
+        #expect(mock.parseCallCount == 1)
+        #expect(mock.parseCallArgs == [Array("hello".utf8)])
+    }
+
+    @Test("typed throws method with an inout parameter re-throws the typed error")
+    func typedThrowsInoutParameterReThrowsTypedError() {
+        let mock = TypedThrowingParserMock()
+        mock.parseHandler = { _ in throw TypedThrowsError(code: 8) }
+
+        var buffer: [UInt8] = []
+        #expect(throws: TypedThrowsError(code: 8)) {
+            try mock.parse(&buffer)
+        }
+    }
+
     @Test("throws(Never) method is called without try")
     func neverThrowsMethodReturnsHandlerValue() {
         let mock = NeverThrowingLoaderMock()
