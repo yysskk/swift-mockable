@@ -77,41 +77,10 @@ extension MockGenerator {
         return members
     }
 
+    /// A subscript requirement with no accessor block (`subscript(i: Int) -> Int`)
+    /// is get-only, hence the `true` default.
     static func isGetOnlySubscript(_ subscriptDecl: SubscriptDeclSyntax) -> Bool {
-        guard let accessorBlock = subscriptDecl.accessorBlock else {
-            return true
-        }
-
-        switch accessorBlock.accessors {
-        case .getter:
-            return true
-        case .accessors(let accessors):
-            let hasGetter = accessors.contains { $0.accessorSpecifier.tokenKind == .keyword(.get) }
-            let hasSetter = accessors.contains { $0.accessorSpecifier.tokenKind == .keyword(.set) }
-            return hasGetter && !hasSetter
-        }
-    }
-
-    static func extractGenericParameterNames(from subscriptDecl: SubscriptDeclSyntax) -> Set<String> {
-        guard let genericClause = subscriptDecl.genericParameterClause else {
-            return []
-        }
-        return Set(genericClause.parameters.map { $0.name.text })
-    }
-
-    /// Generates a unique suffix based on parameter types to distinguish overloaded subscripts.
-    static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax) -> String {
-        let parameters = subscriptDecl.parameterClause.parameters
-        if parameters.isEmpty {
-            return ""
-        }
-
-        let typeNames = parameters.map { param -> String in
-            let typeName = param.type.trimmedDescription
-            return sanitizeTypeName(typeName)
-        }
-
-        return typeNames.joined()
+        isGetOnly(subscriptDecl.accessorBlock, defaultWhenAbsent: true)
     }
 
     private func generateSubscriptStorageProperty(
@@ -420,13 +389,7 @@ if let _handler = _storage.withLock({ $0.\(MockNaming.setHandler(MockNaming.subs
     /// The `get` accessor of a subscript when it carries `async`/`throws` effects
     /// (e.g. `subscript(i: Int) -> T { get async throws }`), or `nil` otherwise.
     static func effectfulSubscriptGetter(_ subscriptDecl: SubscriptDeclSyntax) -> AccessorDeclSyntax? {
-        guard let accessorBlock = subscriptDecl.accessorBlock,
-              case .accessors(let accessors) = accessorBlock.accessors else {
-            return nil
-        }
-        return accessors.first { accessor in
-            accessor.accessorSpecifier.tokenKind == .keyword(.get) && accessor.effectSpecifiers != nil
-        }
+        effectfulGetAccessor(in: subscriptDecl.accessorBlock)
     }
 
     func buildSubscriptGetterClosureType(
@@ -437,16 +400,7 @@ if let _handler = _storage.withLock({ $0.\(MockNaming.setHandler(MockNaming.subs
     ) -> String {
         let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
-        // The handler is untyped-throwing even for a typed-throws accessor
-        // (`get throws(E)`) — the generated getter re-throws the typed error via a
-        // `catch` — so a typed error type is dropped here.
-        var effectsText = ""
-        if effects?.asyncSpecifier != nil {
-            effectsText += " async"
-        }
-        if effects?.hasThrowsEffect == true {
-            effectsText += " throws"
-        }
+        let effectsText = Self.effectsSuffix(for: effects)
 
         if parameters.isEmpty {
             return "()\(effectsText) -> \(returnTypeStr)"

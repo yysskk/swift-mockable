@@ -371,19 +371,11 @@ guard let _handler else {
         } else {
             parameterClause = "(\(paramTupleType.description))"
         }
-        var closureType = parameterClause
-        if isAsync {
-            closureType += " async"
-        }
-        if isThrows {
-            // The handler is untyped-throwing even for typed-throws (`throws(E)`)
-            // requirements: a typed-throws function value would need the Swift 6 runtime
-            // (macOS 15+) and cannot name a method's generic error type at storage scope.
-            // The generated body re-throws the typed error via a `catch` (see buildTypedThrowsCatch).
-            closureType += " throws"
-        }
-        closureType += " -> \(returnTypeStr)"
-        return closureType
+        // The handler is untyped-throwing even for typed-throws (`throws(E)`)
+        // requirements: a typed-throws function value would need the Swift 6 runtime
+        // (macOS 15+) and cannot name a method's generic error type at storage scope.
+        // The generated body re-throws the typed error via a `catch` (see buildTypedThrowsCatch).
+        return parameterClause + Self.effectsSuffix(isAsync: isAsync, isThrows: isThrows) + " -> \(returnTypeStr)"
     }
 
     /// Builds the argument string passed to `_handler(...)` in the generated method body.

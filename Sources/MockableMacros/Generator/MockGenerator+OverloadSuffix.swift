@@ -38,90 +38,38 @@ extension MockGenerator {
         return MockNaming.initializerIdentifier(suffix: suffix)
     }
 
-    // MARK: - Function Identifier Suffix
+    // MARK: - Overload Disambiguation
 
-    /// Generates a unique suffix based on parameter types to distinguish overloaded functions.
-    /// Example: `func set(_ value: Bool, forKey: Key)` -> "BoolKey"
-    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax) -> String {
-        let parameters = funcDecl.signature.parameterClause.parameters
-        if parameters.isEmpty {
-            return ""
+    /// The signature facts overload disambiguation is computed from, extracted once so
+    /// functions, initializers, and subscripts share a single suffix algorithm.
+    private struct OverloadSignature {
+        let id: SyntaxIdentifier
+        let parameters: FunctionParameterListSyntax
+        let isAsync: Bool
+        let hasThrowsEffect: Bool
+        /// `nil` for initializers, which have no return-type disambiguator.
+        let returnType: TypeSyntax?
+
+        init(_ funcDecl: FunctionDeclSyntax) {
+            self.id = funcDecl.id
+            self.parameters = funcDecl.signature.parameterClause.parameters
+            self.isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
+            self.hasThrowsEffect = funcDecl.signature.effectSpecifiers?.hasThrowsEffect == true
+            self.returnType = funcDecl.signature.returnClause?.type
         }
 
-        let typeNames = parameters.map { param -> String in
-            let typeName = param.type.trimmedDescription
-            return sanitizeTypeName(typeName)
+        init(_ initDecl: InitializerDeclSyntax) {
+            self.id = initDecl.id
+            self.parameters = initDecl.signature.parameterClause.parameters
+            self.isAsync = initDecl.signature.effectSpecifiers?.asyncSpecifier != nil
+            self.hasThrowsEffect = initDecl.signature.effectSpecifiers?.hasThrowsEffect == true
+            self.returnType = nil
         }
-
-        return typeNames.joined()
     }
 
-    /// Generates a unique suffix for an overloaded function within a group of methods with the same name.
-    /// First attempts to use parameter types only. If that results in duplicates within the group,
-    /// adds return type and async/throws modifiers to disambiguate. If overloads still collide
-    /// (e.g. nested generics that sanitize identically, such as `Foo<Bar, Baz>` and `Foo<BarBaz>`),
-    /// a deterministic source-order ordinal is appended so generated names stay unique.
-    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
-        let baseSuffix = functionIdentifierSuffix(from: funcDecl)
-
-        // Check if there are duplicates with the same base suffix in the method group
-        let baseCollisions = methodGroup.filter { functionIdentifierSuffix(from: $0) == baseSuffix }
-
-        if baseCollisions.count <= 1 {
-            // No duplicates, use base suffix
-            return baseSuffix
-        }
-
-        // There are duplicates, add return type and async/throws to disambiguate
-        let extendedSuffix = extendedFunctionIdentifierSuffix(from: funcDecl, baseSuffix: baseSuffix)
-
-        let extendedCollisions = baseCollisions.filter {
-            extendedFunctionIdentifierSuffix(from: $0, baseSuffix: functionIdentifierSuffix(from: $0)) == extendedSuffix
-        }
-        guard extendedCollisions.count > 1 else {
-            return extendedSuffix
-        }
-
-        // Still colliding: append a deterministic 1-based ordinal by source order.
-        // The first colliding overload keeps the extended suffix for stability.
-        guard let index = extendedCollisions.firstIndex(where: { $0.id == funcDecl.id }), index > 0 else {
-            return extendedSuffix
-        }
-        return "\(extendedSuffix)\(index + 1)"
-    }
-
-    /// Generates an extended suffix that includes return type and async/throws modifiers.
-    private static func extendedFunctionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, baseSuffix: String) -> String {
-        var suffix = baseSuffix
-
-        // Add return type if present and not Void
-        if let returnClause = funcDecl.signature.returnClause {
-            let returnTypeName = returnClause.type.trimmedDescription
-            if returnTypeName != "Void" && returnTypeName != "()" {
-                suffix += sanitizeTypeName(returnTypeName)
-            }
-        }
-
-        // Add async modifier
-        if funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil {
-            suffix += "Async"
-        }
-
-        // Add throws modifier
-        if funcDecl.signature.effectSpecifiers?.hasThrowsEffect == true {
-            suffix += "Throwing"
-        }
-
-        return suffix
-    }
-
-    // MARK: - Initializer Identifier Suffix
-
-    /// Generates a suffix based on parameter types to distinguish overloaded initializers,
-    /// mirroring `functionIdentifierSuffix(from:)`. Example: `init(host: String, port: Int)`
-    /// -> "StringInt".
-    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax) -> String {
-        let parameters = initDecl.signature.parameterClause.parameters
+    /// The suffix built from the parameter types alone, e.g. "BoolKey" for
+    /// `(_ value: Bool, forKey: Key)`, or "" for an empty parameter list.
+    private static func overloadBaseSuffix(parameters: FunctionParameterListSyntax) -> String {
         if parameters.isEmpty {
             return ""
         }
@@ -131,48 +79,100 @@ extension MockGenerator {
             .joined()
     }
 
-    /// Generates a unique suffix for an overloaded initializer within a group of `init`
-    /// requirements. Mirrors the function overload logic: parameter types first, then
-    /// `async`/`throws` modifiers, then a deterministic source-order ordinal if overloads
-    /// still collide. Initializers have no return type, so that disambiguator does not apply.
-    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
-        let baseSuffix = initializerIdentifierSuffix(from: initDecl)
+    /// Extends a base suffix with the return type (functions only) and `Async`/`Throwing`
+    /// markers to disambiguate overloads whose parameter types sanitize identically.
+    /// A `rethrows` requirement counts as throwing here — the marker reflects the
+    /// declared signature, unlike the handler closure, which drops `rethrows`.
+    private static func extendedOverloadSuffix(for signature: OverloadSignature, baseSuffix: String) -> String {
+        var suffix = baseSuffix
 
-        let baseCollisions = group.filter { initializerIdentifierSuffix(from: $0) == baseSuffix }
+        if let returnType = signature.returnType {
+            let returnTypeName = returnType.trimmedDescription
+            if returnTypeName != "Void" && returnTypeName != "()" {
+                suffix += sanitizeTypeName(returnTypeName)
+            }
+        }
+
+        if signature.isAsync {
+            suffix += "Async"
+        }
+
+        if signature.hasThrowsEffect {
+            suffix += "Throwing"
+        }
+
+        return suffix
+    }
+
+    /// Disambiguates one overload within its group in three stages: parameter types
+    /// first; then return type and `async`/`throws` markers when base suffixes collide;
+    /// then a deterministic 1-based source-order ordinal when overloads still collide
+    /// (e.g. nested generics that sanitize identically, such as `Foo<Bar, Baz>` and
+    /// `Foo<BarBaz>`). The first colliding overload keeps the extended suffix for
+    /// stability. Group membership is compared by node identity, so signatures must be
+    /// built from the original declaration nodes.
+    private static func overloadSuffix(for signature: OverloadSignature, in group: [OverloadSignature]) -> String {
+        let baseSuffix = overloadBaseSuffix(parameters: signature.parameters)
+
+        // Pair every group member with its base suffix once, rather than recomputing
+        // it inside each collision filter.
+        let membersWithBase = group.map { ($0, overloadBaseSuffix(parameters: $0.parameters)) }
+        let baseCollisions = membersWithBase.filter { $0.1 == baseSuffix }
         if baseCollisions.count <= 1 {
             return baseSuffix
         }
 
-        let extendedSuffix = extendedInitializerIdentifierSuffix(from: initDecl, baseSuffix: baseSuffix)
-        let extendedCollisions = baseCollisions.filter {
-            extendedInitializerIdentifierSuffix(from: $0, baseSuffix: initializerIdentifierSuffix(from: $0)) == extendedSuffix
+        let extendedSuffix = extendedOverloadSuffix(for: signature, baseSuffix: baseSuffix)
+        let extendedCollisions = baseCollisions.filter { member, memberBase in
+            extendedOverloadSuffix(for: member, baseSuffix: memberBase) == extendedSuffix
         }
         guard extendedCollisions.count > 1 else {
             return extendedSuffix
         }
 
-        // Still colliding: append a deterministic 1-based ordinal by source order. The first
-        // colliding overload keeps the extended suffix for stability.
-        guard let index = extendedCollisions.firstIndex(where: { $0.id == initDecl.id }), index > 0 else {
+        guard let index = extendedCollisions.firstIndex(where: { $0.0.id == signature.id }), index > 0 else {
             return extendedSuffix
         }
         return "\(extendedSuffix)\(index + 1)"
     }
 
-    /// Extends an initializer suffix with `async`/`throws` modifiers to disambiguate overloads
-    /// whose parameter types sanitize identically.
-    private static func extendedInitializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, baseSuffix: String) -> String {
-        var suffix = baseSuffix
+    // MARK: - Function Identifier Suffix
 
-        if initDecl.signature.effectSpecifiers?.asyncSpecifier != nil {
-            suffix += "Async"
-        }
+    /// Generates a unique suffix based on parameter types to distinguish overloaded functions.
+    /// Example: `func set(_ value: Bool, forKey: Key)` -> "BoolKey"
+    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax) -> String {
+        overloadBaseSuffix(parameters: funcDecl.signature.parameterClause.parameters)
+    }
 
-        if initDecl.signature.effectSpecifiers?.hasThrowsEffect == true {
-            suffix += "Throwing"
-        }
+    /// Generates a unique suffix for an overloaded function within a group of methods
+    /// with the same name. See `overloadSuffix(for:in:)` for the disambiguation stages.
+    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
+        overloadSuffix(for: OverloadSignature(funcDecl), in: methodGroup.map(OverloadSignature.init))
+    }
 
-        return suffix
+    // MARK: - Initializer Identifier Suffix
+
+    /// Generates a suffix based on parameter types to distinguish overloaded initializers,
+    /// mirroring `functionIdentifierSuffix(from:)`. Example: `init(host: String, port: Int)`
+    /// -> "StringInt".
+    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax) -> String {
+        overloadBaseSuffix(parameters: initDecl.signature.parameterClause.parameters)
+    }
+
+    /// Generates a unique suffix for an overloaded initializer within a group of `init`
+    /// requirements. See `overloadSuffix(for:in:)` for the disambiguation stages;
+    /// initializers have no return type, so that disambiguator does not apply.
+    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
+        overloadSuffix(for: OverloadSignature(initDecl), in: group.map(OverloadSignature.init))
+    }
+
+    // MARK: - Subscript Identifier Suffix
+
+    /// Generates a unique suffix based on parameter types to distinguish overloaded subscripts.
+    /// Unlike functions, the suffix is emitted even for a sole subscript, because generated
+    /// members cannot be named after a subscript's missing base name.
+    static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax) -> String {
+        overloadBaseSuffix(parameters: subscriptDecl.parameterClause.parameters)
     }
 
     /// Sanitizes a type name for use in an identifier.

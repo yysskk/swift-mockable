@@ -4,15 +4,11 @@ import SwiftSyntaxBuilder
 // MARK: - Type Erasure
 
 extension MockGenerator {
-    static func extractGenericParameterNames(from funcDecl: FunctionDeclSyntax) -> Set<String> {
-        guard let genericClause = funcDecl.genericParameterClause else {
-            return []
-        }
-        return Set(genericClause.parameters.map { $0.name.text })
-    }
-
-    static func extractGenericParameterNames(from initDecl: InitializerDeclSyntax) -> Set<String> {
-        guard let genericClause = initDecl.genericParameterClause else {
+    /// The names of a requirement's generic parameters, e.g. `{"T", "U"}` for
+    /// `func convert<T, U>(_ value: T) -> U`. Types mentioning one of these cannot be
+    /// referenced from the mock's class-scope storage and handlers, so they are erased.
+    static func extractGenericParameterNames(from decl: some WithGenericParametersSyntax) -> Set<String> {
+        guard let genericClause = decl.genericParameterClause else {
             return []
         }
         return Set(genericClause.parameters.map { $0.name.text })
