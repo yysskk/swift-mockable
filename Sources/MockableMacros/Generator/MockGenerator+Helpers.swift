@@ -1,4 +1,3 @@
-import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
@@ -69,28 +68,6 @@ extension MockGenerator {
 
     func usesLockBasedStorage(isTypeMember: Bool) -> Bool {
         usesInstanceStorageLock || isTypeMember
-    }
-
-    func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
-        mapMemberBlockItemsPreservingIfConfig { decl in
-            if let associatedType = decl.as(AssociatedTypeDeclSyntax.self) {
-                return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
-            }
-
-            if let typeAliasDecl = decl.as(TypeAliasDeclSyntax.self) {
-                let rebuilt = TypeAliasDeclSyntax(
-                    modifiers: buildModifiers(),
-                    name: .identifier(typeAliasDecl.name.text),
-                    initializer: TypeInitializerClauseSyntax(
-                        equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),
-                        value: typeAliasDecl.initializer.value
-                    )
-                )
-                return [MemberBlockItemSyntax(decl: rebuilt)]
-            }
-
-            return []
-        }
     }
 
     func mapMemberBlockItemsPreservingIfConfig(
@@ -1164,7 +1141,7 @@ extension MockGenerator {
             let genericArgsStr = String(result[result.index(after: openAngleIndex)..<closeAngleIndex])
             // Split generic arguments by comma, handling nested generics
             let genericArgs = splitGenericArguments(genericArgsStr)
-            let sanitizedArgs = genericArgs.map { sanitizeTypeName($0.trimmingCharacters(in: .whitespaces)) }
+            let sanitizedArgs = genericArgs.map { sanitizeTypeName(trimmingWhitespace($0)) }
             result = baseName + sanitizedArgs.joined()
         }
 
@@ -1177,6 +1154,18 @@ extension MockGenerator {
         }
 
         return result
+    }
+
+    /// Removes leading and trailing whitespace from a string.
+    private static func trimmingWhitespace(_ string: String) -> String {
+        var substring = Substring(string)
+        while substring.first?.isWhitespace == true {
+            substring.removeFirst()
+        }
+        while substring.last?.isWhitespace == true {
+            substring.removeLast()
+        }
+        return String(substring)
     }
 
     /// Splits generic arguments by comma, handling nested generics.

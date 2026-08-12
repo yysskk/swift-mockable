@@ -4,6 +4,28 @@ import SwiftSyntaxBuilder
 // MARK: - Associated Type Generation
 
 extension MockGenerator {
+    func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
+        mapMemberBlockItemsPreservingIfConfig { decl in
+            if let associatedType = decl.as(AssociatedTypeDeclSyntax.self) {
+                return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
+            }
+
+            if let typeAliasDecl = decl.as(TypeAliasDeclSyntax.self) {
+                let rebuilt = TypeAliasDeclSyntax(
+                    modifiers: buildModifiers(),
+                    name: .identifier(typeAliasDecl.name.text),
+                    initializer: TypeInitializerClauseSyntax(
+                        equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),
+                        value: typeAliasDecl.initializer.value
+                    )
+                )
+                return [MemberBlockItemSyntax(decl: rebuilt)]
+            }
+
+            return []
+        }
+    }
+
     /// Generates a typealias declaration for an associated type.
     /// Uses the default type if specified, otherwise falls back to Any.
     func generateTypeAlias(for associatedType: AssociatedTypeDeclSyntax) -> TypeAliasDeclSyntax {
