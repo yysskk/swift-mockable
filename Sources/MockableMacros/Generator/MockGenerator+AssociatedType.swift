@@ -4,6 +4,8 @@ import SwiftSyntaxBuilder
 // MARK: - Associated Type Generation
 
 extension MockGenerator {
+    /// The type aliases the mock needs to satisfy the protocol's `associatedtype` and
+    /// `typealias` declarations. Emitted first so later members can refer to them.
     func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
         mapMemberBlockItemsPreservingIfConfig { decl in
             if let associatedType = decl.as(AssociatedTypeDeclSyntax.self) {

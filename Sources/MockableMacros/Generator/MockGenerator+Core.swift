@@ -3,13 +3,22 @@ import SwiftSyntaxBuilder
 
 /// Builds the mock type for a single `@Mockable` protocol from its parsed shape.
 ///
-/// `MockableMacro` extracts the protocol's name, members, conformances, and access level
-/// into a `MockGenerator`, then calls ``generate()``. The generator's responsibilities are
-/// split across `MockGenerator+*.swift` extensions by concern: `+Function`, `+Variable`,
-/// and `+Subscript` emit the per-requirement witnesses and their tracking members;
-/// `+Storage` builds the lock-backed storage structs used for `Sendable`/actor mocks;
-/// `+Reset` emits `resetMock()`; and `+Helpers` holds the shared type-erasure and naming
-/// utilities.
+/// `MockableMacro` extracts the protocol's shape into a `MockGenerator`, then calls
+/// ``generate()``. The generator's responsibilities are split across
+/// `MockGenerator+*.swift` extensions by concern:
+///
+/// - `TrackingModel` derives, once per requirement, which tracking slots it needs and
+///   how they are named and typed. `+Function`, `+Variable`, `+Subscript`, and
+///   `+Initializer` emit the witnesses and their tracking members from that model;
+///   `+Storage` builds the lock-backed storage structs from it; `+Reset` emits
+///   `resetMock()` from it.
+/// - `+Emit` holds the shared property and statement builders those generators use.
+/// - `+TypeErasure`, `+ParameterModel`, `+DefaultReturnValue`, `+OverloadSuffix`,
+///   `+AccessorInspection`, and `+StorageModel` hold the shared analyses: erasing
+///   generic parameters, shaping recorded arguments, choosing unset-handler defaults,
+///   disambiguating overloads, reading accessor blocks, and deciding storage flavor.
+/// - `+IfConfigTraversal` keeps every generator's output aligned with the protocol's
+///   conditional-compilation structure.
 struct MockGenerator {
     let protocolName: String
     let mockClassName: String
@@ -20,6 +29,9 @@ struct MockGenerator {
     let accessLevel: AccessLevel
     let parentMockClassName: String?
 
+    /// Whether the mock subclasses a parent protocol's mock, inheriting its members and
+    /// initializers. Actor mocks are final and never subclass, so an actor protocol
+    /// re-implements its parent's requirements instead.
     var hasParentMock: Bool {
         parentMockClassName != nil && !isActor
     }
@@ -51,6 +63,8 @@ struct MockGenerator {
         return DeclModifierListSyntax(modifiers)
     }
 
+    /// Whether the generated type can be subclassed from another module, which decides
+    /// whether `public` members are emitted as `open`. Actor mocks are always final.
     var canBeSubclassedOutsideModule: Bool {
         accessLevel == .public && !isActor
     }
@@ -121,6 +135,9 @@ struct MockGenerator {
         )
     }
 
+    /// Builds the class mock: the shared member block plus the inheritance clause
+    /// (parent mock first, then the protocol, then `@unchecked Sendable` when the
+    /// protocol requires it) and the `@MainActor` attribute where applicable.
     private func generateClassMock() -> ClassDeclSyntax {
         let memberBlock = buildMockMemberBlock()
 
@@ -165,6 +182,9 @@ struct MockGenerator {
         )
     }
 
+    /// Builds the actor mock: the shared member block plus a conformance to the
+    /// protocol alone. An actor is implicitly `Sendable` and cannot subclass, so
+    /// neither the `Sendable` conformance nor a parent mock applies.
     private func generateActorMock() -> ActorDeclSyntax {
         let memberBlock = buildMockMemberBlock()
 
@@ -183,6 +203,9 @@ struct MockGenerator {
         )
     }
 
+    /// The per-requirement mock members, in protocol declaration order and with any
+    /// `#if` structure preserved. Each requirement's tracking model is computed once
+    /// here and handed to the per-kind generator.
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
         let overloads = makeOverloadContext()
 

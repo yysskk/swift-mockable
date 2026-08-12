@@ -41,6 +41,7 @@ extension MockGenerator {
         return type
     }
 
+    /// `T?`, `T!`, or the unsugared `Optional<T>`.
     private static func isOptionalType(_ type: TypeSyntax) -> Bool {
         if type.is(OptionalTypeSyntax.self) || type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
             return true
@@ -48,6 +49,7 @@ extension MockGenerator {
         return isGenericStdlibType(type, named: "Optional")
     }
 
+    /// `[T]` or the unsugared `Array<T>`.
     private static func isArrayType(_ type: TypeSyntax) -> Bool {
         if type.is(ArrayTypeSyntax.self) {
             return true
@@ -55,10 +57,12 @@ extension MockGenerator {
         return isGenericStdlibType(type, named: "Array")
     }
 
+    /// `Set<T>`, which has no sugared spelling.
     private static func isSetType(_ type: TypeSyntax) -> Bool {
         isGenericStdlibType(type, named: "Set")
     }
 
+    /// `[K: V]` or the unsugared `Dictionary<K, V>`.
     private static func isDictionaryType(_ type: TypeSyntax) -> Bool {
         if type.is(DictionaryTypeSyntax.self) {
             return true

@@ -102,6 +102,9 @@ extension MockGenerator {
         "()\(effectsSuffix(for: effects)) -> \(varType.trimmedDescription)"
     }
 
+    /// Generates the members that mock an effectful read-only property: the tracking
+    /// slots plus a witness whose getter keeps the requirement's `async`/`throws`
+    /// effects, records the call, and forwards to the handler.
     private func generateEffectfulGetterMock(
         requirement: TrackingRequirement,
         getter: AccessorDeclSyntax
@@ -204,6 +207,10 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         )
     }
 
+    /// The property witness of a lock-backed stored property, reading (and, for a
+    /// get-set requirement, writing) its `_name` slot through the lock. A non-optional
+    /// requirement force-unwraps the optional slot, so reading before the test sets a
+    /// value traps rather than silently returning a placeholder.
     private func generateLockBasedVariableProperty(
         varName: String,
         varType: TypeSyntax,
@@ -239,6 +246,8 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         )
     }
 
+    /// The get-only witness of a stored property, reading its `_name` backing storage
+    /// (force-unwrapped for a non-optional requirement).
     private func generateComputedGetProperty(
         varName: String,
         varType: TypeSyntax,

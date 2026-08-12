@@ -35,6 +35,9 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// is the full explanation.
     case unsupportedGenericParameter(String)
 
+    /// The text shown at the diagnostic's source location. Cases carrying an
+    /// explanation report it verbatim, so each diagnostic can describe why the
+    /// requirement cannot be mocked in its own terms.
     var message: String {
         switch self {
         case .notAProtocol:
@@ -56,8 +59,11 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
         }
     }
 
+    /// Every case is an error: the alternative to reporting is an expansion that does
+    /// not compile, so there is nothing a warning would let the build proceed with.
     var severity: DiagnosticSeverity { .error }
 
+    /// The stable identifier tools use to group these diagnostics.
     var diagnosticID: MessageID {
         switch self {
         case .notAProtocol:
@@ -79,5 +85,6 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
         }
     }
 
+    /// `CustomStringConvertible` conformance, mirroring the diagnostic message.
     var description: String { message }
 }

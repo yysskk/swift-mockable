@@ -64,6 +64,9 @@ extension MockGenerator {
         generateStorageStruct(named: MockNaming.staticStorageTypeName, includeTypeMembers: true)
     }
 
+    /// Builds one storage struct from the tracking model: a stored field per slot of
+    /// every requirement on the matching side of the instance/static split, with the
+    /// protocol's `#if` structure preserved.
     private func generateStorageStruct(
         named storageName: String,
         includeTypeMembers: Bool
