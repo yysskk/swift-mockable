@@ -69,14 +69,14 @@ struct MockGenerator {
     /// Builds the members shared by class and actor mocks, in emission order:
     /// associated-type aliases, lock-backed storage (instance, then static), an
     /// explicit initializer where the access level requires one, the per-requirement
-    /// mock members, and `resetMock()`. Actor mocks always use instance lock storage;
-    /// class mocks only when the protocol is `Sendable`.
-    private func buildMockMemberBlock(alwaysEmitInstanceStorage: Bool) -> MemberBlockSyntax {
+    /// mock members, and `resetMock()`. Instance lock storage is emitted for every
+    /// actor mock and for `Sendable` class mocks (`usesInstanceStorageLock` covers both).
+    private func buildMockMemberBlock() -> MemberBlockSyntax {
         var members: [MemberBlockItemSyntax] = []
 
         members.append(contentsOf: generateAssociatedTypeMembers())
 
-        if alwaysEmitInstanceStorage || usesInstanceStorageLock {
+        if usesInstanceStorageLock {
             let storageStruct = generateStorageStruct()
             members.append(MemberBlockItemSyntax(decl: storageStruct))
 
@@ -122,7 +122,7 @@ struct MockGenerator {
     }
 
     private func generateClassMock() -> ClassDeclSyntax {
-        let memberBlock = buildMockMemberBlock(alwaysEmitInstanceStorage: false)
+        let memberBlock = buildMockMemberBlock()
 
         var inheritedTypes: [InheritedTypeSyntax] = []
 
@@ -166,7 +166,7 @@ struct MockGenerator {
     }
 
     private func generateActorMock() -> ActorDeclSyntax {
-        let memberBlock = buildMockMemberBlock(alwaysEmitInstanceStorage: true)
+        let memberBlock = buildMockMemberBlock()
 
         let inheritedTypes: [InheritedTypeSyntax] = [
             InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
