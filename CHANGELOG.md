@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-08-12
+
 ### Added
 
 - A `condition:` argument on `@Mockable` that controls the `#if` guard around the generated mock: `.debug` (the default, matching the previous always-`#if DEBUG` behavior), `.custom("CONDITION")` for a custom compilation condition, and `.always` for no guard. This makes mocks usable in test-support modules built in the release configuration, SwiftUI previews, and UI-test host apps. The custom condition accepts a flag (`"MOCKING"`) or a compound compilation condition expression built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks (`"DEBUG || UITESTS"`, `"os(iOS) && !RELEASE"`). Invalid arguments (non-literal values, interpolated strings, or unsupported condition constructs) emit compile-time diagnostics.
@@ -159,7 +161,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.11.1...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.12.0...HEAD
+[1.12.0]: https://github.com/yysskk/swift-mockable/compare/1.11.1...1.12.0
 [1.11.1]: https://github.com/yysskk/swift-mockable/compare/1.11.0...1.11.1
 [1.11.0]: https://github.com/yysskk/swift-mockable/compare/1.10.0...1.11.0
 [1.10.0]: https://github.com/yysskk/swift-mockable/compare/1.9.1...1.10.0
