@@ -29,29 +29,8 @@ public struct MockableMacro: PeerMacro {
             return []
         }
 
-        // Protocol-level conformance flags drive both diagnostics and code generation.
-        let isSendable = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
-            inherited.type.trimmedDescription == "Sendable"
-        } ?? false
-
-        let hasSendableAttribute = protocolDecl.attributes.contains { attr in
-            if case .attribute(let attributeSyntax) = attr {
-                return attributeSyntax.attributeName.trimmedDescription == "Sendable"
-            }
-            return false
-        }
-
-        // Check if the protocol inherits from Actor
-        let isActor = protocolDecl.inheritanceClause?.inheritedTypes.contains { inherited in
-            inherited.type.trimmedDescription == "Actor"
-        } ?? false
-
-        // Extract parent protocol names (excluding well-known non-protocol types)
-        let knownNonParentProtocols: Set<String> = ["Sendable", "Actor", "AnyObject", "AnyActor"]
-        let parentProtocolNames: [String] = protocolDecl.inheritanceClause?.inheritedTypes
-            .map { $0.type.trimmedDescription }
-            .filter { !knownNonParentProtocols.contains($0) }
-            ?? []
+        // The protocol-level shape drives both diagnostics and code generation.
+        let shape = ProtocolShape(protocolDecl)
 
         // `nil` means the arguments were invalid and diagnostics were emitted; the
         // member diagnostics below still run so all problems surface in one pass.
@@ -63,40 +42,22 @@ public struct MockableMacro: PeerMacro {
         // inherits the parent mock's `required init`.
         let hasUnsupportedInitializers = diagnoseInitializerContext(
             in: protocolDecl.memberBlock.members,
-            isUnsupportedContext: !parentProtocolNames.isEmpty,
+            isUnsupportedContext: !shape.parentProtocolNames.isEmpty,
             context: context
         )
         guard let condition, !hasUnsupportedMembers, !hasUnsupportedInitializers else {
             return []
         }
 
-        let protocolName = protocolDecl.name.text
-        let mockClassName = MockNaming.mockTypeName(forProtocol: protocolName)
-
-        // Check if the protocol has @MainActor attribute
-        let isMainActor = protocolDecl.attributes.contains { attr in
-            if case .attribute(let attributeSyntax) = attr {
-                return attributeSyntax.attributeName.trimmedDescription == "MainActor"
-            }
-            return false
-        }
-
-        let parentMockClassName: String? = parentProtocolNames.first.map { MockNaming.mockTypeName(forProtocol: $0) }
-
-        let members = protocolDecl.memberBlock.members
-
-        // Extract access level from the protocol declaration
-        let accessLevel = AccessLevel.from(protocolDecl: protocolDecl)
-
         let generator = MockGenerator(
-            protocolName: protocolName,
-            mockClassName: mockClassName,
-            members: members,
-            isSendable: isSendable || hasSendableAttribute,
-            isActor: isActor,
-            isMainActor: isMainActor,
-            accessLevel: accessLevel,
-            parentMockClassName: parentMockClassName
+            protocolName: shape.protocolName,
+            mockClassName: shape.mockClassName,
+            members: protocolDecl.memberBlock.members,
+            isSendable: shape.isSendable,
+            isActor: shape.isActor,
+            isMainActor: shape.isMainActor,
+            accessLevel: shape.accessLevel,
+            parentMockClassName: shape.parentMockClassName
         )
 
         let mockClass = generator.generate()
