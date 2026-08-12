@@ -58,19 +58,15 @@ struct MockGenerator {
     /// Builds the mock declaration: an `actor` for `Actor` protocols, otherwise a `class`.
     /// `Sendable` and non-`Sendable` class mocks share the same builder; they differ only
     /// in whether members are lock-backed, which the builder decides per member.
-    func generate() throws -> DeclSyntax {
+    func generate() -> DeclSyntax {
         if isActor {
-            return DeclSyntax(try generateActorMock())
+            return DeclSyntax(generateActorMock())
         }
 
-        if isSendable {
-            return DeclSyntax(try generateClassMock())
-        }
-
-        return DeclSyntax(try generateClassMock())
+        return DeclSyntax(generateClassMock())
     }
 
-    private func generateClassMock() throws -> ClassDeclSyntax {
+    private func generateClassMock() -> ClassDeclSyntax {
         var classMembers: [MemberBlockItemSyntax] = []
         let needsStaticStorage = hasTypeMembers()
 
@@ -161,7 +157,7 @@ struct MockGenerator {
         )
     }
 
-    private func generateActorMock() throws -> ActorDeclSyntax {
+    private func generateActorMock() -> ActorDeclSyntax {
         var actorMembers: [MemberBlockItemSyntax] = []
 
         actorMembers.append(contentsOf: generateAssociatedTypeMembers())

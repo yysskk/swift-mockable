@@ -99,7 +99,7 @@ public struct MockableMacro: PeerMacro {
             parentMockClassName: parentMockClassName
         )
 
-        let mockClass = try generator.generate()
+        let mockClass = generator.generate()
 
         return [condition.wrapping(mockClass)]
     }
@@ -492,16 +492,9 @@ public struct MockableMacro: PeerMacro {
         }
 
         if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return !hasTypeMemberModifier(subscriptDecl.modifiers)
+            return !MockGenerator.isTypeMember(subscriptDecl.modifiers)
         }
 
         return false
-    }
-
-    private static func hasTypeMemberModifier(_ modifiers: DeclModifierListSyntax) -> Bool {
-        modifiers.contains { modifier in
-            let modifierName = modifier.name.text
-            return modifierName == "static" || modifierName == "class"
-        }
     }
 }

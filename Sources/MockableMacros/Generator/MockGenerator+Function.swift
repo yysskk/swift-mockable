@@ -508,7 +508,9 @@ guard let _handler = \(MockNaming.handler(identifier)) else {
         errorType: String
     ) -> CodeBlockItemSyntax {
         let lines = statements.flatMap { statement in
-            statement.trimmedDescription.components(separatedBy: "\n")
+            statement.trimmedDescription
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .map(String.init)
         }
         return buildTypedThrowsCatch(innerLines: lines, errorType: errorType)
     }
