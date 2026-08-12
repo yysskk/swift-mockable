@@ -193,6 +193,13 @@ extension MockGenerator {
         genericParamNames: Set<String>,
         throwsErrorType: TypeSyntax? = nil
     ) -> CodeBlockSyntax {
+        // A throwing `@autoclosure` argument is evaluated with `try` in the requirement's own
+        // body, so a typed-throws requirement has to convert that error too: wrap the whole
+        // body in one catch rather than only the handler call.
+        let errorType = throwsErrorType?.trimmedDescription
+        let wrapsBodyInTypedThrowsCatch = errorType != nil
+            && Self.hasThrowingAutoclosureParameter(parameters)
+
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
@@ -225,9 +232,13 @@ extension MockGenerator {
             isThrows: isThrows,
             hasGenericReturn: hasGenericReturn,
             genericParamNames: genericParamNames,
-            throwsErrorType: throwsErrorType
+            throwsErrorType: wrapsBodyInTypedThrowsCatch ? nil : throwsErrorType
         )
         statements.append(contentsOf: handlerCallStmts)
+
+        if wrapsBodyInTypedThrowsCatch, let errorType {
+            statements = [Self.buildTypedThrowsCatch(statements: statements, errorType: errorType)]
+        }
 
         return CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
@@ -261,6 +272,12 @@ extension MockGenerator {
             genericParamNames: genericParamNames
         )
         let errorType = throwsErrorType?.trimmedDescription
+        // A throwing `@autoclosure` argument is evaluated with `try` in the requirement's own
+        // body, so a typed-throws requirement has to convert that error too: wrap the whole
+        // body in one catch rather than only the handler call.
+        let wrapsBodyInTypedThrowsCatch = errorType != nil
+            && Self.hasThrowingAutoclosureParameter(parameters)
+        let handlerCallErrorType = wrapsBodyInTypedThrowsCatch ? nil : errorType
 
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before taking the lock so user-supplied
@@ -292,7 +309,7 @@ guard let _handler else {
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
                 returnTypeStr: returnTypeStr,
-                errorType: errorType
+                errorType: handlerCallErrorType
             ))
         } else {
             statements.append(Self.buildOptionalHandlerCallStatement(
@@ -300,8 +317,12 @@ guard let _handler else {
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
-                errorType: errorType
+                errorType: handlerCallErrorType
             ))
+        }
+
+        if wrapsBodyInTypedThrowsCatch, let errorType {
+            statements = [Self.buildTypedThrowsCatch(statements: statements, errorType: errorType)]
         }
 
         return CodeBlockSyntax(
@@ -478,6 +499,18 @@ guard let _handler = \(MockNaming.handler(identifier)) else {
             throw error as! \(errorType)
         }
         """)))
+    }
+
+    /// Wraps whole statements in the typed-throws catch, keeping each statement's own
+    /// indentation. Used when the conversion has to cover more than the handler call.
+    static func buildTypedThrowsCatch(
+        statements: [CodeBlockItemSyntax],
+        errorType: String
+    ) -> CodeBlockItemSyntax {
+        let lines = statements.flatMap { statement in
+            statement.trimmedDescription.components(separatedBy: "\n")
+        }
+        return buildTypedThrowsCatch(innerLines: lines, errorType: errorType)
     }
 
     /// Builds an `if let _handler` statement for optional handler calls (void return).

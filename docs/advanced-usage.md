@@ -247,6 +247,25 @@ A typed-throws closure *parameter* (`func run(_ body: () throws(MyError) -> Void
 is likewise stored untyped: its `CallArgs`/handler entry uses `() throws -> Void`,
 so the mock never embeds a typed-throws function value.
 
+A throwing `@autoclosure` argument is evaluated inside the same conversion, so its
+error is re-thrown as the declared type too — the mock wraps its whole body rather
+than only the handler call:
+
+```swift
+func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int
+// generates:
+// do {
+//     let value = try value()
+//     ...
+//     return try _handler(value)
+// } catch {
+//     throw error as! ComputeError
+// }
+```
+
+As with an unrecorded call elsewhere, an autoclosure that throws does so before the
+call is recorded, so `CallCount` is not incremented.
+
 ### `throws(Never)` and `throws(any Error)`
 
 Two error types describe what an untyped clause already says, so the mock skips

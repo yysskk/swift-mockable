@@ -52,9 +52,18 @@ extension MockGenerator {
         identifier: String
     ) -> InitializerDeclSyntax {
         let parameters = initDecl.signature.parameterClause.parameters
+        let throwsErrorType = initDecl.signature.effectSpecifiers?.throwsErrorType
         let body = usesInstanceStorageLock
-            ? buildLockBasedInitializerBody(parameters: parameters, identifier: identifier)
-            : buildDirectInitializerBody(parameters: parameters, identifier: identifier)
+            ? buildLockBasedInitializerBody(
+                parameters: parameters,
+                identifier: identifier,
+                throwsErrorType: throwsErrorType
+            )
+            : buildDirectInitializerBody(
+                parameters: parameters,
+                identifier: identifier,
+                throwsErrorType: throwsErrorType
+            )
 
         // A class mock is non-final, so a protocol `init` requirement must be satisfied by a
         // `required` initializer to force subclasses to provide it too. Actors are final and
@@ -79,7 +88,8 @@ extension MockGenerator {
     /// stored tracking properties.
     private func buildDirectInitializerBody(
         parameters: FunctionParameterListSyntax,
-        identifier: String
+        identifier: String,
+        throwsErrorType: TypeSyntax?
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments once so recording observes the evaluated value,
@@ -91,6 +101,11 @@ extension MockGenerator {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         statements.append(
             CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callArgs(identifier)).append(\(argsExpr))")))
+        )
+        statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
+            statements,
+            parameters: parameters,
+            throwsErrorType: throwsErrorType
         )
 
         return CodeBlockSyntax(
@@ -105,7 +120,8 @@ extension MockGenerator {
     /// lock so user-supplied expressions never run while it is held.
     private func buildLockBasedInitializerBody(
         parameters: FunctionParameterListSyntax,
-        identifier: String
+        identifier: String,
+        throwsErrorType: TypeSyntax?
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
@@ -117,11 +133,33 @@ extension MockGenerator {
             storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
         }
         """))))
+        statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
+            statements,
+            parameters: parameters,
+            throwsErrorType: throwsErrorType
+        )
 
         return CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
             statements: CodeBlockItemListSyntax(Self.ensureNewlinesBetweenStatements(statements)),
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
+    }
+
+    /// Wraps an initializer body in the typed-throws catch when it evaluates a throwing
+    /// `@autoclosure` argument, whose `try` would otherwise escape the declared error type.
+    /// An initializer has no handler, so this is the only error it can convert.
+    private static func typedThrowsCatchWrappingAutoclosureEvaluation(
+        _ statements: [CodeBlockItemSyntax],
+        parameters: FunctionParameterListSyntax,
+        throwsErrorType: TypeSyntax?
+    ) -> [CodeBlockItemSyntax] {
+        guard
+            let errorType = throwsErrorType?.trimmedDescription,
+            hasThrowingAutoclosureParameter(parameters)
+        else {
+            return statements
+        }
+        return [buildTypedThrowsCatch(statements: statements, errorType: errorType)]
     }
 }
