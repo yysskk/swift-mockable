@@ -120,7 +120,7 @@ func load(id: Int) throws(LoadError) -> String
 // do { return try _handler(id) } catch { throw error as! LoadError }
 ```
 
-Configure the handler as usual (`mock.loadHandler = { id in throw LoadError() }`). This keeps the full deployment range and supports generic error types. If a handler throws a different error type, the mock traps.
+Configure the handler as usual (`mock.loadHandler = { id in throw LoadError() }`). This keeps the full deployment range and supports generic error types. If a handler throws a different error type, the mock traps. An error thrown while evaluating a throwing `@autoclosure` argument is converted the same way, before the call is recorded.
 
 Two error types need no re-throw. `throws(Never)` keeps its signature but is mocked as non-throwing — the handler cannot throw, and the mock is called without `try`:
 

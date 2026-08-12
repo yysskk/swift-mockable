@@ -6,6 +6,11 @@ import Testing
 
 @Suite("Typed Throws Mock Tests")
 struct TypedThrowsTests {
+    /// An expression for a throwing `@autoclosure` argument to evaluate.
+    private func throwingValue(code: Int) throws -> Int {
+        throw TypedThrowsError(code: code)
+    }
+
     @Test("typed throws method returns the handler value")
     func typedThrowsMethodReturnsHandlerValue() throws {
         let mock = TypedThrowingLoaderMock()
@@ -94,6 +99,36 @@ struct TypedThrowsTests {
 
         #expect(handlerRan)
         #expect(mock.performCallCount == 1)
+    }
+
+    @Test("typed throws method evaluates a throwing @autoclosure argument")
+    func typedThrowsMethodEvaluatesThrowingAutoclosure() throws {
+        let mock = TypedThrowingCalculatorMock()
+        mock.computeHandler = { value in value * 2 }
+
+        let result = try mock.compute(21)
+
+        #expect(result == 42)
+        #expect(mock.computeCallCount == 1)
+        #expect(mock.computeCallArgs == [21])
+    }
+
+    @Test("typed throws method converts an error thrown by the @autoclosure argument")
+    func typedThrowsMethodConvertsAutoclosureError() {
+        let mock = TypedThrowingCalculatorMock()
+        mock.computeHandler = { $0 }
+
+        #expect(throws: TypedThrowsError(code: 13)) {
+            try mock.compute(throwingValue(code: 13))
+        }
+        #expect(mock.computeCallCount == 0)
+    }
+
+    @Test("typed throws init requirement converts an error thrown by the @autoclosure argument")
+    func typedThrowsInitializerConvertsAutoclosureError() {
+        #expect(throws: TypedThrowsError(code: 17)) {
+            try TypedThrowingBuilderMock(throwingValue(code: 17))
+        }
     }
 
     @Test("typed throws subscript returns the handler value")

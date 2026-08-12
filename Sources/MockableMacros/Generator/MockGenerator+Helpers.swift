@@ -498,6 +498,17 @@ extension MockGenerator {
         }
     }
 
+    /// Whether any `@autoclosure` parameter can throw, and so is evaluated with `try` in the
+    /// requirement's own body rather than inside the handler call.
+    static func hasThrowingAutoclosureParameter(_ parameters: FunctionParameterListSyntax) -> Bool {
+        parameters.contains { param in
+            guard let functionType = autoclosureFunctionType(of: param) else {
+                return false
+            }
+            return functionType.effectSpecifiers?.hasThrowsEffect ?? false
+        }
+    }
+
     private static func stripInOutKeyword(from type: TypeSyntax) -> TypeSyntax {
         let trimmed = type.trimmedDescription
         guard trimmed.hasPrefix("inout ") else {

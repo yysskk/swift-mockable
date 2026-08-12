@@ -337,6 +337,16 @@ protocol TypedThrowingRepository {
 protocol TypedThrowingParser {
     func parse(_ buffer: inout [UInt8]) throws(TypedThrowsError) -> String
 }
+
+@Mockable
+protocol TypedThrowingCalculator {
+    func compute(_ value: @autoclosure () throws -> Int) throws(TypedThrowsError) -> Int
+}
+
+@Mockable
+protocol TypedThrowingBuilder {
+    init(_ value: @autoclosure () throws -> Int) throws(TypedThrowsError)
+}
 #endif
 
 // MARK: - Initializer Requirement Protocols

@@ -176,6 +176,176 @@ struct TypedThrowsMacroTests {
         )
     }
 
+    @Test("typed throws method converts a throwing @autoclosure error too")
+    func typedThrowsMethodConvertsAutoclosureError() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Calculator {
+                func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Calculator {
+                func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int
+            }
+
+            #if DEBUG
+            class CalculatorMock: Calculator {
+                var computeCallCount: Int = 0
+                var computeCallArgs: [Int] = []
+                var computeHandler: (@Sendable (Int) throws -> Int)? = nil
+                func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int {
+                    do {
+                        let value = try value()
+                        computeCallCount += 1
+                        computeCallArgs.append(value)
+                        guard let _handler = computeHandler else {
+                            fatalError("\\(Self.self).computeHandler is not set")
+                        }
+                        return try _handler(value)
+                    } catch {
+                        throw error as! ComputeError
+                    }
+                }
+                func resetMock() {
+                    computeCallCount = 0
+                    computeCallArgs = []
+                    computeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Sendable typed throws method evaluates a throwing @autoclosure before locking")
+    func sendableTypedThrowsMethodConvertsAutoclosureError() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Calculator: Sendable {
+                func compute(_ value: @autoclosure @Sendable () throws -> Int) throws(ComputeError) -> Int
+            }
+            """,
+            expandedSource: """
+            protocol Calculator: Sendable {
+                func compute(_ value: @autoclosure @Sendable () throws -> Int) throws(ComputeError) -> Int
+            }
+
+            #if DEBUG
+            class CalculatorMock: Calculator, @unchecked Sendable {
+                private struct Storage {
+                    var computeCallCount: Int = 0
+                    var computeCallArgs: [Int] = []
+                    var computeHandler: (@Sendable (Int) throws -> Int)? = nil
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                var computeCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.computeCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.computeCallCount = newValue
+                        }
+                    }
+                }
+                var computeCallArgs: [Int] {
+                    get {
+                        _storage.withLock {
+                            $0.computeCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.computeCallArgs = newValue
+                        }
+                    }
+                }
+                var computeHandler: (@Sendable (Int) throws -> Int)? {
+                    get {
+                        _storage.withLock {
+                            $0.computeHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.computeHandler = newValue
+                        }
+                    }
+                }
+                func compute(_ value: @autoclosure @Sendable () throws -> Int) throws(ComputeError) -> Int {
+                    do {
+                        let value = try value()
+                        let _handler = _storage.withLock { storage -> (@Sendable (Int) throws -> Int)? in
+                            storage.computeCallCount += 1
+                            storage.computeCallArgs.append(value)
+                            return storage.computeHandler
+                        }
+                        guard let _handler else {
+                            fatalError("\\(Self.self).computeHandler is not set")
+                        }
+                        return try _handler(value)
+                    } catch {
+                        throw error as! ComputeError
+                    }
+                }
+                func resetMock() {
+                    _storage.withLock { storage in
+                        storage.computeCallCount = 0
+                        storage.computeCallArgs = []
+                        storage.computeHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("typed throws init requirement converts a throwing @autoclosure error")
+    func typedThrowsInitializerConvertsAutoclosureError() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Builder {
+                init(_ value: @autoclosure () throws -> Int) throws(SetupError)
+            }
+            """,
+            expandedSource: """
+            protocol Builder {
+                init(_ value: @autoclosure () throws -> Int) throws(SetupError)
+            }
+
+            #if DEBUG
+            class BuilderMock: Builder {
+                var initCallCount: Int = 0
+                var initCallArgs: [Int] = []
+                required init(_ value: @autoclosure () throws -> Int) throws(SetupError) {
+                    do {
+                        let value = try value()
+                        initCallCount += 1
+                        initCallArgs.append(value)
+                    } catch {
+                        throw error as! SetupError
+                    }
+                }
+                func resetMock() {
+                    initCallCount = 0
+                    initCallArgs = []
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("typed throws subscript re-throws the typed error")
     func typedThrowsSubscriptReThrowsTypedError() {
         assertMacroExpansionForTesting(

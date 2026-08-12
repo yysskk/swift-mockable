@@ -265,7 +265,9 @@ mock.loadHandler = { id in throw LoadError() }   // no error-type annotation nee
 This keeps the package's full deployment range (an untyped handler avoids the
 Swift 6 runtime requirement for typed-throws function values) and supports generic
 error types (`func run<E: Error>(_ body: () throws(E) -> Void) throws(E)`). If a
-handler throws a different error type, the mock traps.
+handler throws a different error type, the mock traps. A throwing `@autoclosure`
+argument is evaluated inside the same conversion, so its error is re-thrown as the
+declared type too, before the call is recorded.
 
 Two error types describe what an untyped clause already says, so the mock skips
 the re-throw for them. `throws(Never)` keeps its signature but is mocked as
