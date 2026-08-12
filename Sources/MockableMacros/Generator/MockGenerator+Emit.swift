@@ -106,6 +106,43 @@ extension MockGenerator {
         )
     }
 
+    /// The `else` body of the unset-handler guard: the return type's natural empty
+    /// default when it has one, otherwise a `fatalError` naming the unset handler.
+    static func unsetHandlerElseBody(returnType: TypeSyntax?, handlerName: String) -> String {
+        defaultReturnStatement(for: returnType)
+            ?? "fatalError(\"\\(Self.self).\(handlerName) is not set\")"
+    }
+
+    /// Builds the unset-handler guard. `binding` is `"_handler"` when the handler was
+    /// already bound (the lock path) or `"_handler = fooHandler"` to bind it from the
+    /// stored property (the direct path).
+    static func makeUnsetHandlerGuard(
+        binding: String,
+        elseBody: String,
+        leadingTrivia: Trivia? = nil
+    ) -> CodeBlockItemSyntax {
+        CodeBlockItemSyntax(leadingTrivia: leadingTrivia, item: .stmt(StmtSyntax(stringLiteral: """
+        guard let \(binding) else {
+            \(elseBody)
+        }
+        """)))
+    }
+
+    /// Builds `return <invokePrefix>_handler(<handlerCallArgs>)<castSuffix>`, wrapped
+    /// in the typed-throws conversion when `errorType` is set.
+    static func makeHandlerReturnStatement(
+        invokePrefix: String,
+        handlerCallArgs: String,
+        castSuffix: String = "",
+        errorType: String?,
+        leadingTrivia: Trivia? = nil
+    ) -> CodeBlockItemSyntax {
+        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
+        let item = errorType.map { buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
+            ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
+        return CodeBlockItemSyntax(leadingTrivia: leadingTrivia, item: item.item)
+    }
+
     /// Builds the two statements that record a call on the direct (non-lock) path:
     /// `<identifier>CallCount += 1` and `<identifier>CallArgs.append(...)`.
     static func makeCallRecordingStatements(

@@ -250,14 +250,10 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if hasReturnValue {
             let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
-            let elseBody = Self.defaultReturnStatement(for: returnType)
-                ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
-            let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler else {
-    \(elseBody)
-}
-""")))
-            statements.append(guardStmt)
+            statements.append(Self.makeUnsetHandlerGuard(
+                binding: "_handler",
+                elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
+            ))
             statements.append(contentsOf: Self.buildHandlerInvocationStatements(
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
@@ -370,13 +366,10 @@ guard let _handler else {
 
         if hasReturnValue {
             let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
-            let elseBody = Self.defaultReturnStatement(for: returnType)
-                ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(identifier)) is not set\")"
-            let guardStmt = CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(MockNaming.handler(identifier)) else {
-    \(elseBody)
-}
-""")))
+            let guardStmt = Self.makeUnsetHandlerGuard(
+                binding: "_handler = \(MockNaming.handler(identifier))",
+                elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
+            )
             var result: [CodeBlockItemSyntax] = [guardStmt]
             result.append(contentsOf: Self.buildHandlerInvocationStatements(
                 invokePrefix: invokePrefix,

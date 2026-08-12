@@ -137,8 +137,7 @@ extension MockGenerator {
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
-        let elseBody = Self.defaultReturnStatement(for: varType)
-            ?? "fatalError(\"\\(Self.self).\(MockNaming.handler(varName)) is not set\")"
+        let elseBody = Self.unsetHandlerElseBody(returnType: varType, handlerName: MockNaming.handler(varName))
         let errorType = effects?.throwsErrorType?.trimmedDescription
 
         var getterStatements: [CodeBlockItemSyntax] = []
@@ -150,33 +149,25 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
     return storage.\(MockNaming.handler(varName))
 }
 """))))
-            getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler else {
-    \(elseBody)
-}
-"""))))
+            getterStatements.append(Self.makeUnsetHandlerGuard(
+                binding: "_handler",
+                elseBody: elseBody,
+                leadingTrivia: .newline
+            ))
         } else {
             getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(varName)) += 1"))))
-            getterStatements.append(CodeBlockItemSyntax(leadingTrivia: .newline, item: .stmt(StmtSyntax(stringLiteral: """
-guard let _handler = \(MockNaming.handler(varName)) else {
-    \(elseBody)
-}
-"""))))
-        }
-        if let errorType {
-            getterStatements.append(CodeBlockItemSyntax(
-                leadingTrivia: .newline,
-                item: Self.buildTypedThrowsCatch(
-                    innerLines: ["return \(invokePrefix)_handler()"],
-                    errorType: errorType
-                ).item
-            ))
-        } else {
-            getterStatements.append(CodeBlockItemSyntax(
-                leadingTrivia: .newline,
-                item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler()"))
+            getterStatements.append(Self.makeUnsetHandlerGuard(
+                binding: "_handler = \(MockNaming.handler(varName))",
+                elseBody: elseBody,
+                leadingTrivia: .newline
             ))
         }
+        getterStatements.append(Self.makeHandlerReturnStatement(
+            invokePrefix: invokePrefix,
+            handlerCallArgs: "",
+            errorType: errorType,
+            leadingTrivia: .newline
+        ))
 
         // The protocol witness stays actor-isolated on actor mocks (like every other
         // generated witness); only the auxiliary CallCount/Handler storage members are
