@@ -27,7 +27,7 @@ extension MockGenerator {
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
-        let callCountProperty = generateFunctionStorageProperty(
+        let callCountProperty = generateTrackingStorageProperty(
             name: MockNaming.callCount(identifier),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
@@ -36,7 +36,7 @@ extension MockGenerator {
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateFunctionStorageProperty(
+        let callArgsProperty = generateTrackingStorageProperty(
             name: MockNaming.callArgs(identifier),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
@@ -51,7 +51,7 @@ extension MockGenerator {
             isThrows: handlerThrows,
             genericParamNames: genericParamNames
         )
-        let handlerProperty = generateFunctionStorageProperty(
+        let handlerProperty = generateTrackingStorageProperty(
             name: MockNaming.handler(identifier),
             type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
@@ -70,63 +70,37 @@ extension MockGenerator {
         return members
     }
 
-    func generateFunctionStorageProperty(
+    /// Builds one tracking member (`CallCount`, `CallArgs`, `Handler`, ...): a plain
+    /// stored property, or a lock-backed computed property when the storage model
+    /// requires it. Shared by the function, variable, subscript, and initializer
+    /// generators.
+    func generateTrackingStorageProperty(
         name fullName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
         isTypeMember: Bool
     ) -> VariableDeclSyntax {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
-        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
-        if shouldUseLockBasedStorage {
+        if usesLockBasedStorage(isTypeMember: isTypeMember) {
             if !isTypeMember {
                 additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
             }
 
-            return VariableDeclSyntax(
+            return Self.makeLockBackedProperty(
                 modifiers: buildModifiers(additional: additionalModifiers),
-                bindingSpecifier: .keyword(.var),
-                bindings: PatternBindingListSyntax([
-                    PatternBindingSyntax(
-                        pattern: IdentifierPatternSyntax(identifier: .identifier(fullName)),
-                        typeAnnotation: TypeAnnotationSyntax(type: type),
-                        accessorBlock: AccessorBlockSyntax(
-                            accessors: .accessors(AccessorDeclListSyntax([
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.get),
-                                    body: CodeBlockSyntax(
-                                        statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(storageName).withLock { $0.\(fullName) }")))
-                                        ])
-                                    )
-                                ),
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.set),
-                                    body: CodeBlockSyntax(
-                                        statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(storageName).withLock { $0.\(fullName) = newValue }")))
-                                        ])
-                                    )
-                                )
-                            ]))
-                        )
-                    )
-                ])
+                name: fullName,
+                type: type,
+                storageName: Self.storagePropertyName(isTypeMember: isTypeMember),
+                storedName: fullName
             )
         }
 
-        return VariableDeclSyntax(
+        return Self.makeStoredProperty(
             modifiers: buildModifiers(additional: additionalModifiers),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(fullName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: type),
-                    initializer: InitializerClauseSyntax(value: initializer)
-                )
-            ])
+            name: fullName,
+            type: type,
+            initializer: initializer
         )
     }
 
@@ -203,26 +177,7 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
-        let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(identifier))),
-            operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
-            rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
-        )
-        statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
-
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        let appendExpr = FunctionCallExprSyntax(
-            calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(identifier))),
-                name: .identifier("append")
-            ),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: argsExpr)
-            ]),
-            rightParen: .rightParenToken()
-        )
-        statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(appendExpr))))
+        statements.append(contentsOf: Self.makeCallRecordingStatements(identifier: identifier, parameters: parameters))
 
         let handlerCallStmts = buildHandlerCallStatements(
             identifier: identifier,

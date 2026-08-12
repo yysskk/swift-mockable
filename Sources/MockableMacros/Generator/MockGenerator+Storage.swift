@@ -87,28 +87,18 @@ extension MockGenerator {
                 let parameters = initDecl.signature.parameterClause.parameters
                 let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
 
-                let callCountDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(identifier))),
-                            typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
-                            initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
-                        )
-                    ])
+                let callCountDecl = Self.makeStoredProperty(
+                    name: MockNaming.callCount(identifier),
+                    type: TypeSyntax(stringLiteral: "Int"),
+                    initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-                let callArgsDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(identifier))),
-                            typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
-                            initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
-                        )
-                    ])
+                let callArgsDecl = Self.makeStoredProperty(
+                    name: MockNaming.callArgs(identifier),
+                    type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
+                    initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
@@ -130,29 +120,19 @@ extension MockGenerator {
                 let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
 
                 // CallCount
-                let callCountDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(identifier))),
-                            typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
-                            initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
-                        )
-                    ])
+                let callCountDecl = Self.makeStoredProperty(
+                    name: MockNaming.callCount(identifier),
+                    type: TypeSyntax(stringLiteral: "Int"),
+                    initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // CallArgs
                 let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-                let callArgsDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(identifier))),
-                            typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
-                            initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
-                        )
-                    ])
+                let callArgsDecl = Self.makeStoredProperty(
+                    name: MockNaming.callArgs(identifier),
+                    type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
+                    initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
@@ -165,17 +145,10 @@ extension MockGenerator {
                     genericParamNames: genericParamNames
                 )
 
-                let handlerDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(identifier))),
-                            typeAnnotation: TypeAnnotationSyntax(
-                                type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
-                            ),
-                            initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                        )
-                    ])
+                let handlerDecl = Self.makeStoredProperty(
+                    name: MockNaming.handler(identifier),
+                    type: TypeSyntax(OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))),
+                    initializer: ExprSyntax(NilLiteralExprSyntax())
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
             } else if let varDecl = decl.as(VariableDeclSyntax.self) {
@@ -193,29 +166,17 @@ extension MockGenerator {
                             effects: effectfulGetter.effectSpecifiers
                         )
 
-                        let callCountDecl = VariableDeclSyntax(
-                            bindingSpecifier: .keyword(.var),
-                            bindings: PatternBindingListSyntax([
-                                PatternBindingSyntax(
-                                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(varName))),
-                                    typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
-                                    initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
-                                )
-                            ])
+                        let callCountDecl = Self.makeStoredProperty(
+                            name: MockNaming.callCount(varName),
+                            type: TypeSyntax(stringLiteral: "Int"),
+                            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                         )
                         generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
-                        let handlerDecl = VariableDeclSyntax(
-                            bindingSpecifier: .keyword(.var),
-                            bindings: PatternBindingListSyntax([
-                                PatternBindingSyntax(
-                                    pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(varName))),
-                                    typeAnnotation: TypeAnnotationSyntax(
-                                        type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
-                                    ),
-                                    initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                                )
-                            ])
+                        let handlerDecl = Self.makeStoredProperty(
+                            name: MockNaming.handler(varName),
+                            type: TypeSyntax(OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))),
+                            initializer: ExprSyntax(NilLiteralExprSyntax())
                         )
                         generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
                         continue
@@ -230,15 +191,10 @@ extension MockGenerator {
                         storageType = TypeSyntax(OptionalTypeSyntax(wrappedType: varType.trimmed))
                     }
 
-                    let storageProp = VariableDeclSyntax(
-                        bindingSpecifier: .keyword(.var),
-                        bindings: PatternBindingListSyntax([
-                            PatternBindingSyntax(
-                                pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.variableBacking(varName))),
-                                typeAnnotation: TypeAnnotationSyntax(type: storageType),
-                                initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                            )
-                        ])
+                    let storageProp = Self.makeStoredProperty(
+                        name: MockNaming.variableBacking(varName),
+                        type: storageType,
+                        initializer: ExprSyntax(NilLiteralExprSyntax())
                     )
                     generatedMembers.append(MemberBlockItemSyntax(decl: storageProp))
                 }
@@ -250,29 +206,19 @@ extension MockGenerator {
                 let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
 
                 // SubscriptCallCount
-                let callCountDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                            typeAnnotation: TypeAnnotationSyntax(type: TypeSyntax(stringLiteral: "Int")),
-                            initializer: InitializerClauseSyntax(value: IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
-                        )
-                    ])
+                let callCountDecl = Self.makeStoredProperty(
+                    name: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
+                    type: TypeSyntax(stringLiteral: "Int"),
+                    initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callCountDecl))
 
                 // SubscriptCallArgs
                 let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-                let callArgsDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                            typeAnnotation: TypeAnnotationSyntax(type: ArrayTypeSyntax(element: tupleType)),
-                            initializer: InitializerClauseSyntax(value: ArrayExprSyntax(elements: ArrayElementListSyntax([])))
-                        )
-                    ])
+                let callArgsDecl = Self.makeStoredProperty(
+                    name: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
+                    type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
+                    initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: callArgsDecl))
 
@@ -285,17 +231,10 @@ extension MockGenerator {
                     effects: getterEffects
                 )
 
-                let handlerDecl = VariableDeclSyntax(
-                    bindingSpecifier: .keyword(.var),
-                    bindings: PatternBindingListSyntax([
-                        PatternBindingSyntax(
-                            pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                            typeAnnotation: TypeAnnotationSyntax(
-                                type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))
-                            ),
-                            initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                        )
-                    ])
+                let handlerDecl = Self.makeStoredProperty(
+                    name: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
+                    type: TypeSyntax(OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(closureType))"))),
+                    initializer: ExprSyntax(NilLiteralExprSyntax())
                 )
                 generatedMembers.append(MemberBlockItemSyntax(decl: handlerDecl))
 
@@ -307,17 +246,10 @@ extension MockGenerator {
                         genericParamNames: genericParamNames
                     )
 
-                    let setHandlerDecl = VariableDeclSyntax(
-                        bindingSpecifier: .keyword(.var),
-                        bindings: PatternBindingListSyntax([
-                            PatternBindingSyntax(
-                                pattern: IdentifierPatternSyntax(identifier: .identifier(MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                                typeAnnotation: TypeAnnotationSyntax(
-                                    type: OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(setClosureType))"))
-                                ),
-                                initializer: InitializerClauseSyntax(value: NilLiteralExprSyntax())
-                            )
-                        ])
+                    let setHandlerDecl = Self.makeStoredProperty(
+                        name: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
+                        type: TypeSyntax(OptionalTypeSyntax(wrappedType: TypeSyntax(stringLiteral: "(@Sendable \(setClosureType))"))),
+                        initializer: ExprSyntax(NilLiteralExprSyntax())
                     )
                     generatedMembers.append(MemberBlockItemSyntax(decl: setHandlerDecl))
                 }

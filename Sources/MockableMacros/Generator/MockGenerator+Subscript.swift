@@ -20,20 +20,20 @@ extension MockGenerator {
         let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
         let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
 
-        let callCountProperty = generateSubscriptStorageProperty(
-            propertyName: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
+        let callCountProperty = generateTrackingStorageProperty(
+            name: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "Int"),
             initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            usesLockBasedStorage: usesInstanceStorageLock
+            isTypeMember: false
         )
         members.append(MemberBlockItemSyntax(decl: callCountProperty))
 
         let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateSubscriptStorageProperty(
-            propertyName: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
+        let callArgsProperty = generateTrackingStorageProperty(
+            name: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
             initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            usesLockBasedStorage: usesInstanceStorageLock
+            isTypeMember: false
         )
         members.append(MemberBlockItemSyntax(decl: callArgsProperty))
 
@@ -43,11 +43,11 @@ extension MockGenerator {
             genericParamNames: genericParamNames,
             effects: getterEffects
         )
-        let handlerProperty = generateSubscriptStorageProperty(
-            propertyName: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
+        let handlerProperty = generateTrackingStorageProperty(
+            name: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
             type: TypeSyntax(stringLiteral: "(@Sendable \(getterClosureType))?"),
             initializer: ExprSyntax(NilLiteralExprSyntax()),
-            usesLockBasedStorage: usesInstanceStorageLock
+            isTypeMember: false
         )
         members.append(MemberBlockItemSyntax(decl: handlerProperty))
 
@@ -57,11 +57,11 @@ extension MockGenerator {
                 returnType: returnType,
                 genericParamNames: genericParamNames
             )
-            let setHandlerProperty = generateSubscriptStorageProperty(
-                propertyName: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
+            let setHandlerProperty = generateTrackingStorageProperty(
+                name: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
                 type: TypeSyntax(stringLiteral: "(@Sendable \(setterClosureType))?"),
                 initializer: ExprSyntax(NilLiteralExprSyntax()),
-                usesLockBasedStorage: usesInstanceStorageLock
+                isTypeMember: false
             )
             members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
         }
@@ -81,58 +81,6 @@ extension MockGenerator {
     /// is get-only, hence the `true` default.
     static func isGetOnlySubscript(_ subscriptDecl: SubscriptDeclSyntax) -> Bool {
         isGetOnly(subscriptDecl.accessorBlock, defaultWhenAbsent: true)
-    }
-
-    private func generateSubscriptStorageProperty(
-        propertyName: String,
-        type: TypeSyntax,
-        initializer: ExprSyntax,
-        usesLockBasedStorage: Bool
-    ) -> VariableDeclSyntax {
-        if usesLockBasedStorage {
-            return VariableDeclSyntax(
-                modifiers: buildModifiers(additional: storageBackedMemberModifiers()),
-                bindingSpecifier: .keyword(.var),
-                bindings: PatternBindingListSyntax([
-                    PatternBindingSyntax(
-                        pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
-                        typeAnnotation: TypeAnnotationSyntax(type: type),
-                        accessorBlock: AccessorBlockSyntax(
-                            accessors: .accessors(AccessorDeclListSyntax([
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.get),
-                                    body: CodeBlockSyntax(
-                                        statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(propertyName) }")))
-                                        ])
-                                    )
-                                ),
-                                AccessorDeclSyntax(
-                                    accessorSpecifier: .keyword(.set),
-                                    body: CodeBlockSyntax(
-                                        statements: CodeBlockItemListSyntax([
-                                            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "_storage.withLock { $0.\(propertyName) = newValue }")))
-                                        ])
-                                    )
-                                )
-                            ]))
-                        )
-                    )
-                ])
-            )
-        }
-
-        return VariableDeclSyntax(
-            modifiers: buildModifiers(),
-            bindingSpecifier: .keyword(.var),
-            bindings: PatternBindingListSyntax([
-                PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: type),
-                    initializer: InitializerClauseSyntax(value: initializer)
-                )
-            ])
-        )
     }
 
     private func generateSubscriptImplementation(
@@ -233,26 +181,10 @@ extension MockGenerator {
         var getterStatements: [CodeBlockItemSyntax] = []
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
-        let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)))),
-            operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
-            rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
-        )
-        getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))))
-
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        let appendExpr = FunctionCallExprSyntax(
-            calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)))),
-                name: .identifier("append")
-            ),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: argsExpr)
-            ]),
-            rightParen: .rightParenToken()
-        )
-        getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(appendExpr))))
+        getterStatements.append(contentsOf: Self.makeCallRecordingStatements(
+            identifier: MockNaming.subscriptIdentifier(suffix: suffix),
+            parameters: parameters
+        ))
 
         getterStatements.append(contentsOf: buildSubscriptHandlerCallStatements(
             parameters: parameters,
