@@ -85,50 +85,25 @@ extension MockGenerator {
         return members
     }
 
+    /// A property binding with no accessor block is not treated as get-only,
+    /// hence the `false` default.
     static func isGetOnlyProperty(binding: PatternBindingSyntax) -> Bool {
-        guard let accessorBlock = binding.accessorBlock else {
-            return false
-        }
-
-        switch accessorBlock.accessors {
-        case .getter:
-            return true
-        case .accessors(let accessors):
-            let hasGetter = accessors.contains { $0.accessorSpecifier.tokenKind == .keyword(.get) }
-            let hasSetter = accessors.contains { $0.accessorSpecifier.tokenKind == .keyword(.set) }
-            return hasGetter && !hasSetter
-        }
+        isGetOnly(binding.accessorBlock, defaultWhenAbsent: false)
     }
 
     /// Returns the `get` accessor of a binding when it carries `async`/`throws`
     /// effects (e.g. `var token: String { get async throws }`), or `nil` otherwise.
-    /// Properties with an effectful getter cannot have a setter (SE-0310).
     static func effectfulGetter(of binding: PatternBindingSyntax) -> AccessorDeclSyntax? {
-        guard let accessorBlock = binding.accessorBlock,
-              case .accessors(let accessors) = accessorBlock.accessors else {
-            return nil
-        }
-        return accessors.first { accessor in
-            accessor.accessorSpecifier.tokenKind == .keyword(.get) && accessor.effectSpecifiers != nil
-        }
+        effectfulGetAccessor(in: binding.accessorBlock)
     }
 
     /// The handler closure type for an effectful read-only property, e.g.
-    /// `() async throws -> String`. The handler is untyped-throwing even for a
-    /// typed-throws accessor (`get throws(E)`) — the generated getter re-throws the
-    /// typed error via a `catch` — so a typed error type is dropped here.
+    /// `() async throws -> String`.
     static func effectfulGetterClosureType(
         varType: TypeSyntax,
         effects: AccessorEffectSpecifiersSyntax?
     ) -> String {
-        var effectsText = ""
-        if effects?.asyncSpecifier != nil {
-            effectsText += " async"
-        }
-        if effects?.hasThrowsEffect == true {
-            effectsText += " throws"
-        }
-        return "()\(effectsText) -> \(varType.trimmedDescription)"
+        "()\(effectsSuffix(for: effects)) -> \(varType.trimmedDescription)"
     }
 
     private func generateEffectfulGetterMock(
