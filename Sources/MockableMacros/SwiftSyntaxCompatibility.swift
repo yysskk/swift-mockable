@@ -11,9 +11,13 @@ import SwiftSyntax
 
 extension FunctionEffectSpecifiersSyntax {
     /// Returns whether the function has a throws effect, compatible across swift-syntax versions.
+    /// A `throws(Never)` clause declares a function that cannot throw, so it reports `false`.
     var hasThrowsEffect: Bool {
         #if canImport(SwiftSyntax600)
-        return throwsClause != nil
+        guard let throwsClause else {
+            return false
+        }
+        return throwsClause.type?.isNeverType != true
         #else
         return throwsSpecifier != nil
         #endif
@@ -28,11 +32,13 @@ extension FunctionEffectSpecifiersSyntax {
         #endif
     }
 
-    /// The typed-throws error type (`throws(MyError)`), or `nil` for untyped or absent throws.
+    /// The typed-throws error type (`throws(MyError)`), or `nil` when the requirement throws
+    /// nothing more specific than untyped `throws` already does: absent throws, untyped throws,
+    /// `throws(Never)`, and `throws(any Error)`.
     /// Typed throws (SE-0413) requires Swift 6, so this is always `nil` on swift-syntax 509/510.
     var throwsErrorType: TypeSyntax? {
         #if canImport(SwiftSyntax600)
-        return throwsClause?.type
+        return throwsClause?.type?.typedThrowsErrorType
         #else
         return nil
         #endif
@@ -41,9 +47,13 @@ extension FunctionEffectSpecifiersSyntax {
 
 extension TypeEffectSpecifiersSyntax {
     /// Returns whether the function type has a throws effect, compatible across swift-syntax versions.
+    /// A `throws(Never)` clause declares a function type that cannot throw, so it reports `false`.
     var hasThrowsEffect: Bool {
         #if canImport(SwiftSyntax600)
-        return throwsClause != nil
+        guard let throwsClause else {
+            return false
+        }
+        return throwsClause.type?.isNeverType != true
         #else
         return throwsSpecifier != nil
         #endif
@@ -52,23 +62,56 @@ extension TypeEffectSpecifiersSyntax {
 
 extension AccessorEffectSpecifiersSyntax {
     /// Returns whether the accessor has a throws effect, compatible across swift-syntax versions.
+    /// A `get throws(Never)` clause declares an accessor that cannot throw, so it reports `false`.
     var hasThrowsEffect: Bool {
         #if canImport(SwiftSyntax600)
-        return throwsClause != nil
+        guard let throwsClause else {
+            return false
+        }
+        return throwsClause.type?.isNeverType != true
         #else
         return throwsSpecifier != nil
         #endif
     }
 
-    /// The typed-throws error type (`get throws(MyError)`), or `nil` for untyped or absent throws.
+    /// The typed-throws error type (`get throws(MyError)`), or `nil` when the accessor throws
+    /// nothing more specific than untyped `throws` already does: absent throws, untyped throws,
+    /// `get throws(Never)`, and `get throws(any Error)`.
     var throwsErrorType: TypeSyntax? {
         #if canImport(SwiftSyntax600)
-        return throwsClause?.type
+        return throwsClause?.type?.typedThrowsErrorType
         #else
         return nil
         #endif
     }
 }
+
+#if canImport(SwiftSyntax600)
+// MARK: - Typed Throws Error Types
+
+extension TypeSyntax {
+    /// The error type a typed-throws clause names, or `nil` when the clause names a type that
+    /// untyped `throws` already describes: `Never` (the function cannot throw) and `any Error`
+    /// (the function can throw anything).
+    var typedThrowsErrorType: TypeSyntax? {
+        (isNeverType || isErrorExistentialType) ? nil : self
+    }
+
+    /// Whether the type is spelled `Never`.
+    ///
+    /// Like the macro's other type checks, this compares spellings: a generic parameter or a
+    /// type alias named `Never` is treated as `Never`.
+    var isNeverType: Bool {
+        ["Never", "Swift.Never"].contains(trimmedDescription)
+    }
+
+    /// Whether the type is spelled `any Error`, including the bare `Error` sugar.
+    private var isErrorExistentialType: Bool {
+        let constraint = self.as(SomeOrAnyTypeSyntax.self)?.constraint ?? self
+        return ["Error", "Swift.Error"].contains(constraint.trimmedDescription)
+    }
+}
+#endif
 
 /// Creates a GenericArgumentSyntax with a type, compatible across swift-syntax versions.
 func makeGenericArgument(type: TypeSyntax) -> GenericArgumentSyntax {

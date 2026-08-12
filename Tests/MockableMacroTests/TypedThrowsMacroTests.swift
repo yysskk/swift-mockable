@@ -176,6 +176,238 @@ struct TypedThrowsMacroTests {
         )
     }
 
+    @Test("throws(Never) method is mocked with a non-throwing handler")
+    func neverThrowsMethodUsesNonThrowingHandler() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Loader {
+                func load(id: Int) throws(Never) -> String
+            }
+            """,
+            expandedSource: """
+            protocol Loader {
+                func load(id: Int) throws(Never) -> String
+            }
+
+            #if DEBUG
+            class LoaderMock: Loader {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [Int] = []
+                var loadHandler: (@Sendable (Int) -> String)? = nil
+                func load(id: Int) throws(Never) -> String {
+                    loadCallCount += 1
+                    loadCallArgs.append(id)
+                    guard let _handler = loadHandler else {
+                        fatalError("\\(Self.self).loadHandler is not set")
+                    }
+                    return _handler(id)
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throws(Never) async method awaits the handler without try")
+    func neverThrowsAsyncMethodAwaitsHandler() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Fetcher {
+                func fetch() async throws(Never) -> Data
+            }
+            """,
+            expandedSource: """
+            protocol Fetcher {
+                func fetch() async throws(Never) -> Data
+            }
+
+            #if DEBUG
+            class FetcherMock: Fetcher {
+                var fetchCallCount: Int = 0
+                var fetchCallArgs: [()] = []
+                var fetchHandler: (@Sendable () async -> Data)? = nil
+                func fetch() async throws(Never) -> Data {
+                    fetchCallCount += 1
+                    fetchCallArgs.append(())
+                    guard let _handler = fetchHandler else {
+                        fatalError("\\(Self.self).fetchHandler is not set")
+                    }
+                    return await _handler()
+                }
+                func resetMock() {
+                    fetchCallCount = 0
+                    fetchCallArgs = []
+                    fetchHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throws(Never) method returning Void calls the handler without try")
+    func neverThrowsVoidMethodCallsHandler() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Pinger {
+                func ping() throws(Never)
+            }
+            """,
+            expandedSource: """
+            protocol Pinger {
+                func ping() throws(Never)
+            }
+
+            #if DEBUG
+            class PingerMock: Pinger {
+                var pingCallCount: Int = 0
+                var pingCallArgs: [()] = []
+                var pingHandler: (@Sendable () -> Void)? = nil
+                func ping() throws(Never) {
+                    pingCallCount += 1
+                    pingCallArgs.append(())
+                    if let _handler = pingHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    pingCallCount = 0
+                    pingCallArgs = []
+                    pingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throws(any Error) method is mocked like untyped throws")
+    func anyErrorThrowsMethodIsMockedLikeUntypedThrows() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Loader {
+                func load(id: Int) throws(any Error) -> String
+            }
+            """,
+            expandedSource: """
+            protocol Loader {
+                func load(id: Int) throws(any Error) -> String
+            }
+
+            #if DEBUG
+            class LoaderMock: Loader {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [Int] = []
+                var loadHandler: (@Sendable (Int) throws -> String)? = nil
+                func load(id: Int) throws(any Error) -> String {
+                    loadCallCount += 1
+                    loadCallArgs.append(id)
+                    guard let _handler = loadHandler else {
+                        fatalError("\\(Self.self).loadHandler is not set")
+                    }
+                    return try _handler(id)
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throws(Error) method is mocked like untyped throws")
+    func bareErrorThrowsMethodIsMockedLikeUntypedThrows() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Loader {
+                func load(id: Int) throws(Error) -> String
+            }
+            """,
+            expandedSource: """
+            protocol Loader {
+                func load(id: Int) throws(Error) -> String
+            }
+
+            #if DEBUG
+            class LoaderMock: Loader {
+                var loadCallCount: Int = 0
+                var loadCallArgs: [Int] = []
+                var loadHandler: (@Sendable (Int) throws -> String)? = nil
+                func load(id: Int) throws(Error) -> String {
+                    loadCallCount += 1
+                    loadCallArgs.append(id)
+                    guard let _handler = loadHandler else {
+                        fatalError("\\(Self.self).loadHandler is not set")
+                    }
+                    return try _handler(id)
+                }
+                func resetMock() {
+                    loadCallCount = 0
+                    loadCallArgs = []
+                    loadHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("throws(Never) property is mocked with a non-throwing handler")
+    func neverThrowsPropertyUsesNonThrowingHandler() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol ConfigProvider {
+                var setting: Int { get throws(Never) }
+            }
+            """,
+            expandedSource: """
+            protocol ConfigProvider {
+                var setting: Int { get throws(Never) }
+            }
+
+            #if DEBUG
+            class ConfigProviderMock: ConfigProvider {
+                var settingCallCount: Int = 0
+                var settingHandler: (@Sendable () -> Int)? = nil
+                var setting: Int {
+                    get throws(Never) {
+                        settingCallCount += 1
+                        guard let _handler = settingHandler else {
+                            fatalError("\\(Self.self).settingHandler is not set")
+                        }
+                        return _handler()
+                    }
+                }
+                func resetMock() {
+                    settingCallCount = 0
+                    settingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("typed throws property re-throws the typed error")
     func typedThrowsPropertyReThrowsTypedError() {
         assertMacroExpansionForTesting(

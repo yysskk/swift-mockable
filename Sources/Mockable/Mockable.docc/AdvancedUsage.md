@@ -122,6 +122,17 @@ func load(id: Int) throws(LoadError) -> String
 
 Configure the handler as usual (`mock.loadHandler = { id in throw LoadError() }`). This keeps the full deployment range and supports generic error types. If a handler throws a different error type, the mock traps.
 
+Two error types need no re-throw. `throws(Never)` keeps its signature but is mocked as non-throwing — the handler cannot throw, and the mock is called without `try`:
+
+```swift
+func load(id: Int) throws(Never) -> String
+// generates:
+// var loadHandler: (@Sendable (Int) -> String)? = nil
+// return _handler(id)
+```
+
+`throws(any Error)` (and the bare `throws(Error)` spelling) is mocked exactly like untyped `throws`. Both types are recognized by spelling, so a generic parameter or type alias named `Never` or `Error` is classified by its name.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic

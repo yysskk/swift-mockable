@@ -247,6 +247,37 @@ A typed-throws closure *parameter* (`func run(_ body: () throws(MyError) -> Void
 is likewise stored untyped: its `CallArgs`/handler entry uses `() throws -> Void`,
 so the mock never embeds a typed-throws function value.
 
+### `throws(Never)` and `throws(any Error)`
+
+Two error types describe what an untyped clause already says, so the mock skips
+the re-throw for them.
+
+`throws(Never)` declares a requirement that cannot throw. Its mock keeps the
+signature but takes the non-throwing path — a non-throwing handler, called
+without `try`:
+
+```swift
+func load(id: Int) throws(Never) -> String
+// generates:
+// var loadHandler: (@Sendable (Int) -> String)? = nil
+// func load(id: Int) throws(Never) -> String { ... return _handler(id) }
+
+let value = mock.load(id: 1)  // no `try` needed
+```
+
+The same applies to a `get throws(Never)` property or subscript, and to an
+`@autoclosure () throws(Never) -> T` parameter, which is evaluated without `try`.
+Because the handler cannot throw, a `throws(Never)` requirement whose
+`@autoclosure` parameter *can* throw is reported as a diagnostic rather than
+mocked.
+
+`throws(any Error)` is mocked exactly like untyped `throws` — a throwing handler
+invoked with `try`, and no re-throw, since the handler's error already has the
+declared type. The bare `throws(Error)` spelling is treated the same way.
+
+Both are recognized by spelling, like the macro's other type checks: a generic
+parameter or type alias named `Never` or `Error` is classified by its name.
+
 ## `inout` and Variadic Parameters
 
 ### Variadic

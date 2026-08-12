@@ -181,6 +181,7 @@ at compile time and cannot read runtime values.
 - Non-escaping closure arguments are forwarded to the handler but excluded from `CallArgs` (a non-escaping value cannot be stored); the call is still counted.
 - `rethrows` methods generate a non-throwing handler that receives the throwing closure arguments (a stored handler cannot satisfy `rethrows` on its own). The handler decides whether to invoke those closures; the mock itself does not re-throw their errors.
 - Typed throws (`throws(MyError)`) keeps the `throws(MyError)` signature and generates a plain untyped-throwing handler; the body re-throws the handler's error as the declared type. Configure the handler normally (`mock.loadHandler = { id in throw MyError() }`). If the handler throws a different error type, the mock traps.
+- `throws(Never)` keeps its signature but is mocked as non-throwing: the handler cannot throw and the mock is called without `try`. `throws(any Error)` (and the bare `throws(Error)` spelling) is mocked exactly like untyped `throws`, with no re-throw.
 - `resetMock()` clears handlers, call counts, call arguments, and backing properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members, and the child mock inherits the parent mock's initializers (including a parent `init` requirement's `required init`).
 
@@ -192,6 +193,7 @@ at compile time and cannot read runtime values.
 - A requirement whose return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`), or that takes a closure whose own parameters mention one (for example `func observe<T>(_ handler: (T) -> Void)`), is not supported and emits a diagnostic: Swift cannot convert between function types at runtime, and a closure's parameters are contravariant. Erasing a closure's result is fine, so `func load<T>(_ make: () -> T)` is mocked normally.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 - Static/class subscripts are not supported.
+- The `Never` and `any Error` typed-throws error types are recognized by spelling, so a generic parameter or type alias named `Never` or `Error` is classified by its name.
 - Operator requirements (for example `static func == (lhs: Self, rhs: Self) -> Bool`) and method or property names that need backtick escaping (`` func `repeat`() ``, `` var `default`: Int { get } ``) are not supported and emit a diagnostic. The generated members are named after the requirement (`fetch` becomes `fetchCallCount`, `name` becomes `_name`), so such names cannot produce legal identifiers.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
