@@ -53,6 +53,12 @@ extension MockGenerator {
                 returnType: returnType,
                 hasGenericReturn: hasGenericReturn,
                 identifier: identifier,
+                handlerClosureType: buildSubscriptGetterClosureType(
+                    parameters: parameters,
+                    returnType: returnType,
+                    genericParamNames: genericParamNames,
+                    effects: getterEffects
+                ),
                 invokePrefix: invokePrefix,
                 errorType: errorType
             )
@@ -216,6 +222,7 @@ if let _handler = \(MockNaming.setHandler(identifier)) {
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         identifier: String,
+        handlerClosureType: String,
         invokePrefix: String = "",
         errorType: String? = nil
     ) -> [CodeBlockItemSyntax] {
@@ -225,15 +232,16 @@ if let _handler = \(MockNaming.setHandler(identifier)) {
         // Evaluate @autoclosure arguments before taking the lock so user-supplied
         // expressions never run while the storage lock is held.
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
-        let recordCallStmt = CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
-\(MockNaming.instanceStorageName).withLock { storage in
+        // Record the call and read the handler in a single lock acquisition,
+        // mirroring the method witnesses.
+        let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
+let _handler = \(MockNaming.instanceStorageName).withLock { storage -> (@Sendable \(handlerClosureType))? in
     storage.\(MockNaming.callCount(identifier)) += 1
     storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
+    return storage.\(MockNaming.handler(identifier))
 }
 """)))
-        statements.append(recordCallStmt)
-        let getHandlerStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _handler = \(MockNaming.instanceStorageName).withLock { $0.\(MockNaming.handler(identifier)) }")))
-        statements.append(getHandlerStmt)
+        statements.append(withLockStmt)
 
         statements.append(contentsOf: buildGuardedSubscriptHandlerReturn(
             guardBinding: "_handler",

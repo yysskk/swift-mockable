@@ -152,12 +152,10 @@ struct EffectfulSubscriptMacroTests {
                 }
                 subscript(key: String) -> Int {
                     get async throws {
-                        _storage.withLock { storage in
+                        let _handler = _storage.withLock { storage -> (@Sendable (String) async throws -> Int )? in
                             storage.subscriptStringCallCount += 1
                             storage.subscriptStringCallArgs.append(key)
-                        }
-                        let _handler = _storage.withLock {
-                            $0.subscriptStringHandler
+                            return storage.subscriptStringHandler
                         }
                         guard let _handler else {
                             fatalError("\\(Self.self).subscriptStringHandler is not set")
