@@ -4,41 +4,20 @@ import SwiftSyntaxBuilder
 // MARK: - Initializer Mock Generation
 
 extension MockGenerator {
-    /// Generates the members that mock a single `init` requirement: the call-count and
-    /// captured-arguments properties and the initializer witness that records the call.
+    /// Generates the members that mock a single `init` requirement: the requirement's
+    /// tracking slots and the initializer witness that records the call.
     ///
     /// Unlike methods, initializers have no configurable handler: the recording state lives
     /// on the instance being created, so a per-instance handler could never be set before
     /// the initializer runs. The witness therefore only records that it was invoked and with
-    /// which arguments. `identifier` disambiguates overloaded initializers (see
-    /// `initializerIdentifier(for:in:)`).
+    /// which arguments.
     func generateInitializerMock(
         _ initDecl: InitializerDeclSyntax,
-        identifier: String
+        requirement: TrackingRequirement
     ) -> [MemberBlockItemSyntax] {
-        var members: [MemberBlockItemSyntax] = []
+        var members = trackingMemberItems(for: requirement)
 
-        let parameters = initDecl.signature.parameterClause.parameters
-        let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
-
-        let callCountProperty = generateTrackingStorageProperty(
-            name: MockNaming.callCount(identifier),
-            type: TypeSyntax(stringLiteral: "Int"),
-            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            isTypeMember: false
-        )
-        members.append(MemberBlockItemSyntax(decl: callCountProperty))
-
-        let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateTrackingStorageProperty(
-            name: MockNaming.callArgs(identifier),
-            type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
-            initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            isTypeMember: false
-        )
-        members.append(MemberBlockItemSyntax(decl: callArgsProperty))
-
-        let witness = generateInitializerWitness(initDecl, identifier: identifier)
+        let witness = generateInitializerWitness(initDecl, identifier: requirement.identifier)
         members.append(MemberBlockItemSyntax(decl: witness))
 
         return members

@@ -4,70 +4,37 @@ import SwiftSyntaxBuilder
 // MARK: - Function Mock Generation
 
 extension MockGenerator {
-    /// Generates the members that mock a single method requirement: the call-count and
-    /// captured-arguments properties, the configurable handler, and the witness that
-    /// records the call and forwards to the handler. `suffix` disambiguates overloads
-    /// that share a base name (see `functionIdentifierSuffix`).
+    /// Generates the members that mock a single method requirement: the requirement's
+    /// tracking slots (call count, captured arguments, handler) and the witness that
+    /// records the call and forwards to the handler.
     func generateFunctionMock(
         _ funcDecl: FunctionDeclSyntax,
-        suffix: String = ""
+        requirement: TrackingRequirement
     ) -> [MemberBlockItemSyntax] {
-        var members: [MemberBlockItemSyntax] = []
-
-        let funcName = funcDecl.name.text
-        let identifier = suffix.isEmpty ? funcName : "\(funcName)\(suffix)"
-        let isTypeMember = Self.isTypeMember(funcDecl.modifiers)
-        let parameters = funcDecl.signature.parameterClause.parameters
-        let returnType = funcDecl.signature.returnClause?.type
-        let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-        // A `rethrows` requirement gets a non-throwing handler: a stored handler cannot
-        // satisfy `rethrows` (it may only throw through the requirement's own closure
-        // parameters), so the handler receives those closures and never throws itself.
-        let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
-            && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
-        let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
-
-        let callCountProperty = generateTrackingStorageProperty(
-            name: MockNaming.callCount(identifier),
-            type: TypeSyntax(stringLiteral: "Int"),
-            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            isTypeMember: isTypeMember
-        )
-        members.append(MemberBlockItemSyntax(decl: callCountProperty))
-
-        let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateTrackingStorageProperty(
-            name: MockNaming.callArgs(identifier),
-            type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
-            initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            isTypeMember: isTypeMember
-        )
-        members.append(MemberBlockItemSyntax(decl: callArgsProperty))
-
-        let closureType = buildFunctionClosureType(
-            parameters: parameters,
-            returnType: returnType,
-            isAsync: isAsync,
-            isThrows: handlerThrows,
-            genericParamNames: genericParamNames
-        )
-        let handlerProperty = generateTrackingStorageProperty(
-            name: MockNaming.handler(identifier),
-            type: TypeSyntax(stringLiteral: "(@Sendable \(closureType))?"),
-            initializer: ExprSyntax(NilLiteralExprSyntax()),
-            isTypeMember: isTypeMember
-        )
-        members.append(MemberBlockItemSyntax(decl: handlerProperty))
+        var members = trackingMemberItems(for: requirement)
 
         let mockFunction = generateMockFunction(
             funcDecl,
-            identifier: identifier,
-            genericParamNames: genericParamNames,
-            isTypeMember: isTypeMember
+            identifier: requirement.identifier,
+            genericParamNames: Self.extractGenericParameterNames(from: funcDecl),
+            isTypeMember: requirement.isTypeMember
         )
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
         return members
+    }
+
+    /// The requirement's tracking slots as mock members, one stored or lock-backed
+    /// property per `TrackingField`.
+    func trackingMemberItems(for requirement: TrackingRequirement) -> [MemberBlockItemSyntax] {
+        requirement.trackingFields(model: .direct).map { field in
+            MemberBlockItemSyntax(decl: generateTrackingStorageProperty(
+                name: field.name,
+                type: field.type,
+                initializer: field.initialValue,
+                isTypeMember: requirement.isTypeMember
+            ))
+        }
     }
 
     /// Builds one tracking member (`CallCount`, `CallArgs`, `Handler`, ...): a plain

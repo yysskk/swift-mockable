@@ -4,73 +4,21 @@ import SwiftSyntaxBuilder
 // MARK: - Subscript Mock Generation
 
 extension MockGenerator {
-    /// Generates the members that mock a subscript requirement: the call-count and
-    /// captured-index properties, a get handler, a set handler (for get-set subscripts),
-    /// and the subscript witness. The identifier suffix encodes the index and element
-    /// types so overloaded subscripts get distinct members.
+    /// Generates the members that mock a subscript requirement: the requirement's
+    /// tracking slots (call count, captured indices, get handler, and a set handler
+    /// for get-set subscripts) and the subscript witness. The identifier suffix
+    /// encodes the index types so overloaded subscripts get distinct members.
     func generateSubscriptMock(
-        _ subscriptDecl: SubscriptDeclSyntax
+        _ subscriptDecl: SubscriptDeclSyntax,
+        requirement: TrackingRequirement
     ) -> [MemberBlockItemSyntax] {
-        var members: [MemberBlockItemSyntax] = []
-
-        let parameters = subscriptDecl.parameterClause.parameters
-        let returnType = subscriptDecl.returnClause.type
-        let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
-        let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
-        let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
-
-        let callCountProperty = generateTrackingStorageProperty(
-            name: MockNaming.callCount(MockNaming.subscriptIdentifier(suffix: suffix)),
-            type: TypeSyntax(stringLiteral: "Int"),
-            initializer: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            isTypeMember: false
-        )
-        members.append(MemberBlockItemSyntax(decl: callCountProperty))
-
-        let tupleType = Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames)
-        let callArgsProperty = generateTrackingStorageProperty(
-            name: MockNaming.callArgs(MockNaming.subscriptIdentifier(suffix: suffix)),
-            type: TypeSyntax(ArrayTypeSyntax(element: tupleType)),
-            initializer: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            isTypeMember: false
-        )
-        members.append(MemberBlockItemSyntax(decl: callArgsProperty))
-
-        let getterClosureType = buildSubscriptGetterClosureType(
-            parameters: parameters,
-            returnType: returnType,
-            genericParamNames: genericParamNames,
-            effects: getterEffects
-        )
-        let handlerProperty = generateTrackingStorageProperty(
-            name: MockNaming.handler(MockNaming.subscriptIdentifier(suffix: suffix)),
-            type: TypeSyntax(stringLiteral: "(@Sendable \(getterClosureType))?"),
-            initializer: ExprSyntax(NilLiteralExprSyntax()),
-            isTypeMember: false
-        )
-        members.append(MemberBlockItemSyntax(decl: handlerProperty))
-
-        if !isGetOnly {
-            let setterClosureType = buildSubscriptSetterClosureType(
-                parameters: parameters,
-                returnType: returnType,
-                genericParamNames: genericParamNames
-            )
-            let setHandlerProperty = generateTrackingStorageProperty(
-                name: MockNaming.setHandler(MockNaming.subscriptIdentifier(suffix: suffix)),
-                type: TypeSyntax(stringLiteral: "(@Sendable \(setterClosureType))?"),
-                initializer: ExprSyntax(NilLiteralExprSyntax()),
-                isTypeMember: false
-            )
-            members.append(MemberBlockItemSyntax(decl: setHandlerProperty))
-        }
+        var members = trackingMemberItems(for: requirement)
 
         let mockSubscript = generateSubscriptImplementation(
             subscriptDecl,
-            isGetOnly: isGetOnly,
-            genericParamNames: genericParamNames,
-            suffix: suffix
+            isGetOnly: Self.isGetOnlySubscript(subscriptDecl),
+            genericParamNames: Self.extractGenericParameterNames(from: subscriptDecl),
+            suffix: Self.subscriptIdentifierSuffix(from: subscriptDecl)
         )
         members.append(MemberBlockItemSyntax(decl: mockSubscript))
 

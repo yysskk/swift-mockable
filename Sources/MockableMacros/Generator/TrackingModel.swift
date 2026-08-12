@@ -56,7 +56,7 @@ struct TrackingRequirement {
         /// its own storage (no `_name` backing).
         case storedVariable(varType: TypeSyntax, isOptional: Bool, isGetOnly: Bool)
         /// A `get async`/`get throws` property: handler-based, no backing storage.
-        case effectfulVariable
+        case effectfulVariable(varType: TypeSyntax)
         case subscriptRequirement(isGetOnly: Bool)
     }
 
@@ -182,112 +182,139 @@ extension MockGenerator {
     /// `...2` suffixes.
     func trackingRequirements(for decl: DeclSyntax, overloads: OverloadContext) -> [TrackingRequirement] {
         if let initDecl = decl.as(InitializerDeclSyntax.self) {
-            let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
-            return [TrackingRequirement(
-                identifier: Self.initializerIdentifier(for: initDecl, in: overloads.initializers),
-                isTypeMember: false,
-                kind: .initializer,
-                callArgsTupleType: Self.buildCallArgsTupleType(
-                    parameters: initDecl.signature.parameterClause.parameters,
-                    genericParamNames: genericParamNames
-                ),
-                handlerClosureType: nil,
-                setHandlerClosureType: nil
-            )]
+            return [initializerTrackingRequirement(for: initDecl, overloads: overloads)]
         }
 
         if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-            let funcName = funcDecl.name.text
-            let methodGroup = overloads.methodGroups[funcName] ?? []
-            let suffix = methodGroup.count > 1 ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
-            let parameters = funcDecl.signature.parameterClause.parameters
-            let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
-            // `rethrows` requirements get a non-throwing handler (see MockGenerator+Function).
-            let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
-                && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
-            let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
-            return [TrackingRequirement(
-                identifier: suffix.isEmpty ? funcName : "\(funcName)\(suffix)",
-                isTypeMember: Self.isTypeMember(funcDecl.modifiers),
-                kind: .function,
-                callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-                handlerClosureType: buildFunctionClosureType(
-                    parameters: parameters,
-                    returnType: funcDecl.signature.returnClause?.type,
-                    isAsync: isAsync,
-                    isThrows: handlerThrows,
-                    genericParamNames: genericParamNames
-                ),
-                setHandlerClosureType: nil
-            )]
+            return [functionTrackingRequirement(for: funcDecl, overloads: overloads)]
         }
 
         if let varDecl = decl.as(VariableDeclSyntax.self) {
             let isTypeMember = Self.isTypeMember(varDecl.modifiers)
             return varDecl.bindings.compactMap { binding in
-                guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
-                      let typeAnnotation = binding.typeAnnotation else {
-                    return nil
-                }
-
-                let varName = identifier.identifier.text
-                let varType = typeAnnotation.type
-
-                if let effectfulGetter = Self.effectfulGetter(of: binding) {
-                    return TrackingRequirement(
-                        identifier: varName,
-                        isTypeMember: isTypeMember,
-                        kind: .effectfulVariable,
-                        callArgsTupleType: nil,
-                        handlerClosureType: Self.effectfulGetterClosureType(
-                            varType: varType,
-                            effects: effectfulGetter.effectSpecifiers
-                        ),
-                        setHandlerClosureType: nil
-                    )
-                }
-
-                let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-                return TrackingRequirement(
-                    identifier: varName,
-                    isTypeMember: isTypeMember,
-                    kind: .storedVariable(
-                        varType: varType,
-                        isOptional: isOptional,
-                        isGetOnly: Self.isGetOnlyProperty(binding: binding)
-                    ),
-                    callArgsTupleType: nil,
-                    handlerClosureType: nil,
-                    setHandlerClosureType: nil
-                )
+                variableTrackingRequirement(for: binding, isTypeMember: isTypeMember)
             }
         }
 
         if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            let parameters = subscriptDecl.parameterClause.parameters
-            let returnType = subscriptDecl.returnClause.type
-            let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
-            let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-            let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
-            return [TrackingRequirement(
-                identifier: MockNaming.subscriptIdentifier(suffix: suffix),
-                isTypeMember: false,
-                kind: .subscriptRequirement(isGetOnly: isGetOnly),
-                callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-                handlerClosureType: buildSubscriptGetterClosureType(
-                    parameters: parameters,
-                    returnType: returnType,
-                    genericParamNames: genericParamNames,
-                    effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
-                ),
-                setHandlerClosureType: isGetOnly ? nil : buildSubscriptSetterClosureType(
-                    parameters: parameters,
-                    returnType: returnType,
-                    genericParamNames: genericParamNames
-                )
-            )]
+            return [subscriptTrackingRequirement(for: subscriptDecl)]
         }
 
         return []
+    }
+
+    func initializerTrackingRequirement(
+        for initDecl: InitializerDeclSyntax,
+        overloads: OverloadContext
+    ) -> TrackingRequirement {
+        let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
+        return TrackingRequirement(
+            identifier: Self.initializerIdentifier(for: initDecl, in: overloads.initializers),
+            isTypeMember: false,
+            kind: .initializer,
+            callArgsTupleType: Self.buildCallArgsTupleType(
+                parameters: initDecl.signature.parameterClause.parameters,
+                genericParamNames: genericParamNames
+            ),
+            handlerClosureType: nil,
+            setHandlerClosureType: nil
+        )
+    }
+
+    func functionTrackingRequirement(
+        for funcDecl: FunctionDeclSyntax,
+        overloads: OverloadContext
+    ) -> TrackingRequirement {
+        let funcName = funcDecl.name.text
+        let methodGroup = overloads.methodGroups[funcName] ?? []
+        let suffix = methodGroup.count > 1 ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
+        let parameters = funcDecl.signature.parameterClause.parameters
+        let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
+        // `rethrows` requirements get a non-throwing handler (see MockGenerator+Function).
+        let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
+            && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
+        let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
+        return TrackingRequirement(
+            identifier: suffix.isEmpty ? funcName : "\(funcName)\(suffix)",
+            isTypeMember: Self.isTypeMember(funcDecl.modifiers),
+            kind: .function,
+            callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            handlerClosureType: buildFunctionClosureType(
+                parameters: parameters,
+                returnType: funcDecl.signature.returnClause?.type,
+                isAsync: isAsync,
+                isThrows: handlerThrows,
+                genericParamNames: genericParamNames
+            ),
+            setHandlerClosureType: nil
+        )
+    }
+
+    /// The tracking requirement of one property binding, or `nil` for a binding
+    /// without a name or type annotation (which cannot be mocked).
+    func variableTrackingRequirement(
+        for binding: PatternBindingSyntax,
+        isTypeMember: Bool
+    ) -> TrackingRequirement? {
+        guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
+              let typeAnnotation = binding.typeAnnotation else {
+            return nil
+        }
+
+        let varName = identifier.identifier.text
+        let varType = typeAnnotation.type
+
+        if let effectfulGetter = Self.effectfulGetter(of: binding) {
+            return TrackingRequirement(
+                identifier: varName,
+                isTypeMember: isTypeMember,
+                kind: .effectfulVariable(varType: varType),
+                callArgsTupleType: nil,
+                handlerClosureType: Self.effectfulGetterClosureType(
+                    varType: varType,
+                    effects: effectfulGetter.effectSpecifiers
+                ),
+                setHandlerClosureType: nil
+            )
+        }
+
+        let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+        return TrackingRequirement(
+            identifier: varName,
+            isTypeMember: isTypeMember,
+            kind: .storedVariable(
+                varType: varType,
+                isOptional: isOptional,
+                isGetOnly: Self.isGetOnlyProperty(binding: binding)
+            ),
+            callArgsTupleType: nil,
+            handlerClosureType: nil,
+            setHandlerClosureType: nil
+        )
+    }
+
+    func subscriptTrackingRequirement(for subscriptDecl: SubscriptDeclSyntax) -> TrackingRequirement {
+        let parameters = subscriptDecl.parameterClause.parameters
+        let returnType = subscriptDecl.returnClause.type
+        let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
+        let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl)
+        return TrackingRequirement(
+            identifier: MockNaming.subscriptIdentifier(suffix: suffix),
+            isTypeMember: false,
+            kind: .subscriptRequirement(isGetOnly: isGetOnly),
+            callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            handlerClosureType: buildSubscriptGetterClosureType(
+                parameters: parameters,
+                returnType: returnType,
+                genericParamNames: genericParamNames,
+                effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+            ),
+            setHandlerClosureType: isGetOnly ? nil : buildSubscriptSetterClosureType(
+                parameters: parameters,
+                returnType: returnType,
+                genericParamNames: genericParamNames
+            )
+        )
     }
 }
