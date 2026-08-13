@@ -396,8 +396,10 @@ struct AssociatedTypeMacroTests {
         )
     }
 
-    @Test("Protocol with associated type with type constraint")
+    @Test("A constrained associated type with no default is reported")
     func associatedTypeWithConstraint() {
+        // `Any` cannot satisfy the constraint, so the mock would not conform. The
+        // requirement is reported instead, where the author can add a default.
         assertMacroExpansionForTesting(
             """
             @Mockable
@@ -411,10 +413,41 @@ struct AssociatedTypeMacroTests {
                 associatedtype Item: Decodable
                 func decode(from data: Data) -> Item
             }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        Cannot mock associated type 'Item': the mock fulfills it with 'Any', \
+                        which does not satisfy its constraints. Give it a default \
+                        ('associatedtype Item: ... = SomeType') so the mock has a type to use.
+                        """,
+                    line: 3,
+                    column: 5
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("A constrained associated type with a default is mocked with that default")
+    func constrainedAssociatedTypeWithDefault() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol DecodableStore {
+                associatedtype Item: Decodable = Data
+                func decode(from data: Data) -> Item
+            }
+            """,
+            expandedSource: """
+            protocol DecodableStore {
+                associatedtype Item: Decodable = Data
+                func decode(from data: Data) -> Item
+            }
 
             #if DEBUG
             class DecodableStoreMock: DecodableStore {
-                typealias Item = Any
+                typealias Item = Data
                 var decodeCallCount: Int = 0
                 var decodeCallArgs: [Data] = []
                 var decodeHandler: (@Sendable (Data) -> Item)? = nil
@@ -430,6 +463,48 @@ struct AssociatedTypeMacroTests {
                     decodeCallCount = 0
                     decodeCallArgs = []
                     decodeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("A generic type alias keeps its parameter and where clauses")
+    func genericTypeAlias() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol AliasHost {
+                typealias Pair<T> = (T, T)
+                func make() -> Int
+            }
+            """,
+            expandedSource: """
+            protocol AliasHost {
+                typealias Pair<T> = (T, T)
+                func make() -> Int
+            }
+
+            #if DEBUG
+            class AliasHostMock: AliasHost {
+                typealias Pair<T> = (T, T)
+                var makeCallCount: Int = 0
+                var makeCallArgs: [()] = []
+                var makeHandler: (@Sendable () -> Int)? = nil
+                func make() -> Int {
+                    makeCallCount += 1
+                    makeCallArgs.append(())
+                    guard let _handler = makeHandler else {
+                        fatalError("\\(Self.self).makeHandler is not set")
+                    }
+                    return _handler()
+                }
+                func resetMock() {
+                    makeCallCount = 0
+                    makeCallArgs = []
+                    makeHandler = nil
                 }
             }
             #endif

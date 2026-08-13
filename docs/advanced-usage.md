@@ -163,6 +163,18 @@ Generates:
 typealias Value = Any
 ```
 
+An associated type carrying a constraint — a conformance or a `where` clause — needs a
+default, because `Any` does not satisfy it and the mock would not conform. Declaring one
+without a default emits a diagnostic:
+
+```swift
+associatedtype Item: Decodable          // reported: give it a default
+associatedtype Item: Decodable = Data   // mocked as `typealias Item = Data`
+```
+
+A `typealias` the protocol declares is re-emitted on the mock with its generic parameter
+and `where` clauses intact.
+
 ## `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is

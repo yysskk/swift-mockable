@@ -163,7 +163,7 @@ at compile time and cannot read runtime values.
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
 - Initializer requirements (`init(...)`) generated as recording `required init` witnesses (`Sendable`/`actor` mocks record behind the lock)
-- Associated types (generated as `typealias`, using default type when available, otherwise `Any`)
+- Associated types (generated as `typealias`, using the requirement's default when it has one, otherwise `Any`; a constrained associated type needs a default, since `Any` cannot satisfy the constraint)
 - Static methods and static properties
 - Get-only / get-set / optional properties
 - Effectful read-only properties (`get async`, `get throws`, `get async throws`) mocked with handlers

@@ -26,6 +26,9 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// mock subclasses a parent protocol's mock. The associated value is the full
     /// explanation.
     case unsupportedInitializer(String)
+    /// An `associatedtype` whose constraints the mock's `Any` fallback cannot satisfy.
+    /// The associated value is the full explanation.
+    case unsupportedAssociatedType(String)
     /// An inherited type the generated mock cannot be made to conform to — a protocol
     /// with requirements the macro cannot witness, or a parent protocol written with
     /// generic arguments. The associated value is the full explanation.
@@ -56,6 +59,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return message
         case .unsupportedInitializer(let message):
             return message
+        case .unsupportedAssociatedType(let message):
+            return message
         case .unsupportedInheritedType(let message):
             return message
         case .unsupportedGenericReturn(let message):
@@ -84,6 +89,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "unsupportedMemberName")
         case .unsupportedInitializer:
             return MessageID(domain: "MockableMacro", id: "unsupportedInitializer")
+        case .unsupportedAssociatedType:
+            return MessageID(domain: "MockableMacro", id: "unsupportedAssociatedType")
         case .unsupportedInheritedType:
             return MessageID(domain: "MockableMacro", id: "unsupportedInheritedType")
         case .unsupportedGenericReturn:
