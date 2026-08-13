@@ -132,6 +132,7 @@ extension MockGenerator {
         }
 
         return FunctionDeclSyntax(
+            attributes: Self.witnessAttributes(of: funcDecl.attributes),
             modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
             name: funcDecl.name,
             genericParameterClause: funcDecl.genericParameterClause,
@@ -583,6 +584,29 @@ if let \(handlerBinding) {
         buildInOutWriteBackAssignments(inOutParams: inOutParams, source: source).map {
             CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: $0)))
         }
+    }
+
+    /// The attributes a requirement's witness keeps.
+    ///
+    /// Witnesses are built from scratch rather than by editing the requirement, so an
+    /// attribute is carried over only when it means the same thing on the mock. That is
+    /// `@discardableResult`, which describes how callers may use the result and would
+    /// otherwise leave every discarding call site with an unused-result warning. Others
+    /// are deliberately dropped: `@available(*, deprecated)` marks the requirement, not
+    /// the mock a test calls, and an availability range is inherited from the expansion
+    /// site already.
+    static func witnessAttributes(of attributes: AttributeListSyntax) -> AttributeListSyntax {
+        let carried: Set<String> = ["discardableResult"]
+        let elements = attributes.compactMap { element -> AttributeListSyntax.Element? in
+            guard case .attribute(let attribute) = element,
+                  carried.contains(attribute.attributeName.trimmedDescription) else {
+                return nil
+            }
+            // The requirement's own layout does not apply where the witness is emitted,
+            // so the attribute is re-laid out on a line of its own.
+            return .attribute(attribute.trimmed.with(\.trailingTrivia, .newline))
+        }
+        return AttributeListSyntax(elements)
     }
 
     /// Puts each statement after the first on its own line. Statements assembled from
