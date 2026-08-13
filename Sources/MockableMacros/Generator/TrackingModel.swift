@@ -173,6 +173,18 @@ struct OverloadContext {
     let methodGroups: [String: [FunctionDeclSyntax]]
     let initializers: [InitializerDeclSyntax]
     let subscripts: [SubscriptDeclSyntax]
+    /// The identifier each requirement's tracking members are named after, assigned
+    /// across the whole protocol so no two requirements share one. Keyed by the
+    /// declaration's node identity, so lookups need the original nodes.
+    let trackingIdentifiers: [SyntaxIdentifier: String]
+
+    /// The identifier assigned to a requirement, falling back to what the requirement
+    /// suggests on its own. The fallback covers a declaration the assignment pass did
+    /// not see, which can only happen if a caller builds a requirement from a node
+    /// outside the protocol's member block.
+    func trackingIdentifier(for id: SyntaxIdentifier, suggestion: @autoclosure () -> String) -> String {
+        trackingIdentifiers[id] ?? suggestion()
+    }
 }
 
 extension MockGenerator {
@@ -180,10 +192,18 @@ extension MockGenerator {
     /// identifiers without re-walking the member tree.
     func makeOverloadContext() -> OverloadContext {
         let decls = collectDeclsIncludingConditional()
+        let methodGroups = groupMethodsByNameIncludingConditional()
+        let initializers = decls.compactMap { $0.as(InitializerDeclSyntax.self) }
+        let subscripts = decls.compactMap { $0.as(SubscriptDeclSyntax.self) }
         return OverloadContext(
-            methodGroups: groupMethodsByNameIncludingConditional(),
-            initializers: decls.compactMap { $0.as(InitializerDeclSyntax.self) },
-            subscripts: decls.compactMap { $0.as(SubscriptDeclSyntax.self) }
+            methodGroups: methodGroups,
+            initializers: initializers,
+            subscripts: subscripts,
+            trackingIdentifiers: assignTrackingIdentifiers(
+                methodGroups: methodGroups,
+                initializers: initializers,
+                subscripts: subscripts
+            )
         )
     }
 
@@ -224,7 +244,10 @@ extension MockGenerator {
     ) -> TrackingRequirement {
         let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
         return TrackingRequirement(
-            identifier: Self.initializerIdentifier(for: initDecl, in: overloads.initializers),
+            identifier: overloads.trackingIdentifier(
+                for: initDecl.id,
+                suggestion: Self.suggestedIdentifier(for: initDecl, in: overloads.initializers)
+            ),
             isTypeMember: false,
             kind: .initializer,
             callArgsTupleType: Self.buildCallArgsTupleType(
@@ -244,7 +267,6 @@ extension MockGenerator {
     ) -> TrackingRequirement {
         let funcName = funcDecl.name.text
         let methodGroup = overloads.methodGroups[funcName] ?? []
-        let suffix = methodGroup.count > 1 ? Self.functionIdentifierSuffix(from: funcDecl, in: methodGroup) : ""
         let parameters = funcDecl.signature.parameterClause.parameters
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
         // `rethrows` requirements get a non-throwing handler (see MockGenerator+Function).
@@ -252,7 +274,10 @@ extension MockGenerator {
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
         return TrackingRequirement(
-            identifier: suffix.isEmpty ? funcName : "\(funcName)\(suffix)",
+            identifier: overloads.trackingIdentifier(
+                for: funcDecl.id,
+                suggestion: Self.suggestedIdentifier(for: funcDecl, in: methodGroup)
+            ),
             isTypeMember: Self.isTypeMember(funcDecl.modifiers),
             kind: .function,
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
@@ -321,9 +346,11 @@ extension MockGenerator {
         let returnType = subscriptDecl.returnClause.type
         let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-        let suffix = Self.subscriptIdentifierSuffix(from: subscriptDecl, in: overloads.subscripts)
         return TrackingRequirement(
-            identifier: MockNaming.subscriptIdentifier(suffix: suffix),
+            identifier: overloads.trackingIdentifier(
+                for: subscriptDecl.id,
+                suggestion: Self.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
+            ),
             isTypeMember: false,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
