@@ -437,9 +437,11 @@ struct ParameterNameMacroTests {
                     }
                 }
                 func resetMock() {
-                    Self.storeCallCount = 0
-                    Self.storeCallArgs = []
-                    Self.storeHandler = nil
+                    Self._staticStorage.withLock { storage in
+                        storage.storeCallCount = 0
+                        storage.storeCallArgs = []
+                        storage.storeHandler = nil
+                    }
                 }
             }
             #endif

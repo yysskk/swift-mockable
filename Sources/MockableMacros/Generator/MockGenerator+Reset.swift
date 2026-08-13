@@ -4,6 +4,42 @@ import SwiftSyntaxBuilder
 // MARK: - Reset Method Generation
 
 extension MockGenerator {
+    /// The assignments that clear one storage struct's fields, addressed through the
+    /// `withLock` closure's `storage` binding and keeping the protocol's `#if` structure.
+    private func resetLines(forTypeMembers includeTypeMembers: Bool, overloads: OverloadContext) -> [String] {
+        mapLinesPreservingIfConfig { decl in
+            guard Self.isTypeMember(decl) == includeTypeMembers else {
+                return []
+            }
+            return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
+                requirement.trackingFields(model: .lockBacked).map { field in
+                    "storage.\(field.name) = \(field.resetValue)"
+                }
+            }
+        }
+    }
+
+    /// Wraps reset assignments in a single `withLock`, so the slots a caller can observe
+    /// together are cleared together.
+    private func buildWithLockBody(storageName: String, resetLines: [String]) -> String {
+        let resetBody = resetLines
+            .map { "    \($0)" }
+            .joined(separator: "\n")
+
+        if resetBody.isEmpty {
+            return """
+\(storageName).withLock { storage in
+}
+"""
+        }
+
+        return """
+\(storageName).withLock { storage in
+\(resetBody)
+}
+"""
+    }
+
     /// Generates `resetMock()`, which clears every requirement's call count, captured
     /// arguments, and handler back to its initial state. The lock-backed variant (for
     /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
@@ -27,14 +63,15 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         let overloads = makeOverloadContext()
 
-        // The regular reset always assigns through the direct-model names — even a
-        // static member's lock-backed slot is reset through its public accessor
-        // (`Self.cachedCount = nil`), not the storage-struct field.
+        // Instance slots are plain stored properties here, so they are assigned through
+        // the direct-model names.
         let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
-            trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
-                let prefix = requirement.isTypeMember ? "Self." : ""
-                return requirement.trackingFields(model: .direct).map { field in
-                    CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(prefix)\(field.name) = \(field.resetValue)")))
+            guard !Self.isTypeMember(decl) else {
+                return []
+            }
+            return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
+                requirement.trackingFields(model: .direct).map { field in
+                    CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(field.name) = \(field.resetValue)")))
                 }
             }
         }
@@ -45,6 +82,17 @@ extension MockGenerator {
         }
 
         statements.append(contentsOf: resetStatements)
+
+        // Static slots are lock-backed even in a mock whose instance state is not, so
+        // they are cleared in one acquisition rather than one per slot: a caller
+        // recording a call concurrently would otherwise see a half-reset mock.
+        let staticResetLines = resetLines(forTypeMembers: true, overloads: overloads)
+        if !staticResetLines.isEmpty {
+            statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
+                storageName: "Self.\(MockNaming.staticStorageName)",
+                resetLines: staticResetLines
+            )))))
+        }
 
         let body = CodeBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),
@@ -78,41 +126,8 @@ extension MockGenerator {
     /// mock the method is `nonisolated`, so a test can reset without awaiting.
     private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
         let overloads = makeOverloadContext()
-
-        func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {
-            mapLinesPreservingIfConfig { decl in
-                guard Self.isTypeMember(decl) == includeTypeMembers else {
-                    return []
-                }
-                return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
-                    requirement.trackingFields(model: .lockBacked).map { field in
-                        "storage.\(field.name) = \(field.resetValue)"
-                    }
-                }
-            }
-        }
-
-        func buildWithLockBody(storageName: String, resetLines: [String]) -> String {
-            let resetBody = resetLines
-                .map { "    \($0)" }
-                .joined(separator: "\n")
-
-            if resetBody.isEmpty {
-                return """
-\(storageName).withLock { storage in
-}
-"""
-            }
-
-            return """
-\(storageName).withLock { storage in
-\(resetBody)
-}
-"""
-        }
-
-        let instanceResetLines = resetLines(forTypeMembers: false)
-        let staticResetLines = resetLines(forTypeMembers: true)
+        let instanceResetLines = resetLines(forTypeMembers: false, overloads: overloads)
+        let staticResetLines = resetLines(forTypeMembers: true, overloads: overloads)
 
         var bodyStatements: [CodeBlockItemSyntax] = []
         if hasParentMock {

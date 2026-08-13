@@ -322,8 +322,10 @@ struct EffectfulAccessorMacroTests {
                     }
                 }
                 func resetMock() {
-                    Self.apiKeyCallCount = 0
-                    Self.apiKeyHandler = nil
+                    Self._staticStorage.withLock { storage in
+                        storage.apiKeyCallCount = 0
+                        storage.apiKeyHandler = nil
+                    }
                 }
             }
             #endif
