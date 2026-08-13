@@ -263,4 +263,104 @@ struct TrackingRequirementTests {
         """)
         #expect(all.isEmpty)
     }
+
+    // MARK: - Identifier uniqueness across requirements
+
+    /// The tracking identifiers of every requirement, in declaration order.
+    private func identifiers(ofProtocol source: String) -> [String] {
+        requirements(ofProtocol: source).map(\.identifier)
+    }
+
+    @Test("An overload's suffixed identifier gives way to a method of that name")
+    func overloadGivesWayToMethodName() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func load()
+            func load(_ item: Item)
+            func loadItem()
+        }
+        """) == ["load", "loadItem2", "loadItem"])
+    }
+
+    @Test("The method of that name keeps its identifier whichever is declared first")
+    func overloadGivesWayRegardlessOfOrder() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func loadItem()
+            func load()
+            func load(_ item: Item)
+        }
+        """) == ["loadItem", "load", "loadItem2"])
+    }
+
+    @Test("An overload's suffixed identifier gives way to a property of that name")
+    func overloadGivesWayToPropertyName() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            var loadItem: Int { get async }
+            func load()
+            func load(_ item: Item)
+        }
+        """) == ["loadItem", "load", "loadItem2"])
+    }
+
+    @Test("A subscript's identifier gives way to a method of that name")
+    func subscriptGivesWayToMethodName() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func subscriptString()
+            subscript(key: String) -> Int { get }
+        }
+        """) == ["subscriptString", "subscriptString2"])
+    }
+
+    @Test("An initializer's identifier gives way to a method of that name")
+    func initializerGivesWayToMethodName() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func initString()
+            init()
+            init(_ name: String)
+        }
+        """) == ["initString", "init", "initString2"])
+    }
+
+    @Test("Counting continues past every identifier already taken")
+    func countingContinuesPastTakenIdentifiers() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func loadItem()
+            func loadItem2()
+            func load()
+            func load(_ item: Item)
+        }
+        """) == ["loadItem", "loadItem2", "load", "loadItem3"])
+    }
+
+    @Test("A collision across conditional clauses is resolved too")
+    func collisionAcrossConditionalClauses() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            func loadItem()
+            #if CUSTOM
+            func load()
+            func load(_ item: Item)
+            #endif
+        }
+        """) == ["loadItem", "load", "loadItem2"])
+    }
+
+    @Test("Requirements that do not collide keep the identifiers they suggest")
+    func noCollisionKeepsSuggestedIdentifiers() {
+        #expect(identifiers(ofProtocol: """
+        protocol Service {
+            var name: String { get }
+            init(name: String)
+            func fetch()
+            func fetch(id: Int)
+            func fetch(name: String) async
+            subscript(index: Int) -> String { get }
+        }
+        """) == ["name", "init", "fetch", "fetchInt", "fetchString", "subscriptInt"])
+    }
 }

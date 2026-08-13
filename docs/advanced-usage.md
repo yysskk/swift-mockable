@@ -32,6 +32,19 @@ Generates distinct handlers like:
 - `getURLStringAsyncHandler`
 - `getURLDataAsyncThrowingHandler`
 
+A suffixed name can also spell out a name another requirement already uses. Identifiers are assigned across the whole protocol, so the requirement tracked under a name it declares — a method, or a property — keeps it, and the suffixed one continues counting:
+
+```swift
+@Mockable
+protocol Service {
+    func load()
+    func load(_ item: Item)   // loadItem is taken -> loadItem2CallCount, loadItem2Handler, ...
+    func loadItem()           // loadItemCallCount, loadItemHandler, ...
+}
+```
+
+This holds whichever requirement is declared first, and applies to subscripts and initializers alike.
+
 ### Subscripts
 
 Subscript-generated names use `subscript<suffix>...`.
