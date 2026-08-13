@@ -36,12 +36,17 @@ extension MockGenerator {
             ? buildLockBasedInitializerBody(
                 parameters: parameters,
                 identifier: identifier,
-                throwsErrorType: throwsErrorType
+                throwsErrorType: throwsErrorType,
+                names: WitnessNames(parameters: parameters, memberNames: [MockNaming.instanceStorageName])
             )
             : buildDirectInitializerBody(
                 parameters: parameters,
                 identifier: identifier,
-                throwsErrorType: throwsErrorType
+                throwsErrorType: throwsErrorType,
+                names: WitnessNames(
+                    parameters: parameters,
+                    memberNames: [MockNaming.callCount(identifier), MockNaming.callArgs(identifier)]
+                )
             )
 
         // A class mock is non-final, so a protocol `init` requirement must be satisfied by a
@@ -68,18 +73,19 @@ extension MockGenerator {
     private func buildDirectInitializerBody(
         parameters: FunctionParameterListSyntax,
         identifier: String,
-        throwsErrorType: TypeSyntax?
+        throwsErrorType: TypeSyntax?,
+        names: WitnessNames
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments once so recording observes the evaluated value,
         // mirroring the method witnesses.
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         statements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(identifier)) += 1")))
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(names.member(MockNaming.callCount(identifier))) += 1")))
         )
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         statements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callArgs(identifier)).append(\(argsExpr))")))
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(names.member(MockNaming.callArgs(identifier))).append(\(argsExpr))")))
         )
         statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
             statements,
@@ -100,16 +106,17 @@ extension MockGenerator {
     private func buildLockBasedInitializerBody(
         parameters: FunctionParameterListSyntax,
         identifier: String,
-        throwsErrorType: TypeSyntax?
+        throwsErrorType: TypeSyntax?,
+        names: WitnessNames
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
-        \(MockNaming.instanceStorageName).withLock { storage in
-            storage.\(MockNaming.callCount(identifier)) += 1
-            storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
+        \(names.member(MockNaming.instanceStorageName)).withLock { \(names.storage) in
+            \(names.storage).\(MockNaming.callCount(identifier)) += 1
+            \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
         }
         """))))
         statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(

@@ -102,7 +102,12 @@ extension MockGenerator {
                 isTypeMember: isTypeMember,
                 hasGenericReturn: hasGenericReturn,
                 genericParamNames: genericParamNames,
-                throwsErrorType: throwsErrorType
+                throwsErrorType: throwsErrorType,
+                names: WitnessNames(
+                    parameters: parameters,
+                    memberNames: [Self.storagePropertyName(isTypeMember: isTypeMember)],
+                    isTypeMember: isTypeMember
+                )
             )
         } else {
             body = buildDirectFunctionBody(
@@ -113,7 +118,16 @@ extension MockGenerator {
                 isThrows: handlerThrows,
                 hasGenericReturn: hasGenericReturn,
                 genericParamNames: genericParamNames,
-                throwsErrorType: throwsErrorType
+                throwsErrorType: throwsErrorType,
+                names: WitnessNames(
+                    parameters: parameters,
+                    memberNames: [
+                        MockNaming.callCount(identifier),
+                        MockNaming.callArgs(identifier),
+                        MockNaming.handler(identifier),
+                    ],
+                    isTypeMember: isTypeMember
+                )
             )
         }
 
@@ -137,7 +151,8 @@ extension MockGenerator {
         isThrows: Bool,
         hasGenericReturn: Bool,
         genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil
+        throwsErrorType: TypeSyntax? = nil,
+        names: WitnessNames
     ) -> CodeBlockSyntax {
         // A throwing `@autoclosure` argument is evaluated with `try` in the requirement's own
         // body, so a typed-throws requirement has to convert that error too: wrap the whole
@@ -149,7 +164,11 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
-        statements.append(contentsOf: Self.makeCallRecordingStatements(identifier: identifier, parameters: parameters))
+        statements.append(contentsOf: Self.makeCallRecordingStatements(
+            identifier: identifier,
+            parameters: parameters,
+            names: names
+        ))
 
         let handlerCallStmts = buildHandlerCallStatements(
             identifier: identifier,
@@ -159,7 +178,8 @@ extension MockGenerator {
             isThrows: isThrows,
             hasGenericReturn: hasGenericReturn,
             genericParamNames: genericParamNames,
-            throwsErrorType: wrapsBodyInTypedThrowsCatch ? nil : throwsErrorType
+            throwsErrorType: wrapsBodyInTypedThrowsCatch ? nil : throwsErrorType,
+            names: names
         )
         statements.append(contentsOf: handlerCallStmts)
 
@@ -186,13 +206,14 @@ extension MockGenerator {
         isTypeMember: Bool,
         hasGenericReturn: Bool,
         genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil
+        throwsErrorType: TypeSyntax? = nil,
+        names: WitnessNames
     ) -> CodeBlockSyntax {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         let hasReturnValue = Self.hasReturnValue(returnType)
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
-        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
+        let storageName = names.member(Self.storagePropertyName(isTypeMember: isTypeMember))
 
         let closureType = buildFunctionClosureType(
             parameters: parameters,
@@ -214,10 +235,10 @@ extension MockGenerator {
         // expressions never run while the storage lock is held.
         statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
-    storage.\(MockNaming.callCount(identifier)) += 1
-    storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
-    return storage.\(MockNaming.handler(identifier))
+let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable \(closureType))? in
+    \(names.storage).\(MockNaming.callCount(identifier)) += 1
+    \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
+    return \(names.storage).\(MockNaming.handler(identifier))
 }
 """)))
         statements.append(withLockStmt)
@@ -226,7 +247,7 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         if hasReturnValue {
             let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
             statements.append(Self.makeUnsetHandlerGuard(
-                binding: "_handler",
+                binding: names.handler,
                 elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
             ))
             statements.append(contentsOf: Self.buildHandlerInvocationStatements(
@@ -235,15 +256,17 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
                 returnTypeStr: returnTypeStr,
-                errorType: handlerCallErrorType
+                errorType: handlerCallErrorType,
+                names: names
             ))
         } else {
             statements.append(Self.buildOptionalHandlerCallStatement(
-                handlerBinding: "_handler",
+                handlerBinding: names.handler,
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
-                errorType: handlerCallErrorType
+                errorType: handlerCallErrorType,
+                names: names
             ))
         }
 
@@ -336,19 +359,21 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         isThrows: Bool,
         hasGenericReturn: Bool = false,
         genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil
+        throwsErrorType: TypeSyntax? = nil,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let errorType = throwsErrorType?.trimmedDescription
+        let handlerBinding = "\(names.handler) = \(names.member(MockNaming.handler(identifier)))"
 
         let hasReturnValue = Self.hasReturnValue(returnType)
 
         if hasReturnValue {
             let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
             let guardStmt = Self.makeUnsetHandlerGuard(
-                binding: "_handler = \(MockNaming.handler(identifier))",
+                binding: handlerBinding,
                 elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
             )
             var result: [CodeBlockItemSyntax] = [guardStmt]
@@ -358,16 +383,18 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
                 returnTypeStr: returnTypeStr,
-                errorType: errorType
+                errorType: errorType,
+                names: names
             ))
             return result
         } else {
             return [Self.buildOptionalHandlerCallStatement(
-                handlerBinding: "_handler = \(MockNaming.handler(identifier))",
+                handlerBinding: handlerBinding,
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
-                errorType: errorType
+                errorType: errorType,
+                names: names
             )]
         }
     }
@@ -382,31 +409,33 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         inOutParams: [(name: String, erasedType: String, originalType: String)],
         hasGenericReturn: Bool,
         returnTypeStr: String,
-        errorType: String? = nil
+        errorType: String? = nil,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
+        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArgs))"
 
         if let errorType {
             var innerLines: [String] = []
             if !inOutParams.isEmpty {
-                innerLines.append("let _result = \(invokePrefix)_handler(\(handlerCallArgs))")
-                innerLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "_result.inoutArgs"))
-                innerLines.append("return _result.returnValue\(castSuffix)")
+                innerLines.append("let \(names.result) = \(call)")
+                innerLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "\(names.result).inoutArgs"))
+                innerLines.append("return \(names.result).returnValue\(castSuffix)")
             } else {
-                innerLines.append("return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")
+                innerLines.append("return \(call)\(castSuffix)")
             }
             return [buildTypedThrowsCatch(innerLines: innerLines, errorType: errorType)]
         }
 
         if !inOutParams.isEmpty {
             var result: [CodeBlockItemSyntax] = []
-            result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let _result = \(invokePrefix)_handler(\(handlerCallArgs))"))))
-            result.append(contentsOf: buildInOutWriteBackStatements(inOutParams: inOutParams, source: "_result.inoutArgs"))
-            result.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return _result.returnValue\(castSuffix)"))))
+            result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let \(names.result) = \(call)"))))
+            result.append(contentsOf: buildInOutWriteBackStatements(inOutParams: inOutParams, source: "\(names.result).inoutArgs"))
+            result.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(names.result).returnValue\(castSuffix)"))))
             return result
         }
 
-        return [CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)")))]
+        return [CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: "return \(call)\(castSuffix)")))]
     }
 
     /// Wraps `innerLines` in a `do { ... } catch { throw error as! ErrorType }` statement,
@@ -445,14 +474,16 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         invokePrefix: String,
         handlerCallArgs: String,
         inOutParams: [(name: String, erasedType: String, originalType: String)],
-        errorType: String? = nil
+        errorType: String? = nil,
+        names: WitnessNames
     ) -> CodeBlockItemSyntax {
+        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArgs))"
         var ifBodyLines: [String]
         if !inOutParams.isEmpty {
-            ifBodyLines = ["let _writeBack = \(invokePrefix)_handler(\(handlerCallArgs))"]
-            ifBodyLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: "_writeBack"))
+            ifBodyLines = ["let \(names.writeBack) = \(call)"]
+            ifBodyLines.append(contentsOf: buildInOutWriteBackAssignments(inOutParams: inOutParams, source: names.writeBack))
         } else {
-            ifBodyLines = ["\(invokePrefix)_handler(\(handlerCallArgs))"]
+            ifBodyLines = [call]
         }
 
         // Typed throws: wrap the handler call in a `do`/`catch` that re-throws the

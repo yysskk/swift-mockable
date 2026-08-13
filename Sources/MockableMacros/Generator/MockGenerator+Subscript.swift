@@ -48,6 +48,20 @@ extension MockGenerator {
         let isThrows = getterEffects?.hasThrowsEffect ?? false
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let errorType = getterEffects?.throwsErrorType?.trimmedDescription
+        let names = WitnessNames(
+            parameters: parameters,
+            memberNames: usesInstanceStorageLock
+                ? [MockNaming.instanceStorageName]
+                : [
+                    MockNaming.callCount(identifier),
+                    MockNaming.callArgs(identifier),
+                    MockNaming.handler(identifier),
+                    MockNaming.setHandler(identifier),
+                ]
+        )
+        // The setter's implicit `newValue` is in scope alongside the indices, so an
+        // index of that name would capture the value being assigned.
+        let setterValueName = names.uniqueLocalName(startingAt: "newValue", parameters: parameters)
 
         let getterStatements: [CodeBlockItemSyntax]
         if usesInstanceStorageLock {
@@ -63,7 +77,8 @@ extension MockGenerator {
                     effects: getterEffects
                 ),
                 invokePrefix: invokePrefix,
-                errorType: errorType
+                errorType: errorType,
+                names: names
             )
         } else {
             getterStatements = buildDirectSubscriptGetterStatements(
@@ -72,7 +87,8 @@ extension MockGenerator {
                 hasGenericReturn: hasGenericReturn,
                 identifier: identifier,
                 invokePrefix: invokePrefix,
-                errorType: errorType
+                errorType: errorType,
+                names: names
             )
         }
 
@@ -98,9 +114,19 @@ extension MockGenerator {
         } else {
             var setterStatements = Self.buildAutoclosureEvaluationStatements(parameters: parameters)
             if usesInstanceStorageLock {
-                setterStatements.append(buildLockBasedSubscriptSetHandlerCallStatement(parameters: parameters, identifier: identifier))
+                setterStatements.append(buildLockBasedSubscriptSetHandlerCallStatement(
+                    parameters: parameters,
+                    identifier: identifier,
+                    names: names,
+                    valueName: setterValueName
+                ))
             } else {
-                setterStatements.append(buildDirectSubscriptSetHandlerCallStatement(parameters: parameters, identifier: identifier))
+                setterStatements.append(buildDirectSubscriptSetHandlerCallStatement(
+                    parameters: parameters,
+                    identifier: identifier,
+                    names: names,
+                    valueName: setterValueName
+                ))
             }
 
             accessors = AccessorBlockSyntax(
@@ -111,6 +137,11 @@ extension MockGenerator {
                     ),
                     AccessorDeclSyntax(
                         accessorSpecifier: .keyword(.set),
+                        // An explicit accessor parameter is only spelled out when the
+                        // implicit `newValue` would be shadowed by an index of that name.
+                        parameters: setterValueName == "newValue"
+                            ? nil
+                            : AccessorParametersSyntax(name: .identifier(setterValueName)),
                         body: CodeBlockSyntax(statements: CodeBlockItemListSyntax(setterStatements))
                     )
                 ]))
@@ -135,14 +166,16 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         identifier: String,
         invokePrefix: String = "",
-        errorType: String? = nil
+        errorType: String? = nil,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         var getterStatements: [CodeBlockItemSyntax] = []
         getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
 
         getterStatements.append(contentsOf: Self.makeCallRecordingStatements(
             identifier: identifier,
-            parameters: parameters
+            parameters: parameters,
+            names: names
         ))
 
         getterStatements.append(contentsOf: buildSubscriptHandlerCallStatements(
@@ -151,7 +184,8 @@ extension MockGenerator {
             hasGenericReturn: hasGenericReturn,
             identifier: identifier,
             invokePrefix: invokePrefix,
-            errorType: errorType
+            errorType: errorType,
+            names: names
         ))
 
         return getterStatements
@@ -166,7 +200,8 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         identifier: String,
         invokePrefix: String,
-        errorType: String?
+        errorType: String?,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let returnTypeStr = Self.castTargetType(for: returnType)
         let guardStmt = Self.makeUnsetHandlerGuard(
@@ -178,6 +213,7 @@ extension MockGenerator {
         )
         let returnStmt = Self.makeHandlerReturnStatement(
             invokePrefix: invokePrefix,
+            handlerName: names.handler,
             handlerCallArgs: buildHandlerCallArguments(parameters: parameters),
             castSuffix: hasGenericReturn ? " as! \(returnTypeStr)" : "",
             errorType: errorType
@@ -193,16 +229,18 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         identifier: String,
         invokePrefix: String = "",
-        errorType: String? = nil
+        errorType: String? = nil,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         buildGuardedSubscriptHandlerReturn(
-            guardBinding: "_handler = \(MockNaming.handler(identifier))",
+            guardBinding: "\(names.handler) = \(names.member(MockNaming.handler(identifier)))",
             parameters: parameters,
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
             identifier: identifier,
             invokePrefix: invokePrefix,
-            errorType: errorType
+            errorType: errorType,
+            names: names
         )
     }
 
@@ -211,20 +249,28 @@ extension MockGenerator {
     /// followed by `newValue`.
     private func buildDirectSubscriptSetHandlerCallStatement(
         parameters: FunctionParameterListSyntax,
-        identifier: String
+        identifier: String,
+        names: WitnessNames,
+        valueName: String
     ) -> CodeBlockItemSyntax {
-        let handlerCallArgs: String
-        if parameters.isEmpty {
-            handlerCallArgs = "newValue"
-        } else {
-            handlerCallArgs = "\(buildHandlerCallArguments(parameters: parameters)), newValue"
-        }
+        let handlerCallArgs = setHandlerCallArguments(parameters: parameters, valueName: valueName)
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = \(MockNaming.setHandler(identifier)) {
-    _handler(\(handlerCallArgs))
+if let \(names.handler) = \(names.member(MockNaming.setHandler(identifier))) {
+    \(names.handler)(\(handlerCallArgs))
 }
 """)))
+    }
+
+    /// The arguments a set handler receives: the indices followed by the new value.
+    private func setHandlerCallArguments(
+        parameters: FunctionParameterListSyntax,
+        valueName: String
+    ) -> String {
+        if parameters.isEmpty {
+            return valueName
+        }
+        return "\(buildHandlerCallArguments(parameters: parameters)), \(valueName)"
     }
 
     /// The getter body for `Sendable`/actor mocks: record the call and read the handler
@@ -236,7 +282,8 @@ if let _handler = \(MockNaming.setHandler(identifier)) {
         identifier: String,
         handlerClosureType: String,
         invokePrefix: String = "",
-        errorType: String? = nil
+        errorType: String? = nil,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
 
@@ -247,22 +294,23 @@ if let _handler = \(MockNaming.setHandler(identifier)) {
         // Record the call and read the handler in a single lock acquisition,
         // mirroring the method witnesses.
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let _handler = \(MockNaming.instanceStorageName).withLock { storage -> (@Sendable \(handlerClosureType))? in
-    storage.\(MockNaming.callCount(identifier)) += 1
-    storage.\(MockNaming.callArgs(identifier)).append(\(argsExpr))
-    return storage.\(MockNaming.handler(identifier))
+let \(names.handler) = \(names.member(MockNaming.instanceStorageName)).withLock { \(names.storage) -> (@Sendable \(handlerClosureType))? in
+    \(names.storage).\(MockNaming.callCount(identifier)) += 1
+    \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
+    return \(names.storage).\(MockNaming.handler(identifier))
 }
 """)))
         statements.append(withLockStmt)
 
         statements.append(contentsOf: buildGuardedSubscriptHandlerReturn(
-            guardBinding: "_handler",
+            guardBinding: names.handler,
             parameters: parameters,
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
             identifier: identifier,
             invokePrefix: invokePrefix,
-            errorType: errorType
+            errorType: errorType,
+            names: names
         ))
         return statements
     }
@@ -271,18 +319,15 @@ let _handler = \(MockNaming.instanceStorageName).withLock { storage -> (@Sendabl
     /// invoke it outside. Setters record nothing, so there is no counter to update.
     private func buildLockBasedSubscriptSetHandlerCallStatement(
         parameters: FunctionParameterListSyntax,
-        identifier: String
+        identifier: String,
+        names: WitnessNames,
+        valueName: String
     ) -> CodeBlockItemSyntax {
-        let handlerCallArgs: String
-        if parameters.isEmpty {
-            handlerCallArgs = "newValue"
-        } else {
-            handlerCallArgs = "\(buildHandlerCallArguments(parameters: parameters)), newValue"
-        }
+        let handlerCallArgs = setHandlerCallArguments(parameters: parameters, valueName: valueName)
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let _handler = \(MockNaming.instanceStorageName).withLock({ $0.\(MockNaming.setHandler(identifier)) }) {
-    _handler(\(handlerCallArgs))
+if let \(names.handler) = \(names.member(MockNaming.instanceStorageName)).withLock({ $0.\(MockNaming.setHandler(identifier)) }) {
+    \(names.handler)(\(handlerCallArgs))
 }
 """)))
     }

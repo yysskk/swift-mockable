@@ -49,10 +49,16 @@ public struct MockableMacro: PeerMacro {
             return []
         }
 
+        // Diagnostics above read the protocol as written; generation reads it with every
+        // requirement's parameters renamed to something the generated bodies can refer
+        // to (see `ParameterNameNormalizer`). Normalizing once, here, keeps every later
+        // pass looking at the same nodes.
+        let members = ParameterNameNormalizer().visit(protocolDecl.memberBlock.members)
+
         let generator = MockGenerator(
             protocolName: shape.protocolName,
             mockClassName: shape.mockClassName,
-            members: protocolDecl.memberBlock.members,
+            members: members,
             isSendable: shape.isSendable,
             isActor: shape.isActor,
             isMainActor: shape.isMainActor,

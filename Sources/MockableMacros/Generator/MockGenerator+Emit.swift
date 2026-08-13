@@ -128,36 +128,40 @@ extension MockGenerator {
         """)))
     }
 
-    /// Builds `return <invokePrefix>_handler(<handlerCallArgs>)<castSuffix>`, wrapped
-    /// in the typed-throws conversion when `errorType` is set.
+    /// Builds `return <invokePrefix><handlerName>(<handlerCallArgs>)<castSuffix>`,
+    /// wrapped in the typed-throws conversion when `errorType` is set.
     static func makeHandlerReturnStatement(
         invokePrefix: String,
+        handlerName: String,
         handlerCallArgs: String,
         castSuffix: String = "",
         errorType: String?,
         leadingTrivia: Trivia? = nil
     ) -> CodeBlockItemSyntax {
-        let returnLine = "return \(invokePrefix)_handler(\(handlerCallArgs))\(castSuffix)"
+        let returnLine = "return \(invokePrefix)\(handlerName)(\(handlerCallArgs))\(castSuffix)"
         let item = errorType.map { buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
             ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
         return CodeBlockItemSyntax(leadingTrivia: leadingTrivia, item: item.item)
     }
 
     /// Builds the two statements that record a call on the direct (non-lock) path:
-    /// `<identifier>CallCount += 1` and `<identifier>CallArgs.append(...)`.
+    /// `<identifier>CallCount += 1` and `<identifier>CallArgs.append(...)`. The
+    /// tracking members are addressed as `names` prescribes, which qualifies them
+    /// when a parameter of the requirement shadows one.
     static func makeCallRecordingStatements(
         identifier: String,
-        parameters: FunctionParameterListSyntax
+        parameters: FunctionParameterListSyntax,
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callCount(identifier))),
+            leftOperand: ExprSyntax(stringLiteral: names.member(MockNaming.callCount(identifier))),
             operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
             rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
         )
 
         let appendExpr = FunctionCallExprSyntax(
             calledExpression: MemberAccessExprSyntax(
-                base: DeclReferenceExprSyntax(baseName: .identifier(MockNaming.callArgs(identifier))),
+                base: ExprSyntax(stringLiteral: names.member(MockNaming.callArgs(identifier))),
                 name: .identifier("append")
             ),
             leftParen: .leftParenToken(),
