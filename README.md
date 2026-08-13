@@ -19,7 +19,7 @@ Add the package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "1.11.1")
+    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "1.12.0")
 ]
 ```
 
