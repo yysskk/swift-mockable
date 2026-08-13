@@ -85,9 +85,15 @@ struct TypeErasureTests {
         #expect(erased("@escaping @Sendable () -> Void") == "@Sendable () -> Void")
     }
 
-    @Test("An inout specifier is preserved")
-    func inoutSpecifierPreserved() {
-        #expect(erased("inout Int") == "inout Int")
+    @Test("Parameter specifiers are stripped outside parameter position")
+    func parameterSpecifiersStripped() {
+        // A stored property or closure type cannot carry any of these.
+        #expect(erased("inout Int") == "Int")
+        #expect(erased("consuming Payload") == "Payload")
+        #expect(erased("borrowing Payload") == "Payload")
+        #expect(erased("sending Payload") == "Payload")
+        #expect(erased("isolated any Actor") == "any Actor")
+        #expect(erased("consuming Box<T>", genericParamNames: ["T"]) == "Any")
     }
 
     @Test("A single-element parenthesized type is unwrapped")

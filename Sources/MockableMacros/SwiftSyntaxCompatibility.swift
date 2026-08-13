@@ -134,6 +134,38 @@ extension AttributedTypeSyntax {
         #endif
     }
 
+    /// The type's parameter specifiers as written (`inout`, `consuming`, `sending`, ...),
+    /// compatible across swift-syntax versions. Read as text rather than by matching the
+    /// specifier node's cases, which differ between versions.
+    var specifierTexts: [String] {
+        #if canImport(SwiftSyntax600)
+        return specifiers.map { $0.trimmedDescription }
+        #else
+        return specifier.map { [$0.text] } ?? []
+        #endif
+    }
+
+    /// Creates an attributed type carrying no parameter specifiers, for the positions
+    /// where a specifier is invalid (a stored property's or closure's type).
+    static func makeUnspecifiedAttributedType(
+        attributes: AttributeListSyntax,
+        baseType: TypeSyntax
+    ) -> AttributedTypeSyntax {
+        #if canImport(SwiftSyntax600)
+        return AttributedTypeSyntax(
+            specifiers: TypeSpecifierListSyntax([]),
+            attributes: attributes,
+            baseType: baseType
+        )
+        #else
+        return AttributedTypeSyntax(
+            specifier: nil,
+            attributes: attributes,
+            baseType: baseType
+        )
+        #endif
+    }
+
     /// Creates a new AttributedTypeSyntax with the given attributes and base type.
     static func makeAttributedType(
         from original: AttributedTypeSyntax,

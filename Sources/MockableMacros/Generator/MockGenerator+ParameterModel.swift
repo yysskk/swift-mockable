@@ -124,8 +124,9 @@ extension MockGenerator {
         if let resultType = autoclosureResultType(of: param) {
             return eraseGenericTypes(in: resultType, genericParamNames: genericParamNames)
         }
-        let normalizedType = stripInOutKeyword(from: param.type)
-        let erasedType = eraseGenericTypes(in: normalizedType, genericParamNames: genericParamNames)
+        // Erasure drops every parameter specifier (`inout`, `consuming`, `sending`, ...),
+        // which a stored property or closure type cannot carry.
+        let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
         guard param.ellipsis != nil else {
             return erasedType
         }
@@ -159,6 +160,16 @@ extension MockGenerator {
         autoclosureFunctionType(of: param)?.returnClause.type
     }
 
+    /// The statements a witness runs before it touches its arguments: evaluating
+    /// `@autoclosure` parameters and rebinding ownership-specified ones. Both shadow the
+    /// parameter with a local the rest of the body can use as often as it needs.
+    static func buildParameterBindingStatements(
+        parameters: FunctionParameterListSyntax
+    ) -> [CodeBlockItemSyntax] {
+        buildAutoclosureEvaluationStatements(parameters: parameters)
+            + buildOwnershipRebindingStatements(parameters: parameters)
+    }
+
     /// Builds one `let <name> = [try ][await ]<name>()` statement per `@autoclosure`
     /// parameter, shadowing the parameter with its evaluated value so call recording
     /// and the handler observe the same value, evaluated exactly once per call.
@@ -178,6 +189,38 @@ extension MockGenerator {
         }
     }
 
+    /// Builds one rebinding statement per parameter carrying an ownership specifier,
+    /// shadowing it with an ordinary local.
+    ///
+    /// The generated body uses each argument twice — once to record it and once to
+    /// forward it to the handler — which an ownership-specified parameter does not
+    /// allow: a `consuming` one may be consumed once, and a `borrowing` one not at all.
+    /// Rebinding does that once up front, leaving a local the rest of the body can use
+    /// freely. A borrowed value has to be copied explicitly, since recording it takes
+    /// ownership.
+    static func buildOwnershipRebindingStatements(
+        parameters: FunctionParameterListSyntax
+    ) -> [CodeBlockItemSyntax] {
+        parameters.compactMap { param in
+            let specifiers = Set(MockGenerator.specifiers(of: param.type))
+            guard !specifiers.isDisjoint(with: ownershipSpecifiers) else {
+                return nil
+            }
+            let name = (param.secondName ?? param.firstName).text
+            let value = specifiers.isDisjoint(with: borrowedSpecifiers) ? name : "copy \(name)"
+            return CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: "let \(name) = \(value)")))
+        }
+    }
+
+    /// The specifiers that constrain how often an argument may be used. `inout` is not
+    /// among them: it names a mutable binding the witness writes back to, not a
+    /// transfer of ownership, and rebinding it would break the write-back.
+    private static let ownershipSpecifiers: Set<String> = ["consuming", "borrowing", "__owned", "__shared"]
+
+    /// The specifiers that lend a value rather than transfer it, so the rebinding has
+    /// to copy instead of taking what it was given.
+    private static let borrowedSpecifiers: Set<String> = ["borrowing", "__shared"]
+
     /// Whether any `@autoclosure` parameter can throw, and so is evaluated with `try` in the
     /// requirement's own body rather than inside the handler call.
     static func hasThrowingAutoclosureParameter(_ parameters: FunctionParameterListSyntax) -> Bool {
@@ -187,17 +230,6 @@ extension MockGenerator {
             }
             return functionType.effectSpecifiers?.hasThrowsEffect ?? false
         }
-    }
-
-    /// Removes an `inout` specifier, which is invalid in a stored-property or
-    /// closure-parameter position. The write-back machinery reintroduces the
-    /// mutation separately (see `buildInOutWriteBackType`).
-    private static func stripInOutKeyword(from type: TypeSyntax) -> TypeSyntax {
-        let trimmed = type.trimmedDescription
-        guard trimmed.hasPrefix("inout ") else {
-            return type
-        }
-        return TypeSyntax(stringLiteral: String(trimmed.dropFirst("inout ".count)))
     }
 
     /// The recorded-arguments value, shaped to match `buildParameterTupleType`:

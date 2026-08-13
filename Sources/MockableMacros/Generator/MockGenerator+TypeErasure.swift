@@ -94,9 +94,14 @@ extension MockGenerator {
         return type
     }
 
-    /// Strips `@escaping` (invalid outside parameter position) and recurses into the
-    /// base type, e.g. `@escaping @Sendable (Event) -> Void`. Runs regardless of
-    /// `genericParamNames` so `@escaping` is removed even for non-generic closures.
+    /// Strips `@escaping` and every parameter specifier — both invalid outside parameter
+    /// position — and recurses into the base type, e.g. `@escaping @Sendable (Event) -> Void`
+    /// or `consuming Payload`. Runs regardless of `genericParamNames`, so a non-generic
+    /// parameter is normalized for storage too.
+    ///
+    /// An `inout` parameter loses its specifier here like any other; the witness keeps the
+    /// requirement's own signature, and the write-back machinery reintroduces the mutation
+    /// separately (see `MockGenerator+Function`).
     private static func eraseAttributedType(
         _ attributedType: AttributedTypeSyntax,
         genericParamNames: Set<String>
@@ -104,15 +109,35 @@ extension MockGenerator {
         let filteredAttributes = stripEscapingAttribute(from: attributedType.attributes)
         let processedBaseType = eraseGenericTypes(in: attributedType.baseType, genericParamNames: genericParamNames)
 
-        if filteredAttributes.isEmpty && !attributedType.hasSpecifiers {
+        if filteredAttributes.isEmpty {
             return processedBaseType
         }
 
-        return TypeSyntax(AttributedTypeSyntax.makeAttributedType(
-            from: attributedType,
+        return TypeSyntax(AttributedTypeSyntax.makeUnspecifiedAttributedType(
             attributes: filteredAttributes,
             baseType: processedBaseType
         ))
+    }
+
+    /// The type as it is written without its parameter specifiers, e.g. `inout Int!` ->
+    /// `Int!`. This is the type the requirement actually deals in, and what the erased
+    /// storage type and the write-back cast are both derived from.
+    static func unspecifiedType(_ type: TypeSyntax) -> TypeSyntax {
+        guard let attributedType = type.as(AttributedTypeSyntax.self), attributedType.hasSpecifiers else {
+            return type
+        }
+        if attributedType.attributes.isEmpty {
+            return attributedType.baseType.trimmed
+        }
+        return TypeSyntax(AttributedTypeSyntax.makeUnspecifiedAttributedType(
+            attributes: attributedType.attributes,
+            baseType: attributedType.baseType
+        ))
+    }
+
+    /// The parameter specifiers a type carries, e.g. `["inout"]`, or an empty array.
+    static func specifiers(of type: TypeSyntax) -> [String] {
+        type.as(AttributedTypeSyntax.self)?.specifierTexts ?? []
     }
 
     /// Erases a tuple type. A single-element unlabeled tuple is a parenthesized type

@@ -159,6 +159,7 @@ at compile time and cannot read runtime values.
 - `@autoclosure` parameters (evaluated once per call; handlers and `CallArgs` receive the evaluated value)
 - Non-escaping closure parameters (forwarded to the handler; excluded from `CallArgs`)
 - `inout` parameters with write-back support
+- Parameter specifiers (`consuming`, `borrowing`, `sending`, `isolated`), dropped from the stored and handler types where they are not valid
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
 - Overloaded methods (unique suffixes are added to generated names when needed)
 - Initializer requirements (`init(...)`) generated as recording `required init` witnesses (`Sendable`/`actor` mocks record behind the lock)
