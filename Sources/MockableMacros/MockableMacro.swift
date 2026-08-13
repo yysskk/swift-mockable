@@ -72,6 +72,33 @@ public struct MockableMacro: PeerMacro {
         return [condition.wrapping(mockClass)]
     }
 
+    /// Reports an `associatedtype` the mock cannot satisfy, returning whether it did.
+    ///
+    /// The mock fulfills an associated type with a `typealias`, using the requirement's
+    /// default when it has one and `Any` otherwise. `Any` satisfies an unconstrained
+    /// requirement, but not one carrying a conformance or a `where` clause, and the
+    /// resulting error names the mock rather than the requirement it cannot meet.
+    private static func diagnoseConstrainedAssociatedType(
+        _ associatedType: AssociatedTypeDeclSyntax,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        guard associatedType.initializer == nil,
+              associatedType.inheritanceClause != nil || associatedType.genericWhereClause != nil else {
+            return false
+        }
+
+        let name = associatedType.name.text
+        context.diagnose(Diagnostic(
+            node: Syntax(associatedType),
+            message: MockableError.unsupportedAssociatedType("""
+                Cannot mock associated type '\(name)': the mock fulfills it with 'Any', \
+                which does not satisfy its constraints. Give it a default \
+                ('associatedtype \(name): ... = SomeType') so the mock has a type to use.
+                """)
+        ))
+        return true
+    }
+
     /// Reports every inherited type the generated mock cannot be made to conform to,
     /// returning whether any was found. Without this the mock would be emitted with a
     /// conformance it does not satisfy, or a superclass that does not exist, and the
@@ -203,6 +230,13 @@ public struct MockableMacro: PeerMacro {
                     hasError = true
                     continue
                 }
+            }
+
+            if let associatedType = member.decl.as(AssociatedTypeDeclSyntax.self) {
+                if diagnoseConstrainedAssociatedType(associatedType, context: context) {
+                    hasError = true
+                }
+                continue
             }
 
             if let variableDecl = member.decl.as(VariableDeclSyntax.self) {

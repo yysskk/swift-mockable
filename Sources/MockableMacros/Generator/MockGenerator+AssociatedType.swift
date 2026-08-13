@@ -13,13 +13,18 @@ extension MockGenerator {
             }
 
             if let typeAliasDecl = decl.as(TypeAliasDeclSyntax.self) {
+                // A generic alias names its parameters in its own clause, and any
+                // constraint on them lives in the `where` clause, so both have to come
+                // along or the alias no longer describes the same type.
                 let rebuilt = TypeAliasDeclSyntax(
                     modifiers: buildModifiers(),
                     name: .identifier(typeAliasDecl.name.text),
+                    genericParameterClause: typeAliasDecl.genericParameterClause?.trimmed,
                     initializer: TypeInitializerClauseSyntax(
                         equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),
                         value: typeAliasDecl.initializer.value
-                    )
+                    ),
+                    genericWhereClause: typeAliasDecl.genericWhereClause?.trimmed
                 )
                 return [MemberBlockItemSyntax(decl: rebuilt)]
             }
