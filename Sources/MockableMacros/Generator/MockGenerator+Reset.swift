@@ -9,8 +9,12 @@ extension MockGenerator {
     /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
     /// `super.resetMock()` first when the mock inherits from a parent mock.
     func generateResetMethod() -> FunctionDeclSyntax {
-        if isSendable || isActor {
-            return generateSendableResetMethod()
+        // The two variants address a requirement's slots by different names — an
+        // optional get-set property is its own storage on the direct path but has a
+        // `_name` field in the storage struct — so the choice has to follow the same
+        // predicate the members were generated from.
+        if usesInstanceStorageLock {
+            return generateLockBackedResetMethod()
         } else {
             return generateRegularResetMethod()
         }
@@ -72,7 +76,7 @@ extension MockGenerator {
     /// The lock-backed `resetMock()`: instance slots are cleared in one `withLock` and
     /// static slots in another, so each storage struct is reset atomically. On an actor
     /// mock the method is `nonisolated`, so a test can reset without awaiting.
-    private func generateSendableResetMethod() -> FunctionDeclSyntax {
+    private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
         let overloads = makeOverloadContext()
 
         func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {

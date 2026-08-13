@@ -97,4 +97,109 @@ struct MainActorMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("A nonisolated requirement gets nonisolated, lock-backed tracking members")
+    func nonisolatedRequirement() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            @MainActor
+            protocol Presenter {
+                nonisolated var id: String { get }
+                nonisolated func track(_ event: String)
+            }
+            """,
+            expandedSource: """
+            @MainActor
+            protocol Presenter {
+                nonisolated var id: String { get }
+                nonisolated func track(_ event: String)
+            }
+
+            #if DEBUG
+            @MainActor class PresenterMock: Presenter {
+                private struct Storage {
+                    var _id: String? = nil
+                    var trackCallCount: Int = 0
+                    var trackCallArgs: [String] = []
+                    var trackHandler: (@Sendable (String) -> Void)? = nil
+                }
+                private let _storage = MockableLock<Storage>(Storage())
+                nonisolated var _id: String? {
+                    get {
+                        _storage.withLock {
+                            $0._id
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0._id = newValue
+                        }
+                    }
+                }
+                var id: String {
+                    _storage.withLock {
+                        $0._id!
+                    }
+                }
+                nonisolated var trackCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.trackCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackCallCount = newValue
+                        }
+                    }
+                }
+                nonisolated var trackCallArgs: [String] {
+                    get {
+                        _storage.withLock {
+                            $0.trackCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackCallArgs = newValue
+                        }
+                    }
+                }
+                nonisolated var trackHandler: (@Sendable (String) -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.trackHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackHandler = newValue
+                        }
+                    }
+                }
+                func track(_ event: String) {
+                    let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
+                        storage.trackCallCount += 1
+                        storage.trackCallArgs.append(event)
+                        return storage.trackHandler
+                    }
+                    if let _handler {
+                        _handler(event)
+                    }
+                }
+                func resetMock() {
+                    _storage.withLock { storage in
+                        storage._id = nil
+                        storage.trackCallCount = 0
+                        storage.trackCallArgs = []
+                        storage.trackHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }
