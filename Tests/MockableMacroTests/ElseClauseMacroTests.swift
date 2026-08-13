@@ -112,10 +112,15 @@ struct ElseClauseMacroTests {
                     alphaCallArgs = []
                     alphaHandler = nil
                     #else
-                    Self.betaCallCount = 0
-                    Self.betaCallArgs = []
-                    Self.betaHandler = nil
                     #endif
+                    Self._staticStorage.withLock { storage in
+                        #if CUSTOM
+                        #else
+                        storage.betaCallCount = 0
+                        storage.betaCallArgs = []
+                        storage.betaHandler = nil
+                        #endif
+                    }
                 }
             }
             #endif

@@ -412,11 +412,13 @@ struct BasicMacroTests {
                     }
                 }
                 func resetMock() {
-                    Self.makeValueCallCount = 0
-                    Self.makeValueCallArgs = []
-                    Self.makeValueHandler = nil
-                    Self._cachedToken = nil
-                    Self.cachedCount = nil
+                    Self._staticStorage.withLock { storage in
+                        storage.makeValueCallCount = 0
+                        storage.makeValueCallArgs = []
+                        storage.makeValueHandler = nil
+                        storage._cachedToken = nil
+                        storage._cachedCount = nil
+                    }
                 }
             }
             #endif

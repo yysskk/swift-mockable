@@ -473,7 +473,30 @@ For test ergonomics, helper members are generated as `nonisolated` where possibl
 
 Static methods/properties are always lock-backed through a shared static storage.
 
-`resetMock()` also resets static generated members.
+`resetMock()` also resets static generated members, clearing them in a single lock
+acquisition so a concurrent caller never observes a partly reset mock.
+
+## Thread Safety
+
+A mock's tracking state is protected when the protocol says it should be: a `Sendable`
+protocol, an `Actor` protocol, and a `nonisolated` requirement of a global-actor-isolated
+protocol all select lock-backed storage, and static state is lock-backed regardless.
+Everything else is plain stored properties, which is what a mock used from one task
+needs.
+
+Two things the macro cannot decide for you, because it only ever sees the protocol it is
+attached to:
+
+- **Inheritance chains.** A mock is `Sendable` if its own protocol is, and it subclasses
+  its parent's mock whatever that parent chose. Mixing the two leaves half the state
+  unprotected: a `Sendable` child of a non-`Sendable` parent inherits plain stored
+  properties, and a non-`Sendable` child of a `Sendable` parent adds plain ones of its
+  own while inheriting the parent's `@unchecked Sendable` conformance. Declare `Sendable`
+  on every protocol in the chain, or none.
+- **Global actors.** Isolation is read from the protocol's own attributes, so a protocol
+  that inherits its isolation from a parent produces an unisolated mock, and a protocol
+  isolated to a custom global actor produces one too. Annotate each protocol you mock
+  with the global actor it belongs to.
 
 ## Inheritance and `resetMock()`
 
