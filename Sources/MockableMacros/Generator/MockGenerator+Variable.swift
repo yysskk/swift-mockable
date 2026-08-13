@@ -149,8 +149,11 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
                 leadingTrivia: .newline
             ))
         }
+        // A property getter takes no parameters, so nothing can shadow the local the
+        // handler is bound to and it keeps the default name.
         getterStatements.append(Self.makeHandlerReturnStatement(
             invokePrefix: invokePrefix,
+            handlerName: "_handler",
             handlerCallArgs: "",
             errorType: errorType,
             leadingTrivia: .newline
