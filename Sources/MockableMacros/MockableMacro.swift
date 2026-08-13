@@ -36,16 +36,17 @@ public struct MockableMacro: PeerMacro {
         // member diagnostics below still run so all problems surface in one pass.
         let condition = CompilationCondition.parse(from: node, in: context)
         let hasUnsupportedMembers = diagnoseUnsupportedMembers(in: protocolDecl.memberBlock.members, context: context)
-        // An `init` declared directly on an inheriting protocol is not yet mockable: the
-        // witness would need to chain through the parent mock's initializer, which the macro
-        // cannot see. Initializers inherited from the parent still work, since the child mock
-        // inherits the parent mock's `required init`.
+        let hasUnsupportedInheritance = diagnoseInheritedTypes(shape.unsupportedInheritedTypes, context: context)
+        // An `init` declared directly on a protocol whose mock subclasses another is not yet
+        // mockable: the witness would need to chain through the parent mock's initializer,
+        // which the macro cannot see. Initializers inherited from the parent still work, since
+        // the child mock inherits the parent mock's `required init`.
         let hasUnsupportedInitializers = diagnoseInitializerContext(
             in: protocolDecl.memberBlock.members,
-            isUnsupportedContext: !shape.parentProtocolNames.isEmpty,
+            isUnsupportedContext: shape.subclassesParentMock,
             context: context
         )
-        guard let condition, !hasUnsupportedMembers, !hasUnsupportedInitializers else {
+        guard let condition, !hasUnsupportedMembers, !hasUnsupportedInheritance, !hasUnsupportedInitializers else {
             return []
         }
 
@@ -69,6 +70,23 @@ public struct MockableMacro: PeerMacro {
         let mockClass = generator.generate()
 
         return [condition.wrapping(mockClass)]
+    }
+
+    /// Reports every inherited type the generated mock cannot be made to conform to,
+    /// returning whether any was found. Without this the mock would be emitted with a
+    /// conformance it does not satisfy, or a superclass that does not exist, and the
+    /// error would point into the expansion rather than at the inheritance clause.
+    private static func diagnoseInheritedTypes(
+        _ unsupported: [UnsupportedInheritedType],
+        context: some MacroExpansionContext
+    ) -> Bool {
+        for inherited in unsupported {
+            context.diagnose(Diagnostic(
+                node: Syntax(inherited.type),
+                message: MockableError.unsupportedInheritedType(inherited.message)
+            ))
+        }
+        return !unsupported.isEmpty
     }
 
     /// Reports every member the macro cannot mock, returning whether any was found.
