@@ -17,6 +17,13 @@ extension MockGenerator {
             DeclModifierSyntax(name: .keyword(.private))
         ]
         modifiers.append(contentsOf: Self.typeMemberModifiers(isTypeMember: isStatic))
+        // A `let` of a Sendable type is safe to read from anywhere, and a nonisolated
+        // witness has to: on an isolated mock the lock would otherwise be as isolated
+        // as the state it guards. Actor mocks need no modifier — an actor's stored
+        // `let` and its static members are already reachable from outside.
+        if hasNonisolatedRequirements && !isActor {
+            modifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
+        }
 
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax(modifiers),

@@ -172,6 +172,7 @@ at compile time and cannot read runtime values.
 - Protocol inheritance (child mock inherits from first parent mock when applicable)
 - `Sendable` protocol support (`@unchecked Sendable` mock generation)
 - `Actor` protocol support (actor mock generation with nonisolated helper members)
+- `nonisolated` requirements of a `@MainActor` protocol (the mock's tracking state moves behind the lock, and the members that requirement reaches are `nonisolated`)
 
 ## Behavioral Notes
 

@@ -9,8 +9,12 @@ extension MockGenerator {
     /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
     /// `super.resetMock()` first when the mock inherits from a parent mock.
     func generateResetMethod() -> FunctionDeclSyntax {
-        if isSendable || isActor {
-            return generateSendableResetMethod()
+        // The two variants address a requirement's slots by different names — an
+        // optional get-set property is its own storage on the direct path but has a
+        // `_name` field in the storage struct — so the choice has to follow the same
+        // predicate the members were generated from.
+        if usesInstanceStorageLock {
+            return generateLockBackedResetMethod()
         } else {
             return generateRegularResetMethod()
         }
@@ -72,7 +76,7 @@ extension MockGenerator {
     /// The lock-backed `resetMock()`: instance slots are cleared in one `withLock` and
     /// static slots in another, so each storage struct is reset atomically. On an actor
     /// mock the method is `nonisolated`, so a test can reset without awaiting.
-    private func generateSendableResetMethod() -> FunctionDeclSyntax {
+    private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
         let overloads = makeOverloadContext()
 
         func resetLines(forTypeMembers includeTypeMembers: Bool) -> [String] {
@@ -131,9 +135,12 @@ extension MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        // For actors, add nonisolated modifier; for inherited mocks, add override
+        // This body only touches the lock, so it is nonisolated wherever the mock has
+        // nonisolated members to reset: on an actor mock, and on an isolated mock with
+        // a `nonisolated` requirement, whose state a test sets up without hopping to
+        // the actor and should be able to clear the same way.
         var additionalModifiers: [DeclModifierSyntax] = []
-        if isActor {
+        if isActor || hasNonisolatedRequirements {
             additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
         }
         if hasParentMock {

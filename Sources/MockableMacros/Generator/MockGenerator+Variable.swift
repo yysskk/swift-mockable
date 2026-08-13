@@ -14,10 +14,15 @@ extension MockGenerator {
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
         let isTypeMember = Self.isTypeMember(varDecl.modifiers)
+        let isNonisolated = Self.isNonisolated(varDecl.modifiers)
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
-            guard let requirement = variableTrackingRequirement(for: binding, isTypeMember: isTypeMember) else {
+            guard let requirement = variableTrackingRequirement(
+                for: binding,
+                isTypeMember: isTypeMember,
+                isNonisolated: isNonisolated
+            ) else {
                 continue
             }
 
@@ -38,7 +43,8 @@ extension MockGenerator {
                     let field = requirement.trackingFields(model: .lockBacked)[0]
                     members.append(MemberBlockItemSyntax(decl: generateLockBackedBackingProperty(
                         field: field,
-                        isTypeMember: isTypeMember
+                        isTypeMember: isTypeMember,
+                        isNonisolated: requirement.isNonisolated
                     )))
                     members.append(MemberBlockItemSyntax(decl: generateLockBasedVariableProperty(
                         varName: requirement.identifier,
@@ -194,12 +200,14 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
     /// writes the storage-struct field of the same name inside the lock.
     private func generateLockBackedBackingProperty(
         field: TrackingField,
-        isTypeMember: Bool
+        isTypeMember: Bool,
+        isNonisolated: Bool
     ) -> VariableDeclSyntax {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-        if !isTypeMember {
-            additionalModifiers.append(contentsOf: storageBackedMemberModifiers())
-        }
+        additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
+            isNonisolated: isNonisolated,
+            isTypeMember: isTypeMember
+        ))
 
         return Self.makeLockBackedProperty(
             modifiers: buildModifiers(additional: additionalModifiers),

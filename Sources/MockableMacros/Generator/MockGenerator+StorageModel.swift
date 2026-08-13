@@ -56,10 +56,46 @@ extension MockGenerator {
     }
 
     /// Whether the mock's instance tracking state is lock-backed. `Sendable` mocks need
-    /// it to be safe to mutate across threads; actor mocks need it because their
-    /// `nonisolated` tracking members cannot touch actor-isolated state.
+    /// it to be safe to mutate across threads; actor mocks and global-actor-isolated
+    /// mocks with a `nonisolated` requirement need it because a `nonisolated` member
+    /// cannot touch isolated state.
     var usesInstanceStorageLock: Bool {
-        isActor || isSendable
+        isActor || isSendable || hasNonisolatedRequirements
+    }
+
+    /// Whether the protocol declares a `nonisolated` requirement the mock's isolation
+    /// would otherwise put out of reach. Swift infers the isolation of a witness from
+    /// the requirement it satisfies, so a `nonisolated` requirement of a `@MainActor`
+    /// protocol gets a `nonisolated` witness — which then cannot read the mock's
+    /// isolated stored properties. Outside an isolated mock the modifier changes
+    /// nothing, so the storage model is left alone there.
+    var hasNonisolatedRequirements: Bool {
+        guard isMainActor else {
+            return false
+        }
+        return collectDeclsIncludingConditional().contains { Self.isNonisolated($0) }
+    }
+
+    /// Whether a requirement is declared `nonisolated`.
+    static func isNonisolated(_ decl: DeclSyntax) -> Bool {
+        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+            return isNonisolated(funcDecl.modifiers)
+        }
+
+        if let varDecl = decl.as(VariableDeclSyntax.self) {
+            return isNonisolated(varDecl.modifiers)
+        }
+
+        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+            return isNonisolated(subscriptDecl.modifiers)
+        }
+
+        return false
+    }
+
+    /// Whether a modifier list marks a member `nonisolated`.
+    static func isNonisolated(_ modifiers: DeclModifierListSyntax) -> Bool {
+        modifiers.contains { $0.name.text == "nonisolated" }
     }
 
     /// Whether a member's tracking state is lock-backed: every member of a
