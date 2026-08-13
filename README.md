@@ -112,7 +112,7 @@ Notes:
 - This applies to methods and subscripts alike (subscript getter `(Int, Int) -> V`, setter `(Int, Int, V) -> Void`).
 - Zero- and single-parameter members pass their argument directly.
 - `<name>CallArgs` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
-- A parameter the mock cannot name after — a wildcard (`func handle(_: Event)`) — is recorded under a positional label (`param0`, `param1`), and a parameter named with a keyword keeps its own name, escaped (`` mock.logCallArgs[0].`for` ``). Argument labels, and therefore call sites, are unchanged.
+- A parameter the mock cannot name after — a wildcard (`func handle(_: Event)`) — is recorded under a positional label (`param0`, `param1`), and a parameter named with a keyword keeps its own name (`mock.logCallArgs[0].for`). Argument labels, and therefore call sites, are unchanged.
 
 ## Choosing When Mocks Are Compiled
 

@@ -78,7 +78,7 @@ extension MockGenerator {
             let isLast = index == parameters.count - 1
             let erasedType = parameterStorageType(for: param, genericParamNames: genericParamNames)
             return TupleTypeElementSyntax(
-                firstName: (param.secondName ?? param.firstName).trimmed,
+                firstName: MockGenerator.recordedArgumentLabel(of: param),
                 colon: .colonToken(trailingTrivia: .space),
                 type: erasedType,
                 trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
@@ -216,7 +216,7 @@ extension MockGenerator {
             let paramName = (param.secondName ?? param.firstName).text
             let isLast = index == parameters.count - 1
             return LabeledExprSyntax(
-                label: (param.secondName ?? param.firstName).trimmed,
+                label: MockGenerator.recordedArgumentLabel(of: param),
                 colon: .colonToken(trailingTrivia: .space),
                 expression: DeclReferenceExprSyntax(baseName: .identifier(paramName)),
                 trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)

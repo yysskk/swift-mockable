@@ -77,6 +77,7 @@ struct ParameterNameTests {
         mock.logHandler = { _, _ in }
         mock.log(for: 1, in: "scope")
 
+        // The recorded-arguments label is the parameter's own name, unescaped.
         #expect(mock.logCallArgs.first?.for == 1)
         #expect(mock.logCallArgs.first?.in == "scope")
     }

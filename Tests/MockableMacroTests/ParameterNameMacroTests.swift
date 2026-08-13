@@ -170,7 +170,7 @@ struct ParameterNameMacroTests {
         )
     }
 
-    @Test("Escaped keyword names carry through to the recorded-arguments labels")
+    @Test("Escaped keyword names are labels as they stand and references escaped")
     func keywordParameterNamesInTuple() {
         assertMacroExpansionForTesting(
             """
@@ -187,11 +187,11 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var logCallCount: Int = 0
-                var logCallArgs: [(`for`: Int, `in`: String)] = []
+                var logCallArgs: [(for: Int, in: String)] = []
                 var logHandler: (@Sendable (Int, String) -> Void)? = nil
                 func log(`for`: Int, `in`: String) {
                     logCallCount += 1
-                    logCallArgs.append((`for`: `for`, `in`: `in`))
+                    logCallArgs.append((for: `for`, in: `in`))
                     if let _handler = logHandler {
                         _handler(`for`, `in`)
                     }
