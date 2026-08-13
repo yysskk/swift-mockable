@@ -28,7 +28,7 @@ extension MockGenerator {
 
     /// Strips single-element tuples (parenthesized types) and attributed wrappers so the
     /// underlying type can be classified, mirroring the dispatch precedence of `eraseGenericTypes`.
-    private static func unwrapForDefaultDetection(_ type: TypeSyntax) -> TypeSyntax {
+    static func unwrapForDefaultDetection(_ type: TypeSyntax) -> TypeSyntax {
         if let attributedType = type.as(AttributedTypeSyntax.self) {
             return unwrapForDefaultDetection(attributedType.baseType)
         }

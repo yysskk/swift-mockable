@@ -517,11 +517,17 @@ if let \(handlerBinding) {
     /// return (however spelled) takes the no-return-value path, where an unset handler
     /// is simply a no-op rather than a `fatalError`.
     private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
-        guard let returnType else {
-            return false
-        }
-        let trimmed = returnType.trimmedDescription
-        return trimmed != "Void" && trimmed != "()"
+        returnType.map { returnsAValue($0) } ?? false
+    }
+
+    /// Whether a return type is something other than `Void`, however it is spelled:
+    /// `Void`, `()`, `Swift.Void`, and any of them parenthesized all mean the same
+    /// thing, and a requirement returning nothing has to be mocked the same way for
+    /// each — otherwise `-> Swift.Void` traps on an unset handler where the identical
+    /// `-> Void` no-ops.
+    static func returnsAValue(_ returnType: TypeSyntax) -> Bool {
+        let trimmed = unwrapForDefaultDetection(returnType).trimmedDescription
+        return trimmed != "Void" && trimmed != "Swift.Void" && trimmed != "()"
     }
 
     /// The requirement's `inout` parameters, with both the erased type the handler
