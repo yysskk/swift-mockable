@@ -98,11 +98,10 @@ extension MockGenerator {
     private static func extendedOverloadSuffix(for signature: OverloadSignature, baseSuffix: String) -> String {
         var suffix = baseSuffix
 
-        if let returnType = signature.returnType {
-            let returnTypeName = returnType.trimmedDescription
-            if returnTypeName != "Void" && returnTypeName != "()" {
-                suffix += sanitizeTypeName(returnTypeName)
-            }
+        // A requirement returning nothing contributes no return-type suffix, however it
+        // spells `Void`.
+        if let returnType = signature.returnType, returnsAValue(returnType) {
+            suffix += sanitizeTypeName(returnType.trimmedDescription)
         }
 
         if signature.isAsync {
