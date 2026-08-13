@@ -112,7 +112,7 @@ extension MockGenerator {
                 )
             }
         } else {
-            var setterStatements = Self.buildAutoclosureEvaluationStatements(parameters: parameters)
+            var setterStatements = Self.buildParameterBindingStatements(parameters: parameters)
             if usesInstanceStorageLock {
                 setterStatements.append(buildLockBasedSubscriptSetHandlerCallStatement(
                     parameters: parameters,
@@ -170,7 +170,7 @@ extension MockGenerator {
         names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         var getterStatements: [CodeBlockItemSyntax] = []
-        getterStatements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        getterStatements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
 
         getterStatements.append(contentsOf: Self.makeCallRecordingStatements(
             identifier: identifier,
@@ -290,7 +290,7 @@ if let \(names.handler) = \(names.member(MockNaming.setHandler(identifier))) {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before taking the lock so user-supplied
         // expressions never run while the storage lock is held.
-        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
         // Record the call and read the handler in a single lock acquisition,
         // mirroring the method witnesses.
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """

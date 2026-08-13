@@ -79,7 +79,7 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments once so recording observes the evaluated value,
         // mirroring the method witnesses.
-        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
         statements.append(
             CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(names.member(MockNaming.callCount(identifier))) += 1")))
         )
@@ -110,7 +110,7 @@ extension MockGenerator {
         names: WitnessNames
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
-        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
 
         let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
         statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """

@@ -166,7 +166,7 @@ extension MockGenerator {
             && Self.hasThrowingAutoclosureParameter(parameters)
 
         var statements: [CodeBlockItemSyntax] = []
-        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
 
         statements.append(contentsOf: Self.makeCallRecordingStatements(
             identifier: identifier,
@@ -237,7 +237,7 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before taking the lock so user-supplied
         // expressions never run while the storage lock is held.
-        statements.append(contentsOf: Self.buildAutoclosureEvaluationStatements(parameters: parameters))
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
         let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
 let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable \(closureType))? in
     \(names.storage).\(MockNaming.callCount(identifier)) += 1
@@ -410,7 +410,7 @@ let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable 
     private static func buildHandlerInvocationStatements(
         invokePrefix: String,
         handlerCallArgs: String,
-        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        inOutParams: [(name: String, erasedType: String, castTarget: String)],
         hasGenericReturn: Bool,
         returnTypeStr: String,
         errorType: String? = nil,
@@ -477,7 +477,7 @@ let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable 
         handlerBinding: String,
         invokePrefix: String,
         handlerCallArgs: String,
-        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        inOutParams: [(name: String, erasedType: String, castTarget: String)],
         errorType: String? = nil,
         names: WitnessNames
     ) -> CodeBlockItemSyntax {
@@ -531,17 +531,21 @@ if let \(handlerBinding) {
     private static func extractInOutParameters(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
-    ) -> [(name: String, erasedType: String, originalType: String)] {
+    ) -> [(name: String, erasedType: String, castTarget: String)] {
         parameters.compactMap { param in
-            let typeText = param.type.trimmedDescription
-            guard typeText.hasPrefix("inout ") else {
+            guard specifiers(of: param.type).contains("inout") else {
                 return nil
             }
             let name = (param.secondName ?? param.firstName).text
-            let originalType = String(typeText.dropFirst("inout ".count))
-            let strippedType = TypeSyntax(stringLiteral: originalType)
-            let erased = eraseGenericTypes(in: strippedType, genericParamNames: genericParamNames)
-            return (name: name, erasedType: erased.description, originalType: originalType)
+            // Both spellings come from the same specifier-free type, so the storage the
+            // handler works in and the cast that writes its result back cannot drift.
+            let declaredType = unspecifiedType(param.type)
+            let erased = eraseGenericTypes(in: declaredType, genericParamNames: genericParamNames)
+            return (
+                name: name,
+                erasedType: erased.trimmedDescription,
+                castTarget: castTargetType(for: declaredType.trimmed)
+            )
         }
     }
 
@@ -566,22 +570,28 @@ if let \(handlerBinding) {
     /// The assignments that copy the handler's returned values back into the `inout`
     /// arguments, casting back from the erased type where erasure changed it.
     private static func buildInOutWriteBackAssignments(
-        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        inOutParams: [(name: String, erasedType: String, castTarget: String)],
         source: String
     ) -> [String] {
         if inOutParams.count == 1, let first = inOutParams.first {
-            let castSuffix = first.erasedType != first.originalType ? " as! \(first.originalType)" : ""
-            return ["\(first.name) = \(source)\(castSuffix)"]
+            return ["\(first.name) = \(source)\(writeBackCastSuffix(for: first))"]
         }
         return inOutParams.map {
-            let castSuffix = $0.erasedType != $0.originalType ? " as! \($0.originalType)" : ""
-            return "\($0.name) = \(source).\($0.name)\(castSuffix)"
+            "\($0.name) = \(source).\($0.name)\(writeBackCastSuffix(for: $0))"
         }
+    }
+
+    /// The `as!` that converts the handler's erased value back to the parameter's own
+    /// type, or nothing when erasure left the type as it was.
+    private static func writeBackCastSuffix(
+        for param: (name: String, erasedType: String, castTarget: String)
+    ) -> String {
+        param.erasedType == param.castTarget ? "" : " as! \(param.castTarget)"
     }
 
     /// The write-back assignments as statements.
     private static func buildInOutWriteBackStatements(
-        inOutParams: [(name: String, erasedType: String, originalType: String)],
+        inOutParams: [(name: String, erasedType: String, castTarget: String)],
         source: String
     ) -> [CodeBlockItemSyntax] {
         buildInOutWriteBackAssignments(inOutParams: inOutParams, source: source).map {
