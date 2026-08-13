@@ -20,8 +20,10 @@ enum MockNaming {
     static let staticStorageTypeName = "StaticStorage"
 
     /// The generated mock type name for a protocol, e.g. `UserService` -> `UserServiceMock`.
+    /// An escaped protocol name loses its backticks, since the mock's name is a plain
+    /// identifier: `` `Type` `` -> `TypeMock`.
     static func mockTypeName(forProtocol protocolName: String) -> String {
-        "\(protocolName)Mock"
+        "\(protocolName.trimmingBackticks)Mock"
     }
 
     /// The call-count tracking property, e.g. `fetch` -> `fetchCallCount`.
@@ -63,5 +65,15 @@ enum MockNaming {
     /// The lock-backed storage property name for instance or static members.
     static func storageName(isTypeMember: Bool) -> String {
         isTypeMember ? staticStorageName : instanceStorageName
+    }
+}
+
+private extension String {
+    /// The identifier without the backticks that escape it, e.g. `` `Type` `` -> `Type`.
+    var trimmingBackticks: String {
+        guard count > 2, hasPrefix("`"), hasSuffix("`") else {
+            return self
+        }
+        return String(dropFirst().dropLast())
     }
 }

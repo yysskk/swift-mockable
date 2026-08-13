@@ -22,10 +22,14 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
     /// an operator such as `==`, or a name that needs backtick escaping. The associated
     /// value is the full explanation.
     case unsupportedMemberName(String)
-    /// An `init` requirement in a context the macro cannot yet mock (for example a
-    /// `Sendable`, `actor`, or inheriting protocol). The associated value is the full
+    /// An `init` requirement in a context the macro cannot yet mock: a protocol whose
+    /// mock subclasses a parent protocol's mock. The associated value is the full
     /// explanation.
     case unsupportedInitializer(String)
+    /// An inherited type the generated mock cannot be made to conform to — a protocol
+    /// with requirements the macro cannot witness, or a parent protocol written with
+    /// generic arguments. The associated value is the full explanation.
+    case unsupportedInheritedType(String)
     /// A requirement whose return type mentions a generic parameter inside a function type,
     /// which the mock cannot rebuild from its erased handler result. The associated value is
     /// the full explanation.
@@ -51,6 +55,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
         case .unsupportedMemberName(let message):
             return message
         case .unsupportedInitializer(let message):
+            return message
+        case .unsupportedInheritedType(let message):
             return message
         case .unsupportedGenericReturn(let message):
             return message
@@ -78,6 +84,8 @@ enum MockableError: Error, CustomStringConvertible, DiagnosticMessage {
             return MessageID(domain: "MockableMacro", id: "unsupportedMemberName")
         case .unsupportedInitializer:
             return MessageID(domain: "MockableMacro", id: "unsupportedInitializer")
+        case .unsupportedInheritedType:
+            return MessageID(domain: "MockableMacro", id: "unsupportedInheritedType")
         case .unsupportedGenericReturn:
             return MessageID(domain: "MockableMacro", id: "unsupportedGenericReturn")
         case .unsupportedGenericParameter:
