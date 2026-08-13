@@ -5,11 +5,14 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     /// Groups function declarations by their name, including conditional members.
-    /// This is used to detect overloaded methods.
-    func groupMethodsByNameIncludingConditional() -> [String: [FunctionDeclSyntax]] {
+    /// This is used to detect overloaded methods. Pass the protocol's flattened
+    /// requirements when the caller already has them, to avoid re-walking the tree.
+    func groupMethodsByNameIncludingConditional(
+        in decls: [DeclSyntax]? = nil
+    ) -> [String: [FunctionDeclSyntax]] {
         var methodGroups: [String: [FunctionDeclSyntax]] = [:]
 
-        for decl in collectDeclsIncludingConditional() {
+        for decl in decls ?? collectDeclsIncludingConditional() {
             if let funcDecl = decl.as(FunctionDeclSyntax.self) {
                 let funcName = funcDecl.name.text
                 methodGroups[funcName, default: []].append(funcDecl)

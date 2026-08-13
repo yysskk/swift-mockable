@@ -20,13 +20,15 @@ extension MockGenerator {
     /// to it. Only a suggestion that carries a generated suffix gives way, by
     /// continuing to count (`loadItem2`), so identifiers are unchanged for a protocol
     /// whose requirements do not collide.
+    ///
+    /// `decls` is the protocol's requirements flattened out of any conditional
+    /// compilation, in declaration order, which the caller already has.
     func assignTrackingIdentifiers(
+        in decls: [DeclSyntax],
         methodGroups: [String: [FunctionDeclSyntax]],
         initializers: [InitializerDeclSyntax],
         subscripts: [SubscriptDeclSyntax]
     ) -> [SyntaxIdentifier: String] {
-        let decls = collectDeclsIncludingConditional()
-
         // Names the requirements declare themselves, which no other requirement may take.
         var taken = Set(decls.flatMap(Self.declaredIdentifiers))
         var suffixed: [(id: SyntaxIdentifier, suggestion: String)] = []

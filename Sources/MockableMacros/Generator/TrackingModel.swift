@@ -192,7 +192,7 @@ extension MockGenerator {
     /// identifiers without re-walking the member tree.
     func makeOverloadContext() -> OverloadContext {
         let decls = collectDeclsIncludingConditional()
-        let methodGroups = groupMethodsByNameIncludingConditional()
+        let methodGroups = groupMethodsByNameIncludingConditional(in: decls)
         let initializers = decls.compactMap { $0.as(InitializerDeclSyntax.self) }
         let subscripts = decls.compactMap { $0.as(SubscriptDeclSyntax.self) }
         return OverloadContext(
@@ -200,6 +200,7 @@ extension MockGenerator {
             initializers: initializers,
             subscripts: subscripts,
             trackingIdentifiers: assignTrackingIdentifiers(
+                in: decls,
                 methodGroups: methodGroups,
                 initializers: initializers,
                 subscripts: subscripts
