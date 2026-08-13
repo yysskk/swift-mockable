@@ -30,6 +30,11 @@ protocol ShadowingParameterSendableService: Sendable {
 }
 
 @Mockable
+protocol ShadowingParameterStaticService {
+    static func store(_staticStorage: Int)
+}
+
+@Mockable
 protocol NewValueIndexService {
     subscript(newValue: Int) -> String { get set }
 }
@@ -112,6 +117,22 @@ struct ParameterNameTests {
 
         #expect(mock.saveCallCount == 1)
         #expect(mock.saveCallArgs == [5])
+    }
+
+    @Test("A static requirement's parameter named after the storage is recorded correctly")
+    func staticParameterShadowingStorage() {
+        let mock = ShadowingParameterStaticServiceMock()
+        mock.resetMock()
+        nonisolated(unsafe) var received: Int?
+        ShadowingParameterStaticServiceMock.storeHandler = { received = $0 }
+
+        ShadowingParameterStaticServiceMock.store(_staticStorage: 11)
+
+        #expect(ShadowingParameterStaticServiceMock.storeCallCount == 1)
+        #expect(ShadowingParameterStaticServiceMock.storeCallArgs == [11])
+        #expect(received == 11)
+
+        mock.resetMock()
     }
 
     @Test("A subscript index named newValue is distinguished from the value being set")

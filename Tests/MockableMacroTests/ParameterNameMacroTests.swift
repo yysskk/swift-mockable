@@ -368,6 +368,86 @@ struct ParameterNameMacroTests {
         )
     }
 
+    @Test("A static requirement's parameter named after the storage is read through Self")
+    func staticParameterShadowingStorage() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Service {
+                static func store(_staticStorage: Int)
+            }
+            """,
+            expandedSource: """
+            protocol Service {
+                static func store(_staticStorage: Int)
+            }
+
+            #if DEBUG
+            class ServiceMock: Service {
+                private struct StaticStorage {
+                    var storeCallCount: Int = 0
+                    var storeCallArgs: [Int] = []
+                    var storeHandler: (@Sendable (Int) -> Void)? = nil
+                }
+                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                static var storeCallCount: Int {
+                    get {
+                        _staticStorage.withLock {
+                            $0.storeCallCount
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.storeCallCount = newValue
+                        }
+                    }
+                }
+                static var storeCallArgs: [Int] {
+                    get {
+                        _staticStorage.withLock {
+                            $0.storeCallArgs
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.storeCallArgs = newValue
+                        }
+                    }
+                }
+                static var storeHandler: (@Sendable (Int) -> Void)? {
+                    get {
+                        _staticStorage.withLock {
+                            $0.storeHandler
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.storeHandler = newValue
+                        }
+                    }
+                }
+                static func store(_staticStorage: Int) {
+                    let _handler = Self._staticStorage.withLock { storage -> (@Sendable (Int) -> Void)? in
+                        storage.storeCallCount += 1
+                        storage.storeCallArgs.append(_staticStorage)
+                        return storage.storeHandler
+                    }
+                    if let _handler {
+                        _handler(_staticStorage)
+                    }
+                }
+                func resetMock() {
+                    Self.storeCallCount = 0
+                    Self.storeCallArgs = []
+                    Self.storeHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     @Test("A subscript index named newValue moves the setter's accessor parameter aside")
     func subscriptIndexNamedNewValue() {
         assertMacroExpansionForTesting(
