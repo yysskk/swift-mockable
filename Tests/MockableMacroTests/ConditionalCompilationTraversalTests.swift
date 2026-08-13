@@ -74,16 +74,64 @@ struct ConditionalCompilationTraversalTests {
         #expect(names == ["nested"])
     }
 
-    @Test("Collection skips #else clauses (current behavior)")
-    func collectionSkipsElseClauses() throws {
-        // Documents the current contract: clauses without a condition are not
-        // collected, so overload grouping and type-member detection do not see
-        // `#else` members even though member generation maps them.
+    @Test("Members of an #else clause are collected too")
+    func collectsElseClauseMembers() throws {
+        // Member generation maps every clause, so the whole-protocol analyses have to
+        // see `#else` members as well: otherwise storage, overload grouping, and
+        // initializer detection disagree with the members that are emitted.
         let generator = try #require(makeGenerator(conditionalSource))
 
         let names = generator.collectDeclsIncludingConditional()
             .compactMap { $0.as(FunctionDeclSyntax.self)?.name.text }
-        #expect(names == ["alpha", "beta"])
+        #expect(names == ["alpha", "beta", "gamma"])
+    }
+
+    @Test("hasTypeMembers finds a static member declared only in an #else clause")
+    func findsStaticMemberInElseClause() throws {
+        let generator = try #require(makeGenerator("""
+        protocol Service {
+            #if CUSTOM
+            func alpha() -> Int
+            #else
+            static func beta() -> Int
+            #endif
+        }
+        """))
+
+        #expect(generator.hasTypeMembers())
+    }
+
+    @Test("Overloads are grouped across an #else clause")
+    func groupsOverloadsAcrossElseClause() throws {
+        let generator = try #require(makeGenerator("""
+        protocol Service {
+            func fetch(id: Int) -> Int
+            #if CUSTOM
+            func alpha() -> Int
+            #else
+            func fetch(name: String) -> Int
+            #endif
+        }
+        """))
+
+        let groups = generator.groupMethodsByNameIncludingConditional()
+        #expect(groups["fetch"]?.count == 2)
+    }
+
+    @Test("Initializer requirements declared in an #else clause are collected")
+    func collectsInitializersInElseClause() throws {
+        let generator = try #require(makeGenerator("""
+        protocol Service {
+            #if CUSTOM
+            func alpha() -> Int
+            #else
+            init(name: String)
+            #endif
+        }
+        """))
+
+        #expect(generator.collectInitializers().count == 1)
+        #expect(generator.hasInitializerRequirements)
     }
 
     // MARK: - groupMethodsByNameIncludingConditional

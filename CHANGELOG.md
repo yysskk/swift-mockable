@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Mocking of a requirement declared in an `#else` clause. Member generation visits every clause of a conditional-compilation block, but the analyses that decide the mock's shape skipped clauses without a condition, so an `#else` requirement was mocked without the surrounding declarations it needs. A `static` requirement declared only in an `#else` clause referenced a `_staticStorage` that was never emitted ("cannot find `_staticStorage` in scope"); same-name requirements declared only in an `#else` clause were not recognized as overloads and generated duplicate `CallCount`/`CallArgs`/`Handler` members; and an `init` requirement declared only in an `#else` clause did not suppress the synthesized `init()` of a `public` or `package` mock, so the two collided. Requirements in sibling clauses now share one namespace, exactly as requirements in `#if`/`#elseif` clauses already did, so same-name requirements across the branches of one block are disambiguated with the usual overload suffixes.
+
 ## [1.12.0] - 2026-08-12
 
 ### Added
