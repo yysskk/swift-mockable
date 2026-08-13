@@ -188,7 +188,7 @@ struct MainActorMacroTests {
                         _handler(event)
                     }
                 }
-                func resetMock() {
+                nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage._id = nil
                         storage.trackCallCount = 0

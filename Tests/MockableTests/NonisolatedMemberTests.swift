@@ -31,6 +31,13 @@ struct NonisolatedMemberTests {
 
         #expect(mock.trackCallCount == 1)
         #expect(mock.trackCallArgs == ["opened"])
+
+        // The state was set up from here, so it has to be clearable from here too.
+        mock.resetMock()
+
+        #expect(mock.trackCallCount == 0)
+        #expect(mock.trackCallArgs.isEmpty)
+        #expect(mock.trackHandler == nil)
     }
 
     @Test("An isolated requirement of the same protocol still works")
