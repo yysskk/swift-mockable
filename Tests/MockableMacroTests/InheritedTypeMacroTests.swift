@@ -195,6 +195,35 @@ struct InheritedTypeMacroTests {
         )
     }
 
+    @Test("A module-qualified parameterized parent is reported")
+    func qualifiedParameterizedParentConformance() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Service: SomeModule.Container<Int> {
+                func run()
+            }
+            """,
+            expandedSource: """
+            protocol Service: SomeModule.Container<Int> {
+                func run()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        'SomeModule.Container<Int>' is a parent protocol written with generic arguments, which the \
+                        generated mock cannot subclass. Inherit from an unparameterized protocol \
+                        instead.
+                        """,
+                    line: 2,
+                    column: 19
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     // MARK: - Naming
 
     @Test("An escaped protocol name produces a plain mock type name")

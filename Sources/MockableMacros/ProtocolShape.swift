@@ -141,8 +141,9 @@ private enum InheritedTypeKind {
 
     init(_ type: TypeSyntax) {
         // A parameterized conformance (`Container<Int>`) names no type the mock can
-        // subclass, and a mock for it could not be found by name either.
-        if let identifier = type.as(IdentifierTypeSyntax.self), identifier.genericArgumentClause != nil {
+        // subclass, and a mock for it could not be found by name either. A qualified
+        // spelling (`SomeModule.Container<Int>`) is the same thing written differently.
+        if Self.isParameterized(type) {
             self = .unsupported(type.trimmedDescription, .parameterized)
             return
         }
@@ -155,6 +156,18 @@ private enum InheritedTypeKind {
         } else {
             self = .parent(name)
         }
+    }
+
+    /// Whether the type is written with generic arguments, in either the plain
+    /// (`Container<Int>`) or the qualified (`SomeModule.Container<Int>`) spelling.
+    private static func isParameterized(_ type: TypeSyntax) -> Bool {
+        if let identifier = type.as(IdentifierTypeSyntax.self) {
+            return identifier.genericArgumentClause != nil
+        }
+        if let member = type.as(MemberTypeSyntax.self) {
+            return member.genericArgumentClause != nil
+        }
+        return false
     }
 
     /// The inherited type's name with a `Swift.` module qualifier removed, so
