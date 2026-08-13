@@ -8,10 +8,13 @@ extension MockGenerator {
     /// isolation. Every member of an actor mock qualifies; on a global-actor-isolated
     /// mock only the members of a `nonisolated` requirement do, because its witness is
     /// itself nonisolated and has to reach them.
-    func storageBackedMemberModifiers(isNonisolated: Bool = false) -> [DeclModifierSyntax] {
-        guard isActor || isNonisolated else {
-            return []
+    func storageBackedMemberModifiers(isNonisolated: Bool = false, isTypeMember: Bool = false) -> [DeclModifierSyntax] {
+        // An actor's static members are already reachable from outside it, so only its
+        // instance members need the modifier. On a global-actor-isolated class every
+        // member is isolated, static ones included.
+        if isActor {
+            return isTypeMember ? [] : [DeclModifierSyntax(name: .keyword(.nonisolated))]
         }
-        return [DeclModifierSyntax(name: .keyword(.nonisolated))]
+        return isNonisolated ? [DeclModifierSyntax(name: .keyword(.nonisolated))] : []
     }
 }

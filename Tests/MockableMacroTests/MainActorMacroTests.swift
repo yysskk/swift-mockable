@@ -124,7 +124,7 @@ struct MainActorMacroTests {
                     var trackCallArgs: [String] = []
                     var trackHandler: (@Sendable (String) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = MockableLock<Storage>(Storage())
                 nonisolated var _id: String? {
                     get {
                         _storage.withLock {

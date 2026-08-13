@@ -52,9 +52,10 @@ extension MockGenerator {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
         if usesLockBasedStorage(isTypeMember: isTypeMember) {
-            if !isTypeMember {
-                additionalModifiers.append(contentsOf: storageBackedMemberModifiers(isNonisolated: isNonisolated))
-            }
+            additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
+                isNonisolated: isNonisolated,
+                isTypeMember: isTypeMember
+            ))
 
             return Self.makeLockBackedProperty(
                 modifiers: buildModifiers(additional: additionalModifiers),

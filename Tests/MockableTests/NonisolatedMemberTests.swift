@@ -15,6 +15,14 @@ protocol NonisolatedPresenter {
     func loadData() -> Int
 }
 
+@MainActor
+@Mockable
+protocol NonisolatedVariety {
+    nonisolated static func make() -> Int
+    nonisolated subscript(key: String) -> Int { get set }
+    nonisolated var token: String { get throws }
+}
+
 @Suite("Nonisolated Member Integration Tests")
 struct NonisolatedMemberTests {
     @Test("A nonisolated requirement is usable without hopping to the main actor")
@@ -38,6 +46,25 @@ struct NonisolatedMemberTests {
         #expect(mock.trackCallCount == 0)
         #expect(mock.trackCallArgs.isEmpty)
         #expect(mock.trackHandler == nil)
+    }
+
+    @Test("A nonisolated static, subscript, and effectful property are all reachable")
+    func nonisolatedRequirementKinds() throws {
+        let mock = NonisolatedVarietyMock()
+        mock.resetMock()
+
+        NonisolatedVarietyMock.makeHandler = { 7 }
+        mock.subscriptStringHandler = { $0.count }
+        mock.tokenHandler = { "token" }
+
+        #expect(NonisolatedVarietyMock.make() == 7)
+        #expect(mock["abc"] == 3)
+        #expect(try mock.token == "token")
+
+        mock.resetMock()
+        #expect(NonisolatedVarietyMock.makeCallCount == 0)
+        #expect(mock.subscriptStringCallCount == 0)
+        #expect(mock.tokenCallCount == 0)
     }
 
     @Test("An isolated requirement of the same protocol still works")
