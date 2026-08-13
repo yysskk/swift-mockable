@@ -467,6 +467,19 @@ Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated m
 
 `resetMock()` includes matching conditional branches so reset behavior stays aligned with active compilation conditions.
 
+The mock declares the members of every branch, each under the branch's own condition, so requirements in sibling branches share one namespace: two same-name requirements in different branches of the same block are treated as overloads and get the usual disambiguating suffixes.
+
+```swift
+@Mockable
+protocol Service {
+    #if CUSTOM
+    func fetch(id: Int) -> Int      // fetchIntCallCount, fetchIntHandler, ...
+    #else
+    func fetch(name: String) -> Int // fetchStringCallCount, fetchStringHandler, ...
+    #endif
+}
+```
+
 ## Choosing When Mocks Are Compiled
 
 By default the generated mock is wrapped in `#if DEBUG`. The `condition:`

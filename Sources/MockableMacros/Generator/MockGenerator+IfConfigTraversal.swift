@@ -9,8 +9,9 @@ extension MockGenerator {
     /// (overload grouping, type-member detection, initializer collection).
     ///
     /// Flattening loses the `#if` structure, so this is only for analysis: generation
-    /// goes through the `map*PreservingIfConfig` drivers below, which keep it. Note
-    /// that flattening also skips `#else` clauses (see `collectDecls(from:)`).
+    /// goes through the `map*PreservingIfConfig` drivers below, which keep it. Every
+    /// clause is collected, including `#else`, so these analyses see exactly the
+    /// requirements generation emits members for.
     func collectDeclsIncludingConditional(from members: MemberBlockItemListSyntax? = nil) -> [DeclSyntax] {
         collectDecls(from: members ?? self.members)
     }
@@ -98,16 +99,17 @@ extension MockGenerator {
 
     /// Flattens the clauses of a conditional-compilation block.
     ///
-    /// Only condition-bearing clauses (`#if`/`#elseif`) are collected: a `#else`
-    /// member is generated (the mapping drivers visit every clause) but is excluded
-    /// from these whole-protocol analyses. Diagnostics deliberately differ and visit
-    /// every clause — see `MockableMacro.declClauses(of:)`.
+    /// Every clause is collected, `#else` included, so these analyses cover the same
+    /// requirements the mapping drivers generate members for. Clauses are mutually
+    /// exclusive at compile time, but the mock declares the members of all of them
+    /// (each under its own condition), so requirements in sibling clauses share one
+    /// namespace and are grouped and disambiguated together. This matches
+    /// `MockableMacro.declClauses(of:)`, which visits every clause for diagnostics.
     private func collectDecls(from ifConfigDecl: IfConfigDeclSyntax) -> [DeclSyntax] {
         var result: [DeclSyntax] = []
 
         for clause in ifConfigDecl.clauses {
-            guard clause.condition != nil,
-                  let elements = clause.elements,
+            guard let elements = clause.elements,
                   case .decls(let decls) = elements else {
                 continue
             }
