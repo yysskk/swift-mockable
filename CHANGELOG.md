@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-21
+
 ### Added
 
 - Support for `nonisolated` requirements of a global-actor-isolated protocol, such as `nonisolated var id: String { get }` on a `@MainActor` protocol. Swift infers the isolation of a witness from the requirement it satisfies, so the mock's witness was `nonisolated` while the state it reads was isolated, and the expansion failed to compile with "main actor-isolated property '_id' can not be referenced from a nonisolated context". A mock with such a requirement now keeps its tracking state behind `MockableLock`, and the members that requirement reaches are `nonisolated`, so tests can set handlers, read call counts, and call `resetMock()` without hopping to the actor — the same arrangement actor mocks already used.
@@ -188,7 +190,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/1.12.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/yysskk/swift-mockable/compare/1.12.0...2.0.0
 [1.12.0]: https://github.com/yysskk/swift-mockable/compare/1.11.1...1.12.0
 [1.11.1]: https://github.com/yysskk/swift-mockable/compare/1.11.0...1.11.1
 [1.11.0]: https://github.com/yysskk/swift-mockable/compare/1.10.0...1.11.0
