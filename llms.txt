@@ -1,6 +1,6 @@
 # swift-mockable
 
-> A Swift macro (`@Mockable`) that generates protocol mocks with call tracking, argument capture, and configurable handlers for testing. MIT licensed, supports Swift 5.9+/6.2+.
+> A Swift macro (`@Mockable`) that generates protocol mocks with call tracking, argument capture, and configurable handlers for testing. MIT licensed, supports Swift 6.2+.
 
 swift-mockable provides a single `@Mockable` macro that you attach to any Swift protocol. It generates a `<ProtocolName>Mock` class wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom flag or removes the guard) with:
 
@@ -35,7 +35,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 
 ## Requirements
 
-- Swift 5.9, 5.10, 6.2+
+- Swift 6.2+
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+ / macCatalyst 13+
 - MIT License
 

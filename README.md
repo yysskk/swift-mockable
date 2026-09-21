@@ -3,7 +3,7 @@
 [![Test](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml/badge.svg)](https://github.com/yysskk/swift-mockable/actions/workflows/test.yml)
 [![Coverage](https://codecov.io/gh/yysskk/swift-mockable/graph/badge.svg)](https://codecov.io/gh/yysskk/swift-mockable)
 [![Release](https://img.shields.io/github/v/release/yysskk/swift-mockable)](https://github.com/yysskk/swift-mockable/releases)
-[![Swift](https://img.shields.io/badge/Swift-5.9%20%7C%205.10%20%7C%206.2%20%7C%206.3%20%7C%206.4-orange.svg)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-6.2%20%7C%206.3%20%7C%206.4-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue.svg)](https://developer.apple.com)
 [![License](https://img.shields.io/github/license/yysskk/swift-mockable)](LICENSE)
 
@@ -230,7 +230,7 @@ at compile time and cannot read runtime values.
 
 ## Requirements
 
-- Swift 5.9, 5.10, and 6.2+
+- Swift 6.2+
 - macOS 10.15+ / iOS 13+ / tvOS 13+ / watchOS 6+ / visionOS 1+ / macCatalyst 13+
 - Generated `Sendable` and `actor` mocks synchronize their state with `Mutex` (`Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+, falling back to an `NSLock`-based lock on older OS versions
 
