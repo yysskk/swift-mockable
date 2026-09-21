@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The swift-docc-plugin dependency now requires 1.5.0 or later.
 - **Breaking:** Swift 6.2 is now the minimum supported version. The Swift 5.9 and 5.10 manifests are removed; swift-syntax `509.0.0..<605.0.0` is still accepted, so dependency resolution is unaffected.
 
 ### Fixed

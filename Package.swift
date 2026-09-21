@@ -21,7 +21,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "509.0.0"..<"605.0.0"),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.3"),
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.5.0"),
     ],
     targets: [
         .macro(
