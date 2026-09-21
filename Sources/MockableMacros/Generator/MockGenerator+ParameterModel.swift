@@ -8,7 +8,11 @@ extension MockGenerator {
     /// parameters are excluded because a non-escaping value cannot be stored; the
     /// call is still counted and the closure is still forwarded to the handler.
     static func storableParameters(_ parameters: FunctionParameterListSyntax) -> FunctionParameterListSyntax {
-        FunctionParameterListSyntax(parameters.filter { !isNonEscapingClosureParameter($0) })
+        // Filter into an array explicitly: from swift-syntax 604 `filter` on a
+        // syntax collection returns the collection itself, and re-wrapping that
+        // calls a deprecated no-op initializer.
+        let storable: [FunctionParameterSyntax] = parameters.filter { !isNonEscapingClosureParameter($0) }
+        return FunctionParameterListSyntax(storable)
     }
 
     /// The element type of the `CallArgs` array, built from the storable parameters only.
