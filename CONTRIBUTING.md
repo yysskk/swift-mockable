@@ -51,7 +51,7 @@ repository's Codecov token; run the script locally to check coverage on those.
 The package supports Swift 5.9, 5.10, and 6.2+ through three manifests:
 `Package.swift` (Swift 6.2+), `Package@swift-5.10.swift`, and
 `Package@swift-5.9.swift`. All three accept swift-syntax
-`509.0.0..<604.0.0`, so dependency resolution can agree with whatever
+`509.0.0..<605.0.0`, so dependency resolution can agree with whatever
 swift-syntax major the other packages in a consuming project pin. When a new
 swift-syntax major is released, bump the upper bound in all three manifests
 and add the new major to the `swift-syntax-compat` CI matrix.
