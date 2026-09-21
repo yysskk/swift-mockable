@@ -261,9 +261,8 @@ protocol SendableRethrowingRunner: Sendable {
     func run(_ body: @Sendable () throws -> Void) rethrows
 }
 
-// MARK: - Typed Throws Protocols (Swift 6.0+)
+// MARK: - Typed Throws Protocols
 
-#if compiler(>=6.0)
 struct TypedThrowsError: Error, Equatable {
     let code: Int
 }
@@ -347,7 +346,6 @@ protocol TypedThrowingCalculator {
 protocol TypedThrowingBuilder {
     init(_ value: @autoclosure () throws -> Int) throws(TypedThrowsError)
 }
-#endif
 
 // MARK: - Initializer Requirement Protocols
 

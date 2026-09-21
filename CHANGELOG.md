@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for `nonisolated` requirements of a global-actor-isolated protocol, such as `nonisolated var id: String { get }` on a `@MainActor` protocol. Swift infers the isolation of a witness from the requirement it satisfies, so the mock's witness was `nonisolated` while the state it reads was isolated, and the expansion failed to compile with "main actor-isolated property '_id' can not be referenced from a nonisolated context". A mock with such a requirement now keeps its tracking state behind `MockableLock`, and the members that requirement reaches are `nonisolated`, so tests can set handlers, read call counts, and call `resetMock()` without hopping to the actor — the same arrangement actor mocks already used.
-- Support for swift-syntax 604 (the Swift 6.4 release): every manifest now accepts `509.0.0..<605.0.0`, so a project whose other packages already resolve swift-syntax 604 no longer fails dependency resolution. CI now also builds and tests with Swift 6.3 and 6.4, and builds against swift-syntax 603.
+- Support for swift-syntax 604 (the Swift 6.4 release): the package now accepts `509.0.0..<605.0.0`, so a project whose other packages already resolve swift-syntax 604 no longer fails dependency resolution. CI now also builds and tests with Swift 6.3 and 6.4, and builds against swift-syntax 603.
+
+### Changed
+
+- **Breaking:** Swift 6.2 is now the minimum supported version. The Swift 5.9 and 5.10 manifests are removed; swift-syntax `509.0.0..<605.0.0` is still accepted, so dependency resolution is unaffected.
 
 ### Fixed
 

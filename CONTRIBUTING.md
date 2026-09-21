@@ -24,8 +24,7 @@ swift test
 ```
 
 Tests use [swift-testing](https://github.com/swiftlang/swift-testing) (`@Test` /
-`#expect`), which ships with Swift 6 toolchains. On Swift 5.9 / 5.10 the package
-builds but the test suite is Swift 6 only.
+`#expect`), which ships with the Swift toolchain.
 
 ### Code coverage
 
@@ -48,13 +47,11 @@ repository's Codecov token; run the script locally to check coverage on those.
 
 ### Swift version compatibility
 
-The package supports Swift 5.9, 5.10, and 6.2+ through three manifests:
-`Package.swift` (Swift 6.2+), `Package@swift-5.10.swift`, and
-`Package@swift-5.9.swift`. All three accept swift-syntax
+The package supports Swift 6.2+. `Package.swift` accepts swift-syntax
 `509.0.0..<605.0.0`, so dependency resolution can agree with whatever
 swift-syntax major the other packages in a consuming project pin. When a new
-swift-syntax major is released, bump the upper bound in all three manifests
-and add the new major to the `swift-syntax-compat` CI matrix.
+swift-syntax major is released, bump the upper bound and add the new major to
+the `swift-syntax-compat` CI matrix.
 
 Any use of a version-sensitive swift-syntax API must go through a shim in
 `Sources/MockableMacros/SwiftSyntaxCompatibility.swift` so it compiles against
