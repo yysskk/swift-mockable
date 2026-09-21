@@ -40,7 +40,7 @@ jobs:
             - Readability, maintainability, and naming
             - Missing test coverage
             - Swift / Swift Concurrency correctness (data races, actor isolation, Sendable conformance)
-            - Macro correctness: generated code compiles and behaves correctly across the supported Swift versions (5.9, 5.10, 6.2), and expansion handles edge cases such as generics, overloaded methods, subscripts, associated types, inheritance, and access levels
+            - Macro correctness: generated code compiles and behaves correctly across the supported Swift versions (6.2+), and expansion handles edge cases such as generics, overloaded methods, subscripts, associated types, inheritance, and access levels
 
             Note: the PR branch is already checked out in the current directory.
 
