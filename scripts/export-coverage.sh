@@ -48,26 +48,42 @@ if [[ ! -f "${profdata}" ]]; then
     exit 1
 fi
 
-# SwiftPM emits the test target as a bundle directory on Darwin and as a bare
-# executable everywhere else.
-test_binary=""
+# The native build system emits one test product for the whole package, and
+# the Swift Build backend (the default from Swift 6.4) one per test target.
+# Each is a bundle directory on Darwin and a bare executable on Linux, except
+# that the Swift Build backend on Linux emits a shared library loaded by a
+# `-test-runner` executable. Coverage is merged across all of them.
+test_binaries=()
 for bundle in "${bin_path}"/*.xctest; do
     if [[ -d "${bundle}" ]]; then
-        test_binary="${bundle}/Contents/MacOS/$(basename "${bundle}" .xctest)"
+        test_binaries+=("${bundle}/Contents/MacOS/$(basename "${bundle}" .xctest)")
     elif [[ -f "${bundle}" ]]; then
-        test_binary="${bundle}"
+        test_binaries+=("${bundle}")
     fi
 done
-readonly test_binary
+for runner in "${bin_path}"/*-test-runner; do
+    library="${runner%-test-runner}.so"
+    if [[ -f "${library}" ]]; then
+        test_binaries+=("${library}")
+    fi
+done
+readonly test_binaries
 
-if [[ ! -x "${test_binary}" ]]; then
+if [[ ${#test_binaries[@]} -eq 0 ]]; then
     echo "error: no test binary found in ${bin_path}." >&2
     exit 1
 fi
 
+# llvm-cov takes the first binary positionally and the rest through -object.
+llvm_cov_objects=("${test_binaries[0]}")
+for binary in "${test_binaries[@]:1}"; do
+    llvm_cov_objects+=(-object "${binary}")
+done
+readonly llvm_cov_objects
+
 # llvm-cov records absolute source paths. Codecov matches coverage against the
 # repository tree, so rewrite them relative to the repository root.
-"${llvm_cov[@]}" export -format=lcov "${test_binary}" \
+"${llvm_cov[@]}" export -format=lcov "${llvm_cov_objects[@]}" \
     -instr-profile "${profdata}" \
     -ignore-filename-regex="${excluded_paths}" \
     | awk -v prefix="SF:${repo_root}/" '
@@ -75,7 +91,7 @@ fi
         { print }
     ' > "${output}"
 
-"${llvm_cov[@]}" report "${test_binary}" \
+"${llvm_cov[@]}" report "${llvm_cov_objects[@]}" \
     -instr-profile "${profdata}" \
     -ignore-filename-regex="${excluded_paths}"
 
