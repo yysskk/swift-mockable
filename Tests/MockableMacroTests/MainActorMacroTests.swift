@@ -202,4 +202,234 @@ struct MainActorMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("A @MainActor child of another protocol keeps its state behind a nonisolated lock")
+    func childOfParentProtocol() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            @MainActor
+            protocol Child: Base {
+                func load()
+                static func make() -> Int
+            }
+            """,
+            expandedSource: """
+            @MainActor
+            protocol Child: Base {
+                func load()
+                static func make() -> Int
+            }
+
+            #if DEBUG
+            @MainActor class ChildMock: BaseMock, Child {
+                private struct Storage {
+                    var loadCallCount: Int = 0
+                    var loadCallArgs: [()] = []
+                    var loadHandler: (@Sendable () -> Void)? = nil
+                }
+                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private struct StaticStorage {
+                    var makeCallCount: Int = 0
+                    var makeCallArgs: [()] = []
+                    var makeHandler: (@Sendable () -> Int)? = nil
+                }
+                private static nonisolated let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                var loadCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
+                    }
+                }
+                var loadCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
+                    }
+                }
+                var loadHandler: (@Sendable () -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
+                    }
+                }
+                func load() {
+                    let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
+                        storage.loadCallCount += 1
+                        storage.loadCallArgs.append(())
+                        return storage.loadHandler
+                    }
+                    if let _handler {
+                        _handler()
+                    }
+                }
+                static var makeCallCount: Int {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeCallCount
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeCallCount = newValue
+                        }
+                    }
+                }
+                static var makeCallArgs: [()] {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeCallArgs
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeCallArgs = newValue
+                        }
+                    }
+                }
+                static var makeHandler: (@Sendable () -> Int)? {
+                    get {
+                        _staticStorage.withLock {
+                            $0.makeHandler
+                        }
+                    }
+                    set {
+                        _staticStorage.withLock {
+                            $0.makeHandler = newValue
+                        }
+                    }
+                }
+                static func make() -> Int {
+                    let _handler = _staticStorage.withLock { storage -> (@Sendable () -> Int)? in
+                        storage.makeCallCount += 1
+                        storage.makeCallArgs.append(())
+                        return storage.makeHandler
+                    }
+                    guard let _handler else {
+                        fatalError("\\(Self.self).makeHandler is not set")
+                    }
+                    return _handler()
+                }
+                override func resetMock() {
+                    super.resetMock()
+                    _storage.withLock { storage in
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                    }
+                    Self._staticStorage.withLock { storage in
+                        storage.makeCallCount = 0
+                        storage.makeCallArgs = []
+                        storage.makeHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("A nonisolated requirement of a @MainActor child leaves the resetMock override unmarked")
+    func nonisolatedRequirementOfChild() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            @MainActor
+            protocol Child: Base {
+                nonisolated func track()
+            }
+            """,
+            expandedSource: """
+            @MainActor
+            protocol Child: Base {
+                nonisolated func track()
+            }
+
+            #if DEBUG
+            @MainActor class ChildMock: BaseMock, Child {
+                private struct Storage {
+                    var trackCallCount: Int = 0
+                    var trackCallArgs: [()] = []
+                    var trackHandler: (@Sendable () -> Void)? = nil
+                }
+                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                nonisolated var trackCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.trackCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackCallCount = newValue
+                        }
+                    }
+                }
+                nonisolated var trackCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.trackCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackCallArgs = newValue
+                        }
+                    }
+                }
+                nonisolated var trackHandler: (@Sendable () -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.trackHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.trackHandler = newValue
+                        }
+                    }
+                }
+                func track() {
+                    let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
+                        storage.trackCallCount += 1
+                        storage.trackCallArgs.append(())
+                        return storage.trackHandler
+                    }
+                    if let _handler {
+                        _handler()
+                    }
+                }
+                override func resetMock() {
+                    super.resetMock()
+                    _storage.withLock { storage in
+                        storage.trackCallCount = 0
+                        storage.trackCallArgs = []
+                        storage.trackHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

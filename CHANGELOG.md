@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Mocking of a `@MainActor` protocol that inherits from a protocol with a mock of its own. The child mock's `resetMock()` overrides the parent mock's, and an override takes the isolation of the method it overrides — so when the parent protocol is not isolated, the override is `nonisolated` and the expansion failed to compile with "main actor-isolated property 'loadCallCount' can not be mutated from a nonisolated context" for every requirement. The macro cannot see the parent protocol's isolation, so a `@MainActor` child mock now keeps its tracking state behind a `nonisolated` lock, as a mock with a `nonisolated` requirement already did, and its override compiles whichever isolation it inherits. A `@MainActor` child with a `nonisolated` requirement no longer marks the override `nonisolated` either: the `super` call has to reach the parent's `resetMock()`, which may be isolated.
+
 ## [2.0.0] - 2026-09-21
 
 ### Added

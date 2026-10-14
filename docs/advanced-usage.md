@@ -506,6 +506,9 @@ If a protocol inherits from another protocol and a parent mock exists:
 - child `resetMock()` calls `super.resetMock()` first
 - the child mock inherits the parent mock's initializers (it does not synthesize its own),
   so a parent `init` requirement is satisfied through the inherited `required init`
+- a `@MainActor` child mock keeps its tracking state behind a `nonisolated` lock. Its
+  `resetMock()` override takes the isolation of the parent's, which the macro cannot
+  see, so the override has to be able to clear the child's state from either isolation
 
 For multiple parent protocols, the first parent is used as the superclass target.
 

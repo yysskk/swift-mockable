@@ -57,10 +57,24 @@ extension MockGenerator {
 
     /// Whether the mock's instance tracking state is lock-backed. `Sendable` mocks need
     /// it to be safe to mutate across threads; actor mocks and global-actor-isolated
-    /// mocks with a `nonisolated` requirement need it because a `nonisolated` member
-    /// cannot touch isolated state.
+    /// mocks with a `nonisolated` member need it because a `nonisolated` member cannot
+    /// touch isolated state.
     var usesInstanceStorageLock: Bool {
-        isActor || isSendable || hasNonisolatedRequirements
+        isActor || isSendable || needsNonisolatedStorage
+    }
+
+    /// Whether a member of a global-actor-isolated mock has to reach the tracking state
+    /// from outside the mock's isolation, so the state is kept behind a `nonisolated`
+    /// lock: the witness of a `nonisolated` requirement, or the `resetMock()` override
+    /// of a mock subclassing a parent mock. An override takes the isolation of the
+    /// method it overrides, and the macro cannot see whether the parent protocol is
+    /// isolated — a `@MainActor` mock of a child of a nonisolated protocol gets a
+    /// nonisolated `resetMock()`, which could not clear isolated stored properties.
+    var needsNonisolatedStorage: Bool {
+        guard isMainActor else {
+            return false
+        }
+        return hasParentMock || hasNonisolatedRequirements
     }
 
     /// Whether the protocol declares a `nonisolated` requirement the mock's isolation

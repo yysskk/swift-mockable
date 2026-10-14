@@ -153,13 +153,14 @@ extension MockGenerator {
         // This body only touches the lock, so it is nonisolated wherever the mock has
         // nonisolated members to reset: on an actor mock, and on an isolated mock with
         // a `nonisolated` requirement, whose state a test sets up without hopping to
-        // the actor and should be able to clear the same way.
+        // the actor and should be able to clear the same way. An override is left
+        // unmarked: it takes the isolation of the parent's `resetMock()`, which the
+        // macro cannot see and the `super` call has to be able to reach.
         var additionalModifiers: [DeclModifierSyntax] = []
-        if isActor || hasNonisolatedRequirements {
-            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
-        }
         if hasParentMock {
             additionalModifiers.append(DeclModifierSyntax(name: .keyword(.override)))
+        } else if isActor || hasNonisolatedRequirements {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
         }
 
         return FunctionDeclSyntax(
