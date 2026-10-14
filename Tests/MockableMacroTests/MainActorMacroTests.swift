@@ -432,4 +432,142 @@ struct MainActorMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("A requirement with an isolated parameter gets nonisolated, lock-backed tracking members")
+    func isolatedParameterRequirement() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            @MainActor
+            protocol Runner {
+                func run(on actor: isolated any Actor) async
+                func load()
+            }
+            """,
+            expandedSource: """
+            @MainActor
+            protocol Runner {
+                func run(on actor: isolated any Actor) async
+                func load()
+            }
+
+            #if DEBUG
+            @MainActor class RunnerMock: Runner {
+                private struct Storage {
+                    var runCallCount: Int = 0
+                    var runCallArgs: [any Actor] = []
+                    var runHandler: (@Sendable (any Actor) async -> Void)? = nil
+                    var loadCallCount: Int = 0
+                    var loadCallArgs: [()] = []
+                    var loadHandler: (@Sendable () -> Void)? = nil
+                }
+                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                nonisolated var runCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.runCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.runCallCount = newValue
+                        }
+                    }
+                }
+                nonisolated var runCallArgs: [any Actor] {
+                    get {
+                        _storage.withLock {
+                            $0.runCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.runCallArgs = newValue
+                        }
+                    }
+                }
+                nonisolated var runHandler: (@Sendable (any Actor) async -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.runHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.runHandler = newValue
+                        }
+                    }
+                }
+                func run(on actor: isolated any Actor) async {
+                    let _handler = _storage.withLock { storage -> (@Sendable (any Actor) async -> Void)? in
+                        storage.runCallCount += 1
+                        storage.runCallArgs.append(actor)
+                        return storage.runHandler
+                    }
+                    if let _handler {
+                        await _handler(actor)
+                    }
+                }
+                var loadCallCount: Int {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallCount
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallCount = newValue
+                        }
+                    }
+                }
+                var loadCallArgs: [()] {
+                    get {
+                        _storage.withLock {
+                            $0.loadCallArgs
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadCallArgs = newValue
+                        }
+                    }
+                }
+                var loadHandler: (@Sendable () -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.loadHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.loadHandler = newValue
+                        }
+                    }
+                }
+                func load() {
+                    let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
+                        storage.loadCallCount += 1
+                        storage.loadCallArgs.append(())
+                        return storage.loadHandler
+                    }
+                    if let _handler {
+                        _handler()
+                    }
+                }
+                nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.runCallCount = 0
+                        storage.runCallArgs = []
+                        storage.runHandler = nil
+                        storage.loadCallCount = 0
+                        storage.loadCallArgs = []
+                        storage.loadHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

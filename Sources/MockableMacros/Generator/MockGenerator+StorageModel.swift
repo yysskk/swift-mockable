@@ -57,7 +57,7 @@ extension MockGenerator {
 
     /// Whether the mock's instance tracking state is lock-backed. `Sendable` mocks need
     /// it to be safe to mutate across threads; actor mocks and global-actor-isolated
-    /// mocks with a `nonisolated` member need it because a `nonisolated` member cannot
+    /// mocks with a member outside their isolation need it because such a member cannot
     /// touch isolated state.
     var usesInstanceStorageLock: Bool {
         isActor || isSendable || needsNonisolatedStorage
@@ -65,30 +65,38 @@ extension MockGenerator {
 
     /// Whether a member of a global-actor-isolated mock has to reach the tracking state
     /// from outside the mock's isolation, so the state is kept behind a `nonisolated`
-    /// lock: the witness of a `nonisolated` requirement, or the `resetMock()` override
-    /// of a mock subclassing a parent mock. An override takes the isolation of the
+    /// lock: the witness of a requirement that leaves the mock's isolation, or the
+    /// `resetMock()` override of a mock subclassing a parent mock. An override takes the isolation of the
     /// method it overrides, and the macro cannot see whether the parent protocol is
     /// isolated — a `@MainActor` mock of a child of a nonisolated protocol gets a
     /// nonisolated `resetMock()`, which could not clear isolated stored properties.
     var needsNonisolatedStorage: Bool {
-        hasNonisolatedRequirements || (isGlobalActorIsolated && hasParentMock)
+        hasRequirementsLeavingIsolation || (isGlobalActorIsolated && hasParentMock)
     }
 
-    /// Whether the protocol declares a `nonisolated` requirement the mock's isolation
-    /// would otherwise put out of reach. Swift infers the isolation of a witness from
-    /// the requirement it satisfies, so a `nonisolated` requirement of a `@MainActor`
-    /// protocol gets a `nonisolated` witness — which then cannot read the mock's
-    /// isolated stored properties. The protocol's own attributes are not consulted:
-    /// the modifier only means something on an isolated protocol, and a protocol can
-    /// inherit its isolation from a parent the macro cannot see.
-    var hasNonisolatedRequirements: Bool {
-        collectDeclsIncludingConditional().contains { Self.isNonisolated($0) }
+    /// Whether the protocol declares a requirement whose witness cannot assume the
+    /// mock's isolation and so cannot reach isolated tracking state. Swift infers the
+    /// isolation of a witness from the requirement it satisfies: a `nonisolated`
+    /// requirement of a `@MainActor` protocol gets a `nonisolated` witness, and a
+    /// requirement with an `isolated` parameter gets a witness isolated to its
+    /// argument — neither can read the mock's isolated stored properties. The
+    /// protocol's own attributes are not consulted: the modifier only means something
+    /// on an isolated protocol, and a protocol can inherit its isolation from a parent
+    /// the macro cannot see.
+    var hasRequirementsLeavingIsolation: Bool {
+        collectDeclsIncludingConditional().contains { Self.leavesMockIsolation($0) }
     }
 
-    /// Whether a requirement is declared `nonisolated`.
-    static func isNonisolated(_ decl: DeclSyntax) -> Bool {
+    /// Whether a requirement's witness takes an isolation other than the mock's: the
+    /// requirement is declared `nonisolated`, or one of its parameters is `isolated`.
+    static func leavesMockIsolation(_ decl: DeclSyntax) -> Bool {
         if let funcDecl = decl.as(FunctionDeclSyntax.self) {
             return isNonisolated(funcDecl.modifiers)
+                || hasIsolatedParameter(funcDecl.signature.parameterClause.parameters)
+        }
+
+        if let initDecl = decl.as(InitializerDeclSyntax.self) {
+            return hasIsolatedParameter(initDecl.signature.parameterClause.parameters)
         }
 
         if let varDecl = decl.as(VariableDeclSyntax.self) {
@@ -97,9 +105,18 @@ extension MockGenerator {
 
         if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
             return isNonisolated(subscriptDecl.modifiers)
+                || hasIsolatedParameter(subscriptDecl.parameterClause.parameters)
         }
 
         return false
+    }
+
+    /// Whether a parameter list carries the `isolated` specifier, e.g.
+    /// `func run(on actor: isolated any Actor)`.
+    static func hasIsolatedParameter(_ parameters: FunctionParameterListSyntax) -> Bool {
+        parameters.contains { parameter in
+            specifiers(of: parameter.type).contains("isolated")
+        }
     }
 
     /// Whether a modifier list marks a member `nonisolated`.
