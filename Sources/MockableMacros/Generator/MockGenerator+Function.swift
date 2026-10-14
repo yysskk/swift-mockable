@@ -33,7 +33,7 @@ extension MockGenerator {
                 type: field.type,
                 initializer: field.initialValue,
                 isTypeMember: requirement.isTypeMember,
-                isNonisolated: requirement.isNonisolated
+                leavesMockIsolation: requirement.leavesMockIsolation
             ))
         }
     }
@@ -47,13 +47,13 @@ extension MockGenerator {
         type: TypeSyntax,
         initializer: ExprSyntax,
         isTypeMember: Bool,
-        isNonisolated: Bool = false
+        leavesMockIsolation: Bool = false
     ) -> VariableDeclSyntax {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
         if usesLockBasedStorage(isTypeMember: isTypeMember) {
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
-                isNonisolated: isNonisolated,
+                leavesMockIsolation: leavesMockIsolation,
                 isTypeMember: isTypeMember
             ))
 

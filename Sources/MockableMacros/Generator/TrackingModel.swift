@@ -64,9 +64,10 @@ struct TrackingRequirement {
     /// `subscriptInt`, `init`, `theme`.
     let identifier: String
     let isTypeMember: Bool
-    /// Whether the requirement is declared `nonisolated`, so its witness and the
-    /// tracking members that witness reaches have to be nonisolated too.
-    var isNonisolated: Bool = false
+    /// Whether the requirement's witness takes an isolation other than the mock's —
+    /// it is declared `nonisolated`, or has an `isolated` parameter — so the tracking
+    /// members that witness reaches have to be nonisolated.
+    var leavesMockIsolation: Bool = false
     let kind: Kind
     /// The tuple element type of the `CallArgs` array; `nil` for properties.
     let callArgsTupleType: TypeSyntax?
@@ -228,12 +229,12 @@ extension MockGenerator {
 
         if let varDecl = decl.as(VariableDeclSyntax.self) {
             let isTypeMember = Self.isTypeMember(varDecl.modifiers)
-            let isNonisolated = Self.isNonisolated(varDecl.modifiers)
+            let leavesMockIsolation = Self.leavesMockIsolation(DeclSyntax(varDecl))
             return varDecl.bindings.compactMap { binding in
                 variableTrackingRequirement(
                     for: binding,
                     isTypeMember: isTypeMember,
-                    isNonisolated: isNonisolated
+                    leavesMockIsolation: leavesMockIsolation
                 )
             }
         }
@@ -288,7 +289,7 @@ extension MockGenerator {
                 suggestion: Self.suggestedIdentifier(for: funcDecl, in: methodGroup)
             ),
             isTypeMember: Self.isTypeMember(funcDecl.modifiers),
-            isNonisolated: Self.isNonisolated(funcDecl.modifiers),
+            leavesMockIsolation: Self.leavesMockIsolation(DeclSyntax(funcDecl)),
             kind: .function,
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerClosureType: buildFunctionClosureType(
@@ -307,7 +308,7 @@ extension MockGenerator {
     func variableTrackingRequirement(
         for binding: PatternBindingSyntax,
         isTypeMember: Bool,
-        isNonisolated: Bool = false
+        leavesMockIsolation: Bool = false
     ) -> TrackingRequirement? {
         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
               let typeAnnotation = binding.typeAnnotation else {
@@ -321,7 +322,7 @@ extension MockGenerator {
             return TrackingRequirement(
                 identifier: varName,
                 isTypeMember: isTypeMember,
-                isNonisolated: isNonisolated,
+                leavesMockIsolation: leavesMockIsolation,
                 kind: .effectfulVariable(varType: varType),
                 callArgsTupleType: nil,
                 handlerClosureType: Self.effectfulGetterClosureType(
@@ -336,7 +337,7 @@ extension MockGenerator {
         return TrackingRequirement(
             identifier: varName,
             isTypeMember: isTypeMember,
-            isNonisolated: isNonisolated,
+            leavesMockIsolation: leavesMockIsolation,
             kind: .storedVariable(
                 varType: varType,
                 isOptional: isOptional,
@@ -365,7 +366,7 @@ extension MockGenerator {
                 suggestion: Self.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
             ),
             isTypeMember: false,
-            isNonisolated: Self.isNonisolated(subscriptDecl.modifiers),
+            leavesMockIsolation: Self.leavesMockIsolation(DeclSyntax(subscriptDecl)),
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerClosureType: buildSubscriptGetterClosureType(

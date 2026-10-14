@@ -14,14 +14,14 @@ extension MockGenerator {
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
         let isTypeMember = Self.isTypeMember(varDecl.modifiers)
-        let isNonisolated = Self.isNonisolated(varDecl.modifiers)
+        let leavesMockIsolation = Self.leavesMockIsolation(DeclSyntax(varDecl))
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
             guard let requirement = variableTrackingRequirement(
                 for: binding,
                 isTypeMember: isTypeMember,
-                isNonisolated: isNonisolated
+                leavesMockIsolation: leavesMockIsolation
             ) else {
                 continue
             }
@@ -44,7 +44,7 @@ extension MockGenerator {
                     members.append(MemberBlockItemSyntax(decl: generateLockBackedBackingProperty(
                         field: field,
                         isTypeMember: isTypeMember,
-                        isNonisolated: requirement.isNonisolated
+                        leavesMockIsolation: requirement.leavesMockIsolation
                     )))
                     members.append(MemberBlockItemSyntax(decl: generateLockBasedVariableProperty(
                         varName: requirement.identifier,
@@ -201,11 +201,11 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
     private func generateLockBackedBackingProperty(
         field: TrackingField,
         isTypeMember: Bool,
-        isNonisolated: Bool
+        leavesMockIsolation: Bool
     ) -> VariableDeclSyntax {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
         additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
-            isNonisolated: isNonisolated,
+            leavesMockIsolation: leavesMockIsolation,
             isTypeMember: isTypeMember
         ))
 

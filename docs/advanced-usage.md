@@ -479,8 +479,9 @@ acquisition so a concurrent caller never observes a partly reset mock.
 ## Thread Safety
 
 A mock's tracking state is protected when the protocol says it should be: a `Sendable`
-protocol, an `Actor` protocol, and a `nonisolated` requirement all select lock-backed
-storage, and static state is lock-backed regardless.
+protocol, an `Actor` protocol, a `nonisolated` requirement, and a requirement with an
+`isolated` parameter all select lock-backed storage, and static state is lock-backed
+regardless.
 Everything else is plain stored properties, which is what a mock used from one task
 needs.
 
@@ -500,6 +501,8 @@ attached to:
   parent gets no attribute of its own, and Swift infers the mock's isolation from the
   parent mock it subclasses; a `nonisolated` requirement moves the tracking state behind
   the lock either way, since the modifier only means something on an isolated protocol.
+  A requirement with an `isolated` parameter (`func run(on actor: isolated any Actor)`)
+  is treated the same way: its witness is isolated to the argument, not to the mock.
 
 ## Inheritance and `resetMock()`
 
