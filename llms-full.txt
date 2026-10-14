@@ -523,7 +523,7 @@ protocol Dog: Animal {
 // DogMock inherits from AnimalMock
 ```
 
-Child `resetMock()` calls `super.resetMock()` first. A `@MainActor` child mock keeps its tracking state behind a `nonisolated` lock, so that override compiles whether or not the parent is isolated.
+Child `resetMock()` calls `super.resetMock()` first. A global-actor-isolated child mock keeps its tracking state behind a `nonisolated` lock, so that override compiles whether or not the parent is isolated.
 
 For multiple parent protocols, the first parent is used as the mock superclass.
 
@@ -590,9 +590,9 @@ protocol MyActorProtocol: Actor {
 // MyActorProtocolMock is an actor with nonisolated test helpers
 ```
 
-### `@MainActor` Protocol Support
+### Global Actor Protocol Support
 
-Protocols annotated with `@MainActor` generate `@MainActor`-bound mocks.
+Protocols annotated with `@MainActor` or a custom global actor (`@DataActor`, `@Persistence.DataActor`) generate mocks carrying the same attribute. A `nonisolated` requirement gets `nonisolated`, lock-backed tracking members so tests can reach them without hopping to the actor.
 
 ## Behavioral Notes
 

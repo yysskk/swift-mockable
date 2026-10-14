@@ -25,9 +25,16 @@ struct MockGenerator {
     let members: MemberBlockItemListSyntax
     let isSendable: Bool
     let isActor: Bool
-    let isMainActor: Bool
+    /// The global actor the protocol is isolated to, as spelled in its attribute, or
+    /// `nil` for a protocol that declares no isolation of its own.
+    let globalActorName: String?
     let accessLevel: AccessLevel
     let parentMockClassName: String?
+
+    /// Whether the protocol is isolated to a global actor, so the mock's members are too.
+    var isGlobalActorIsolated: Bool {
+        globalActorName != nil
+    }
 
     /// Whether the mock subclasses a parent protocol's mock, inheriting its members and
     /// initializers. Actor mocks are final and never subclass, so an actor protocol
@@ -165,9 +172,9 @@ struct MockGenerator {
         }
 
         var classAttributes: [AttributeListSyntax.Element] = []
-        if isMainActor {
+        if let globalActorName {
             classAttributes.append(.attribute(
-                AttributeSyntax(attributeName: IdentifierTypeSyntax(name: .identifier("MainActor")))
+                AttributeSyntax(attributeName: TypeSyntax(stringLiteral: globalActorName))
             ))
         }
 

@@ -14,8 +14,10 @@ struct ProtocolShape {
     let isSendable: Bool
     /// Whether the protocol inherits `Actor`, producing an actor mock.
     let isActor: Bool
-    /// Whether the protocol is marked `@MainActor`.
-    let isMainActor: Bool
+    /// The global actor the protocol is isolated to, as spelled in its attribute
+    /// (`MainActor`, `DataActor`, `Module.DataActor`), or `nil` for a protocol that
+    /// declares no isolation of its own.
+    let globalActorName: String?
     /// Inherited types that name parent protocols, in declaration order.
     let parentProtocolNames: [String]
     /// Inherited types the generated mock cannot be made to conform to, reported
@@ -66,7 +68,7 @@ struct ProtocolShape {
             || protocolDecl.inherits("Error")
             || protocolDecl.hasAttribute(named: "Sendable")
         self.isActor = protocolDecl.inherits("Actor")
-        self.isMainActor = protocolDecl.hasAttribute(named: "MainActor")
+        self.globalActorName = protocolDecl.globalActorAttributeName()
         self.parentProtocolNames = parentProtocolNames
         self.unsupportedInheritedTypes = unsupportedInheritedTypes
         self.accessLevel = AccessLevel.from(protocolDecl: protocolDecl)
@@ -190,6 +192,33 @@ private extension ProtocolDeclSyntax {
             let inheritedName = inherited.type.trimmedDescription
             return inheritedName == name || inheritedName == "Swift.\(name)"
         } ?? false
+    }
+
+    /// The name of the attribute isolating the protocol to a global actor, if any. A
+    /// global actor attribute names a type (`@MainActor`, `@DataActor`, possibly
+    /// module-qualified) and takes no arguments, and the only other type-named
+    /// attributes a protocol carries are `@Sendable` and attached macros such as
+    /// `@Mockable` itself; any other capitalized attribute is taken for a global actor.
+    /// The `(unsafe)` argument of a pre-Swift 6 `@MainActor(unsafe)` is accepted too.
+    func globalActorAttributeName() -> String? {
+        for attribute in attributes {
+            guard case .attribute(let attributeSyntax) = attribute else {
+                continue
+            }
+            let name = attributeSyntax.attributeName.trimmedDescription
+            let baseName = name.split(separator: ".").last.map(String.init) ?? name
+            guard let first = baseName.first, first.isUppercase else {
+                continue
+            }
+            if baseName == "Sendable" || baseName == "Mockable" {
+                continue
+            }
+            if let arguments = attributeSyntax.arguments, arguments.trimmedDescription != "unsafe" {
+                continue
+            }
+            return name
+        }
+        return nil
     }
 
     /// Whether the protocol carries the given attribute, e.g. `@MainActor protocol P`.

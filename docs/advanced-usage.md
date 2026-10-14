@@ -479,8 +479,8 @@ acquisition so a concurrent caller never observes a partly reset mock.
 ## Thread Safety
 
 A mock's tracking state is protected when the protocol says it should be: a `Sendable`
-protocol, an `Actor` protocol, and a `nonisolated` requirement of a global-actor-isolated
-protocol all select lock-backed storage, and static state is lock-backed regardless.
+protocol, an `Actor` protocol, and a `nonisolated` requirement all select lock-backed
+storage, and static state is lock-backed regardless.
 Everything else is plain stored properties, which is what a mock used from one task
 needs.
 
@@ -493,10 +493,13 @@ attached to:
   properties, and a non-`Sendable` child of a `Sendable` parent adds plain ones of its
   own while inheriting the parent's `@unchecked Sendable` conformance. Declare `Sendable`
   on every protocol in the chain, or none.
-- **Global actors.** Isolation is read from the protocol's own attributes, so a protocol
-  that inherits its isolation from a parent produces an unisolated mock, and a protocol
-  isolated to a custom global actor produces one too. Annotate each protocol you mock
-  with the global actor it belongs to.
+- **Global actors.** Isolation is read from the protocol's own attributes: `@MainActor`
+  or a custom global actor attribute (`@DataActor`, `@Persistence.DataActor`) is carried
+  onto the mock. Any capitalized attribute without arguments other than `@Sendable` and
+  `@Mockable` is taken for a global actor. A protocol that inherits its isolation from a
+  parent gets no attribute of its own, and Swift infers the mock's isolation from the
+  parent mock it subclasses; a `nonisolated` requirement moves the tracking state behind
+  the lock either way, since the modifier only means something on an isolated protocol.
 
 ## Inheritance and `resetMock()`
 
@@ -506,7 +509,7 @@ If a protocol inherits from another protocol and a parent mock exists:
 - child `resetMock()` calls `super.resetMock()` first
 - the child mock inherits the parent mock's initializers (it does not synthesize its own),
   so a parent `init` requirement is satisfied through the inherited `required init`
-- a `@MainActor` child mock keeps its tracking state behind a `nonisolated` lock. Its
+- a global-actor-isolated child mock keeps its tracking state behind a `nonisolated` lock. Its
   `resetMock()` override takes the isolation of the parent's, which the macro cannot
   see, so the override has to be able to clear the child's state from either isolation
 

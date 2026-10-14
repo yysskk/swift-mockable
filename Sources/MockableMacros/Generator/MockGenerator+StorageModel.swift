@@ -71,23 +71,18 @@ extension MockGenerator {
     /// isolated — a `@MainActor` mock of a child of a nonisolated protocol gets a
     /// nonisolated `resetMock()`, which could not clear isolated stored properties.
     var needsNonisolatedStorage: Bool {
-        guard isMainActor else {
-            return false
-        }
-        return hasParentMock || hasNonisolatedRequirements
+        hasNonisolatedRequirements || (isGlobalActorIsolated && hasParentMock)
     }
 
     /// Whether the protocol declares a `nonisolated` requirement the mock's isolation
     /// would otherwise put out of reach. Swift infers the isolation of a witness from
     /// the requirement it satisfies, so a `nonisolated` requirement of a `@MainActor`
     /// protocol gets a `nonisolated` witness — which then cannot read the mock's
-    /// isolated stored properties. Outside an isolated mock the modifier changes
-    /// nothing, so the storage model is left alone there.
+    /// isolated stored properties. The protocol's own attributes are not consulted:
+    /// the modifier only means something on an isolated protocol, and a protocol can
+    /// inherit its isolation from a parent the macro cannot see.
     var hasNonisolatedRequirements: Bool {
-        guard isMainActor else {
-            return false
-        }
-        return collectDeclsIncludingConditional().contains { Self.isNonisolated($0) }
+        collectDeclsIncludingConditional().contains { Self.isNonisolated($0) }
     }
 
     /// Whether a requirement is declared `nonisolated`.

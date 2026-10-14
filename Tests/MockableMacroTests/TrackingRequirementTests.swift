@@ -22,7 +22,7 @@ struct TrackingRequirementTests {
             members: protocolDecl.memberBlock.members,
             isSendable: isSendable,
             isActor: isActor,
-            isMainActor: false,
+            globalActorName: nil,
             accessLevel: .internal,
             parentMockClassName: nil
         )
