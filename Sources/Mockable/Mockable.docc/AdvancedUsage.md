@@ -210,7 +210,7 @@ A child mock inherits its parent mock's initializers, so a protocol whose parent
 
 ## Inheritance and `resetMock()`
 
-If a protocol inherits from another protocol and a parent mock exists, the child mock inherits from the parent mock. Child `resetMock()` calls `super.resetMock()` first. The child mock inherits the parent mock's initializers (it does not synthesize its own), so a parent `init` requirement is satisfied through the inherited `required init`.
+If a protocol inherits from another protocol and a parent mock exists, the child mock inherits from the parent mock. Child `resetMock()` calls `super.resetMock()` first. The child mock inherits the parent mock's initializers (it does not synthesize its own), so a parent `init` requirement is satisfied through the inherited `required init`. A `@MainActor` child mock keeps its tracking state behind a `nonisolated` lock, so its `resetMock()` override compiles whether or not the parent is isolated.
 
 For multiple parent protocols, the first parent is used as the superclass target.
 

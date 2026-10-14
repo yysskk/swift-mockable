@@ -145,6 +145,30 @@ protocol ChildService: BaseService {
     func childMethod() -> Int
 }
 
+// A `@MainActor` child of a nonisolated parent. The child's `resetMock()` override
+// takes the parent's nonisolated isolation, so the child's state has to be reachable
+// from there — compiling this mock is most of the test.
+@MainActor
+@Mockable
+protocol MainActorChildService: BaseService {
+    func refresh()
+    var subtitle: String { get set }
+    static func make() -> Int
+}
+
+@MainActor
+@Mockable
+protocol MainActorChildPresenter: MainActorPresenter {
+    func refresh()
+}
+
+@MainActor
+@Mockable
+protocol TrackingChildService: BaseService {
+    nonisolated func track(_ event: String)
+    func refresh()
+}
+
 // MARK: - Overloaded Method Protocols
 
 @Mockable

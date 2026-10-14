@@ -523,7 +523,7 @@ protocol Dog: Animal {
 // DogMock inherits from AnimalMock
 ```
 
-Child `resetMock()` calls `super.resetMock()` first.
+Child `resetMock()` calls `super.resetMock()` first. A `@MainActor` child mock keeps its tracking state behind a `nonisolated` lock, so that override compiles whether or not the parent is isolated.
 
 For multiple parent protocols, the first parent is used as the mock superclass.
 
