@@ -201,24 +201,36 @@ private extension ProtocolDeclSyntax {
     /// `@Mockable` itself; any other capitalized attribute is taken for a global actor.
     /// The `(unsafe)` argument of a pre-Swift 6 `@MainActor(unsafe)` is accepted too.
     func globalActorAttributeName() -> String? {
-        for attribute in attributes {
-            guard case .attribute(let attributeSyntax) = attribute else {
-                continue
+        attributes.lazy
+            .compactMap { attribute -> AttributeSyntax? in
+                // An attribute inside `#if` is not read: the mock's own attribute
+                // would have to be conditional too.
+                if case .attribute(let attributeSyntax) = attribute {
+                    return attributeSyntax
+                }
+                return nil
             }
-            let name = attributeSyntax.attributeName.trimmedDescription
-            let baseName = name.split(separator: ".").last.map(String.init) ?? name
-            guard let first = baseName.first, first.isUppercase else {
-                continue
+            .first { attributeSyntax in
+                let baseName: String
+                if let memberType = attributeSyntax.attributeName.as(MemberTypeSyntax.self) {
+                    baseName = memberType.name.text
+                } else if let identifierType = attributeSyntax.attributeName.as(IdentifierTypeSyntax.self) {
+                    baseName = identifierType.name.text
+                } else {
+                    return false
+                }
+                guard let first = baseName.first, first.isUppercase else {
+                    return false
+                }
+                if baseName == "Sendable" || baseName == "Mockable" {
+                    return false
+                }
+                if let arguments = attributeSyntax.arguments, arguments.trimmedDescription != "unsafe" {
+                    return false
+                }
+                return true
             }
-            if baseName == "Sendable" || baseName == "Mockable" {
-                continue
-            }
-            if let arguments = attributeSyntax.arguments, arguments.trimmedDescription != "unsafe" {
-                continue
-            }
-            return name
-        }
-        return nil
+            .map { $0.attributeName.trimmedDescription }
     }
 
     /// Whether the protocol carries the given attribute, e.g. `@MainActor protocol P`.

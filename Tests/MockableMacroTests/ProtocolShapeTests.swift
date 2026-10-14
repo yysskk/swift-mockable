@@ -73,6 +73,17 @@ struct ProtocolShapeTests {
         #expect(shape.isSendable)
     }
 
+    @Test("A global actor attribute inside a conditional-compilation block is not read")
+    func conditionalGlobalActorIgnored() throws {
+        let shape = try #require(makeShape(of: """
+            #if DEBUG
+            @MainActor
+            #endif
+            protocol Service {}
+            """))
+        #expect(shape.globalActorName == nil)
+    }
+
     @Test("Marker conformances are excluded from parent protocols")
     func markerConformancesExcluded() throws {
         let shape = try #require(makeShape(of: "protocol Service: BaseService, Sendable, AnyObject {}"))
