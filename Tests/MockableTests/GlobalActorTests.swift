@@ -15,8 +15,15 @@ actor DataActor {
 @Mockable
 protocol DataStore {
     nonisolated var id: String { get }
-    nonisolated static func make() -> Int
     func save(_ value: String)
+}
+
+// Static state is shared by every instance of a mock, and `resetMock()` clears it, so
+// the static requirement gets a mock of its own that a single test touches.
+@DataActor
+@Mockable
+protocol DataStoreFactory {
+    nonisolated static func make() -> Int
 }
 
 @DataActor
@@ -38,17 +45,25 @@ struct GlobalActorTests {
     func nonisolatedMembersAreReachable() {
         let mock = DataStoreMock()
         mock._id = "store"
-        DataStoreMock.makeHandler = { 7 }
 
         #expect(mock.id == "store")
-        #expect(DataStoreMock.make() == 7)
-        #expect(DataStoreMock.makeCallCount == 1)
 
         mock.resetMock()
 
         #expect(mock._id == nil)
-        #expect(DataStoreMock.makeCallCount == 0)
-        #expect(DataStoreMock.makeHandler == nil)
+    }
+
+    @Test("A nonisolated static requirement of a custom-actor protocol is usable from anywhere")
+    func nonisolatedStaticMembersAreReachable() {
+        DataStoreFactoryMock.makeHandler = { 7 }
+
+        #expect(DataStoreFactoryMock.make() == 7)
+        #expect(DataStoreFactoryMock.makeCallCount == 1)
+
+        DataStoreFactoryMock().resetMock()
+
+        #expect(DataStoreFactoryMock.makeCallCount == 0)
+        #expect(DataStoreFactoryMock.makeHandler == nil)
     }
 
     @Test("An isolated requirement of a custom-actor protocol is tracked on its actor")
