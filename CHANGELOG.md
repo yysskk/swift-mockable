@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-14
+
 ### Fixed
 
 - Mocking of a requirement with an `isolated` parameter on a global-actor-isolated protocol, such as `func run(on actor: isolated any Actor) async` on a `@MainActor` protocol. The witness of such a requirement is isolated to its argument rather than to the mock, so it could not record into the mock's isolated tracking state and the expansion failed to compile with "main actor-isolated property 'runCallCount' can not be mutated on a nonisolated actor instance". The requirement is now treated like a `nonisolated` one: the tracking state moves behind the lock, and the members the witness reaches are `nonisolated`.
@@ -196,7 +198,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/2.0.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/2.1.0...HEAD
+[2.1.0]: https://github.com/yysskk/swift-mockable/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/yysskk/swift-mockable/compare/1.12.0...2.0.0
 [1.12.0]: https://github.com/yysskk/swift-mockable/compare/1.11.1...1.12.0
 [1.11.1]: https://github.com/yysskk/swift-mockable/compare/1.11.0...1.11.1
