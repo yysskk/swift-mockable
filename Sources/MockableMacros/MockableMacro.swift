@@ -62,7 +62,7 @@ public struct MockableMacro: PeerMacro {
             members: members,
             isSendable: shape.isSendable,
             isActor: shape.isActor,
-            isMainActor: shape.isMainActor,
+            globalActorName: shape.globalActorName,
             accessLevel: shape.accessLevel,
             parentMockClassName: shape.parentMockClassName
         )

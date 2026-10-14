@@ -20,7 +20,7 @@ struct ProtocolShapeTests {
         #expect(shape.mockClassName == "ServiceMock")
         #expect(!shape.isSendable)
         #expect(!shape.isActor)
-        #expect(!shape.isMainActor)
+        #expect(shape.globalActorName == nil)
         #expect(shape.parentProtocolNames.isEmpty)
         #expect(shape.parentMockClassName == nil)
         #expect(shape.accessLevel == .internal)
@@ -39,11 +39,49 @@ struct ProtocolShapeTests {
     func actorDetection() throws {
         let actor = try #require(makeShape(of: "protocol Worker: Actor {}"))
         #expect(actor.isActor)
-        #expect(!actor.isMainActor)
+        #expect(actor.globalActorName == nil)
 
         let mainActor = try #require(makeShape(of: "@MainActor protocol ViewModel {}"))
-        #expect(mainActor.isMainActor)
+        #expect(mainActor.globalActorName == "MainActor")
         #expect(!mainActor.isActor)
+    }
+
+    @Test("A custom global actor attribute is detected, qualified or not")
+    func customGlobalActorDetection() throws {
+        let custom = try #require(makeShape(of: "@DataActor protocol Store {}"))
+        #expect(custom.globalActorName == "DataActor")
+
+        let qualified = try #require(makeShape(of: "@Persistence.DataActor protocol Store {}"))
+        #expect(qualified.globalActorName == "Persistence.DataActor")
+
+        let unsafe = try #require(makeShape(of: "@MainActor(unsafe) protocol ViewModel {}"))
+        #expect(unsafe.globalActorName == "MainActor")
+    }
+
+    @Test("Attributes that are not global actors are ignored")
+    func nonActorAttributesIgnored() throws {
+        let shape = try #require(makeShape(of: """
+            @Mockable(condition: .debug)
+            @Mockable
+            @Sendable
+            @preconcurrency
+            @objc
+            @available(iOS 13, *)
+            protocol Service {}
+            """))
+        #expect(shape.globalActorName == nil)
+        #expect(shape.isSendable)
+    }
+
+    @Test("A global actor attribute inside a conditional-compilation block is not read")
+    func conditionalGlobalActorIgnored() throws {
+        let shape = try #require(makeShape(of: """
+            #if DEBUG
+            @MainActor
+            #endif
+            protocol Service {}
+            """))
+        #expect(shape.globalActorName == nil)
     }
 
     @Test("Marker conformances are excluded from parent protocols")

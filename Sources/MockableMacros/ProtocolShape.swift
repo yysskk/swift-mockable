@@ -14,8 +14,10 @@ struct ProtocolShape {
     let isSendable: Bool
     /// Whether the protocol inherits `Actor`, producing an actor mock.
     let isActor: Bool
-    /// Whether the protocol is marked `@MainActor`.
-    let isMainActor: Bool
+    /// The global actor the protocol is isolated to, as spelled in its attribute
+    /// (`MainActor`, `DataActor`, `Module.DataActor`), or `nil` for a protocol that
+    /// declares no isolation of its own.
+    let globalActorName: String?
     /// Inherited types that name parent protocols, in declaration order.
     let parentProtocolNames: [String]
     /// Inherited types the generated mock cannot be made to conform to, reported
@@ -66,7 +68,7 @@ struct ProtocolShape {
             || protocolDecl.inherits("Error")
             || protocolDecl.hasAttribute(named: "Sendable")
         self.isActor = protocolDecl.inherits("Actor")
-        self.isMainActor = protocolDecl.hasAttribute(named: "MainActor")
+        self.globalActorName = protocolDecl.globalActorAttributeName()
         self.parentProtocolNames = parentProtocolNames
         self.unsupportedInheritedTypes = unsupportedInheritedTypes
         self.accessLevel = AccessLevel.from(protocolDecl: protocolDecl)
@@ -190,6 +192,45 @@ private extension ProtocolDeclSyntax {
             let inheritedName = inherited.type.trimmedDescription
             return inheritedName == name || inheritedName == "Swift.\(name)"
         } ?? false
+    }
+
+    /// The name of the attribute isolating the protocol to a global actor, if any. A
+    /// global actor attribute names a type (`@MainActor`, `@DataActor`, possibly
+    /// module-qualified) and takes no arguments, and the only other type-named
+    /// attributes a protocol carries are `@Sendable` and attached macros such as
+    /// `@Mockable` itself; any other capitalized attribute is taken for a global actor.
+    /// The `(unsafe)` argument of a pre-Swift 6 `@MainActor(unsafe)` is accepted too.
+    func globalActorAttributeName() -> String? {
+        attributes.lazy
+            .compactMap { attribute -> AttributeSyntax? in
+                // An attribute inside `#if` is not read: the mock's own attribute
+                // would have to be conditional too.
+                if case .attribute(let attributeSyntax) = attribute {
+                    return attributeSyntax
+                }
+                return nil
+            }
+            .first { attributeSyntax in
+                let baseName: String
+                if let memberType = attributeSyntax.attributeName.as(MemberTypeSyntax.self) {
+                    baseName = memberType.name.text
+                } else if let identifierType = attributeSyntax.attributeName.as(IdentifierTypeSyntax.self) {
+                    baseName = identifierType.name.text
+                } else {
+                    return false
+                }
+                guard let first = baseName.first, first.isUppercase else {
+                    return false
+                }
+                if baseName == "Sendable" || baseName == "Mockable" {
+                    return false
+                }
+                if let arguments = attributeSyntax.arguments, arguments.trimmedDescription != "unsafe" {
+                    return false
+                }
+                return true
+            }
+            .map { $0.attributeName.trimmedDescription }
     }
 
     /// Whether the protocol carries the given attribute, e.g. `@MainActor protocol P`.
