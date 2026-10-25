@@ -7,6 +7,7 @@ import SwiftSyntaxBuilder
 /// ``generate()``. The generator's responsibilities are split across
 /// `MockGenerator+*.swift` extensions by concern:
 ///
+/// - `Requirement` classifies each protocol member once; every pass switches over it.
 /// - `TrackingModel` derives, once per requirement, which tracking slots it needs and
 ///   how they are named and typed. `+Function`, `+Variable`, `+Subscript`, and
 ///   `+Initializer` emit the witnesses and their tracking members from that model;
@@ -216,33 +217,48 @@ struct MockGenerator {
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
         let overloads = makeOverloadContext()
 
-        return mapMemberBlockItemsPreservingIfConfig { decl in
-            if let initDecl = decl.as(InitializerDeclSyntax.self) {
+        return mapMemberBlockItemsPreservingIfConfig { requirement in
+            switch requirement {
+            case .initializer(let initDecl):
                 return generateInitializerMock(
                     initDecl,
                     requirement: initializerTrackingRequirement(for: initDecl, overloads: overloads)
                 )
-            }
 
-            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+            case .function(let funcDecl):
                 return generateFunctionMock(
                     funcDecl,
-                    requirement: functionTrackingRequirement(for: funcDecl, overloads: overloads)
+                    requirement: functionTrackingRequirement(
+                        for: funcDecl,
+                        isTypeMember: requirement.isTypeMember,
+                        leavesMockIsolation: requirement.leavesMockIsolation,
+                        overloads: overloads
+                    )
                 )
-            }
 
-            if let varDecl = decl.as(VariableDeclSyntax.self) {
-                return generateVariableMock(varDecl)
-            }
+            case .variable(let varDecl):
+                return generateVariableMock(
+                    varDecl,
+                    isTypeMember: requirement.isTypeMember,
+                    leavesMockIsolation: requirement.leavesMockIsolation
+                )
 
-            if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+            case .subscript(let subscriptDecl):
                 return generateSubscriptMock(
                     subscriptDecl,
-                    requirement: subscriptTrackingRequirement(for: subscriptDecl, overloads: overloads)
+                    requirement: subscriptTrackingRequirement(
+                        for: subscriptDecl,
+                        leavesMockIsolation: requirement.leavesMockIsolation,
+                        overloads: overloads
+                    )
                 )
-            }
 
-            return []
+            // Associated types and type aliases are emitted ahead of the other members
+            // (see `generateAssociatedTypeMembers`); an unsupported member never reaches
+            // generation, since diagnostics reject the protocol first.
+            case .associatedType, .typeAlias, .unsupported:
+                return []
+            }
         }
     }
 

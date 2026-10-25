@@ -7,12 +7,12 @@ extension MockGenerator {
     /// The type aliases the mock needs to satisfy the protocol's `associatedtype` and
     /// `typealias` declarations. Emitted first so later members can refer to them.
     func generateAssociatedTypeMembers() -> [MemberBlockItemSyntax] {
-        mapMemberBlockItemsPreservingIfConfig { decl in
-            if let associatedType = decl.as(AssociatedTypeDeclSyntax.self) {
+        mapMemberBlockItemsPreservingIfConfig { requirement in
+            switch requirement {
+            case .associatedType(let associatedType):
                 return [MemberBlockItemSyntax(decl: generateTypeAlias(for: associatedType))]
-            }
 
-            if let typeAliasDecl = decl.as(TypeAliasDeclSyntax.self) {
+            case .typeAlias(let typeAliasDecl):
                 // A generic alias names its parameters in its own clause, and any
                 // constraint on them lives in the `where` clause, so both have to come
                 // along or the alias no longer describes the same type.
@@ -27,9 +27,10 @@ extension MockGenerator {
                     genericWhereClause: typeAliasDecl.genericWhereClause?.trimmed
                 )
                 return [MemberBlockItemSyntax(decl: rebuilt)]
-            }
 
-            return []
+            case .function, .initializer, .variable, .subscript, .unsupported:
+                return []
+            }
         }
     }
 

@@ -27,6 +27,6 @@ struct IsolationPredicateTests {
         ]
     )
     func leavesMockIsolation(source: String, expected: Bool) {
-        #expect(MockGenerator.leavesMockIsolation(decl(source)) == expected)
+        #expect(Requirement(decl(source)).leavesMockIsolation == expected)
     }
 }

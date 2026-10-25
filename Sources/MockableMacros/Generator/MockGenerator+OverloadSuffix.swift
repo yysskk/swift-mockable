@@ -4,18 +4,17 @@ import SwiftSyntaxBuilder
 // MARK: - Overload Identifier Suffixes
 
 extension MockGenerator {
-    /// Groups function declarations by their name, including conditional members.
-    /// This is used to detect overloaded methods. Pass the protocol's flattened
+    /// Groups the protocol's method requirements by name, including those declared in
+    /// conditional-compilation blocks, to detect overloads. Pass the protocol's flattened
     /// requirements when the caller already has them, to avoid re-walking the tree.
-    func groupMethodsByNameIncludingConditional(
-        in decls: [DeclSyntax]? = nil
+    func groupMethodsByName(
+        in requirements: [Requirement]? = nil
     ) -> [String: [FunctionDeclSyntax]] {
         var methodGroups: [String: [FunctionDeclSyntax]] = [:]
 
-        for decl in decls ?? collectDeclsIncludingConditional() {
-            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-                let funcName = funcDecl.name.text
-                methodGroups[funcName, default: []].append(funcDecl)
+        for requirement in requirements ?? collectRequirements() {
+            if case .function(let funcDecl) = requirement {
+                methodGroups[funcDecl.name.text, default: []].append(funcDecl)
             }
         }
 
@@ -26,12 +25,17 @@ extension MockGenerator {
     /// conditional-compilation blocks. Used to detect `init` overloads and to decide
     /// whether the mock declares its own initializers.
     func collectInitializers() -> [InitializerDeclSyntax] {
-        collectDeclsIncludingConditional().compactMap { $0.as(InitializerDeclSyntax.self) }
+        collectRequirements().compactMap { requirement in
+            if case .initializer(let initDecl) = requirement {
+                return initDecl
+            }
+            return nil
+        }
     }
 
     /// Whether the protocol declares at least one `init` requirement.
     var hasInitializerRequirements: Bool {
-        collectDeclsIncludingConditional().contains { $0.is(InitializerDeclSyntax.self) }
+        !collectInitializers().isEmpty
     }
 
     /// The tracking identifier for an initializer within its overload group, e.g. `init`

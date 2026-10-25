@@ -8,13 +8,14 @@ extension MockGenerator {
     /// backed by a settable `_name` (or the property itself, for optional get-set), while an
     /// effectful read-only requirement (`get async`/`throws`) is handler-based like a method
     /// (see `generateEffectfulGetterMock`). Handles one `VariableDeclSyntax`, which may
-    /// declare several bindings.
+    /// declare several bindings; `isTypeMember` and `leavesMockIsolation` are the
+    /// declaration's, read from its `Requirement`.
     func generateVariableMock(
-        _ varDecl: VariableDeclSyntax
+        _ varDecl: VariableDeclSyntax,
+        isTypeMember: Bool,
+        leavesMockIsolation: Bool
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
-        let isTypeMember = Self.isTypeMember(varDecl.modifiers)
-        let leavesMockIsolation = Self.leavesMockIsolation(DeclSyntax(varDecl))
         let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
