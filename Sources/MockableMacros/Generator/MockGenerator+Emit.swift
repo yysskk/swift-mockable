@@ -143,37 +143,4 @@ extension MockGenerator {
             ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
         return CodeBlockItemSyntax(leadingTrivia: leadingTrivia, item: item.item)
     }
-
-    /// Builds the two statements that record a call on the direct (non-lock) path:
-    /// `<identifier>CallCount += 1` and `<identifier>CallArgs.append(...)`. The
-    /// tracking members are addressed as `names` prescribes, which qualifies them
-    /// when a parameter of the requirement shadows one.
-    static func makeCallRecordingStatements(
-        identifier: String,
-        parameters: FunctionParameterListSyntax,
-        names: WitnessNames
-    ) -> [CodeBlockItemSyntax] {
-        let incrementStmt = InfixOperatorExprSyntax(
-            leftOperand: ExprSyntax(stringLiteral: names.member(MockNaming.callCount(identifier))),
-            operator: BinaryOperatorExprSyntax(operator: .binaryOperator("+=")),
-            rightOperand: IntegerLiteralExprSyntax(literal: .integerLiteral("1"))
-        )
-
-        let appendExpr = FunctionCallExprSyntax(
-            calledExpression: MemberAccessExprSyntax(
-                base: ExprSyntax(stringLiteral: names.member(MockNaming.callArgs(identifier))),
-                name: .identifier("append")
-            ),
-            leftParen: .leftParenToken(),
-            arguments: LabeledExprListSyntax([
-                LabeledExprSyntax(expression: buildCallArgsExpression(parameters: parameters))
-            ]),
-            rightParen: .rightParenToken()
-        )
-
-        return [
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(incrementStmt))),
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(appendExpr)))
-        ]
-    }
 }
