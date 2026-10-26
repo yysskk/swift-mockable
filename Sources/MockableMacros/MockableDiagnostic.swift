@@ -54,7 +54,7 @@ enum MockableDiagnostic: DiagnosticMessage {
         case conditionNotLiteral
         /// `.custom(...)` was given something other than a single string literal.
         case customNotAStringLiteral
-        /// The `.custom` string literal is interpolated.
+        /// The condition's string literal is interpolated.
         case customInterpolated
         /// The `.custom` condition is empty.
         case customEmpty
@@ -183,7 +183,7 @@ extension MockableDiagnostic.ArgumentProblem {
         case .duplicateCondition:
             return "duplicate 'condition' argument"
         case .conditionNotLiteral:
-            return "the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'"
+            return "the 'condition' argument must be written literally as '.debug', '.always', a string literal \"CONDITION\", or '.custom(\"CONDITION\")'"
         case .customNotAStringLiteral:
             return "'.custom' requires a single string literal, e.g. '.custom(\"MOCKING\")'"
         case .customInterpolated:

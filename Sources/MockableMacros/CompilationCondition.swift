@@ -83,13 +83,18 @@ enum CompilationCondition: Equatable {
     /// Parses the expression passed to `condition:`.
     ///
     /// Accepts `.debug`, `.always`, and `.custom("<condition>")`, each optionally
-    /// qualified (`MockCompilationCondition.debug`). The qualifying base is not
+    /// qualified (`MockCompilationCondition.debug`), and a bare string literal, which
+    /// `MockCompilationCondition` makes a custom condition. The qualifying base is not
     /// inspected — the compiler has already type-checked the argument as a
     /// `MockCompilationCondition` before the macro expands.
     private static func parseConditionValue(
         _ expression: ExprSyntax,
         in context: some MacroExpansionContext
     ) -> CompilationCondition? {
+        if let stringLiteral = expression.as(StringLiteralExprSyntax.self) {
+            return parseCustomCondition(stringLiteral, in: context)
+        }
+
         if let memberAccess = expression.as(MemberAccessExprSyntax.self) {
             switch memberAccess.declName.baseName.text {
             case "debug":
@@ -125,6 +130,15 @@ enum CompilationCondition: Equatable {
             return nil
         }
 
+        return parseCustomCondition(stringLiteral, in: context)
+    }
+
+    /// Validates the condition a string literal spells, whether passed to `.custom`
+    /// or to `condition:` directly.
+    private static func parseCustomCondition(
+        _ stringLiteral: StringLiteralExprSyntax,
+        in context: some MacroExpansionContext
+    ) -> CompilationCondition? {
         var conditionSource = ""
         for segment in stringLiteral.segments {
             guard let stringSegment = segment.as(StringSegmentSyntax.self) else {

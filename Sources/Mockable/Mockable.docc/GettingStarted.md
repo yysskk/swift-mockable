@@ -39,8 +39,8 @@ protocol UserService {
 
 This generates a `UserServiceMock` class with test-friendly members. The mock is
 wrapped in `#if DEBUG` by default; pass a ``MockCompilationCondition`` (for
-example `@Mockable(condition: .custom("MOCKING"))`) when the mock must be
-available in other build configurations.
+example `@Mockable(condition: "MOCKING")`) when the mock must be available in
+other build configurations.
 
 ## Using the Mock
 

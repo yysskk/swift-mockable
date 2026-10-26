@@ -30,10 +30,10 @@
 /// emit it unconditionally:
 ///
 /// ```swift
-/// @Mockable(condition: .custom("MOCKING"))
+/// @Mockable(condition: "MOCKING")
 /// protocol PaymentService { ... }   // mock wrapped in #if MOCKING
 ///
-/// @Mockable(condition: .custom("DEBUG || UITESTS"))
+/// @Mockable(condition: "DEBUG || UITESTS")
 /// protocol AnalyticsService { ... } // mock wrapped in #if DEBUG || UITESTS
 ///
 /// @Mockable(condition: .always)
@@ -42,8 +42,8 @@
 ///
 /// - Parameter condition: The compilation condition that guards the generated
 ///   mock. Defaults to ``MockCompilationCondition/debug``. The value must be
-///   written literally at the attachment site (`.debug`, `.always`, or
-///   `.custom("CONDITION")` with a string literal).
+///   written literally at the attachment site: `.debug`, `.always`, or a string
+///   literal holding a compilation condition (also spelled `.custom("CONDITION")`).
 @attached(peer, names: suffixed(Mock))
 public macro Mockable(
     condition: MockCompilationCondition = .debug

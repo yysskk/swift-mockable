@@ -125,6 +125,133 @@ struct CompilationConditionArgumentMacroTests {
         )
     }
 
+    @Test("A string literal wraps the mock in the custom condition")
+    func stringLiteralCondition() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: "MOCKING")
+            protocol UserService {
+                func fetchUser(id: Int) -> String
+            }
+            """,
+            expandedSource: """
+            protocol UserService {
+                func fetchUser(id: Int) -> String
+            }
+
+            #if MOCKING
+            class UserServiceMock: UserService {
+                var fetchUserCallCount: Int = 0
+                var fetchUserCallArgs: [Int] = []
+                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                func fetchUser(id: Int) -> String {
+                    fetchUserCallCount += 1
+                    fetchUserCallArgs.append(id)
+                    guard let _handler = fetchUserHandler else {
+                        fatalError("\\(Self.self).fetchUserHandler is not set")
+                    }
+                    return _handler(id)
+                }
+                func resetMock() {
+                    fetchUserCallCount = 0
+                    fetchUserCallArgs = []
+                    fetchUserHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("A string literal accepts a compound condition")
+    func stringLiteralCompoundCondition() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: "DEBUG || UITESTS")
+            protocol UserService {
+                func ping()
+            }
+            """,
+            expandedSource: """
+            protocol UserService {
+                func ping()
+            }
+
+            #if DEBUG || UITESTS
+            class UserServiceMock: UserService {
+                var pingCallCount: Int = 0
+                var pingCallArgs: [()] = []
+                var pingHandler: (@Sendable () -> Void)? = nil
+                func ping() {
+                    pingCallCount += 1
+                    pingCallArgs.append(())
+                    if let _handler = pingHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    pingCallCount = 0
+                    pingCallArgs = []
+                    pingHandler = nil
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("A string literal with interpolation produces a diagnostic")
+    func stringLiteralInterpolationProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: "\\(flag)")
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: the custom compilation condition must be a string literal without interpolation",
+                    line: 1,
+                    column: 22
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("An empty string literal produces a diagnostic")
+    func emptyStringLiteralProducesDiagnostic() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable(condition: "")
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            expandedSource: """
+            protocol CacheService {
+                func clear()
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "Invalid @Mockable argument: the custom compilation condition must not be empty",
+                    line: 1,
+                    column: 22
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test(".custom accepts flags with underscores and digits")
     func customConditionWithUnderscoresAndDigits() {
         assertMacroExpansionForTesting(
@@ -458,7 +585,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', a string literal \"CONDITION\", or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 )
@@ -483,7 +610,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', a string literal \"CONDITION\", or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 )
@@ -725,7 +852,7 @@ struct CompilationConditionArgumentMacroTests {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'",
+                    message: "Invalid @Mockable argument: the 'condition' argument must be written literally as '.debug', '.always', a string literal \"CONDITION\", or '.custom(\"CONDITION\")'",
                     line: 1,
                     column: 22
                 ),

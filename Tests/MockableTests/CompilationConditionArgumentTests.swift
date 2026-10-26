@@ -38,6 +38,12 @@ protocol CompoundConditionService {
     func compute(x: Int) -> Int
 }
 
+// A string literal is the same custom condition without the `.custom` spelling.
+@Mockable(condition: "MOCKABLE_RUNTIME_TEST_CONDITION")
+protocol StringLiteralConditionService {
+    func name() -> String
+}
+
 // The negated flag is never defined, so this condition holds in every build.
 @Mockable(condition: .custom("!MOCKABLE_UNDEFINED_CONDITION"))
 protocol NegatedConditionService {
@@ -98,6 +104,22 @@ struct CompilationConditionArgumentTests {
         mock.resetMock()
         #expect(mock.isEnabledCallCount == 0)
         #expect(mock._identifier == nil)
+    }
+
+    @Test("A string-literal condition mock exists when its flag is defined")
+    func stringLiteralConditionMock() {
+        let mock = StringLiteralConditionServiceMock()
+
+        mock.nameHandler = { "literal" }
+
+        #expect(mock.name() == "literal")
+        #expect(mock.nameCallCount == 1)
+    }
+
+    @Test("A string literal is the custom condition it spells")
+    func stringLiteralIsCustomCondition() {
+        let condition: MockCompilationCondition = "DEBUG || UITESTS"
+        #expect(condition == .custom("DEBUG || UITESTS"))
     }
 
     @Test(".custom mock with a compound condition works")
