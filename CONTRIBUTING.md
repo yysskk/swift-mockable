@@ -78,6 +78,21 @@ Most changes should include both:
 Diagnostics are tested by passing a `diagnostics:` array to
 `assertMacroExpansionForTesting`.
 
+### Building the documentation
+
+The DocC plugin is not part of the package's regular dependencies, so that
+packages depending on Mockable do not resolve it. Set `MOCKABLE_ENABLE_DOCC`
+to add it, then build the site the way the `Deploy DocC` workflow does:
+
+```sh
+MOCKABLE_ENABLE_DOCC=1 swift package --allow-writing-to-directory ./docs \
+    generate-documentation --target Mockable \
+    --disable-indexing \
+    --transform-for-static-hosting \
+    --hosting-base-path swift-mockable \
+    --output-path ./docs
+```
+
 ## Keeping documentation in sync
 
 When a change affects generated output or user-facing behavior, update all of
