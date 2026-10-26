@@ -94,7 +94,7 @@ struct TrackingAccessTests {
         let binding = TrackingAccess.direct.handlerBinding(
             identifier: "fetch",
             recordedArguments: "id",
-            handlerClosureType: "(Int) -> String",
+            handlerType: "(@Sendable (Int) -> String)?",
             names: names()
         )
         #expect(rendered(binding.statements) == ["fetchCallCount += 1", "fetchCallArgs.append(id)"])
@@ -106,7 +106,7 @@ struct TrackingAccessTests {
         let binding = TrackingAccess.lockBacked(storageName: "_staticStorage").handlerBinding(
             identifier: "fetch",
             recordedArguments: "id",
-            handlerClosureType: "(Int) -> String",
+            handlerType: "(@Sendable (Int) -> String)?",
             names: names()
         )
         #expect(rendered(binding.statements) == ["""
