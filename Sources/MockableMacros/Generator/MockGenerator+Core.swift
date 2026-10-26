@@ -13,6 +13,8 @@ import SwiftSyntaxBuilder
 ///   `+Initializer` emit the witnesses and their tracking members from that model;
 ///   `+Storage` builds the lock-backed storage structs from it; `+Reset` emits
 ///   `resetMock()` from it.
+/// - `TrackingAccess` expresses, once, how a witness records a call and reads a handler
+///   or backing slot on each storage model, so every witness generator has one body.
 /// - `+Emit` holds the shared property and statement builders those generators use.
 /// - `+TypeErasure`, `+ParameterModel`, `+DefaultReturnValue`, `+OverloadSuffix`,
 ///   `+AccessorInspection`, and `+StorageModel` hold the shared analyses: erasing

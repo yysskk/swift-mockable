@@ -22,12 +22,6 @@ extension MockGenerator {
         return [DeclModifierSyntax(name: .keyword(.static))]
     }
 
-    /// The lock-backed storage property a member's tracking state lives in:
-    /// `_staticStorage` for type members, `_storage` for instance members.
-    static func storagePropertyName(isTypeMember: Bool) -> String {
-        MockNaming.storageName(isTypeMember: isTypeMember)
-    }
-
     /// Whether the mock's instance tracking state is lock-backed. `Sendable` mocks need
     /// it to be safe to mutate across threads; actor mocks and global-actor-isolated
     /// mocks with a member outside their isolation need it because such a member cannot

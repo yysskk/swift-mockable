@@ -27,7 +27,8 @@ extension MockGenerator {
     /// The requirement's tracking slots as mock members, one stored or lock-backed
     /// property per `TrackingField`.
     func trackingMemberItems(for requirement: TrackingRequirement) -> [MemberBlockItemSyntax] {
-        requirement.trackingFields(model: .direct).map { field in
+        let access = trackingAccess(isTypeMember: requirement.isTypeMember)
+        return requirement.trackingFields(model: access.model).map { field in
             MemberBlockItemSyntax(decl: generateTrackingStorageProperty(
                 name: field.name,
                 type: field.type,
@@ -38,10 +39,11 @@ extension MockGenerator {
         }
     }
 
-    /// Builds one tracking member (`CallCount`, `CallArgs`, `Handler`, ...): a plain
-    /// stored property, or a lock-backed computed property when the storage model
-    /// requires it. Shared by the function, variable, subscript, and initializer
-    /// generators.
+    /// Builds one tracking member (`CallCount`, `CallArgs`, `Handler`, a property's
+    /// `_name` backing slot, ...): a plain stored property, or a computed property
+    /// reading and writing the storage-struct field of the same name through the lock
+    /// when the storage model requires it. Shared by the function, variable, subscript,
+    /// and initializer generators.
     func generateTrackingStorageProperty(
         name fullName: String,
         type: TypeSyntax,
@@ -51,27 +53,28 @@ extension MockGenerator {
     ) -> VariableDeclSyntax {
         var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
 
-        if usesLockBasedStorage(isTypeMember: isTypeMember) {
+        switch trackingAccess(isTypeMember: isTypeMember) {
+        case .direct:
+            return Self.makeStoredProperty(
+                modifiers: buildModifiers(additional: additionalModifiers),
+                name: fullName,
+                type: type,
+                initializer: initializer
+            )
+
+        case .lockBacked(let storageName):
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
                 leavesMockIsolation: leavesMockIsolation,
                 isTypeMember: isTypeMember
             ))
-
             return Self.makeLockBackedProperty(
                 modifiers: buildModifiers(additional: additionalModifiers),
                 name: fullName,
                 type: type,
-                storageName: Self.storagePropertyName(isTypeMember: isTypeMember),
+                storageName: storageName,
                 storedName: fullName
             )
         }
-
-        return Self.makeStoredProperty(
-            modifiers: buildModifiers(additional: additionalModifiers),
-            name: fullName,
-            type: type,
-            initializer: initializer
-        )
     }
 
     /// Builds the method witness: the requirement's own signature (generics, effects,
@@ -92,47 +95,28 @@ extension MockGenerator {
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let throwsErrorType = funcDecl.signature.effectSpecifiers?.throwsErrorType
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
-        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
+        let access = trackingAccess(isTypeMember: isTypeMember)
 
-        let body: CodeBlockSyntax
-        if shouldUseLockBasedStorage {
-            body = buildLockBasedFunctionBody(
-                identifier: identifier,
+        let body = buildFunctionBody(
+            identifier: identifier,
+            parameters: parameters,
+            returnType: returnType,
+            isAsync: isAsync,
+            isThrows: handlerThrows,
+            hasGenericReturn: hasGenericReturn,
+            genericParamNames: genericParamNames,
+            throwsErrorType: throwsErrorType,
+            access: access,
+            names: WitnessNames(
                 parameters: parameters,
-                returnType: returnType,
-                isAsync: isAsync,
-                isThrows: handlerThrows,
-                isTypeMember: isTypeMember,
-                hasGenericReturn: hasGenericReturn,
-                genericParamNames: genericParamNames,
-                throwsErrorType: throwsErrorType,
-                names: WitnessNames(
-                    parameters: parameters,
-                    memberNames: [Self.storagePropertyName(isTypeMember: isTypeMember)],
-                    isTypeMember: isTypeMember
-                )
+                memberNames: access.referencedMembers([
+                    MockNaming.callCount(identifier),
+                    MockNaming.callArgs(identifier),
+                    MockNaming.handler(identifier),
+                ]),
+                isTypeMember: isTypeMember
             )
-        } else {
-            body = buildDirectFunctionBody(
-                identifier: identifier,
-                parameters: parameters,
-                returnType: returnType,
-                isAsync: isAsync,
-                isThrows: handlerThrows,
-                hasGenericReturn: hasGenericReturn,
-                genericParamNames: genericParamNames,
-                throwsErrorType: throwsErrorType,
-                names: WitnessNames(
-                    parameters: parameters,
-                    memberNames: [
-                        MockNaming.callCount(identifier),
-                        MockNaming.callArgs(identifier),
-                        MockNaming.handler(identifier),
-                    ],
-                    isTypeMember: isTypeMember
-                )
-            )
-        }
+        )
 
         return FunctionDeclSyntax(
             attributes: Self.witnessAttributes(of: funcDecl.attributes),
@@ -145,9 +129,12 @@ extension MockGenerator {
         )
     }
 
-    /// The witness body for plain mocks: evaluate `@autoclosure` arguments, record the
-    /// call into the stored tracking properties, then invoke the handler.
-    private func buildDirectFunctionBody(
+    /// The witness body: evaluate `@autoclosure` arguments, record the call and bind
+    /// the handler the way `access` prescribes, then invoke the handler — falling back
+    /// to a default return or `fatalError` when it is unset, or to a no-op when the
+    /// requirement returns nothing. On lock-backed access the handler is invoked
+    /// outside the lock, so a user-supplied handler never runs while it is held.
+    private func buildFunctionBody(
         identifier: String,
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax?,
@@ -155,77 +142,10 @@ extension MockGenerator {
         isThrows: Bool,
         hasGenericReturn: Bool,
         genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil,
+        throwsErrorType: TypeSyntax?,
+        access: TrackingAccess,
         names: WitnessNames
     ) -> CodeBlockSyntax {
-        // A throwing `@autoclosure` argument is evaluated with `try` in the requirement's own
-        // body, so a typed-throws requirement has to convert that error too: wrap the whole
-        // body in one catch rather than only the handler call.
-        let errorType = throwsErrorType?.trimmedDescription
-        let wrapsBodyInTypedThrowsCatch = errorType != nil
-            && Self.hasThrowingAutoclosureParameter(parameters)
-
-        var statements: [CodeBlockItemSyntax] = []
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
-
-        statements.append(contentsOf: Self.makeCallRecordingStatements(
-            identifier: identifier,
-            parameters: parameters,
-            names: names
-        ))
-
-        let handlerCallStmts = buildHandlerCallStatements(
-            identifier: identifier,
-            parameters: parameters,
-            returnType: returnType,
-            isAsync: isAsync,
-            isThrows: isThrows,
-            hasGenericReturn: hasGenericReturn,
-            genericParamNames: genericParamNames,
-            throwsErrorType: wrapsBodyInTypedThrowsCatch ? nil : throwsErrorType,
-            names: names
-        )
-        statements.append(contentsOf: handlerCallStmts)
-
-        if wrapsBodyInTypedThrowsCatch, let errorType {
-            statements = [Self.buildTypedThrowsCatch(statements: statements, errorType: errorType)]
-        }
-
-        return CodeBlockSyntax(
-            leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(Self.ensureNewlinesBetweenStatements(statements)),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
-    }
-
-    /// The witness body for `Sendable`/actor mocks and type members: record the call and
-    /// read the handler in a single `withLock`, then invoke the handler outside the lock
-    /// so a user-supplied handler never runs while it is held.
-    private func buildLockBasedFunctionBody(
-        identifier: String,
-        parameters: FunctionParameterListSyntax,
-        returnType: TypeSyntax?,
-        isAsync: Bool,
-        isThrows: Bool,
-        isTypeMember: Bool,
-        hasGenericReturn: Bool,
-        genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil,
-        names: WitnessNames
-    ) -> CodeBlockSyntax {
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        let hasReturnValue = Self.hasReturnValue(returnType)
-        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
-        let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
-        let storageName = names.member(Self.storagePropertyName(isTypeMember: isTypeMember))
-
-        let closureType = buildFunctionClosureType(
-            parameters: parameters,
-            returnType: returnType,
-            isAsync: isAsync,
-            isThrows: isThrows,
-            genericParamNames: genericParamNames
-        )
         let errorType = throwsErrorType?.trimmedDescription
         // A throwing `@autoclosure` argument is evaluated with `try` in the requirement's own
         // body, so a typed-throws requirement has to convert that error too: wrap the whole
@@ -235,23 +155,31 @@ extension MockGenerator {
         let handlerCallErrorType = wrapsBodyInTypedThrowsCatch ? nil : errorType
 
         var statements: [CodeBlockItemSyntax] = []
-        // Evaluate @autoclosure arguments before taking the lock so user-supplied
-        // expressions never run while the storage lock is held.
+        // Evaluate @autoclosure arguments before the call is recorded, so a lock-backed
+        // mock never runs a user-supplied expression while the storage lock is held.
         statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
-        let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable \(closureType))? in
-    \(names.storage).\(MockNaming.callCount(identifier)) += 1
-    \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
-    return \(names.storage).\(MockNaming.handler(identifier))
-}
-""")))
-        statements.append(withLockStmt)
 
+        let binding = access.handlerBinding(
+            identifier: identifier,
+            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            handlerClosureType: buildFunctionClosureType(
+                parameters: parameters,
+                returnType: returnType,
+                isAsync: isAsync,
+                isThrows: isThrows,
+                genericParamNames: genericParamNames
+            ),
+            names: names
+        )
+        statements.append(contentsOf: binding.statements)
+
+        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
+        let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
-        if hasReturnValue {
+        if Self.hasReturnValue(returnType) {
             let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
             statements.append(Self.makeUnsetHandlerGuard(
-                binding: names.handler,
+                binding: binding.pattern,
                 elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
             ))
             statements.append(contentsOf: Self.buildHandlerInvocationStatements(
@@ -265,7 +193,7 @@ let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable 
             ))
         } else {
             statements.append(Self.buildOptionalHandlerCallStatement(
-                handlerBinding: names.handler,
+                handlerBinding: binding.pattern,
                 invokePrefix: invokePrefix,
                 handlerCallArgs: handlerCallArgs,
                 inOutParams: inOutParams,
@@ -350,57 +278,6 @@ let \(names.handler) = \(storageName).withLock { \(names.storage) -> (@Sendable 
                 .joined(separator: ", ")
         }
         return Self.buildArgsExpression(parameters: parameters).description
-    }
-
-    /// The direct path's handler invocation: a guard binding the stored handler (falling
-    /// back to a default return or `fatalError`) plus the call itself, or a plain
-    /// `if let` no-op when the requirement returns nothing.
-    private func buildHandlerCallStatements(
-        identifier: String,
-        parameters: FunctionParameterListSyntax,
-        returnType: TypeSyntax?,
-        isAsync: Bool,
-        isThrows: Bool,
-        hasGenericReturn: Bool = false,
-        genericParamNames: Set<String>,
-        throwsErrorType: TypeSyntax? = nil,
-        names: WitnessNames
-    ) -> [CodeBlockItemSyntax] {
-        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
-        let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
-        let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
-        let errorType = throwsErrorType?.trimmedDescription
-        let handlerBinding = "\(names.handler) = \(names.member(MockNaming.handler(identifier)))"
-
-        let hasReturnValue = Self.hasReturnValue(returnType)
-
-        if hasReturnValue {
-            let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
-            let guardStmt = Self.makeUnsetHandlerGuard(
-                binding: handlerBinding,
-                elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
-            )
-            var result: [CodeBlockItemSyntax] = [guardStmt]
-            result.append(contentsOf: Self.buildHandlerInvocationStatements(
-                invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams,
-                hasGenericReturn: hasGenericReturn,
-                returnTypeStr: returnTypeStr,
-                errorType: errorType,
-                names: names
-            ))
-            return result
-        } else {
-            return [Self.buildOptionalHandlerCallStatement(
-                handlerBinding: handlerBinding,
-                invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
-                inOutParams: inOutParams,
-                errorType: errorType,
-                names: names
-            )]
-        }
     }
 
     /// Builds statements for invoking a handler and handling inout write-back (return value path).

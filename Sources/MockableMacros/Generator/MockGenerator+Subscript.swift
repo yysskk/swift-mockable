@@ -48,49 +48,37 @@ extension MockGenerator {
         let isThrows = getterEffects?.hasThrowsEffect ?? false
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let errorType = getterEffects?.throwsErrorType?.trimmedDescription
+        // Subscripts are never type members, so their state is instance state.
+        let access = trackingAccess(isTypeMember: false)
         let names = WitnessNames(
             parameters: parameters,
-            memberNames: usesInstanceStorageLock
-                ? [MockNaming.instanceStorageName]
-                : [
-                    MockNaming.callCount(identifier),
-                    MockNaming.callArgs(identifier),
-                    MockNaming.handler(identifier),
-                    MockNaming.setHandler(identifier),
-                ]
+            memberNames: access.referencedMembers([
+                MockNaming.callCount(identifier),
+                MockNaming.callArgs(identifier),
+                MockNaming.handler(identifier),
+                MockNaming.setHandler(identifier),
+            ])
         )
         // The setter's implicit `newValue` is in scope alongside the indices, so an
         // index of that name would capture the value being assigned.
         let setterValueName = names.uniqueLocalName(startingAt: "newValue", parameters: parameters)
 
-        let getterStatements: [CodeBlockItemSyntax]
-        if usesInstanceStorageLock {
-            getterStatements = buildLockBasedSubscriptGetterStatements(
+        let getterStatements = buildSubscriptGetterStatements(
+            parameters: parameters,
+            returnType: returnType,
+            hasGenericReturn: hasGenericReturn,
+            identifier: identifier,
+            handlerClosureType: buildSubscriptGetterClosureType(
                 parameters: parameters,
                 returnType: returnType,
-                hasGenericReturn: hasGenericReturn,
-                identifier: identifier,
-                handlerClosureType: buildSubscriptGetterClosureType(
-                    parameters: parameters,
-                    returnType: returnType,
-                    genericParamNames: genericParamNames,
-                    effects: getterEffects
-                ),
-                invokePrefix: invokePrefix,
-                errorType: errorType,
-                names: names
-            )
-        } else {
-            getterStatements = buildDirectSubscriptGetterStatements(
-                parameters: parameters,
-                returnType: returnType,
-                hasGenericReturn: hasGenericReturn,
-                identifier: identifier,
-                invokePrefix: invokePrefix,
-                errorType: errorType,
-                names: names
-            )
-        }
+                genericParamNames: genericParamNames,
+                effects: getterEffects
+            ),
+            invokePrefix: invokePrefix,
+            errorType: errorType,
+            access: access,
+            names: names
+        )
 
         let accessors: AccessorBlockSyntax
         if isGetOnly {
@@ -113,21 +101,13 @@ extension MockGenerator {
             }
         } else {
             var setterStatements = Self.buildParameterBindingStatements(parameters: parameters)
-            if usesInstanceStorageLock {
-                setterStatements.append(buildLockBasedSubscriptSetHandlerCallStatement(
-                    parameters: parameters,
-                    identifier: identifier,
-                    names: names,
-                    valueName: setterValueName
-                ))
-            } else {
-                setterStatements.append(buildDirectSubscriptSetHandlerCallStatement(
-                    parameters: parameters,
-                    identifier: identifier,
-                    names: names,
-                    valueName: setterValueName
-                ))
-            }
+            setterStatements.append(buildSubscriptSetHandlerCallStatement(
+                parameters: parameters,
+                identifier: identifier,
+                access: access,
+                names: names,
+                valueName: setterValueName
+            ))
 
             accessors = AccessorBlockSyntax(
                 accessors: .accessors(AccessorDeclListSyntax([
@@ -158,27 +138,36 @@ extension MockGenerator {
         )
     }
 
-    /// The getter body for plain mocks: evaluate `@autoclosure` indices, record the
-    /// call into the stored tracking properties, then invoke the handler.
-    private func buildDirectSubscriptGetterStatements(
+    /// The getter body: evaluate `@autoclosure` indices, record the call and bind the
+    /// handler the way `access` prescribes, then invoke the handler. On lock-backed
+    /// access the call is recorded and the handler read in a single `withLock`,
+    /// mirroring the method witnesses, and the handler is invoked outside the lock.
+    private func buildSubscriptGetterStatements(
         parameters: FunctionParameterListSyntax,
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         identifier: String,
-        invokePrefix: String = "",
-        errorType: String? = nil,
+        handlerClosureType: String,
+        invokePrefix: String,
+        errorType: String?,
+        access: TrackingAccess,
         names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
-        var getterStatements: [CodeBlockItemSyntax] = []
-        getterStatements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
+        var statements: [CodeBlockItemSyntax] = []
+        // Evaluate @autoclosure arguments before the call is recorded, so a lock-backed
+        // mock never runs a user-supplied expression while the storage lock is held.
+        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
 
-        getterStatements.append(contentsOf: Self.makeCallRecordingStatements(
+        let binding = access.handlerBinding(
             identifier: identifier,
-            parameters: parameters,
+            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            handlerClosureType: handlerClosureType,
             names: names
-        ))
+        )
+        statements.append(contentsOf: binding.statements)
 
-        getterStatements.append(contentsOf: buildSubscriptHandlerCallStatements(
+        statements.append(contentsOf: buildGuardedSubscriptHandlerReturn(
+            guardBinding: binding.pattern,
             parameters: parameters,
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
@@ -187,12 +176,12 @@ extension MockGenerator {
             errorType: errorType,
             names: names
         ))
-
-        return getterStatements
+        return statements
     }
 
-    /// Builds the unset-handler guard and the handler invocation shared by the direct
-    /// and lock-based subscript getters, which differ only in how `_handler` is bound.
+    /// Builds the unset-handler guard and the handler invocation of a subscript getter.
+    /// `guardBinding` is the pattern that binds the handler, as `TrackingAccess`
+    /// prescribes it.
     private func buildGuardedSubscriptHandlerReturn(
         guardBinding: String,
         parameters: FunctionParameterListSyntax,
@@ -221,42 +210,22 @@ extension MockGenerator {
         return [guardStmt, returnStmt]
     }
 
-    /// The direct path's guard and handler invocation, binding `_handler` from the
-    /// stored handler property.
-    private func buildSubscriptHandlerCallStatements(
-        parameters: FunctionParameterListSyntax,
-        returnType: TypeSyntax,
-        hasGenericReturn: Bool,
-        identifier: String,
-        invokePrefix: String = "",
-        errorType: String? = nil,
-        names: WitnessNames
-    ) -> [CodeBlockItemSyntax] {
-        buildGuardedSubscriptHandlerReturn(
-            guardBinding: "\(names.handler) = \(names.member(MockNaming.handler(identifier)))",
-            parameters: parameters,
-            returnType: returnType,
-            hasGenericReturn: hasGenericReturn,
-            identifier: identifier,
-            invokePrefix: invokePrefix,
-            errorType: errorType,
-            names: names
-        )
-    }
-
-    /// The setter body for plain mocks. A setter has no return value, so an unset
-    /// handler is a no-op rather than a `fatalError`; the handler receives the indices
-    /// followed by `newValue`.
-    private func buildDirectSubscriptSetHandlerCallStatement(
+    /// The setter body. A setter has no return value, so an unset handler is a no-op
+    /// rather than a `fatalError`; the handler receives the indices followed by
+    /// `newValue`. Setters record nothing, so there is no counter to update: the
+    /// handler is read the way `access` prescribes and invoked outside any lock.
+    private func buildSubscriptSetHandlerCallStatement(
         parameters: FunctionParameterListSyntax,
         identifier: String,
+        access: TrackingAccess,
         names: WitnessNames,
         valueName: String
     ) -> CodeBlockItemSyntax {
         let handlerCallArgs = setHandlerCallArguments(parameters: parameters, valueName: valueName)
+        let pattern = access.handlerReadPattern(handlerName: MockNaming.setHandler(identifier), names: names)
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let \(names.handler) = \(names.member(MockNaming.setHandler(identifier))) {
+if let \(pattern) {
     \(names.handler)(\(handlerCallArgs))
 }
 """)))
@@ -271,65 +240,6 @@ if let \(names.handler) = \(names.member(MockNaming.setHandler(identifier))) {
             return valueName
         }
         return "\(buildHandlerCallArguments(parameters: parameters)), \(valueName)"
-    }
-
-    /// The getter body for `Sendable`/actor mocks: record the call and read the handler
-    /// in a single `withLock`, then invoke the handler outside the lock.
-    private func buildLockBasedSubscriptGetterStatements(
-        parameters: FunctionParameterListSyntax,
-        returnType: TypeSyntax,
-        hasGenericReturn: Bool,
-        identifier: String,
-        handlerClosureType: String,
-        invokePrefix: String = "",
-        errorType: String? = nil,
-        names: WitnessNames
-    ) -> [CodeBlockItemSyntax] {
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-
-        var statements: [CodeBlockItemSyntax] = []
-        // Evaluate @autoclosure arguments before taking the lock so user-supplied
-        // expressions never run while the storage lock is held.
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
-        // Record the call and read the handler in a single lock acquisition,
-        // mirroring the method witnesses.
-        let withLockStmt = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let \(names.handler) = \(names.member(MockNaming.instanceStorageName)).withLock { \(names.storage) -> (@Sendable \(handlerClosureType))? in
-    \(names.storage).\(MockNaming.callCount(identifier)) += 1
-    \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
-    return \(names.storage).\(MockNaming.handler(identifier))
-}
-""")))
-        statements.append(withLockStmt)
-
-        statements.append(contentsOf: buildGuardedSubscriptHandlerReturn(
-            guardBinding: names.handler,
-            parameters: parameters,
-            returnType: returnType,
-            hasGenericReturn: hasGenericReturn,
-            identifier: identifier,
-            invokePrefix: invokePrefix,
-            errorType: errorType,
-            names: names
-        ))
-        return statements
-    }
-
-    /// The setter body for `Sendable`/actor mocks: read the handler under the lock and
-    /// invoke it outside. Setters record nothing, so there is no counter to update.
-    private func buildLockBasedSubscriptSetHandlerCallStatement(
-        parameters: FunctionParameterListSyntax,
-        identifier: String,
-        names: WitnessNames,
-        valueName: String
-    ) -> CodeBlockItemSyntax {
-        let handlerCallArgs = setHandlerCallArguments(parameters: parameters, valueName: valueName)
-
-        return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
-if let \(names.handler) = \(names.member(MockNaming.instanceStorageName)).withLock({ $0.\(MockNaming.setHandler(identifier)) }) {
-    \(names.handler)(\(handlerCallArgs))
-}
-""")))
     }
 
     /// The parameter-type portion of a subscript handler closure.

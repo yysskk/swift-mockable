@@ -32,22 +32,21 @@ extension MockGenerator {
     ) -> InitializerDeclSyntax {
         let parameters = initDecl.signature.parameterClause.parameters
         let throwsErrorType = initDecl.signature.effectSpecifiers?.throwsErrorType
-        let body = usesInstanceStorageLock
-            ? buildLockBasedInitializerBody(
+        // Initializers are never type members, so their state is instance state.
+        let access = trackingAccess(isTypeMember: false)
+        let body = buildInitializerBody(
+            parameters: parameters,
+            identifier: identifier,
+            throwsErrorType: throwsErrorType,
+            access: access,
+            names: WitnessNames(
                 parameters: parameters,
-                identifier: identifier,
-                throwsErrorType: throwsErrorType,
-                names: WitnessNames(parameters: parameters, memberNames: [MockNaming.instanceStorageName])
+                memberNames: access.referencedMembers([
+                    MockNaming.callCount(identifier),
+                    MockNaming.callArgs(identifier),
+                ])
             )
-            : buildDirectInitializerBody(
-                parameters: parameters,
-                identifier: identifier,
-                throwsErrorType: throwsErrorType,
-                names: WitnessNames(
-                    parameters: parameters,
-                    memberNames: [MockNaming.callCount(identifier), MockNaming.callArgs(identifier)]
-                )
-            )
+        )
 
         // A class mock is non-final, so a protocol `init` requirement must be satisfied by a
         // `required` initializer to force subclasses to provide it too. Actors are final and
@@ -68,57 +67,24 @@ extension MockGenerator {
         )
     }
 
-    /// The witness body for plain (non-lock-backed) mocks: record directly into the
-    /// stored tracking properties.
-    private func buildDirectInitializerBody(
+    /// The witness body: evaluate `@autoclosure` arguments once so recording observes
+    /// the evaluated value, then record the call the way `access` prescribes. On
+    /// lock-backed access the arguments are evaluated before the lock is taken, so a
+    /// user-supplied expression never runs while it is held.
+    private func buildInitializerBody(
         parameters: FunctionParameterListSyntax,
         identifier: String,
         throwsErrorType: TypeSyntax?,
-        names: WitnessNames
-    ) -> CodeBlockSyntax {
-        var statements: [CodeBlockItemSyntax] = []
-        // Evaluate @autoclosure arguments once so recording observes the evaluated value,
-        // mirroring the method witnesses.
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
-        statements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(names.member(MockNaming.callCount(identifier))) += 1")))
-        )
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        statements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(names.member(MockNaming.callArgs(identifier))).append(\(argsExpr))")))
-        )
-        statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
-            statements,
-            parameters: parameters,
-            throwsErrorType: throwsErrorType
-        )
-
-        return CodeBlockSyntax(
-            leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(Self.ensureNewlinesBetweenStatements(statements)),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
-    }
-
-    /// The witness body for `Sendable`/actor mocks: record inside `withLock` so the tracking
-    /// state stays behind the lock. `@autoclosure` arguments are evaluated before taking the
-    /// lock so user-supplied expressions never run while it is held.
-    private func buildLockBasedInitializerBody(
-        parameters: FunctionParameterListSyntax,
-        identifier: String,
-        throwsErrorType: TypeSyntax?,
+        access: TrackingAccess,
         names: WitnessNames
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
         statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
-
-        let argsExpr = Self.buildCallArgsExpression(parameters: parameters)
-        statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: """
-        \(names.member(MockNaming.instanceStorageName)).withLock { \(names.storage) in
-            \(names.storage).\(MockNaming.callCount(identifier)) += 1
-            \(names.storage).\(MockNaming.callArgs(identifier)).append(\(argsExpr))
-        }
-        """))))
+        statements.append(contentsOf: access.recordingStatements(
+            identifier: identifier,
+            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            names: names
+        ))
         statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
             statements,
             parameters: parameters,

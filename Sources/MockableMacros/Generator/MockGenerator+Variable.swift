@@ -16,7 +16,7 @@ extension MockGenerator {
         leavesMockIsolation: Bool
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
-        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
+        let access = trackingAccess(isTypeMember: isTypeMember)
 
         for binding in varDecl.bindings {
             guard let requirement = variableTrackingRequirement(
@@ -40,45 +40,24 @@ extension MockGenerator {
                 }
 
             case .storedVariable(let varType, let isOptional, let isGetOnly):
-                if shouldUseLockBasedStorage {
-                    let field = requirement.trackingFields(model: .lockBacked)[0]
-                    members.append(MemberBlockItemSyntax(decl: generateLockBackedBackingProperty(
-                        field: field,
-                        isTypeMember: isTypeMember,
-                        leavesMockIsolation: requirement.leavesMockIsolation
-                    )))
-                    members.append(MemberBlockItemSyntax(decl: generateLockBasedVariableProperty(
-                        varName: requirement.identifier,
-                        varType: varType,
-                        isGetOnly: isGetOnly,
-                        isTypeMember: isTypeMember
-                    )))
+                // The backing slot: a settable `_name`, or — for an optional get-set
+                // property on the direct path — the property itself, which then
+                // satisfies the requirement on its own.
+                members.append(contentsOf: trackingMemberItems(for: requirement))
+                let isSelfBacked = requirement.trackingFields(model: access.model)
+                    .contains { $0.name == requirement.identifier }
+                if isSelfBacked {
                     continue
                 }
 
-                let field = requirement.trackingFields(model: .direct)[0]
-                members.append(MemberBlockItemSyntax(decl: Self.makeStoredProperty(
-                    modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-                    name: field.name,
-                    type: field.type,
-                    initializer: field.initialValue
+                members.append(MemberBlockItemSyntax(decl: generateVariableWitness(
+                    varName: requirement.identifier,
+                    varType: varType,
+                    isOptional: isOptional,
+                    isGetOnly: isGetOnly,
+                    isTypeMember: isTypeMember,
+                    access: access
                 )))
-
-                if isGetOnly {
-                    members.append(MemberBlockItemSyntax(decl: generateComputedGetProperty(
-                        varName: requirement.identifier,
-                        varType: varType,
-                        isTypeMember: isTypeMember
-                    )))
-                } else if !isOptional {
-                    members.append(MemberBlockItemSyntax(decl: generateComputedGetSetProperty(
-                        varName: requirement.identifier,
-                        varType: varType,
-                        isTypeMember: isTypeMember
-                    )))
-                }
-                // An optional get-set property is its own storage: the stored
-                // property above already satisfies the requirement.
 
             default:
                 continue
@@ -126,7 +105,6 @@ extension MockGenerator {
         let isAsync = effects?.asyncSpecifier != nil
         let isThrows = effects?.hasThrowsEffect ?? false
         let closureType = requirement.handlerClosureType ?? "() -> Void"
-        let shouldUseLockBasedStorage = usesLockBasedStorage(isTypeMember: isTypeMember)
 
         var members = trackingMemberItems(for: requirement)
 
@@ -134,33 +112,26 @@ extension MockGenerator {
         let elseBody = Self.unsetHandlerElseBody(returnType: varType, handlerName: MockNaming.handler(varName))
         let errorType = effects?.throwsErrorType?.trimmedDescription
 
-        var getterStatements: [CodeBlockItemSyntax] = []
-        if shouldUseLockBasedStorage {
-            let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
-            getterStatements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? in
-    storage.\(MockNaming.callCount(varName)) += 1
-    return storage.\(MockNaming.handler(varName))
-}
-"""))))
-            getterStatements.append(Self.makeUnsetHandlerGuard(
-                binding: "_handler",
-                elseBody: elseBody,
-                leadingTrivia: .newline
-            ))
-        } else {
-            getterStatements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(MockNaming.callCount(varName)) += 1"))))
-            getterStatements.append(Self.makeUnsetHandlerGuard(
-                binding: "_handler = \(MockNaming.handler(varName))",
-                elseBody: elseBody,
-                leadingTrivia: .newline
-            ))
-        }
-        // A property getter takes no parameters, so nothing can shadow the local the
-        // handler is bound to and it keeps the default name.
+        // A property getter takes no parameters, so nothing can shadow the locals the
+        // body binds and they keep their default names. The call is counted but has no
+        // arguments to record.
+        let names = WitnessNames(parameters: FunctionParameterListSyntax([]))
+        let binding = trackingAccess(isTypeMember: isTypeMember).handlerBinding(
+            identifier: varName,
+            recordedArguments: nil,
+            handlerClosureType: closureType,
+            names: names
+        )
+
+        var getterStatements = binding.statements
+        getterStatements.append(Self.makeUnsetHandlerGuard(
+            binding: binding.pattern,
+            elseBody: elseBody,
+            leadingTrivia: .newline
+        ))
         getterStatements.append(Self.makeHandlerReturnStatement(
             invokePrefix: invokePrefix,
-            handlerName: "_handler",
+            handlerName: names.handler,
             handlerCallArgs: "",
             errorType: errorType,
             leadingTrivia: .newline
@@ -197,52 +168,25 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         return members
     }
 
-    /// The public write-through accessor of a lock-backed `_name` slot: reads and
-    /// writes the storage-struct field of the same name inside the lock.
-    private func generateLockBackedBackingProperty(
-        field: TrackingField,
-        isTypeMember: Bool,
-        leavesMockIsolation: Bool
-    ) -> VariableDeclSyntax {
-        var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-        additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
-            leavesMockIsolation: leavesMockIsolation,
-            isTypeMember: isTypeMember
-        ))
-
-        return Self.makeLockBackedProperty(
-            modifiers: buildModifiers(additional: additionalModifiers),
-            name: field.name,
-            type: field.type,
-            storageName: Self.storagePropertyName(isTypeMember: isTypeMember),
-            storedName: field.name
-        )
-    }
-
-    /// The property witness of a lock-backed stored property, reading (and, for a
-    /// get-set requirement, writing) its `_name` slot through the lock. A non-optional
+    /// The property witness of a stored property: reads its `_name` backing slot the
+    /// way `access` prescribes, and writes it for a get-set requirement. A non-optional
     /// requirement force-unwraps the optional slot, so reading before the test sets a
     /// value traps rather than silently returning a placeholder.
-    private func generateLockBasedVariableProperty(
+    private func generateVariableWitness(
         varName: String,
         varType: TypeSyntax,
+        isOptional: Bool,
         isGetOnly: Bool,
-        isTypeMember: Bool
+        isTypeMember: Bool,
+        access: TrackingAccess
     ) -> VariableDeclSyntax {
-        let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-        let storageName = Self.storagePropertyName(isTypeMember: isTypeMember)
-        let additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
-
-        let getterBody: String
-        if isOptional {
-            getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) }"
-        } else {
-            getterBody = "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName))! }"
-        }
+        let backingName = MockNaming.variableBacking(varName)
+        let modifiers = buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember))
+        let getterBody = access.read(isOptional ? backingName : "\(backingName)!")
 
         if isGetOnly {
             return Self.makeGetOnlyProperty(
-                modifiers: buildModifiers(additional: additionalModifiers),
+                modifiers: modifiers,
                 name: varName,
                 type: varType.trimmed,
                 getterBody: getterBody
@@ -250,52 +194,11 @@ let _handler = \(storageName).withLock { storage -> (@Sendable \(closureType))? 
         }
 
         return Self.makeGetSetProperty(
-            modifiers: buildModifiers(additional: additionalModifiers),
+            modifiers: modifiers,
             name: varName,
             type: varType.trimmed,
             getterBody: getterBody,
-            setterBody: "\(storageName).withLock { $0.\(MockNaming.variableBacking(varName)) = newValue }"
-        )
-    }
-
-    /// The get-only witness of a stored property, reading its `_name` backing storage
-    /// (force-unwrapped for a non-optional requirement).
-    private func generateComputedGetProperty(
-        varName: String,
-        varType: TypeSyntax,
-        isTypeMember: Bool
-    ) -> VariableDeclSyntax {
-        let isOptional = varType.is(OptionalTypeSyntax.self) ||
-                         varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-
-        let getterBody: String
-        if isOptional {
-            getterBody = "\(MockNaming.variableBacking(varName))"
-        } else {
-            getterBody = "\(MockNaming.variableBacking(varName))!"
-        }
-
-        return Self.makeGetOnlyProperty(
-            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-            name: varName,
-            type: varType.trimmed,
-            getterBody: getterBody
-        )
-    }
-
-    /// The get-set witness of a non-optional stored property, reading and writing
-    /// its `_name` backing storage.
-    private func generateComputedGetSetProperty(
-        varName: String,
-        varType: TypeSyntax,
-        isTypeMember: Bool
-    ) -> VariableDeclSyntax {
-        Self.makeGetSetProperty(
-            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
-            name: varName,
-            type: varType.trimmed,
-            getterBody: "\(MockNaming.variableBacking(varName))!",
-            setterBody: "\(MockNaming.variableBacking(varName)) = newValue"
+            setterBody: access.write(backingName, "newValue")
         )
     }
 }
