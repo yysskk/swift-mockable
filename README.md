@@ -224,6 +224,7 @@ the macro expands at compile time and cannot read runtime values.
 
 - [Docs index](docs/README.md)
 - [Advanced usage and naming rules](docs/advanced-usage.md)
+- [Migrating to 3.0](docs/migrating-to-3.0.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 

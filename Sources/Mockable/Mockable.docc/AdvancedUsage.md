@@ -179,7 +179,7 @@ Read-only subscripts with the same effects (`subscript(key: K) -> V { get async 
 
 ### `Sendable`
 
-If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind ``MockableLock``.
+If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock`.
 
 ### `Actor`
 
