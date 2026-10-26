@@ -8,7 +8,7 @@ Add the package dependency:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "2.1.0")
+    .package(url: "https://github.com/yysskk/swift-mockable.git", from: "3.0.0")
 ]
 ```
 
