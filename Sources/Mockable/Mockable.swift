@@ -1,8 +1,3 @@
-// Re-export Synchronization when available for clients that use it alongside Mockable.
-#if canImport(Synchronization)
-@_exported import Synchronization
-#endif
-
 /// A macro that generates a mock class for a protocol.
 ///
 /// When applied to a protocol, this macro generates a `<ProtocolName>Mock` class
