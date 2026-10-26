@@ -86,7 +86,7 @@ struct SendableIntegrationTests {
         useService(mock)
 
         #expect(mock.logCallCount == 1)
-        #expect(mock.logCallArgs == ["test"])
+        #expect(mock.logCallArguments == ["test"])
     }
 
     @Test("Sendable mock async method works")
@@ -102,7 +102,7 @@ struct SendableIntegrationTests {
 
         #expect(result == "result for 123")
         #expect(mock.performTaskCallCount == 1)
-        #expect(mock.performTaskCallArgs == [123])
+        #expect(mock.performTaskCallArguments == [123])
     }
 
     @Test("Sendable mock void method tracking")
@@ -116,7 +116,7 @@ struct SendableIntegrationTests {
         mock.log(message: "third")
 
         #expect(mock.logCallCount == 3)
-        #expect(mock.logCallArgs == ["first", "second", "third"])
+        #expect(mock.logCallArguments == ["first", "second", "third"])
     }
 
     @Test("Sendable static members are tracked and reset")
@@ -133,12 +133,12 @@ struct SendableIntegrationTests {
 
         #expect(result == "value-abc")
         #expect(SendableStaticServiceMock.lookupCallCount == 1)
-        #expect(SendableStaticServiceMock.lookupCallArgs == ["abc"])
+        #expect(SendableStaticServiceMock.lookupCallArguments == ["abc"])
         #expect(SendableStaticServiceMock.sharedToken == "token")
 
         SendableStaticServiceMock.resetMock()
         #expect(SendableStaticServiceMock.lookupCallCount == 0)
-        #expect(SendableStaticServiceMock.lookupCallArgs == [])
+        #expect(SendableStaticServiceMock.lookupCallArguments == [])
         #expect(SendableStaticServiceMock.lookupHandler == nil)
         #expect(SendableStaticServiceMock.sharedToken == nil)
     }
@@ -155,7 +155,7 @@ struct SendableIntegrationTests {
         mock.sort(&values)
 
         #expect(mock.sortCallCount == 1)
-        #expect(mock.sortCallArgs == [[9, 4, 1]])
+        #expect(mock.sortCallArguments == [[9, 4, 1]])
         #expect(values == [1, 4, 9])
     }
 
@@ -174,7 +174,7 @@ struct SendableIntegrationTests {
         #expect(removed == "x")
         #expect(items == ["y", "z"])
         #expect(mock.removeFirstCallCount == 1)
-        #expect(mock.removeFirstCallArgs == [["x", "y", "z"]])
+        #expect(mock.removeFirstCallArguments == [["x", "y", "z"]])
     }
 
     @Test("Sendable mock multiple inout parameters")
@@ -224,7 +224,7 @@ struct SendableIntegrationTests {
         mock.log("first", "second")
 
         #expect(mock.logCallCount == 1)
-        #expect(mock.logCallArgs == [["first", "second"]])
+        #expect(mock.logCallArguments == [["first", "second"]])
         #expect(captured == ["first", "second"])
     }
 
@@ -243,7 +243,7 @@ struct SendableIntegrationTests {
         }
 
         #expect(mock.logCallCount == 100)
-        #expect(mock.logCallArgs.count == 100)
+        #expect(mock.logCallArguments.count == 100)
     }
 
     @Test("Sendable config provider mock get-only property")
@@ -334,12 +334,12 @@ struct SendableIntegrationTests {
         mock.log(message: "second")
 
         #expect(mock.logCallCount == 2)
-        #expect(mock.logCallArgs == ["first", "second"])
+        #expect(mock.logCallArguments == ["first", "second"])
 
         mock.resetMock()
 
         #expect(mock.logCallCount == 0)
-        #expect(mock.logCallArgs == [])
+        #expect(mock.logCallArguments == [])
         #expect(mock.logHandler == nil)
     }
 
@@ -353,12 +353,12 @@ struct SendableIntegrationTests {
         _ = try await mock.performTask(id: 2)
 
         #expect(mock.performTaskCallCount == 2)
-        #expect(mock.performTaskCallArgs == [1, 2])
+        #expect(mock.performTaskCallArguments == [1, 2])
 
         mock.resetMock()
 
         #expect(mock.performTaskCallCount == 0)
-        #expect(mock.performTaskCallArgs == [])
+        #expect(mock.performTaskCallArguments == [])
         #expect(mock.performTaskHandler == nil)
     }
 
@@ -408,7 +408,7 @@ struct SendableIntegrationTests {
         mock.log(message: "second session again")
 
         #expect(mock.logCallCount == 2)
-        #expect(mock.logCallArgs == ["second session", "second session again"])
+        #expect(mock.logCallArguments == ["second session", "second session again"])
     }
 
     @Test("Sendable mock resetMock is thread-safe")

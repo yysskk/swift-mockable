@@ -39,7 +39,7 @@ struct ParameterSpecifierTests {
         mock.consume(SpecifiedPayload(id: 1))
 
         #expect(mock.consumeCallCount == 1)
-        #expect(mock.consumeCallArgs == [SpecifiedPayload(id: 1)])
+        #expect(mock.consumeCallArguments == [SpecifiedPayload(id: 1)])
         #expect(received == SpecifiedPayload(id: 1))
     }
 
@@ -51,7 +51,7 @@ struct ParameterSpecifierTests {
 
         mock.inspect(SpecifiedPayload(id: 2))
 
-        #expect(mock.inspectCallArgs == [SpecifiedPayload(id: 2)])
+        #expect(mock.inspectCallArguments == [SpecifiedPayload(id: 2)])
         #expect(received == SpecifiedPayload(id: 2))
     }
 
@@ -62,7 +62,7 @@ struct ParameterSpecifierTests {
 
         mock.send(SpecifiedPayload(id: 3))
 
-        #expect(mock.sendCallArgs == [SpecifiedPayload(id: 3)])
+        #expect(mock.sendCallArguments == [SpecifiedPayload(id: 3)])
     }
 
     @Test("A consuming parameter of a Sendable mock is recorded behind the lock")
@@ -73,7 +73,7 @@ struct ParameterSpecifierTests {
         mock.consume(SpecifiedPayload(id: 4))
 
         #expect(mock.consumeCallCount == 1)
-        #expect(mock.consumeCallArgs == [SpecifiedPayload(id: 4)])
+        #expect(mock.consumeCallArguments == [SpecifiedPayload(id: 4)])
     }
 
     @Test("An implicitly unwrapped optional inout argument is written back")

@@ -26,12 +26,12 @@ struct StaticResetTests {
         StaticResetServiceMock.record(2)
 
         #expect(StaticResetServiceMock.recordCallCount == 2)
-        #expect(StaticResetServiceMock.recordCallArgs == [1, 2])
+        #expect(StaticResetServiceMock.recordCallArguments == [1, 2])
 
         StaticResetServiceMock.resetMock()
 
         #expect(StaticResetServiceMock.recordCallCount == 0)
-        #expect(StaticResetServiceMock.recordCallArgs.isEmpty)
+        #expect(StaticResetServiceMock.recordCallArguments.isEmpty)
         #expect(StaticResetServiceMock.recordHandler == nil)
     }
 
@@ -88,7 +88,7 @@ struct StaticResetTests {
 
         StaticResetServiceMock.resetMock()
         #expect(StaticResetServiceMock.recordCallCount == 0)
-        #expect(StaticResetServiceMock.recordCallArgs.isEmpty)
+        #expect(StaticResetServiceMock.recordCallArguments.isEmpty)
         #expect(StaticResetServiceMock.recordHandler == nil)
     }
 }

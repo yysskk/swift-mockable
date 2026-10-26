@@ -51,7 +51,7 @@ struct SameParameterTypesDifferentReturnTypesTests {
 
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
     @Test("Overloaded methods with same parameter types have separate call args")
-    func overloadedMethodsSameParamsSeparateCallArgs() async throws {
+    func overloadedMethodsSameParamsSeparateCallArguments() async throws {
         let mock = HttpServiceMock()
 
         mock.getURLStringAsyncHandler = { @Sendable _ in "result" }
@@ -63,11 +63,11 @@ struct SameParameterTypesDifferentReturnTypesTests {
         let _: String = await mock.get(url: url1)
         let _: Data = try await mock.get(url: url2)
 
-        #expect(mock.getURLStringAsyncCallArgs.count == 1)
-        #expect(mock.getURLStringAsyncCallArgs[0] == url1)
+        #expect(mock.getURLStringAsyncCallArguments.count == 1)
+        #expect(mock.getURLStringAsyncCallArguments[0] == url1)
 
-        #expect(mock.getURLDataAsyncThrowingCallArgs.count == 1)
-        #expect(mock.getURLDataAsyncThrowingCallArgs[0] == url2)
+        #expect(mock.getURLDataAsyncThrowingCallArguments.count == 1)
+        #expect(mock.getURLDataAsyncThrowingCallArguments[0] == url2)
     }
 
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
@@ -123,8 +123,8 @@ struct SameParameterTypesDifferentReturnTypesTests {
         #expect(mock.getURLStringAsyncCallCount == 0)
         #expect(mock.getURLDataAsyncThrowingCallCount == 0)
         #expect(mock.getURLStringStringArrayCallCount == 0)
-        #expect(mock.getURLStringAsyncCallArgs.isEmpty)
-        #expect(mock.getURLDataAsyncThrowingCallArgs.isEmpty)
-        #expect(mock.getURLStringStringArrayCallArgs.isEmpty)
+        #expect(mock.getURLStringAsyncCallArguments.isEmpty)
+        #expect(mock.getURLDataAsyncThrowingCallArguments.isEmpty)
+        #expect(mock.getURLStringStringArrayCallArguments.isEmpty)
     }
 }

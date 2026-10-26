@@ -14,7 +14,7 @@ struct EffectfulSubscriptTests {
 
         #expect(value == 5)
         #expect(mock.subscriptStringCallCount == 1)
-        #expect(mock.subscriptStringCallArgs == ["swift"])
+        #expect(mock.subscriptStringCallArguments == ["swift"])
     }
 
     @Test("get async throws subscript propagates the handler error")

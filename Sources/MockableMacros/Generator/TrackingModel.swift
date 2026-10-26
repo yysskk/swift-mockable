@@ -24,7 +24,7 @@ struct TrackingField {
     /// What the slot stores.
     enum Role {
         case callCount
-        case callArgs
+        case callArguments
         case handler
         case setHandler
         /// The `_name` backing storage of a stored property (or the property
@@ -69,8 +69,8 @@ struct TrackingRequirement {
     /// members that witness reaches have to be nonisolated.
     var leavesMockIsolation: Bool = false
     let kind: Kind
-    /// The tuple element type of the `CallArgs` array; `nil` for properties.
-    let callArgsTupleType: TypeSyntax?
+    /// The tuple element type of the `CallArguments` array; `nil` for properties.
+    let callArgumentsTupleType: TypeSyntax?
     /// The type of the `<name>Handler` slot, an optional `@Sendable` closure such as
     /// `(@Sendable (Int) async throws -> String)?`; `nil` for initializers and
     /// stored properties, which have no handler.
@@ -90,13 +90,13 @@ struct TrackingRequirement {
     func trackingFields(model: StorageModel) -> [TrackingField] {
         switch kind {
         case .function:
-            return [callCountField, callArgsField, handlerField]
+            return [callCountField, callArgumentsField, handlerField]
         case .initializer:
-            return [callCountField, callArgsField]
+            return [callCountField, callArgumentsField]
         case .effectfulVariable:
             return [callCountField, handlerField]
         case .subscriptRequirement(let isGetOnly):
-            var fields = [callCountField, callArgsField, handlerField]
+            var fields = [callCountField, callArgumentsField, handlerField]
             if !isGetOnly {
                 fields.append(setHandlerField)
             }
@@ -116,12 +116,12 @@ struct TrackingRequirement {
         )
     }
 
-    /// The `<name>CallArgs` slot, an array of the requirement's argument tuple.
-    private var callArgsField: TrackingField {
+    /// The `<name>CallArguments` slot, an array of the requirement's argument tuple.
+    private var callArgumentsField: TrackingField {
         TrackingField(
-            role: .callArgs,
-            name: MockNaming.callArgs(identifier),
-            type: TypeSyntax(ArrayTypeSyntax(element: callArgsTupleType ?? TypeSyntax(stringLiteral: "Void"))),
+            role: .callArguments,
+            name: MockNaming.callArguments(identifier),
+            type: TypeSyntax(ArrayTypeSyntax(element: callArgumentsTupleType ?? TypeSyntax(stringLiteral: "Void"))),
             initialValue: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
         )
     }
@@ -287,7 +287,7 @@ extension MockGenerator {
             ),
             scope: .instance,
             kind: .initializer,
-            callArgsTupleType: Self.buildCallArgsTupleType(
+            callArgumentsTupleType: Self.buildCallArgumentsTupleType(
                 parameters: initDecl.signature.parameterClause.parameters,
                 genericParamNames: genericParamNames
             ),
@@ -321,7 +321,7 @@ extension MockGenerator {
             scope: scope,
             leavesMockIsolation: leavesMockIsolation,
             kind: .function,
-            callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerType: TrackingRequirement.handlerType(forClosure: buildFunctionClosureType(
                 parameters: parameters,
                 returnType: funcDecl.signature.returnClause?.type,
@@ -354,7 +354,7 @@ extension MockGenerator {
                 scope: scope,
                 leavesMockIsolation: leavesMockIsolation,
                 kind: .effectfulVariable(varType: varType),
-                callArgsTupleType: nil,
+                callArgumentsTupleType: nil,
                 handlerType: TrackingRequirement.handlerType(forClosure: Self.effectfulGetterClosureType(
                     varType: varType,
                     effects: effectfulGetter.effectSpecifiers
@@ -373,7 +373,7 @@ extension MockGenerator {
                 isOptional: isOptional,
                 isGetOnly: Self.isGetOnlyProperty(binding: binding)
             ),
-            callArgsTupleType: nil,
+            callArgumentsTupleType: nil,
             handlerType: nil,
             setHandlerType: nil
         )
@@ -400,7 +400,7 @@ extension MockGenerator {
             scope: .instance,
             leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
-            callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerType: TrackingRequirement.handlerType(forClosure: buildSubscriptGetterClosureType(
                 parameters: parameters,
                 returnType: returnType,

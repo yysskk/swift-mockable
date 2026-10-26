@@ -39,43 +39,43 @@ struct ConditionalCompilationMacroTests {
             #if DEBUG
             class KeychainManagerMock: KeychainManager {
                 var getDeviceIdCallCount: Int = 0
-                var getDeviceIdCallArgs: [()] = []
+                var getDeviceIdCallArguments: [()] = []
                 var getDeviceIdHandler: (@Sendable () -> String?)? = nil
                 func getDeviceId() -> String? {
                     getDeviceIdCallCount += 1
-                    getDeviceIdCallArgs.append(())
+                    getDeviceIdCallArguments.append(())
                     guard let _handler = getDeviceIdHandler else {
                         return nil
                     }
                     return _handler()
                 }
                 var saveAccessIdCallCount: Int = 0
-                var saveAccessIdCallArgs: [String] = []
+                var saveAccessIdCallArguments: [String] = []
                 var saveAccessIdHandler: (@Sendable (String) -> Void)? = nil
                 func saveAccessId(_ accessId: String) {
                     saveAccessIdCallCount += 1
-                    saveAccessIdCallArgs.append(accessId)
+                    saveAccessIdCallArguments.append(accessId)
                     if let _handler = saveAccessIdHandler {
                         _handler(accessId)
                     }
                 }
                 #if DEBUG
                 var deleteDeviceIdCallCount: Int = 0
-                var deleteDeviceIdCallArgs: [()] = []
+                var deleteDeviceIdCallArguments: [()] = []
                 var deleteDeviceIdHandler: (@Sendable () -> Void)? = nil
                 func deleteDeviceId() {
                     deleteDeviceIdCallCount += 1
-                    deleteDeviceIdCallArgs.append(())
+                    deleteDeviceIdCallArguments.append(())
                     if let _handler = deleteDeviceIdHandler {
                         _handler()
                     }
                 }
                 var getAllObjectsCallCount: Int = 0
-                var getAllObjectsCallArgs: [()] = []
+                var getAllObjectsCallArguments: [()] = []
                 var getAllObjectsHandler: (@Sendable () -> [AnyObject])? = nil
                 func getAllObjects() -> [AnyObject] {
                     getAllObjectsCallCount += 1
-                    getAllObjectsCallArgs.append(())
+                    getAllObjectsCallArguments.append(())
                     guard let _handler = getAllObjectsHandler else {
                         return []
                     }
@@ -84,17 +84,17 @@ struct ConditionalCompilationMacroTests {
                 #endif
                 func resetMock() {
                     getDeviceIdCallCount = 0
-                    getDeviceIdCallArgs = []
+                    getDeviceIdCallArguments = []
                     getDeviceIdHandler = nil
                     saveAccessIdCallCount = 0
-                    saveAccessIdCallArgs = []
+                    saveAccessIdCallArguments = []
                     saveAccessIdHandler = nil
                     #if DEBUG
                     deleteDeviceIdCallCount = 0
-                    deleteDeviceIdCallArgs = []
+                    deleteDeviceIdCallArguments = []
                     deleteDeviceIdHandler = nil
                     getAllObjectsCallCount = 0
-                    getAllObjectsCallArgs = []
+                    getAllObjectsCallArguments = []
                     getAllObjectsHandler = nil
                     #endif
                 }
@@ -196,33 +196,33 @@ struct ConditionalCompilationMacroTests {
             class PlatformLoggerMock: PlatformLogger {
                 #if os(iOS)
                 var logToConsoleCallCount: Int = 0
-                var logToConsoleCallArgs: [()] = []
+                var logToConsoleCallArguments: [()] = []
                 var logToConsoleHandler: (@Sendable () -> Void)? = nil
                 func logToConsole() {
                     logToConsoleCallCount += 1
-                    logToConsoleCallArgs.append(())
+                    logToConsoleCallArguments.append(())
                     if let _handler = logToConsoleHandler {
                         _handler()
                     }
                 }
                 #elseif os(macOS)
                 var logToFileCallCount: Int = 0
-                var logToFileCallArgs: [()] = []
+                var logToFileCallArguments: [()] = []
                 var logToFileHandler: (@Sendable () -> Void)? = nil
                 func logToFile() {
                     logToFileCallCount += 1
-                    logToFileCallArgs.append(())
+                    logToFileCallArguments.append(())
                     if let _handler = logToFileHandler {
                         _handler()
                     }
                 }
                 #else
                 var logToFallbackCallCount: Int = 0
-                var logToFallbackCallArgs: [()] = []
+                var logToFallbackCallArguments: [()] = []
                 var logToFallbackHandler: (@Sendable () -> Void)? = nil
                 func logToFallback() {
                     logToFallbackCallCount += 1
-                    logToFallbackCallArgs.append(())
+                    logToFallbackCallArguments.append(())
                     if let _handler = logToFallbackHandler {
                         _handler()
                     }
@@ -231,15 +231,15 @@ struct ConditionalCompilationMacroTests {
                 func resetMock() {
                     #if os(iOS)
                     logToConsoleCallCount = 0
-                    logToConsoleCallArgs = []
+                    logToConsoleCallArguments = []
                     logToConsoleHandler = nil
                     #elseif os(macOS)
                     logToFileCallCount = 0
-                    logToFileCallArgs = []
+                    logToFileCallArguments = []
                     logToFileHandler = nil
                     #else
                     logToFallbackCallCount = 0
-                    logToFallbackCallArgs = []
+                    logToFallbackCallArguments = []
                     logToFallbackHandler = nil
                     #endif
                 }
@@ -283,15 +283,15 @@ struct ConditionalCompilationMacroTests {
                 private struct Storage {
                     #if os(iOS)
                     var logToConsoleCallCount: Int = 0
-                    var logToConsoleCallArgs: [()] = []
+                    var logToConsoleCallArguments: [()] = []
                     var logToConsoleHandler: (@Sendable () -> Void)? = nil
                     #elseif os(macOS)
                     var logToFileCallCount: Int = 0
-                    var logToFileCallArgs: [()] = []
+                    var logToFileCallArguments: [()] = []
                     var logToFileHandler: (@Sendable () -> Void)? = nil
                     #else
                     var logToFallbackCallCount: Int = 0
-                    var logToFallbackCallArgs: [()] = []
+                    var logToFallbackCallArguments: [()] = []
                     var logToFallbackHandler: (@Sendable () -> Void)? = nil
                     #endif
                 }
@@ -309,15 +309,15 @@ struct ConditionalCompilationMacroTests {
                         }
                     }
                 }
-                var logToConsoleCallArgs: [()] {
+                var logToConsoleCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.logToConsoleCallArgs
+                            $0.logToConsoleCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.logToConsoleCallArgs = newValue
+                            $0.logToConsoleCallArguments = newValue
                         }
                     }
                 }
@@ -336,7 +336,7 @@ struct ConditionalCompilationMacroTests {
                 func logToConsole() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToConsoleCallCount += 1
-                        storage.logToConsoleCallArgs.append(())
+                        storage.logToConsoleCallArguments.append(())
                         return storage.logToConsoleHandler
                     }
                     if let _handler {
@@ -356,15 +356,15 @@ struct ConditionalCompilationMacroTests {
                         }
                     }
                 }
-                var logToFileCallArgs: [()] {
+                var logToFileCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.logToFileCallArgs
+                            $0.logToFileCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.logToFileCallArgs = newValue
+                            $0.logToFileCallArguments = newValue
                         }
                     }
                 }
@@ -383,7 +383,7 @@ struct ConditionalCompilationMacroTests {
                 func logToFile() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToFileCallCount += 1
-                        storage.logToFileCallArgs.append(())
+                        storage.logToFileCallArguments.append(())
                         return storage.logToFileHandler
                     }
                     if let _handler {
@@ -403,15 +403,15 @@ struct ConditionalCompilationMacroTests {
                         }
                     }
                 }
-                var logToFallbackCallArgs: [()] {
+                var logToFallbackCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.logToFallbackCallArgs
+                            $0.logToFallbackCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.logToFallbackCallArgs = newValue
+                            $0.logToFallbackCallArguments = newValue
                         }
                     }
                 }
@@ -430,7 +430,7 @@ struct ConditionalCompilationMacroTests {
                 func logToFallback() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToFallbackCallCount += 1
-                        storage.logToFallbackCallArgs.append(())
+                        storage.logToFallbackCallArguments.append(())
                         return storage.logToFallbackHandler
                     }
                     if let _handler {
@@ -442,15 +442,15 @@ struct ConditionalCompilationMacroTests {
                     _storage.withLock { storage in
                         #if os(iOS)
                         storage.logToConsoleCallCount = 0
-                        storage.logToConsoleCallArgs = []
+                        storage.logToConsoleCallArguments = []
                         storage.logToConsoleHandler = nil
                         #elseif os(macOS)
                         storage.logToFileCallCount = 0
-                        storage.logToFileCallArgs = []
+                        storage.logToFileCallArguments = []
                         storage.logToFileHandler = nil
                         #else
                         storage.logToFallbackCallCount = 0
-                        storage.logToFallbackCallArgs = []
+                        storage.logToFallbackCallArguments = []
                         storage.logToFallbackHandler = nil
                         #endif
                     }

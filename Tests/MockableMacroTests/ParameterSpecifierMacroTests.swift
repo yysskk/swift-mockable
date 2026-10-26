@@ -30,19 +30,19 @@ struct ParameterSpecifierMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var consumeCallCount: Int = 0
-                var consumeCallArgs: [Payload] = []
+                var consumeCallArguments: [Payload] = []
                 var consumeHandler: (@Sendable (Payload) -> Void)? = nil
                 func consume(_ item: consuming Payload) {
                     let item = item
                     consumeCallCount += 1
-                    consumeCallArgs.append(item)
+                    consumeCallArguments.append(item)
                     if let _handler = consumeHandler {
                         _handler(item)
                     }
                 }
                 func resetMock() {
                     consumeCallCount = 0
-                    consumeCallArgs = []
+                    consumeCallArguments = []
                     consumeHandler = nil
                 }
                 class func resetMock() {
@@ -71,19 +71,19 @@ struct ParameterSpecifierMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var inspectCallCount: Int = 0
-                var inspectCallArgs: [Payload] = []
+                var inspectCallArguments: [Payload] = []
                 var inspectHandler: (@Sendable (Payload) -> Void)? = nil
                 func inspect(_ item: borrowing Payload) {
                     let item = copy item
                     inspectCallCount += 1
-                    inspectCallArgs.append(item)
+                    inspectCallArguments.append(item)
                     if let _handler = inspectHandler {
                         _handler(item)
                     }
                 }
                 func resetMock() {
                     inspectCallCount = 0
-                    inspectCallArgs = []
+                    inspectCallArguments = []
                     inspectHandler = nil
                 }
                 class func resetMock() {
@@ -112,18 +112,18 @@ struct ParameterSpecifierMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var sendCallCount: Int = 0
-                var sendCallArgs: [Payload] = []
+                var sendCallArguments: [Payload] = []
                 var sendHandler: (@Sendable (Payload) -> Void)? = nil
                 func send(_ item: sending Payload) {
                     sendCallCount += 1
-                    sendCallArgs.append(item)
+                    sendCallArguments.append(item)
                     if let _handler = sendHandler {
                         _handler(item)
                     }
                 }
                 func resetMock() {
                     sendCallCount = 0
-                    sendCallArgs = []
+                    sendCallArguments = []
                     sendHandler = nil
                 }
                 class func resetMock() {
@@ -152,11 +152,11 @@ struct ParameterSpecifierMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var fillCallCount: Int = 0
-                var fillCallArgs: [Int?] = []
+                var fillCallArguments: [Int?] = []
                 var fillHandler: (@Sendable (Int?) -> Int?)? = nil
                 func fill(_ value: inout Int!) {
                     fillCallCount += 1
-                    fillCallArgs.append(value)
+                    fillCallArguments.append(value)
                     if let _handler = fillHandler {
                         let _writeBack = _handler(value)
                         value = _writeBack
@@ -164,7 +164,7 @@ struct ParameterSpecifierMacroTests {
                 }
                 func resetMock() {
                     fillCallCount = 0
-                    fillCallArgs = []
+                    fillCallArguments = []
                     fillHandler = nil
                 }
                 class func resetMock() {

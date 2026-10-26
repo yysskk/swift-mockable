@@ -128,17 +128,17 @@ extension MockGenerator {
         """)))
     }
 
-    /// Builds `return <invokePrefix><handlerName>(<handlerCallArgs>)<castSuffix>`,
+    /// Builds `return <invokePrefix><handlerName>(<handlerCallArguments>)<castSuffix>`,
     /// wrapped in the typed-throws conversion when `errorType` is set.
     static func makeHandlerReturnStatement(
         invokePrefix: String,
         handlerName: String,
-        handlerCallArgs: String,
+        handlerCallArguments: String,
         castSuffix: String = "",
         errorType: String?,
         leadingTrivia: Trivia? = nil
     ) -> CodeBlockItemSyntax {
-        let returnLine = "return \(invokePrefix)\(handlerName)(\(handlerCallArgs))\(castSuffix)"
+        let returnLine = "return \(invokePrefix)\(handlerName)(\(handlerCallArguments))\(castSuffix)"
         let item = errorType.map { buildTypedThrowsCatch(innerLines: [returnLine], errorType: $0) }
             ?? CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: returnLine)))
         return CodeBlockItemSyntax(leadingTrivia: leadingTrivia, item: item.item)

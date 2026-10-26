@@ -59,7 +59,7 @@ struct AccessLevelIntegrationTests {
 
         #expect(result == "User 42")
         #expect(mock.fetchUserCallCount == 1)
-        #expect(mock.fetchUserCallArgs == [42])
+        #expect(mock.fetchUserCallArguments == [42])
         #expect(mock.currentUser == "John")
     }
 
@@ -90,7 +90,7 @@ struct AccessLevelIntegrationTests {
 
         #expect(result == "value for api_url")
         #expect(mock.getConfigCallCount == 1)
-        #expect(mock.getConfigCallArgs == ["api_url"])
+        #expect(mock.getConfigCallArguments == ["api_url"])
         #expect(mock.environment == "production")
     }
 
@@ -148,12 +148,12 @@ struct AccessLevelIntegrationTests {
         mock.currentUser = "Jane"
 
         #expect(mock.fetchUserCallCount == 2)
-        #expect(mock.fetchUserCallArgs == [1, 2])
+        #expect(mock.fetchUserCallArguments == [1, 2])
 
         mock.resetMock()
 
         #expect(mock.fetchUserCallCount == 0)
-        #expect(mock.fetchUserCallArgs == [])
+        #expect(mock.fetchUserCallArguments == [])
         #expect(mock.fetchUserHandler == nil)
     }
 
@@ -170,7 +170,7 @@ struct AccessLevelIntegrationTests {
         mock.resetMock()
 
         #expect(mock.getConfigCallCount == 0)
-        #expect(mock.getConfigCallArgs == [])
+        #expect(mock.getConfigCallArguments == [])
         #expect(mock.getConfigHandler == nil)
     }
 
@@ -187,7 +187,7 @@ struct AccessLevelIntegrationTests {
         mock.resetMock()
 
         #expect(mock.loadDataCallCount == 0)
-        #expect(mock.loadDataCallArgs.isEmpty)
+        #expect(mock.loadDataCallArguments.isEmpty)
         #expect(mock.loadDataHandler == nil)
     }
 
@@ -203,7 +203,7 @@ struct AccessLevelIntegrationTests {
         mock.save(value: "hello")
 
         #expect(mock.saveCallCount == 1)
-        #expect(mock.saveCallArgs == ["hello"])
+        #expect(mock.saveCallArguments == ["hello"])
         #expect(mock.lastSaved == "test value")
     }
 
@@ -234,7 +234,7 @@ struct AccessLevelIntegrationTests {
         mock.resetMock()
 
         #expect(mock.saveCallCount == 0)
-        #expect(mock.saveCallArgs == [])
+        #expect(mock.saveCallArguments == [])
         #expect(mock.saveHandler == nil)
         #expect(mock.lastSaved == nil)
     }
@@ -252,7 +252,7 @@ struct AccessLevelIntegrationTests {
 
         #expect(result == 10)
         #expect(mock.computeCallCount == 1)
-        #expect(mock.computeCallArgs == [5])
+        #expect(mock.computeCallArguments == [5])
         #expect(mock.cachedResult == 100)
     }
 
@@ -283,7 +283,7 @@ struct AccessLevelIntegrationTests {
         mock.resetMock()
 
         #expect(mock.computeCallCount == 0)
-        #expect(mock.computeCallArgs == [])
+        #expect(mock.computeCallArguments == [])
         #expect(mock.computeHandler == nil)
         #expect(mock.cachedResult == nil)
     }

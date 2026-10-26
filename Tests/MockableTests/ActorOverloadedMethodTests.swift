@@ -24,7 +24,7 @@ struct ActorOverloadedMethodTests {
     }
 
     @Test("Actor overloaded methods have separate call args")
-    func actorOverloadedMethodsSeparateCallArgs() async {
+    func actorOverloadedMethodsSeparateCallArguments() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = ActorOverloadedServiceMock()
 
@@ -34,8 +34,8 @@ struct ActorOverloadedMethodTests {
         await mock.process(42)
         await mock.process("hello")
 
-        #expect(mock.processIntCallArgs == [42])
-        #expect(mock.processStringCallArgs == ["hello"])
+        #expect(mock.processIntCallArguments == [42])
+        #expect(mock.processStringCallArguments == ["hello"])
     }
 
     @Test("Actor non-overloaded method retains simple naming")
@@ -73,7 +73,7 @@ struct ActorOverloadedMethodTests {
         #expect(mock.processIntCallCount == 0)
         #expect(mock.processStringCallCount == 0)
         #expect(mock.fetchCallCount == 0)
-        #expect(mock.processIntCallArgs.isEmpty)
-        #expect(mock.processStringCallArgs.isEmpty)
+        #expect(mock.processIntCallArguments.isEmpty)
+        #expect(mock.processStringCallArguments.isEmpty)
     }
 }

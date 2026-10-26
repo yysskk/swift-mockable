@@ -27,12 +27,12 @@ struct EffectfulSubscriptMacroTests {
             #if DEBUG
             class StoreMock: Store {
                 var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArgs: [String] = []
+                var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: (@Sendable (String) async throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get async throws {
                         subscriptStringCallCount += 1
-                        subscriptStringCallArgs.append(key)
+                        subscriptStringCallArguments.append(key)
                         guard let _handler = subscriptStringHandler else {
                             fatalError("\\(Self.self).subscriptStringHandler is not set")
                         }
@@ -41,7 +41,7 @@ struct EffectfulSubscriptMacroTests {
                 }
                 func resetMock() {
                     subscriptStringCallCount = 0
-                    subscriptStringCallArgs = []
+                    subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                 }
                 class func resetMock() {
@@ -70,12 +70,12 @@ struct EffectfulSubscriptMacroTests {
             #if DEBUG
             class StoreMock: Store {
                 var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArgs: [String] = []
+                var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: (@Sendable (String) throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get throws {
                         subscriptStringCallCount += 1
-                        subscriptStringCallArgs.append(key)
+                        subscriptStringCallArguments.append(key)
                         guard let _handler = subscriptStringHandler else {
                             fatalError("\\(Self.self).subscriptStringHandler is not set")
                         }
@@ -84,7 +84,7 @@ struct EffectfulSubscriptMacroTests {
                 }
                 func resetMock() {
                     subscriptStringCallCount = 0
-                    subscriptStringCallArgs = []
+                    subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                 }
                 class func resetMock() {
@@ -114,7 +114,7 @@ struct EffectfulSubscriptMacroTests {
             class RemoteStoreMock: RemoteStore, @unchecked Sendable {
                 private struct Storage {
                     var subscriptStringCallCount: Int = 0
-                    var subscriptStringCallArgs: [String] = []
+                    var subscriptStringCallArguments: [String] = []
                     var subscriptStringHandler: (@Sendable (String) async throws -> Int )? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -130,15 +130,15 @@ struct EffectfulSubscriptMacroTests {
                         }
                     }
                 }
-                var subscriptStringCallArgs: [String] {
+                var subscriptStringCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.subscriptStringCallArgs
+                            $0.subscriptStringCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.subscriptStringCallArgs = newValue
+                            $0.subscriptStringCallArguments = newValue
                         }
                     }
                 }
@@ -158,7 +158,7 @@ struct EffectfulSubscriptMacroTests {
                     get async throws {
                         let _handler = _storage.withLock { storage -> (@Sendable (String) async throws -> Int )? in
                             storage.subscriptStringCallCount += 1
-                            storage.subscriptStringCallArgs.append(key)
+                            storage.subscriptStringCallArguments.append(key)
                             return storage.subscriptStringHandler
                         }
                         guard let _handler else {
@@ -170,7 +170,7 @@ struct EffectfulSubscriptMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.subscriptStringCallCount = 0
-                        storage.subscriptStringCallArgs = []
+                        storage.subscriptStringCallArguments = []
                         storage.subscriptStringHandler = nil
                     }
                 }

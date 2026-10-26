@@ -51,7 +51,7 @@ let user = try await mock.fetchUser(id: 42)
 // Verify
 #expect(user.id == 42)
 #expect(mock.fetchUserCallCount == 1)
-#expect(mock.fetchUserCallArgs == [42])
+#expect(mock.fetchUserCallArguments == [42])
 
 // Reset
 mock.resetMock()
@@ -65,7 +65,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 ### Functions
 
 - `<method>CallCount` -- number of times the method was called
-- `<method>CallArgs` -- array of captured arguments from each call
+- `<method>CallArguments` -- array of captured arguments from each call
 - `<method>Handler` -- configurable closure that implements the method
 
 ### Properties
@@ -77,14 +77,14 @@ A non-optional property traps when read before it is set; an optional one reads 
 ### Subscripts
 
 - `subscript<suffix>CallCount` -- number of subscript accesses
-- `subscript<suffix>CallArgs` -- array of captured subscript arguments
+- `subscript<suffix>CallArguments` -- array of captured subscript arguments
 - `subscript<suffix>Handler` -- configurable closure for get subscripts
 - `subscript<suffix>SetHandler` -- configurable closure for set subscripts (get-set only)
 
 ### Initializers
 
 - `initCallCount` -- number of times the `init` requirement was invoked
-- `initCallArgs` -- array of captured initializer arguments
+- `initCallArguments` -- array of captured initializer arguments
 - Overloaded `init`s append a parameter-type suffix (e.g. `initStringCallCount`)
 
 ### Utility
@@ -99,7 +99,7 @@ A non-optional property traps when read before it is set; an optional one reads 
 For a method named `fetch`, generated members are simply:
 
 - `fetchCallCount`
-- `fetchCallArgs`
+- `fetchCallArguments`
 - `fetchHandler`
 
 ### Overloaded Methods
@@ -126,20 +126,20 @@ Subscript-generated names use `subscript<suffix>...`, where the suffix is based 
 subscript(index: Int) -> String { get }
 ```
 
-Generates: `subscriptIntCallCount`, `subscriptIntCallArgs`, `subscriptIntHandler`.
+Generates: `subscriptIntCallCount`, `subscriptIntCallArguments`, `subscriptIntHandler`.
 
 Get-set subscripts also generate `subscript<suffix>SetHandler`.
 
 ### Initializers
 
-A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArgs`). Overloaded initializers append a parameter-type suffix, matching the method scheme:
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a parameter-type suffix, matching the method scheme:
 
 ```swift
 init(host: String)
 init(host: String, port: Int)
 ```
 
-Generates: `initStringCallCount` / `initStringCallArgs` and `initStringIntCallCount` / `initStringIntCallArgs`.
+Generates: `initStringCallCount` / `initStringCallArguments` and `initStringIntCallCount` / `initStringIntCallArguments`.
 
 ## Supported Features
 
@@ -157,7 +157,7 @@ protocol DataService {
 }
 ```
 
-Each generates its own `CallCount`, `CallArgs`, and `Handler`.
+Each generates its own `CallCount`, `CallArguments`, and `Handler`.
 
 ### Properties
 
@@ -293,7 +293,7 @@ type alias named `Never` or `Error` is classified by its name.
 ### `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is
-recorded. `CallArgs` and handlers observe the evaluated value, not the closure:
+recorded. `CallArguments` and handlers observe the evaluated value, not the closure:
 
 ```swift
 @Mockable
@@ -305,7 +305,7 @@ let mock = LoggerMock()
 mock.logHandler = { message in }  // handler: (String) -> Void
 
 mock.log("expensive" + " message")
-// mock.logCallArgs == ["expensive message"]
+// mock.logCallArguments == ["expensive message"]
 ```
 
 Notes:
@@ -321,7 +321,7 @@ Notes:
 ### Non-Escaping Closure Parameters
 
 A non-escaping closure parameter cannot be stored, so it is excluded from
-`CallArgs`. The call is still counted and the closure is still forwarded to the
+`CallArguments`. The call is still counted and the closure is still forwarded to the
 handler:
 
 ```swift
@@ -334,12 +334,12 @@ let mock = RunnerMock()
 mock.runHandler = { label, body in body() }   // handler receives the closure
 
 mock.run(label: "task") { print("ran") }
-// mock.runCallArgs == ["task"]   (only the storable `label`)
+// mock.runCallArguments == ["task"]   (only the storable `label`)
 // mock.runCallCount == 1
 ```
 
 Escaping (`@escaping`), optional, and variadic closures are storable and remain
-in `CallArgs` as before.
+in `CallArguments` as before.
 
 ### `rethrows` Methods
 
@@ -367,7 +367,7 @@ and the call count.
 
 ### Variadic Parameters
 
-Variadic parameters are captured as arrays in `CallArgs`:
+Variadic parameters are captured as arrays in `CallArguments`:
 
 ```swift
 @Mockable
@@ -379,12 +379,12 @@ let mock = LoggerMock()
 mock.logHandler = { items in }
 
 mock.log("a", "b", "c")
-// mock.logCallArgs contains [[\"a\", \"b\", \"c\"]]
+// mock.logCallArguments contains [[\"a\", \"b\", \"c\"]]
 ```
 
 ### `inout` Parameters
 
-`CallArgs` stores the input snapshot before mutation. Handler return shapes vary:
+`CallArguments` stores the input snapshot before mutation. Handler return shapes vary:
 
 Single `inout`, no return value -- handler returns the updated value:
 
@@ -414,7 +414,7 @@ mock.removeFirstHandler = { array in
 
 ### Generic Methods
 
-Generic type parameters are type-erased to `Any` in `CallArgs` storage and handlers. Generated method implementations cast generic returns back to the requested type:
+Generic type parameters are type-erased to `Any` in `CallArguments` storage and handlers. Generated method implementations cast generic returns back to the requested type:
 
 ```swift
 @Mockable
@@ -435,7 +435,7 @@ A generic parameter nested in a collection is erased in place, so the erased typ
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArgs: [[String: Any]] = []
+// var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -481,15 +481,15 @@ protocol Repository {
 }
 // generates:
 // var initCallCount: Int = 0
-// var initCallArgs: [Configuration] = []
+// var initCallArguments: [Configuration] = []
 // required init(configuration: Configuration) {
 //     initCallCount += 1
-//     initCallArgs.append(configuration)
+//     initCallArguments.append(configuration)
 // }
 
 let mock = RepositoryMock(configuration: config)
 // mock.initCallCount == 1
-// mock.initCallArgs == [config]
+// mock.initCallArguments == [config]
 ```
 
 This unlocks protocols built around the `init(configuration:)` pattern, including code that constructs a conformer generically (`Service(configuration:)` where `Service` is a generic constraint).
@@ -500,7 +500,7 @@ Notes:
 - `async`, `throws`, failability (`init?`), and generic clauses are preserved on the witness. A throwing initializer keeps its `throws` signature but never throws.
 - `required` makes the initializer part of the mock's protocol conformance so subclasses of the (non-final) mock inherit it.
 - When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted.
-- `resetMock()` clears `initCallCount` and `initCallArgs`.
+- `resetMock()` clears `initCallCount` and `initCallArguments`.
 - For `Sendable` and `actor` mocks the tracking is lock-backed like every other member (and `nonisolated` on actors); the `actor` witness omits `required`.
 
 A child mock inherits its parent mock's initializers, so a protocol whose parent declares an `init` requirement is mockable through the inherited `required init`. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.

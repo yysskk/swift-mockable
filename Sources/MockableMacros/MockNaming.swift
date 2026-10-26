@@ -31,9 +31,9 @@ enum MockNaming {
         "\(identifier)CallCount"
     }
 
-    /// The captured-arguments property, e.g. `fetch` -> `fetchCallArgs`.
-    static func callArgs(_ identifier: String) -> String {
-        "\(identifier)CallArgs"
+    /// The captured-arguments property, e.g. `fetch` -> `fetchCallArguments`.
+    static func callArguments(_ identifier: String) -> String {
+        "\(identifier)CallArguments"
     }
 
     /// The configurable handler property, e.g. `fetch` -> `fetchHandler`.

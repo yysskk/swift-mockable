@@ -27,11 +27,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [Int] = []
+                var loadCallArguments: [Int] = []
                 var loadHandler: (@Sendable (Int) throws -> String)? = nil
                 func load(id: Int) throws(LoadError) -> String {
                     loadCallCount += 1
-                    loadCallArgs.append(id)
+                    loadCallArguments.append(id)
                     guard let _handler = loadHandler else {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
@@ -43,7 +43,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {
@@ -72,11 +72,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class FetcherMock: Fetcher {
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [()] = []
+                var fetchCallArguments: [()] = []
                 var fetchHandler: (@Sendable () async throws -> Data)? = nil
                 func fetch() async throws(NetworkError) -> Data {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -88,7 +88,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -117,11 +117,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable (() throws -> Void) throws -> Void)? = nil
                 func run<E: Error>(_ body: () throws(E) -> Void) throws(E) {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     if let _handler = runHandler {
                         do {
                             try _handler(body)
@@ -132,7 +132,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -161,18 +161,18 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
-                var runCallArgs: [() throws -> Void] = []
+                var runCallArguments: [() throws -> Void] = []
                 var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
                 func run(_ body: @escaping () throws(RunError) -> Void) {
                     runCallCount += 1
-                    runCallArgs.append(body)
+                    runCallArguments.append(body)
                     if let _handler = runHandler {
                         _handler(body)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -201,13 +201,13 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class CalculatorMock: Calculator {
                 var computeCallCount: Int = 0
-                var computeCallArgs: [Int] = []
+                var computeCallArguments: [Int] = []
                 var computeHandler: (@Sendable (Int) throws -> Int)? = nil
                 func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int {
                     do {
                         let value = try value()
                         computeCallCount += 1
-                        computeCallArgs.append(value)
+                        computeCallArguments.append(value)
                         guard let _handler = computeHandler else {
                             fatalError("\\(Self.self).computeHandler is not set")
                         }
@@ -218,7 +218,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     computeCallCount = 0
-                    computeCallArgs = []
+                    computeCallArguments = []
                     computeHandler = nil
                 }
                 class func resetMock() {
@@ -248,7 +248,7 @@ struct TypedThrowsMacroTests {
             class CalculatorMock: Calculator, @unchecked Sendable {
                 private struct Storage {
                     var computeCallCount: Int = 0
-                    var computeCallArgs: [Int] = []
+                    var computeCallArguments: [Int] = []
                     var computeHandler: (@Sendable (Int) throws -> Int)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -264,15 +264,15 @@ struct TypedThrowsMacroTests {
                         }
                     }
                 }
-                var computeCallArgs: [Int] {
+                var computeCallArguments: [Int] {
                     get {
                         _storage.withLock {
-                            $0.computeCallArgs
+                            $0.computeCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.computeCallArgs = newValue
+                            $0.computeCallArguments = newValue
                         }
                     }
                 }
@@ -293,7 +293,7 @@ struct TypedThrowsMacroTests {
                         let value = try value()
                         let _handler = _storage.withLock { storage -> (@Sendable (Int) throws -> Int)? in
                             storage.computeCallCount += 1
-                            storage.computeCallArgs.append(value)
+                            storage.computeCallArguments.append(value)
                             return storage.computeHandler
                         }
                         guard let _handler else {
@@ -307,7 +307,7 @@ struct TypedThrowsMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.computeCallCount = 0
-                        storage.computeCallArgs = []
+                        storage.computeCallArguments = []
                         storage.computeHandler = nil
                     }
                 }
@@ -337,19 +337,19 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class BuilderMock: Builder {
                 var initCallCount: Int = 0
-                var initCallArgs: [Int] = []
+                var initCallArguments: [Int] = []
                 required init(_ value: @autoclosure () throws -> Int) throws(SetupError) {
                     do {
                         let value = try value()
                         initCallCount += 1
-                        initCallArgs.append(value)
+                        initCallArguments.append(value)
                     } catch {
                         throw error as! SetupError
                     }
                 }
                 func resetMock() {
                     initCallCount = 0
-                    initCallArgs = []
+                    initCallArguments = []
                 }
                 class func resetMock() {
                 }
@@ -377,12 +377,12 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class CatalogMock: Catalog {
                 var subscriptIntCallCount: Int = 0
-                var subscriptIntCallArgs: [Int] = []
+                var subscriptIntCallArguments: [Int] = []
                 var subscriptIntHandler: (@Sendable (Int) throws -> String )? = nil
                 subscript(id: Int) -> String {
                     get throws(LookupError) {
                         subscriptIntCallCount += 1
-                        subscriptIntCallArgs.append(id)
+                        subscriptIntCallArguments.append(id)
                         guard let _handler = subscriptIntHandler else {
                             fatalError("\\(Self.self).subscriptIntHandler is not set")
                         }
@@ -395,7 +395,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     subscriptIntCallCount = 0
-                    subscriptIntCallArgs = []
+                    subscriptIntCallArguments = []
                     subscriptIntHandler = nil
                 }
                 class func resetMock() {
@@ -424,14 +424,14 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 var initCallCount: Int = 0
-                var initCallArgs: [String] = []
+                var initCallArguments: [String] = []
                 required init(id: String) throws(SetupError) {
                     initCallCount += 1
-                    initCallArgs.append(id)
+                    initCallArguments.append(id)
                 }
                 func resetMock() {
                     initCallCount = 0
-                    initCallArgs = []
+                    initCallArguments = []
                 }
                 class func resetMock() {
                 }
@@ -459,11 +459,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class ParserMock: Parser {
                 var parseCallCount: Int = 0
-                var parseCallArgs: [[UInt8]] = []
+                var parseCallArguments: [[UInt8]] = []
                 var parseHandler: (@Sendable ([UInt8]) throws -> (returnValue: String, inoutArgs: [UInt8]))? = nil
                 func parse(_ buffer: inout [UInt8]) throws(ParseError) -> String {
                     parseCallCount += 1
-                    parseCallArgs.append(buffer)
+                    parseCallArguments.append(buffer)
                     guard let _handler = parseHandler else {
                         fatalError("\\(Self.self).parseHandler is not set")
                     }
@@ -477,7 +477,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     parseCallCount = 0
-                    parseCallArgs = []
+                    parseCallArguments = []
                     parseHandler = nil
                 }
                 class func resetMock() {
@@ -507,7 +507,7 @@ struct TypedThrowsMacroTests {
             class StoreMock: Store, @unchecked Sendable {
                 private struct Storage {
                     var valueCallCount: Int = 0
-                    var valueCallArgs: [()] = []
+                    var valueCallArguments: [()] = []
                     var valueHandler: (@Sendable () throws -> Int)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -523,15 +523,15 @@ struct TypedThrowsMacroTests {
                         }
                     }
                 }
-                var valueCallArgs: [()] {
+                var valueCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.valueCallArgs
+                            $0.valueCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.valueCallArgs = newValue
+                            $0.valueCallArguments = newValue
                         }
                     }
                 }
@@ -550,7 +550,7 @@ struct TypedThrowsMacroTests {
                 func value() throws(StoreError) -> Int {
                     let _handler = _storage.withLock { storage -> (@Sendable () throws -> Int)? in
                         storage.valueCallCount += 1
-                        storage.valueCallArgs.append(())
+                        storage.valueCallArguments.append(())
                         return storage.valueHandler
                     }
                     guard let _handler else {
@@ -565,7 +565,7 @@ struct TypedThrowsMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.valueCallCount = 0
-                        storage.valueCallArgs = []
+                        storage.valueCallArguments = []
                         storage.valueHandler = nil
                     }
                 }
@@ -595,11 +595,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [Int] = []
+                var loadCallArguments: [Int] = []
                 var loadHandler: (@Sendable (Int) -> String)? = nil
                 func load(id: Int) throws(Never) -> String {
                     loadCallCount += 1
-                    loadCallArgs.append(id)
+                    loadCallArguments.append(id)
                     guard let _handler = loadHandler else {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
@@ -607,7 +607,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {
@@ -636,11 +636,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class FetcherMock: Fetcher {
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [()] = []
+                var fetchCallArguments: [()] = []
                 var fetchHandler: (@Sendable () async -> Data)? = nil
                 func fetch() async throws(Never) -> Data {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -648,7 +648,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -677,18 +677,18 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class PingerMock: Pinger {
                 var pingCallCount: Int = 0
-                var pingCallArgs: [()] = []
+                var pingCallArguments: [()] = []
                 var pingHandler: (@Sendable () -> Void)? = nil
                 func ping() throws(Never) {
                     pingCallCount += 1
-                    pingCallArgs.append(())
+                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArgs = []
+                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {
@@ -717,11 +717,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [Int] = []
+                var loadCallArguments: [Int] = []
                 var loadHandler: (@Sendable (Int) throws -> String)? = nil
                 func load(id: Int) throws(any Error) -> String {
                     loadCallCount += 1
-                    loadCallArgs.append(id)
+                    loadCallArguments.append(id)
                     guard let _handler = loadHandler else {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
@@ -729,7 +729,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {
@@ -758,11 +758,11 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [Int] = []
+                var loadCallArguments: [Int] = []
                 var loadHandler: (@Sendable (Int) throws -> String)? = nil
                 func load(id: Int) throws(Error) -> String {
                     loadCallCount += 1
-                    loadCallArgs.append(id)
+                    loadCallArguments.append(id)
                     guard let _handler = loadHandler else {
                         fatalError("\\(Self.self).loadHandler is not set")
                     }
@@ -770,7 +770,7 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {

@@ -10,7 +10,7 @@
 `swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
 
 - Generated mocks are emitted inside `#if DEBUG` by default; the `condition:` argument selects a different compilation condition, or none (see [Choosing When Mocks Are Compiled](#choosing-when-mocks-are-compiled)).
-- Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`), and every property is settable on the mock, even a `{ get }` requirement.
+- Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArguments`, `<name>Handler`), and every property is settable on the mock, even a `{ get }` requirement.
 - `resetMock()` clears an instance's tracking state; `<Protocol>Mock.resetMock()` clears the `static` state the mock type shares.
 
 ## Installation
@@ -63,7 +63,7 @@ let user = try await mock.fetchUser(id: 42)
 
 #expect(user.id == 42)
 #expect(mock.fetchUserCallCount == 1)
-#expect(mock.fetchUserCallArgs == [42])
+#expect(mock.fetchUserCallArguments == [42])
 
 mock.resetMock()
 #expect(mock.fetchUserCallCount == 0)
@@ -75,18 +75,18 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 
 - Functions:
   - `<method>CallCount`
-  - `<method>CallArgs`
+  - `<method>CallArguments`
   - `<method>Handler`
 - Properties:
   - The property itself, settable on the mock even for a `{ get }` requirement (`mock.currentUser = user`)
 - Subscripts:
   - `subscript<suffix>CallCount`
-  - `subscript<suffix>CallArgs`
+  - `subscript<suffix>CallArguments`
   - `subscript<suffix>Handler`
   - `subscript<suffix>SetHandler` for get/set subscripts
 - Initializers:
   - `initCallCount`
-  - `initCallArgs`
+  - `initCallArguments`
   - (overloaded `init`s add a parameter-type suffix, e.g. `initStringCallCount`)
 - Utility:
   - `resetMock()` on the instance, and `resetMock()` on the mock type for `static` requirements
@@ -110,8 +110,8 @@ Notes:
 
 - This applies to methods and subscripts alike (subscript getter `(Int, Int) -> V`, setter `(Int, Int, V) -> Void`).
 - Zero- and single-parameter members pass their argument directly.
-- `<name>CallArgs` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
-- A parameter the mock cannot name after — a wildcard (`func handle(_: Event)`) — is recorded under a positional label (`param0`, `param1`), and a parameter named with a keyword keeps its own name (`mock.logCallArgs[0].for`). Argument labels, and therefore call sites, are unchanged.
+- `<name>CallArguments` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
+- A parameter the mock cannot name after — a wildcard (`func handle(_: Event)`) — is recorded under a positional label (`param0`, `param1`), and a parameter named with a keyword keeps its own name (`mock.logCallArguments[0].for`). Argument labels, and therefore call sites, are unchanged.
 
 ## Choosing When Mocks Are Compiled
 
@@ -155,8 +155,8 @@ the macro expands at compile time and cannot read runtime values.
 - Sync / `async` / `throws` / `rethrows` methods
 - Typed throws (`throws(MyError)`, SE-0413) on methods, properties, and subscripts
 - Variadic parameters (captured as arrays)
-- `@autoclosure` parameters (evaluated once per call; handlers and `CallArgs` receive the evaluated value)
-- Non-escaping closure parameters (forwarded to the handler; excluded from `CallArgs`)
+- `@autoclosure` parameters (evaluated once per call; handlers and `CallArguments` receive the evaluated value)
+- Non-escaping closure parameters (forwarded to the handler; excluded from `CallArguments`)
 - `inout` parameters with write-back support
 - Parameter specifiers (`consuming`, `borrowing`, `sending`, `isolated`), dropped from the stored and handler types where they are not valid
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
@@ -180,7 +180,7 @@ the macro expands at compile time and cannot read runtime values.
 - A stored property is settable on the mock whatever the requirement allows (`mock.currentUser = user` sets up a `{ get }` requirement). Reading a non-optional property before setting it traps; an optional one reads `nil`. Properties with effectful getters (`get async`/`get throws`) generate `<name>CallCount` and `<name>Handler` instead; the same unset-handler defaults apply.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
 - `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
-- Non-escaping closure arguments are forwarded to the handler but excluded from `CallArgs` (a non-escaping value cannot be stored); the call is still counted.
+- Non-escaping closure arguments are forwarded to the handler but excluded from `CallArguments` (a non-escaping value cannot be stored); the call is still counted.
 - `rethrows` methods generate a non-throwing handler that receives the throwing closure arguments (a stored handler cannot satisfy `rethrows` on its own). The handler decides whether to invoke those closures; the mock itself does not re-throw their errors.
 - Typed throws (`throws(MyError)`) keeps the `throws(MyError)` signature and generates a plain untyped-throwing handler; the body re-throws the handler's error as the declared type. Configure the handler normally (`mock.loadHandler = { id in throw MyError() }`). If the handler throws a different error type, the mock traps. An error thrown while evaluating a throwing `@autoclosure` argument is re-thrown as the declared type in the same way.
 - `throws(Never)` keeps its signature but is mocked as non-throwing: the handler cannot throw and the mock is called without `try`. `throws(any Error)` (and the bare `throws(Error)` spelling) is mocked exactly like untyped `throws`, with no re-throw.

@@ -27,18 +27,18 @@ struct RethrowsMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
                 func run(_ body: () throws -> Void) rethrows {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler(body)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -67,11 +67,11 @@ struct RethrowsMacroTests {
             #if DEBUG
             class TransformerMock: Transformer {
                 var transformCallCount: Int = 0
-                var transformCallArgs: [()] = []
+                var transformCallArguments: [()] = []
                 var transformHandler: (@Sendable ((Int) throws -> Int) -> Int)? = nil
                 func transform(_ body: (Int) throws -> Int) rethrows -> Int {
                     transformCallCount += 1
-                    transformCallArgs.append(())
+                    transformCallArguments.append(())
                     guard let _handler = transformHandler else {
                         fatalError("\\(Self.self).transformHandler is not set")
                     }
@@ -79,7 +79,7 @@ struct RethrowsMacroTests {
                 }
                 func resetMock() {
                     transformCallCount = 0
-                    transformCallArgs = []
+                    transformCallArguments = []
                     transformHandler = nil
                 }
                 class func resetMock() {
@@ -109,7 +109,7 @@ struct RethrowsMacroTests {
             class RunnerMock: Runner, @unchecked Sendable {
                 private struct Storage {
                     var runCallCount: Int = 0
-                    var runCallArgs: [()] = []
+                    var runCallArguments: [()] = []
                     var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -125,15 +125,15 @@ struct RethrowsMacroTests {
                         }
                     }
                 }
-                var runCallArgs: [()] {
+                var runCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.runCallArgs
+                            $0.runCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.runCallArgs = newValue
+                            $0.runCallArguments = newValue
                         }
                     }
                 }
@@ -152,7 +152,7 @@ struct RethrowsMacroTests {
                 func run(_ body: @Sendable () throws -> Void) rethrows {
                     let _handler = _storage.withLock { storage -> (@Sendable (@Sendable () throws -> Void) -> Void)? in
                         storage.runCallCount += 1
-                        storage.runCallArgs.append(())
+                        storage.runCallArguments.append(())
                         return storage.runHandler
                     }
                     if let _handler {
@@ -162,7 +162,7 @@ struct RethrowsMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.runCallCount = 0
-                        storage.runCallArgs = []
+                        storage.runCallArguments = []
                         storage.runHandler = nil
                     }
                 }
@@ -192,18 +192,18 @@ struct RethrowsMacroTests {
             #if DEBUG
             class ExecutorMock: Executor {
                 var executeCallCount: Int = 0
-                var executeCallArgs: [() throws -> Void] = []
+                var executeCallArguments: [() throws -> Void] = []
                 var executeHandler: (@Sendable (() throws -> Void) throws -> Void)? = nil
                 func execute(_ body: @escaping () throws -> Void) throws {
                     executeCallCount += 1
-                    executeCallArgs.append(body)
+                    executeCallArguments.append(body)
                     if let _handler = executeHandler {
                         try _handler(body)
                     }
                 }
                 func resetMock() {
                     executeCallCount = 0
-                    executeCallArgs = []
+                    executeCallArguments = []
                     executeHandler = nil
                 }
                 class func resetMock() {

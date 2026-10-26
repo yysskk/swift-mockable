@@ -41,18 +41,18 @@ struct ElseClauseMacroTests {
                     #if CUSTOM
                     #else
                     var betaCallCount: Int = 0
-                    var betaCallArgs: [()] = []
+                    var betaCallArguments: [()] = []
                     var betaHandler: (@Sendable () -> Int)? = nil
                     #endif
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 #if CUSTOM
                 var alphaCallCount: Int = 0
-                var alphaCallArgs: [()] = []
+                var alphaCallArguments: [()] = []
                 var alphaHandler: (@Sendable () -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
-                    alphaCallArgs.append(())
+                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
@@ -70,15 +70,15 @@ struct ElseClauseMacroTests {
                         }
                     }
                 }
-                static var betaCallArgs: [()] {
+                static var betaCallArguments: [()] {
                     get {
                         _staticStorage.withLock {
-                            $0.betaCallArgs
+                            $0.betaCallArguments
                         }
                     }
                     set {
                         _staticStorage.withLock {
-                            $0.betaCallArgs = newValue
+                            $0.betaCallArguments = newValue
                         }
                     }
                 }
@@ -97,7 +97,7 @@ struct ElseClauseMacroTests {
                 static func beta() -> Int {
                     let _handler = _staticStorage.withLock { storage -> (@Sendable () -> Int)? in
                         storage.betaCallCount += 1
-                        storage.betaCallArgs.append(())
+                        storage.betaCallArguments.append(())
                         return storage.betaHandler
                     }
                     guard let _handler else {
@@ -109,7 +109,7 @@ struct ElseClauseMacroTests {
                 func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArgs = []
+                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     #endif
@@ -119,7 +119,7 @@ struct ElseClauseMacroTests {
                         #if CUSTOM
                         #else
                         storage.betaCallCount = 0
-                        storage.betaCallArgs = []
+                        storage.betaCallArguments = []
                         storage.betaHandler = nil
                         #endif
                     }
@@ -159,33 +159,33 @@ struct ElseClauseMacroTests {
             class ServiceMock: Service {
                 #if CUSTOM
                 var alphaCallCount: Int = 0
-                var alphaCallArgs: [()] = []
+                var alphaCallArguments: [()] = []
                 var alphaHandler: (@Sendable () -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
-                    alphaCallArgs.append(())
+                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
                 }
                 #else
                 var fetchIntCallCount: Int = 0
-                var fetchIntCallArgs: [Int] = []
+                var fetchIntCallArguments: [Int] = []
                 var fetchIntHandler: (@Sendable (Int) -> Int)? = nil
                 func fetch(id: Int) -> Int {
                     fetchIntCallCount += 1
-                    fetchIntCallArgs.append(id)
+                    fetchIntCallArguments.append(id)
                     guard let _handler = fetchIntHandler else {
                         fatalError("\\(Self.self).fetchIntHandler is not set")
                     }
                     return _handler(id)
                 }
                 var fetchStringCallCount: Int = 0
-                var fetchStringCallArgs: [String] = []
+                var fetchStringCallArguments: [String] = []
                 var fetchStringHandler: (@Sendable (String) -> Int)? = nil
                 func fetch(name: String) -> Int {
                     fetchStringCallCount += 1
-                    fetchStringCallArgs.append(name)
+                    fetchStringCallArguments.append(name)
                     guard let _handler = fetchStringHandler else {
                         fatalError("\\(Self.self).fetchStringHandler is not set")
                     }
@@ -195,14 +195,14 @@ struct ElseClauseMacroTests {
                 func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArgs = []
+                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     fetchIntCallCount = 0
-                    fetchIntCallArgs = []
+                    fetchIntCallArguments = []
                     fetchIntHandler = nil
                     fetchStringCallCount = 0
-                    fetchStringCallArgs = []
+                    fetchStringCallArguments = []
                     fetchStringHandler = nil
                     #endif
                 }
@@ -241,31 +241,31 @@ struct ElseClauseMacroTests {
             open class ServiceMock: Service {
                 #if CUSTOM
                 public var alphaCallCount: Int = 0
-                public var alphaCallArgs: [()] = []
+                public var alphaCallArguments: [()] = []
                 public var alphaHandler: (@Sendable () -> Void)? = nil
                 public func alpha() {
                     alphaCallCount += 1
-                    alphaCallArgs.append(())
+                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
                 }
                 #else
                 public var initCallCount: Int = 0
-                public var initCallArgs: [String] = []
+                public var initCallArguments: [String] = []
                 public required init(name: String) {
                     initCallCount += 1
-                    initCallArgs.append(name)
+                    initCallArguments.append(name)
                 }
                 #endif
                 open func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArgs = []
+                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     initCallCount = 0
-                    initCallArgs = []
+                    initCallArguments = []
                     #endif
                 }
                 open class func resetMock() {

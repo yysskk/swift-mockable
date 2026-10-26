@@ -42,7 +42,7 @@ struct TrackingAccessTests {
             recordedArguments: "id",
             names: names()
         )
-        #expect(rendered(statements) == ["fetchCallCount += 1", "fetchCallArgs.append(id)"])
+        #expect(rendered(statements) == ["fetchCallCount += 1", "fetchCallArguments.append(id)"])
     }
 
     @Test("Direct access qualifies members a parameter shadows")
@@ -52,7 +52,7 @@ struct TrackingAccessTests {
             recordedArguments: "id",
             names: names(memberNames: ["id"])
         )
-        #expect(rendered(statements) == ["self.fetchCallCount += 1", "self.fetchCallArgs.append(id)"])
+        #expect(rendered(statements) == ["self.fetchCallCount += 1", "self.fetchCallArguments.append(id)"])
     }
 
     @Test("Lock-backed access records inside a single withLock")
@@ -65,7 +65,7 @@ struct TrackingAccessTests {
         #expect(rendered(statements) == ["""
         _storage.withLock { storage in
             storage.fetchCallCount += 1
-            storage.fetchCallArgs.append(id)
+            storage.fetchCallArguments.append(id)
         }
         """])
     }
@@ -97,7 +97,7 @@ struct TrackingAccessTests {
             handlerType: "(@Sendable (Int) -> String)?",
             names: names()
         )
-        #expect(rendered(binding.statements) == ["fetchCallCount += 1", "fetchCallArgs.append(id)"])
+        #expect(rendered(binding.statements) == ["fetchCallCount += 1", "fetchCallArguments.append(id)"])
         #expect(binding.pattern == "_handler = fetchHandler")
     }
 
@@ -112,7 +112,7 @@ struct TrackingAccessTests {
         #expect(rendered(binding.statements) == ["""
         let _handler = _staticStorage.withLock { storage -> (@Sendable (Int) -> String)? in
             storage.fetchCallCount += 1
-            storage.fetchCallArgs.append(id)
+            storage.fetchCallArguments.append(id)
             return storage.fetchHandler
         }
         """])

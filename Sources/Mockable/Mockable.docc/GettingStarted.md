@@ -62,7 +62,7 @@ let user = try await mock.fetchUser(id: 42)
 // Verify
 #expect(user.id == 42)
 #expect(mock.fetchUserCallCount == 1)
-#expect(mock.fetchUserCallArgs == [42])
+#expect(mock.fetchUserCallArguments == [42])
 
 // Reset
 mock.resetMock()
@@ -75,13 +75,13 @@ For each protocol requirement, `@Mockable` generates:
 
 - **Functions**:
   - `<method>CallCount` -- number of calls
-  - `<method>CallArgs` -- array of captured arguments
+  - `<method>CallArguments` -- array of captured arguments
   - `<method>Handler` -- configurable closure
 - **Properties**:
   - `<property>` -- the property itself, settable on the mock even for a `{ get }` requirement
 - **Subscripts**:
   - `subscript<suffix>CallCount`
-  - `subscript<suffix>CallArgs`
+  - `subscript<suffix>CallArguments`
   - `subscript<suffix>Handler`
   - `subscript<suffix>SetHandler` for get/set subscripts
 - **Utility**:

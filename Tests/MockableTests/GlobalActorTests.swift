@@ -74,7 +74,7 @@ struct GlobalActorTests {
         mock.save("value")
 
         #expect(mock.saveCallCount == 1)
-        #expect(mock.saveCallArgs == ["value"])
+        #expect(mock.saveCallArguments == ["value"])
 
         mock.resetMock()
         #expect(mock.saveCallCount == 0)
@@ -106,7 +106,7 @@ struct GlobalActorTests {
         mock.track("opened")
 
         #expect(mock.trackCallCount == 1)
-        #expect(mock.trackCallArgs == ["opened"])
+        #expect(mock.trackCallArguments == ["opened"])
     }
 
     @Test("An unannotated child still tracks its parent's isolated requirements")

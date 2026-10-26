@@ -33,11 +33,11 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var handleCallCount: Int = 0
-                var handleCallArgs: [Int] = []
+                var handleCallArguments: [Int] = []
                 var handleHandler: (@Sendable (Int) -> Int)? = nil
                 func handle(_ param0: Int) -> Int {
                     handleCallCount += 1
-                    handleCallArgs.append(param0)
+                    handleCallArguments.append(param0)
                     guard let _handler = handleHandler else {
                         fatalError("\\(Self.self).handleHandler is not set")
                     }
@@ -45,7 +45,7 @@ struct ParameterNameMacroTests {
                 }
                 func resetMock() {
                     handleCallCount = 0
-                    handleCallArgs = []
+                    handleCallArguments = []
                     handleHandler = nil
                 }
                 class func resetMock() {
@@ -74,18 +74,18 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var pairCallCount: Int = 0
-                var pairCallArgs: [(param0: Int, param1: String)] = []
+                var pairCallArguments: [(param0: Int, param1: String)] = []
                 var pairHandler: (@Sendable (Int, String) -> Void)? = nil
                 func pair(_ param0: Int, _ param1: String) {
                     pairCallCount += 1
-                    pairCallArgs.append((param0: param0, param1: param1))
+                    pairCallArguments.append((param0: param0, param1: param1))
                     if let _handler = pairHandler {
                         _handler(param0, param1)
                     }
                 }
                 func resetMock() {
                     pairCallCount = 0
-                    pairCallArgs = []
+                    pairCallArguments = []
                     pairHandler = nil
                 }
                 class func resetMock() {
@@ -114,18 +114,18 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var takeCallCount: Int = 0
-                var takeCallArgs: [(param0_: Int, param0: String)] = []
+                var takeCallArguments: [(param0_: Int, param0: String)] = []
                 var takeHandler: (@Sendable (Int, String) -> Void)? = nil
                 func take(_ param0_: Int, param0: String) {
                     takeCallCount += 1
-                    takeCallArgs.append((param0_: param0_, param0: param0))
+                    takeCallArguments.append((param0_: param0_, param0: param0))
                     if let _handler = takeHandler {
                         _handler(param0_, param0)
                     }
                 }
                 func resetMock() {
                     takeCallCount = 0
-                    takeCallArgs = []
+                    takeCallArguments = []
                     takeHandler = nil
                 }
                 class func resetMock() {
@@ -154,11 +154,11 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var valueCallCount: Int = 0
-                var valueCallArgs: [Int] = []
+                var valueCallArguments: [Int] = []
                 var valueHandler: (@Sendable (Int) -> Int)? = nil
                 func value(`for`: Int) -> Int {
                     valueCallCount += 1
-                    valueCallArgs.append(`for`)
+                    valueCallArguments.append(`for`)
                     guard let _handler = valueHandler else {
                         fatalError("\\(Self.self).valueHandler is not set")
                     }
@@ -166,7 +166,7 @@ struct ParameterNameMacroTests {
                 }
                 func resetMock() {
                     valueCallCount = 0
-                    valueCallArgs = []
+                    valueCallArguments = []
                     valueHandler = nil
                 }
                 class func resetMock() {
@@ -195,18 +195,18 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var logCallCount: Int = 0
-                var logCallArgs: [(for: Int, in: String)] = []
+                var logCallArguments: [(for: Int, in: String)] = []
                 var logHandler: (@Sendable (Int, String) -> Void)? = nil
                 func log(`for`: Int, `in`: String) {
                     logCallCount += 1
-                    logCallArgs.append((for: `for`, in: `in`))
+                    logCallArguments.append((for: `for`, in: `in`))
                     if let _handler = logHandler {
                         _handler(`for`, `in`)
                     }
                 }
                 func resetMock() {
                     logCallCount = 0
-                    logCallArgs = []
+                    logCallArguments = []
                     logHandler = nil
                 }
                 class func resetMock() {
@@ -238,7 +238,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service, @unchecked Sendable {
                 private struct Storage {
                     var saveCallCount: Int = 0
-                    var saveCallArgs: [Int] = []
+                    var saveCallArguments: [Int] = []
                     var saveHandler: (@Sendable (Int) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -254,15 +254,15 @@ struct ParameterNameMacroTests {
                         }
                     }
                 }
-                var saveCallArgs: [Int] {
+                var saveCallArguments: [Int] {
                     get {
                         _storage.withLock {
-                            $0.saveCallArgs
+                            $0.saveCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.saveCallArgs = newValue
+                            $0.saveCallArguments = newValue
                         }
                     }
                 }
@@ -281,7 +281,7 @@ struct ParameterNameMacroTests {
                 func save(storage: Int) {
                     let _handler = _storage.withLock { storage_ -> (@Sendable (Int) -> Void)? in
                         storage_.saveCallCount += 1
-                        storage_.saveCallArgs.append(storage)
+                        storage_.saveCallArguments.append(storage)
                         return storage_.saveHandler
                     }
                     if let _handler {
@@ -291,7 +291,7 @@ struct ParameterNameMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.saveCallCount = 0
-                        storage.saveCallArgs = []
+                        storage.saveCallArguments = []
                         storage.saveHandler = nil
                     }
                 }
@@ -321,18 +321,18 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var runCallCount: Int = 0
-                var runCallArgs: [Int] = []
+                var runCallArguments: [Int] = []
                 var runHandler: (@Sendable (Int) -> Void)? = nil
                 func run(_handler: Int) {
                     runCallCount += 1
-                    runCallArgs.append(_handler)
+                    runCallArguments.append(_handler)
                     if let _handler_ = runHandler {
                         _handler_(_handler)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -361,18 +361,18 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [Int] = []
+                var fetchCallArguments: [Int] = []
                 var fetchHandler: (@Sendable (Int) -> Void)? = nil
                 func fetch(fetchCallCount: Int) {
                     self.fetchCallCount += 1
-                    self.fetchCallArgs.append(fetchCallCount)
+                    self.fetchCallArguments.append(fetchCallCount)
                     if let _handler = self.fetchHandler {
                         _handler(fetchCallCount)
                     }
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -402,7 +402,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 private struct StaticStorage {
                     var storeCallCount: Int = 0
-                    var storeCallArgs: [Int] = []
+                    var storeCallArguments: [Int] = []
                     var storeHandler: (@Sendable (Int) -> Void)? = nil
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
@@ -418,15 +418,15 @@ struct ParameterNameMacroTests {
                         }
                     }
                 }
-                static var storeCallArgs: [Int] {
+                static var storeCallArguments: [Int] {
                     get {
                         _staticStorage.withLock {
-                            $0.storeCallArgs
+                            $0.storeCallArguments
                         }
                     }
                     set {
                         _staticStorage.withLock {
-                            $0.storeCallArgs = newValue
+                            $0.storeCallArguments = newValue
                         }
                     }
                 }
@@ -445,7 +445,7 @@ struct ParameterNameMacroTests {
                 static func store(_staticStorage: Int) {
                     let _handler = Self._staticStorage.withLock { storage -> (@Sendable (Int) -> Void)? in
                         storage.storeCallCount += 1
-                        storage.storeCallArgs.append(_staticStorage)
+                        storage.storeCallArguments.append(_staticStorage)
                         return storage.storeHandler
                     }
                     if let _handler {
@@ -457,7 +457,7 @@ struct ParameterNameMacroTests {
                 class func resetMock() {
                     Self._staticStorage.withLock { storage in
                         storage.storeCallCount = 0
-                        storage.storeCallArgs = []
+                        storage.storeCallArguments = []
                         storage.storeHandler = nil
                     }
                 }
@@ -485,13 +485,13 @@ struct ParameterNameMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var subscriptIntCallCount: Int = 0
-                var subscriptIntCallArgs: [Int] = []
+                var subscriptIntCallArguments: [Int] = []
                 var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
                 var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
                 subscript(newValue: Int) -> String {
                     get {
                         subscriptIntCallCount += 1
-                        subscriptIntCallArgs.append(newValue)
+                        subscriptIntCallArguments.append(newValue)
                         guard let _handler = subscriptIntHandler else {
                             fatalError("\\(Self.self).subscriptIntHandler is not set")
                         }
@@ -505,7 +505,7 @@ struct ParameterNameMacroTests {
                 }
                 func resetMock() {
                     subscriptIntCallCount = 0
-                    subscriptIntCallArgs = []
+                    subscriptIntCallArguments = []
                     subscriptIntHandler = nil
                     subscriptIntSetHandler = nil
                 }

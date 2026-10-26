@@ -62,7 +62,7 @@ struct MainActorInheritanceTests {
         mock.track("opened")
 
         #expect(mock.trackCallCount == 1)
-        #expect(mock.trackCallArgs == ["opened"])
+        #expect(mock.trackCallArguments == ["opened"])
 
         // The parent is nonisolated, so its override of `resetMock()` is too.
         mock.resetMock()

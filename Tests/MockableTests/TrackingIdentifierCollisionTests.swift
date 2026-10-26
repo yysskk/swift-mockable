@@ -64,7 +64,7 @@ struct TrackingIdentifierCollisionTests {
 
         #expect(mock.loadCallCount == 1)
         #expect(mock.loadItem2CallCount == 2)
-        #expect(mock.loadItem2CallArgs == [Item(id: 1), Item(id: 2)])
+        #expect(mock.loadItem2CallArguments == [Item(id: 1), Item(id: 2)])
         #expect(mock.loadItemCallCount == 3)
 
         mock.resetMock()
@@ -83,7 +83,7 @@ struct TrackingIdentifierCollisionTests {
         mock.load(Item(id: 9))
 
         #expect(mock.loadItemCallCount == 1)
-        #expect(mock.loadItem2CallArgs == [Item(id: 9)])
+        #expect(mock.loadItem2CallArguments == [Item(id: 9)])
     }
 
     @Test("A subscript gives way to a method named after its identifier")
@@ -97,7 +97,7 @@ struct TrackingIdentifierCollisionTests {
         #expect(mock["abc"] == 3)
         #expect(mock.subscriptStringCallCount == 1)
         #expect(mock.subscriptString2CallCount == 1)
-        #expect(mock.subscriptString2CallArgs == ["abc"])
+        #expect(mock.subscriptString2CallArguments == ["abc"])
     }
 
     @Test("An initializer gives way to a method named after its identifier")
@@ -105,7 +105,7 @@ struct TrackingIdentifierCollisionTests {
         let mock = CollidingInitializerServiceMock("name")
 
         #expect(mock.initString2CallCount == 1)
-        #expect(mock.initString2CallArgs == ["name"])
+        #expect(mock.initString2CallArguments == ["name"])
         #expect(mock.initCallCount == 0)
         #expect(mock.initStringCallCount == 0)
     }
@@ -119,7 +119,7 @@ struct TrackingIdentifierCollisionTests {
         mock.load(Item(id: 1))
         mock.loadItem()
 
-        #expect(mock.loadItem2CallArgs == [Item(id: 1)])
+        #expect(mock.loadItem2CallArguments == [Item(id: 1)])
         #expect(mock.loadItemCallCount == 1)
 
         mock.resetMock()

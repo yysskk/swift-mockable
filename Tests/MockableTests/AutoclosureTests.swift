@@ -13,7 +13,7 @@ struct AutoclosureTests {
         mock.log("world")
 
         #expect(mock.logCallCount == 2)
-        #expect(mock.logCallArgs == ["hello", "world"])
+        #expect(mock.logCallArguments == ["hello", "world"])
     }
 
     @Test("handler receives the evaluated value")
@@ -42,7 +42,7 @@ struct AutoclosureTests {
         mock.log(nextMessage())
 
         #expect(evaluationCount == 1)
-        #expect(mock.logCallArgs == ["message-1"])
+        #expect(mock.logCallArguments == ["message-1"])
     }
 
     @Test("@autoclosure argument is evaluated even when no handler is set")
@@ -70,9 +70,9 @@ struct AutoclosureTests {
         let result = mock.combine(prefix: "INFO", message: "ready")
 
         #expect(result == "INFO: ready")
-        #expect(mock.combineCallArgs.count == 1)
-        #expect(mock.combineCallArgs[0].prefix == "INFO")
-        #expect(mock.combineCallArgs[0].message == "ready")
+        #expect(mock.combineCallArguments.count == 1)
+        #expect(mock.combineCallArguments[0].prefix == "INFO")
+        #expect(mock.combineCallArguments[0].message == "ready")
     }
 
     @Test("@autoclosure @escaping argument is evaluated the same way")
@@ -86,7 +86,7 @@ struct AutoclosureTests {
         mock.schedule(21 + 21)
 
         #expect(received == [42])
-        #expect(mock.scheduleCallArgs == [42])
+        #expect(mock.scheduleCallArguments == [42])
     }
 
     @Test("throwing autoclosure propagates its error before recording the call")
@@ -103,7 +103,7 @@ struct AutoclosureTests {
             try mock.compute(try failingValue())
         }
         #expect(mock.computeCallCount == 0)
-        #expect(mock.computeCallArgs.isEmpty)
+        #expect(mock.computeCallArguments.isEmpty)
     }
 
     @Test("throwing autoclosure evaluates successfully and forwards to the handler")
@@ -116,7 +116,7 @@ struct AutoclosureTests {
         let result = try mock.compute(21)
 
         #expect(result == 42)
-        #expect(mock.computeCallArgs == [21])
+        #expect(mock.computeCallArguments == [21])
     }
 
     @Test("Sendable mock evaluates and records autoclosure arguments")
@@ -126,7 +126,7 @@ struct AutoclosureTests {
         mock.record(40 + 2)
 
         #expect(mock.recordCallCount == 1)
-        #expect(mock.recordCallArgs == [42])
+        #expect(mock.recordCallArguments == [42])
     }
 
     @Test("subscript with autoclosure key records the evaluated key")
@@ -140,7 +140,7 @@ struct AutoclosureTests {
 
         #expect(value == 5)
         #expect(mock.subscriptAutoclosureStringCallCount == 1)
-        #expect(mock.subscriptAutoclosureStringCallArgs == ["swift"])
+        #expect(mock.subscriptAutoclosureStringCallArguments == ["swift"])
     }
 
     @Test("resetMock clears autoclosure tracking state")
@@ -152,7 +152,7 @@ struct AutoclosureTests {
         mock.resetMock()
 
         #expect(mock.logCallCount == 0)
-        #expect(mock.logCallArgs.isEmpty)
+        #expect(mock.logCallArguments.isEmpty)
         #expect(mock.logHandler == nil)
     }
 }

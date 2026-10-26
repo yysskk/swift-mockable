@@ -22,7 +22,7 @@ struct MainActorIntegrationTests {
         mock.loadData()
 
         #expect(mock.loadDataCallCount == 2)
-        #expect(mock.loadDataCallArgs.count == 2)
+        #expect(mock.loadDataCallArguments.count == 2)
     }
 
     @Test("MainActor mock void method handler is called")
@@ -136,10 +136,10 @@ struct MainActorIntegrationTests {
         mock.resetMock()
 
         #expect(mock.loadDataCallCount == 0)
-        #expect(mock.loadDataCallArgs.isEmpty)
+        #expect(mock.loadDataCallArguments.isEmpty)
         #expect(mock.loadDataHandler == nil)
         #expect(mock.fetchItemsCallCount == 0)
-        #expect(mock.fetchItemsCallArgs.isEmpty)
+        #expect(mock.fetchItemsCallArguments.isEmpty)
         #expect(mock.fetchItemsHandler == nil)
         #expect(mock.optionalNote == nil)
     }

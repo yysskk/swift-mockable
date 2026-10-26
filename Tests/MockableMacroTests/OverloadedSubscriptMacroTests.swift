@@ -29,22 +29,22 @@ struct OverloadedSubscriptMacroTests {
             #if DEBUG
             class RegistryMock: Registry {
                 var subscriptStringIntCallCount: Int = 0
-                var subscriptStringIntCallArgs: [String] = []
+                var subscriptStringIntCallArguments: [String] = []
                 var subscriptStringIntHandler: (@Sendable (String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptStringIntCallCount += 1
-                    subscriptStringIntCallArgs.append(key)
+                    subscriptStringIntCallArguments.append(key)
                     guard let _handler = subscriptStringIntHandler else {
                         fatalError("\\(Self.self).subscriptStringIntHandler is not set")
                     }
                     return _handler(key)
                 }
                 var subscriptStringBoolCallCount: Int = 0
-                var subscriptStringBoolCallArgs: [String] = []
+                var subscriptStringBoolCallArguments: [String] = []
                 var subscriptStringBoolHandler: (@Sendable (String) -> Bool )? = nil
                 subscript(key: String) -> Bool {
                     subscriptStringBoolCallCount += 1
-                    subscriptStringBoolCallArgs.append(key)
+                    subscriptStringBoolCallArguments.append(key)
                     guard let _handler = subscriptStringBoolHandler else {
                         fatalError("\\(Self.self).subscriptStringBoolHandler is not set")
                     }
@@ -52,10 +52,10 @@ struct OverloadedSubscriptMacroTests {
                 }
                 func resetMock() {
                     subscriptStringIntCallCount = 0
-                    subscriptStringIntCallArgs = []
+                    subscriptStringIntCallArguments = []
                     subscriptStringIntHandler = nil
                     subscriptStringBoolCallCount = 0
-                    subscriptStringBoolCallArgs = []
+                    subscriptStringBoolCallArguments = []
                     subscriptStringBoolHandler = nil
                 }
                 class func resetMock() {
@@ -86,22 +86,22 @@ struct OverloadedSubscriptMacroTests {
             #if DEBUG
             class ContainerMock: Container {
                 var subscriptFooBarBazIntCallCount: Int = 0
-                var subscriptFooBarBazIntCallArgs: [Foo<Bar, Baz>] = []
+                var subscriptFooBarBazIntCallArguments: [Foo<Bar, Baz>] = []
                 var subscriptFooBarBazIntHandler: (@Sendable (Foo<Bar, Baz>) -> Int )? = nil
                 subscript(value: Foo<Bar, Baz>) -> Int {
                     subscriptFooBarBazIntCallCount += 1
-                    subscriptFooBarBazIntCallArgs.append(value)
+                    subscriptFooBarBazIntCallArguments.append(value)
                     guard let _handler = subscriptFooBarBazIntHandler else {
                         fatalError("\\(Self.self).subscriptFooBarBazIntHandler is not set")
                     }
                     return _handler(value)
                 }
                 var subscriptFooBarBazInt2CallCount: Int = 0
-                var subscriptFooBarBazInt2CallArgs: [Foo<BarBaz>] = []
+                var subscriptFooBarBazInt2CallArguments: [Foo<BarBaz>] = []
                 var subscriptFooBarBazInt2Handler: (@Sendable (Foo<BarBaz>) -> Int )? = nil
                 subscript(value: Foo<BarBaz>) -> Int {
                     subscriptFooBarBazInt2CallCount += 1
-                    subscriptFooBarBazInt2CallArgs.append(value)
+                    subscriptFooBarBazInt2CallArguments.append(value)
                     guard let _handler = subscriptFooBarBazInt2Handler else {
                         fatalError("\\(Self.self).subscriptFooBarBazInt2Handler is not set")
                     }
@@ -109,10 +109,10 @@ struct OverloadedSubscriptMacroTests {
                 }
                 func resetMock() {
                     subscriptFooBarBazIntCallCount = 0
-                    subscriptFooBarBazIntCallArgs = []
+                    subscriptFooBarBazIntCallArguments = []
                     subscriptFooBarBazIntHandler = nil
                     subscriptFooBarBazInt2CallCount = 0
-                    subscriptFooBarBazInt2CallArgs = []
+                    subscriptFooBarBazInt2CallArguments = []
                     subscriptFooBarBazInt2Handler = nil
                 }
                 class func resetMock() {
@@ -143,13 +143,13 @@ struct OverloadedSubscriptMacroTests {
             #if DEBUG
             class StoreMock: Store {
                 var subscriptStringIntCallCount: Int = 0
-                var subscriptStringIntCallArgs: [String] = []
+                var subscriptStringIntCallArguments: [String] = []
                 var subscriptStringIntHandler: (@Sendable (String) -> Int )? = nil
                 var subscriptStringIntSetHandler: (@Sendable (String, Int ) -> Void)? = nil
                 subscript(key: String) -> Int {
                     get {
                         subscriptStringIntCallCount += 1
-                        subscriptStringIntCallArgs.append(key)
+                        subscriptStringIntCallArguments.append(key)
                         guard let _handler = subscriptStringIntHandler else {
                             fatalError("\\(Self.self).subscriptStringIntHandler is not set")
                         }
@@ -162,13 +162,13 @@ struct OverloadedSubscriptMacroTests {
                     }
                 }
                 var subscriptStringBoolCallCount: Int = 0
-                var subscriptStringBoolCallArgs: [String] = []
+                var subscriptStringBoolCallArguments: [String] = []
                 var subscriptStringBoolHandler: (@Sendable (String) -> Bool )? = nil
                 var subscriptStringBoolSetHandler: (@Sendable (String, Bool ) -> Void)? = nil
                 subscript(key: String) -> Bool {
                     get {
                         subscriptStringBoolCallCount += 1
-                        subscriptStringBoolCallArgs.append(key)
+                        subscriptStringBoolCallArguments.append(key)
                         guard let _handler = subscriptStringBoolHandler else {
                             fatalError("\\(Self.self).subscriptStringBoolHandler is not set")
                         }
@@ -182,11 +182,11 @@ struct OverloadedSubscriptMacroTests {
                 }
                 func resetMock() {
                     subscriptStringIntCallCount = 0
-                    subscriptStringIntCallArgs = []
+                    subscriptStringIntCallArguments = []
                     subscriptStringIntHandler = nil
                     subscriptStringIntSetHandler = nil
                     subscriptStringBoolCallCount = 0
-                    subscriptStringBoolCallArgs = []
+                    subscriptStringBoolCallArguments = []
                     subscriptStringBoolHandler = nil
                     subscriptStringBoolSetHandler = nil
                 }

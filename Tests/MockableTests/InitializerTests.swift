@@ -9,7 +9,7 @@ struct InitializerRequirementTests {
         let mock = ConfigurableServiceMock(configuration: "production")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["production"])
+        #expect(mock.initCallArguments == ["production"])
     }
 
     @Test("Mock satisfies an init requirement used through a generic constraint")
@@ -21,7 +21,7 @@ struct InitializerRequirementTests {
         let mock = make(ConfigurableServiceMock.self, configuration: "generic")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["generic"])
+        #expect(mock.initCallArguments == ["generic"])
     }
 
     @Test("Overloaded init requirements are tracked separately")
@@ -29,14 +29,14 @@ struct InitializerRequirementTests {
         let byHost = MultiInitServiceMock(host: "example.com")
         #expect(byHost.initStringCallCount == 1)
         #expect(byHost.initStringIntCallCount == 0)
-        #expect(byHost.initStringCallArgs == ["example.com"])
+        #expect(byHost.initStringCallArguments == ["example.com"])
 
         let byHostAndPort = MultiInitServiceMock(host: "example.com", port: 8080)
         #expect(byHostAndPort.initStringIntCallCount == 1)
         #expect(byHostAndPort.initStringCallCount == 0)
-        #expect(byHostAndPort.initStringIntCallArgs.count == 1)
-        #expect(byHostAndPort.initStringIntCallArgs[0].host == "example.com")
-        #expect(byHostAndPort.initStringIntCallArgs[0].port == 8080)
+        #expect(byHostAndPort.initStringIntCallArguments.count == 1)
+        #expect(byHostAndPort.initStringIntCallArguments[0].host == "example.com")
+        #expect(byHostAndPort.initStringIntCallArguments[0].port == 8080)
     }
 
     @Test("Throwing init requirement can be constructed and records the call")
@@ -44,7 +44,7 @@ struct InitializerRequirementTests {
         let mock = try ThrowingInitServiceMock(path: "/etc/config")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["/etc/config"])
+        #expect(mock.initCallArguments == ["/etc/config"])
     }
 
     @Test("Failable init requirement records the call")
@@ -52,7 +52,7 @@ struct InitializerRequirementTests {
         let mock = FailableInitServiceMock(rawValue: "value")
 
         #expect(mock?.initCallCount == 1)
-        #expect(mock?.initCallArgs == ["value"])
+        #expect(mock?.initCallArguments == ["value"])
     }
 
     @Test("resetMock clears init tracking")
@@ -63,7 +63,7 @@ struct InitializerRequirementTests {
         mock.resetMock()
 
         #expect(mock.initCallCount == 0)
-        #expect(mock.initCallArgs == [])
+        #expect(mock.initCallArguments == [])
     }
 
     @Test("Sendable protocol init requirement is recorded behind the lock")
@@ -71,11 +71,11 @@ struct InitializerRequirementTests {
         let mock = SendableInitServiceMock(configuration: "prod")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["prod"])
+        #expect(mock.initCallArguments == ["prod"])
 
         mock.resetMock()
         #expect(mock.initCallCount == 0)
-        #expect(mock.initCallArgs == [])
+        #expect(mock.initCallArguments == [])
     }
 
     @Test("Actor protocol init requirement is recorded through nonisolated tracking")
@@ -83,7 +83,7 @@ struct InitializerRequirementTests {
         let mock = ActorInitServiceMock(identifier: 7)
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == [7])
+        #expect(mock.initCallArguments == [7])
     }
 
     @Test("Child mock inherits the parent's init requirement and its recording")
@@ -91,7 +91,7 @@ struct InitializerRequirementTests {
         let mock = InheritingInitServiceMock(token: "session")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["session"])
+        #expect(mock.initCallArguments == ["session"])
     }
 
     @Test("Child mock without an init requirement is constructible via the inherited init")

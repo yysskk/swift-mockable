@@ -17,8 +17,8 @@ struct NonEscapingClosureTests {
 
         #expect(handlerRan)
         #expect(mock.runCallCount == 1)
-        // CallArgs excludes the non-escaping closure, so it records the empty tuple.
-        #expect(mock.runCallArgs.count == 1)
+        // CallArguments excludes the non-escaping closure, so it records the empty tuple.
+        #expect(mock.runCallArguments.count == 1)
     }
 
     @Test("Storable parameters are recorded while the non-escaping closure is forwarded")
@@ -32,7 +32,7 @@ struct NonEscapingClosureTests {
 
         #expect(result == 42)
         #expect(mock.computeCallCount == 1)
-        #expect(mock.computeCallArgs == ["double"])
+        #expect(mock.computeCallArguments == ["double"])
     }
 
     @Test("Sendable mock forwards a non-escaping @Sendable closure to the handler")
@@ -58,7 +58,7 @@ struct NonEscapingClosureTests {
         mock.resetMock()
 
         #expect(mock.runCallCount == 0)
-        #expect(mock.runCallArgs.isEmpty)
+        #expect(mock.runCallArguments.isEmpty)
         #expect(mock.runHandler == nil)
     }
 }

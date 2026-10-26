@@ -80,7 +80,7 @@ struct ActorIntegrationTests {
         await mock.updateProfile("profile3", for: "key3")
 
         let count = mock.updateProfileCallCount
-        let args = mock.updateProfileCallArgs
+        let args = mock.updateProfileCallArguments
 
         #expect(count == 3)
         #expect(args.count == 3)
@@ -135,12 +135,12 @@ struct ActorIntegrationTests {
 
         #expect(result == "value-abc")
         #expect(ActorStaticServiceMock.lookupCallCount == 1)
-        #expect(ActorStaticServiceMock.lookupCallArgs == ["abc"])
+        #expect(ActorStaticServiceMock.lookupCallArguments == ["abc"])
         #expect(ActorStaticServiceMock.cachedToken == "token")
 
         ActorStaticServiceMock.resetMock()
         #expect(ActorStaticServiceMock.lookupCallCount == 0)
-        #expect(ActorStaticServiceMock.lookupCallArgs == [])
+        #expect(ActorStaticServiceMock.lookupCallArguments == [])
         #expect(ActorStaticServiceMock.lookupHandler == nil)
         #expect(ActorStaticServiceMock.cachedToken == nil)
     }
@@ -167,7 +167,7 @@ struct ActorIntegrationTests {
         try await mock.save("data2")
 
         let count = mock.saveCallCount
-        let args = mock.saveCallArgs
+        let args = mock.saveCallArguments
 
         #expect(count == 2)
         #expect(args == ["data1", "data2"])
@@ -222,7 +222,7 @@ struct ActorIntegrationTests {
         await mock.delete(id: 3)
 
         let count = mock.deleteCallCount
-        let args = mock.deleteCallArgs
+        let args = mock.deleteCallArguments
 
         #expect(count == 3)
         #expect(args == [1, 2, 3])
@@ -284,7 +284,7 @@ struct ActorIntegrationTests {
         }
 
         let count = mock.updateProfileCallCount
-        let args = mock.updateProfileCallArgs
+        let args = mock.updateProfileCallArguments
 
         #expect(count == 100)
         #expect(args.count == 100)
@@ -327,13 +327,13 @@ struct ActorIntegrationTests {
         mock.resetMock()
 
         #expect(mock.updateProfileCallCount == 0)
-        #expect(mock.updateProfileCallArgs.isEmpty)
+        #expect(mock.updateProfileCallArguments.isEmpty)
         #expect(mock.updateProfileHandler == nil)
         #expect(mock.profileCallCount == 0)
-        #expect(mock.profileCallArgs.isEmpty)
+        #expect(mock.profileCallArguments.isEmpty)
         #expect(mock.profileHandler == nil)
         #expect(mock.resetCallCount == 0)
-        #expect(mock.resetCallArgs.isEmpty)
+        #expect(mock.resetCallArguments.isEmpty)
         #expect(mock.resetHandler == nil)
     }
 
@@ -366,9 +366,9 @@ struct ActorIntegrationTests {
         await mock.updateProfile("third", for: "key")
 
         #expect(mock.updateProfileCallCount == 2)
-        #expect(mock.updateProfileCallArgs.count == 2)
-        #expect(mock.updateProfileCallArgs[0].profile == "second")
-        #expect(mock.updateProfileCallArgs[1].profile == "third")
+        #expect(mock.updateProfileCallArguments.count == 2)
+        #expect(mock.updateProfileCallArguments[0].profile == "second")
+        #expect(mock.updateProfileCallArguments[1].profile == "third")
     }
 
     @Test("Async actor mock resetMock resets async method tracking")
@@ -390,13 +390,13 @@ struct ActorIntegrationTests {
         mock.resetMock()
 
         #expect(mock.saveCallCount == 0)
-        #expect(mock.saveCallArgs == [])
+        #expect(mock.saveCallArguments == [])
         #expect(mock.saveHandler == nil)
         #expect(mock.loadCallCount == 0)
-        #expect(mock.loadCallArgs.isEmpty)
+        #expect(mock.loadCallArguments.isEmpty)
         #expect(mock.loadHandler == nil)
         #expect(mock.deleteCallCount == 0)
-        #expect(mock.deleteCallArgs.isEmpty)
+        #expect(mock.deleteCallArguments.isEmpty)
         #expect(mock.deleteHandler == nil)
     }
 

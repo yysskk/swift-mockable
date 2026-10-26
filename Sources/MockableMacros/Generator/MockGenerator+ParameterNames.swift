@@ -45,7 +45,7 @@ extension MockGenerator {
         unescaped((param.secondName ?? param.firstName).text)
     }
 
-    /// The label a parameter's recorded argument carries in `CallArgs`. A tuple label is
+    /// The label a parameter's recorded argument carries in `CallArguments`. A tuple label is
     /// never ambiguous with anything, so a keyword is written there as it stands —
     /// escaping it would be redundant, and Swift says so.
     static func recordedArgumentLabel(of param: FunctionParameterSyntax) -> TokenSyntax {

@@ -28,7 +28,7 @@ struct SendableOverloadedMethodTests {
 
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
     @Test("Overloaded methods have separate call args")
-    func overloadedMethodsSeparateCallArgs() async {
+    func overloadedMethodsSeparateCallArguments() async {
         let mock = OverloadedUserDefaultsMock()
 
         mock.setBoolStringHandler = { @Sendable _, _ in }
@@ -39,17 +39,17 @@ struct SendableOverloadedMethodTests {
         await mock.set(42, forKey: "count")
         await mock.set("value", forKey: "name")
 
-        #expect(mock.setBoolStringCallArgs.count == 1)
-        #expect(mock.setBoolStringCallArgs[0].0 == true)
-        #expect(mock.setBoolStringCallArgs[0].forKey == "enabled")
+        #expect(mock.setBoolStringCallArguments.count == 1)
+        #expect(mock.setBoolStringCallArguments[0].0 == true)
+        #expect(mock.setBoolStringCallArguments[0].forKey == "enabled")
 
-        #expect(mock.setIntStringCallArgs.count == 1)
-        #expect(mock.setIntStringCallArgs[0].0 == 42)
-        #expect(mock.setIntStringCallArgs[0].forKey == "count")
+        #expect(mock.setIntStringCallArguments.count == 1)
+        #expect(mock.setIntStringCallArguments[0].0 == 42)
+        #expect(mock.setIntStringCallArguments[0].forKey == "count")
 
-        #expect(mock.setStringStringCallArgs.count == 1)
-        #expect(mock.setStringStringCallArgs[0].0 == "value")
-        #expect(mock.setStringStringCallArgs[0].forKey == "name")
+        #expect(mock.setStringStringCallArguments.count == 1)
+        #expect(mock.setStringStringCallArguments[0].0 == "value")
+        #expect(mock.setStringStringCallArguments[0].forKey == "name")
     }
 
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
@@ -122,8 +122,8 @@ struct SendableOverloadedMethodTests {
         #expect(mock.setIntStringCallCount == 0)
         #expect(mock.setStringStringCallCount == 0)
         #expect(mock.getValueCallCount == 0)
-        #expect(mock.setBoolStringCallArgs.isEmpty)
-        #expect(mock.setIntStringCallArgs.isEmpty)
-        #expect(mock.setStringStringCallArgs.isEmpty)
+        #expect(mock.setBoolStringCallArguments.isEmpty)
+        #expect(mock.setIntStringCallArguments.isEmpty)
+        #expect(mock.setStringStringCallArguments.isEmpty)
     }
 }

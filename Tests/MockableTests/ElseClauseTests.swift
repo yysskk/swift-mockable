@@ -62,8 +62,8 @@ struct ElseClauseTests {
         #expect(mock.fetch(name: "abc") == 3)
         #expect(mock.fetchIntCallCount == 1)
         #expect(mock.fetchStringCallCount == 1)
-        #expect(mock.fetchIntCallArgs == [21])
-        #expect(mock.fetchStringCallArgs == ["abc"])
+        #expect(mock.fetchIntCallArguments == [21])
+        #expect(mock.fetchStringCallArguments == ["abc"])
 
         mock.resetMock()
         #expect(mock.fetchIntCallCount == 0)
@@ -75,6 +75,6 @@ struct ElseClauseTests {
         let mock = ElseClauseInitServiceMock(name: "mock")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["mock"])
+        #expect(mock.initCallArguments == ["mock"])
     }
 }

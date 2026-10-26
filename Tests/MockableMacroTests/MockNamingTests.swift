@@ -21,7 +21,7 @@ struct MockNamingTests {
     @Test("Tracking-member names derive from the requirement identifier")
     func trackingMemberNames() {
         #expect(MockNaming.callCount("fetch") == "fetchCallCount")
-        #expect(MockNaming.callArgs("fetch") == "fetchCallArgs")
+        #expect(MockNaming.callArguments("fetch") == "fetchCallArguments")
         #expect(MockNaming.handler("fetch") == "fetchHandler")
         #expect(MockNaming.setHandler("subscriptInt") == "subscriptIntSetHandler")
     }

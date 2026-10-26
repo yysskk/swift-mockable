@@ -43,7 +43,7 @@ extension MockGenerator {
                 parameters: parameters,
                 memberNames: access.referencedMembers([
                     MockNaming.callCount(identifier),
-                    MockNaming.callArgs(identifier),
+                    MockNaming.callArguments(identifier),
                 ])
             )
         )
@@ -82,7 +82,7 @@ extension MockGenerator {
         statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
         statements.append(contentsOf: access.recordingStatements(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
             names: names
         ))
         statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(

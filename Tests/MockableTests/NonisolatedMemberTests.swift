@@ -38,13 +38,13 @@ struct NonisolatedMemberTests {
         mock.track("opened")
 
         #expect(mock.trackCallCount == 1)
-        #expect(mock.trackCallArgs == ["opened"])
+        #expect(mock.trackCallArguments == ["opened"])
 
         // The state was set up from here, so it has to be clearable from here too.
         mock.resetMock()
 
         #expect(mock.trackCallCount == 0)
-        #expect(mock.trackCallArgs.isEmpty)
+        #expect(mock.trackCallArguments.isEmpty)
         #expect(mock.trackHandler == nil)
     }
 

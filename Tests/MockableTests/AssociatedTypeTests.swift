@@ -74,7 +74,7 @@ struct AssociatedTypeIntegrationTests {
         #expect(result1 as? String == "Entity 1")
         #expect(result2 == nil)
         #expect(mock.fetchCallCount == 2)
-        #expect(mock.fetchCallArgs == ["1", "2"])
+        #expect(mock.fetchCallArguments == ["1", "2"])
     }
 
     @Test("Associated type save method tracks calls")
@@ -90,7 +90,7 @@ struct AssociatedTypeIntegrationTests {
         mock.save("Entity B")
 
         #expect(mock.saveCallCount == 2)
-        #expect(mock.saveCallArgs.count == 2)
+        #expect(mock.saveCallArguments.count == 2)
         #expect(savedEntities.count == 2)
     }
 
@@ -127,8 +127,8 @@ struct AssociatedTypeIntegrationTests {
         #expect(result == 42)
         #expect(mock.getCallCount == 1)
         #expect(mock.setCallCount == 1)
-        #expect(mock.setCallArgs[0].key == "count")
-        #expect(mock.setCallArgs[0].value == 100)
+        #expect(mock.setCallArguments[0].key == "count")
+        #expect(mock.setCallArguments[0].value == 100)
     }
 
     @Test("Associated type in property works")
@@ -156,7 +156,7 @@ struct AssociatedTypeIntegrationTests {
 
         #expect(result as? String == "Loaded: 123")
         #expect(mock.loadCallCount == 1)
-        #expect(mock.loadCallArgs == ["123"])
+        #expect(mock.loadCallArguments == ["123"])
     }
 
     @Test("Associated type async method can throw")
@@ -187,7 +187,7 @@ struct AssociatedTypeIntegrationTests {
 
         #expect(result == 15)
         #expect(mock.processCallCount == 1)
-        #expect(mock.processCallArgs[0] == [1, 2, 3, 4, 5])
+        #expect(mock.processCallArguments[0] == [1, 2, 3, 4, 5])
     }
 
     @Test("Associated type transform method")
@@ -202,7 +202,7 @@ struct AssociatedTypeIntegrationTests {
 
         #expect(result == 10)
         #expect(mock.transformCallCount == 1)
-        #expect(mock.transformCallArgs == [5])
+        #expect(mock.transformCallArguments == [5])
     }
 
     @Test("Associated type mock resetMock works")
@@ -223,13 +223,13 @@ struct AssociatedTypeIntegrationTests {
         mock.resetMock()
 
         #expect(mock.fetchCallCount == 0)
-        #expect(mock.fetchCallArgs.isEmpty)
+        #expect(mock.fetchCallArguments.isEmpty)
         #expect(mock.fetchHandler == nil)
         #expect(mock.saveCallCount == 0)
-        #expect(mock.saveCallArgs.isEmpty)
+        #expect(mock.saveCallArguments.isEmpty)
         #expect(mock.saveHandler == nil)
         #expect(mock.fetchAllCallCount == 0)
-        #expect(mock.fetchAllCallArgs.isEmpty)
+        #expect(mock.fetchAllCallArguments.isEmpty)
         #expect(mock.fetchAllHandler == nil)
     }
 
@@ -245,9 +245,9 @@ struct AssociatedTypeIntegrationTests {
         mock.resetMock()
 
         #expect(mock.getCallCount == 0)
-        #expect(mock.getCallArgs.isEmpty)
+        #expect(mock.getCallArguments.isEmpty)
         #expect(mock.setCallCount == 0)
-        #expect(mock.setCallArgs.isEmpty)
+        #expect(mock.setCallArguments.isEmpty)
     }
 
     @Test("Associated type mock conforms to protocol")
