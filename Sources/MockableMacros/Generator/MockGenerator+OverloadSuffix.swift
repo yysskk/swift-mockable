@@ -119,46 +119,30 @@ extension MockGenerator {
 
     // MARK: - Function Identifier Suffix
 
-    /// Generates a unique suffix based on parameter types to distinguish overloaded functions.
-    /// Example: `func set(_ value: Bool, forKey: Key)` -> "BoolKey"
-    static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax) -> String {
-        overloadBaseSuffix(parameters: funcDecl.signature.parameterClause.parameters)
-    }
-
     /// Generates a unique suffix for an overloaded function within a group of methods
-    /// with the same name. See `overloadSuffix(for:in:)` for the disambiguation stages.
+    /// with the same name, e.g. "BoolKey" for `func set(_ value: Bool, forKey: Key)`.
+    /// See `overloadSuffix(for:in:)` for the disambiguation stages.
     static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
         overloadSuffix(for: OverloadSignature(funcDecl), in: methodGroup.map(OverloadSignature.init))
     }
 
     // MARK: - Initializer Identifier Suffix
 
-    /// Generates a suffix based on parameter types to distinguish overloaded initializers,
-    /// mirroring `functionIdentifierSuffix(from:)`. Example: `init(host: String, port: Int)`
-    /// -> "StringInt".
-    static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax) -> String {
-        overloadBaseSuffix(parameters: initDecl.signature.parameterClause.parameters)
-    }
-
     /// Generates a unique suffix for an overloaded initializer within a group of `init`
-    /// requirements. See `overloadSuffix(for:in:)` for the disambiguation stages;
-    /// initializers have no return type, so that disambiguator does not apply.
+    /// requirements, e.g. "StringInt" for `init(host: String, port: Int)`. See
+    /// `overloadSuffix(for:in:)` for the disambiguation stages; initializers have no
+    /// return type, so that disambiguator does not apply.
     static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
         overloadSuffix(for: OverloadSignature(initDecl), in: group.map(OverloadSignature.init))
     }
 
     // MARK: - Subscript Identifier Suffix
 
-    /// Generates a unique suffix based on parameter types to distinguish overloaded subscripts.
-    /// Unlike functions, the suffix is emitted even for a sole subscript, because generated
-    /// members cannot be named after a subscript's missing base name.
-    static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax) -> String {
-        overloadBaseSuffix(parameters: subscriptDecl.parameterClause.parameters)
-    }
-
     /// Generates a unique suffix for a subscript within the protocol's subscript group.
-    /// See `overloadSuffix(for:in:)` for the disambiguation stages; a sole subscript
-    /// keeps the plain parameter-type suffix.
+    /// Unlike a function's, the suffix is emitted even for a sole subscript, because
+    /// generated members cannot be named after a subscript's missing base name. See
+    /// `overloadSuffix(for:in:)` for the disambiguation stages; a sole subscript keeps
+    /// the plain parameter-type suffix.
     static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax, in group: [SubscriptDeclSyntax]) -> String {
         overloadSuffix(for: OverloadSignature(subscriptDecl), in: group.map(OverloadSignature.init))
     }

@@ -3,6 +3,16 @@ import Foundation
 import Synchronization
 #endif
 
+/// A lock that guards a value, as `MockableLock` delegates to it.
+///
+/// The two implementations differ only in the primitive they wrap, so `MockableLock`
+/// holds whichever one the running OS supports behind this protocol.
+private protocol LockBox<Value>: Sendable {
+    associatedtype Value
+
+    func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result
+}
+
 /// A thread-safe lock wrapper for platforms without the Synchronization module.
 /// Provides the same `withLock` API as `Mutex` for API compatibility.
 ///
@@ -23,28 +33,14 @@ final class LegacyLock<Value>: @unchecked Sendable {
     }
 }
 
-private class _LockBoxBase<Value>: @unchecked Sendable {
-    @discardableResult
-    func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
-        fatalError("Unimplemented lock box")
-    }
-}
-
-private final class LegacyLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendable {
-    private let _lock: LegacyLock<Value>
-
-    init(_ initialValue: Value) {
-        self._lock = LegacyLock(initialValue)
-    }
-
-    override func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
-        try _lock.withLock(body)
-    }
-}
+extension LegacyLock: LockBox {}
 
 #if canImport(Synchronization)
+/// `Mutex` behind the `LockBox` protocol. A wrapper rather than a conformance of
+/// `Mutex` itself: `Mutex.withLock` is a typed-throws, borrowing method, which cannot
+/// witness the protocol's `rethrows` requirement.
 @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendable {
+private final class MutexLockBox<Value>: LockBox, @unchecked Sendable {
     private let _lock: Mutex<Value>
 
     init(_ initialValue: Value) {
@@ -52,7 +48,7 @@ private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendabl
         self._lock = Mutex(initialValue)
     }
 
-    override func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
+    func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result {
         try _lock.withLock(body)
     }
 }
@@ -71,7 +67,7 @@ private final class MutexLockBox<Value>: _LockBoxBase<Value>, @unchecked Sendabl
 /// - On older deployment targets, falls back to an `NSLock`-based implementation.
 @_documentation(visibility: internal)
 public final class MockableLock<Value>: @unchecked Sendable {
-    private let _box: _LockBoxBase<Value>
+    private let _box: any LockBox<Value>
 
     /// Creates a new lock wrapping the given initial value.
     ///
@@ -81,10 +77,10 @@ public final class MockableLock<Value>: @unchecked Sendable {
         if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             self._box = MutexLockBox(initialValue)
         } else {
-            self._box = LegacyLockBox(initialValue)
+            self._box = LegacyLock(initialValue)
         }
         #else
-        self._box = LegacyLockBox(initialValue)
+        self._box = LegacyLock(initialValue)
         #endif
     }
 
