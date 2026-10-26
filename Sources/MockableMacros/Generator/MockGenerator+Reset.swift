@@ -13,7 +13,7 @@ extension MockGenerator {
             }
             return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
                 tracking.trackingFields(model: .lockBacked).map { field in
-                    "storage.\(field.name) = \(field.resetValue)"
+                    "storage.\(field.name) = \(field.initialValue.trimmedDescription)"
                 }
             }
         }
@@ -70,7 +70,7 @@ extension MockGenerator {
             }
             return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
                 tracking.trackingFields(model: .direct).map { field in
-                    CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(field.name) = \(field.resetValue)")))
+                    CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(field.name) = \(field.initialValue.trimmedDescription)")))
                 }
             }
         }

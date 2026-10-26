@@ -14,12 +14,7 @@ extension MockGenerator {
     ) -> [MemberBlockItemSyntax] {
         var members = trackingMemberItems(for: requirement)
 
-        let mockSubscript = generateSubscriptImplementation(
-            subscriptDecl,
-            isGetOnly: Self.isGetOnlySubscript(subscriptDecl),
-            genericParamNames: Self.extractGenericParameterNames(from: subscriptDecl),
-            identifier: requirement.identifier
-        )
+        let mockSubscript = generateSubscriptImplementation(subscriptDecl, requirement: requirement)
         members.append(MemberBlockItemSyntax(decl: mockSubscript))
 
         return members
@@ -36,10 +31,11 @@ extension MockGenerator {
     /// effectful, which needs an explicit `get async`/`get throws` accessor.
     private func generateSubscriptImplementation(
         _ subscriptDecl: SubscriptDeclSyntax,
-        isGetOnly: Bool,
-        genericParamNames: Set<String>,
-        identifier: String
+        requirement: TrackingRequirement
     ) -> SubscriptDeclSyntax {
+        let identifier = requirement.identifier
+        let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+        let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
         let hasGenericReturn = Self.typeContainsGeneric(returnType, genericParamNames: genericParamNames)
@@ -68,12 +64,7 @@ extension MockGenerator {
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
             identifier: identifier,
-            handlerClosureType: buildSubscriptGetterClosureType(
-                parameters: parameters,
-                returnType: returnType,
-                genericParamNames: genericParamNames,
-                effects: getterEffects
-            ),
+            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
             invokePrefix: invokePrefix,
             errorType: errorType,
             access: access,
@@ -147,7 +138,7 @@ extension MockGenerator {
         returnType: TypeSyntax,
         hasGenericReturn: Bool,
         identifier: String,
-        handlerClosureType: String,
+        handlerType: TypeSyntax,
         invokePrefix: String,
         errorType: String?,
         access: TrackingAccess,
@@ -161,7 +152,7 @@ extension MockGenerator {
         let binding = access.handlerBinding(
             identifier: identifier,
             recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
-            handlerClosureType: handlerClosureType,
+            handlerType: handlerType,
             names: names
         )
         statements.append(contentsOf: binding.statements)

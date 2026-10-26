@@ -104,8 +104,6 @@ extension MockGenerator {
         let effects = getter.effectSpecifiers
         let isAsync = effects?.asyncSpecifier != nil
         let isThrows = effects?.hasThrowsEffect ?? false
-        let closureType = requirement.handlerClosureType ?? "() -> Void"
-
         var members = trackingMemberItems(for: requirement)
 
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
@@ -119,7 +117,7 @@ extension MockGenerator {
         let binding = trackingAccess(for: scope).handlerBinding(
             identifier: varName,
             recordedArguments: nil,
-            handlerClosureType: closureType,
+            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
             names: names
         )
 

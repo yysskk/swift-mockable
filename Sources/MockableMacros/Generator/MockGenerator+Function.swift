@@ -13,12 +13,7 @@ extension MockGenerator {
     ) -> [MemberBlockItemSyntax] {
         var members = trackingMemberItems(for: requirement)
 
-        let mockFunction = generateMockFunction(
-            funcDecl,
-            identifier: requirement.identifier,
-            genericParamNames: Self.extractGenericParameterNames(from: funcDecl),
-            scope: requirement.scope
-        )
+        let mockFunction = generateMockFunction(funcDecl, requirement: requirement)
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
         return members
@@ -82,10 +77,11 @@ extension MockGenerator {
     /// that records the call and forwards to the handler.
     private func generateMockFunction(
         _ funcDecl: FunctionDeclSyntax,
-        identifier: String,
-        genericParamNames: Set<String>,
-        scope: MemberScope
+        requirement: TrackingRequirement
     ) -> FunctionDeclSyntax {
+        let identifier = requirement.identifier
+        let scope = requirement.scope
+        let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -106,6 +102,7 @@ extension MockGenerator {
             hasGenericReturn: hasGenericReturn,
             genericParamNames: genericParamNames,
             throwsErrorType: throwsErrorType,
+            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
             access: access,
             names: WitnessNames(
                 parameters: parameters,
@@ -143,6 +140,7 @@ extension MockGenerator {
         hasGenericReturn: Bool,
         genericParamNames: Set<String>,
         throwsErrorType: TypeSyntax?,
+        handlerType: TypeSyntax,
         access: TrackingAccess,
         names: WitnessNames
     ) -> CodeBlockSyntax {
@@ -162,13 +160,7 @@ extension MockGenerator {
         let binding = access.handlerBinding(
             identifier: identifier,
             recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
-            handlerClosureType: buildFunctionClosureType(
-                parameters: parameters,
-                returnType: returnType,
-                isAsync: isAsync,
-                isThrows: isThrows,
-                genericParamNames: genericParamNames
-            ),
+            handlerType: handlerType,
             names: names
         )
         statements.append(contentsOf: binding.statements)
@@ -287,7 +279,7 @@ extension MockGenerator {
     private static func buildHandlerInvocationStatements(
         invokePrefix: String,
         handlerCallArgs: String,
-        inOutParams: [(name: String, erasedType: String, castTarget: String)],
+        inOutParams: [InOutParameter],
         hasGenericReturn: Bool,
         returnTypeStr: String,
         errorType: String? = nil,
@@ -354,7 +346,7 @@ extension MockGenerator {
         handlerBinding: String,
         invokePrefix: String,
         handlerCallArgs: String,
-        inOutParams: [(name: String, erasedType: String, castTarget: String)],
+        inOutParams: [InOutParameter],
         errorType: String? = nil,
         names: WitnessNames
     ) -> CodeBlockItemSyntax {
@@ -407,14 +399,26 @@ if let \(handlerBinding) {
         return trimmed != "Void" && trimmed != "Swift.Void" && trimmed != "()"
     }
 
+    /// An `inout` parameter of a requirement, as the handler and the witness see it.
+    /// A stored handler cannot take `inout`, so the mock instead has the handler
+    /// *return* the new value and the witness assigns it back after the call.
+    struct InOutParameter {
+        /// The parameter's internal name, which the witness assigns to.
+        let name: String
+        /// The type the handler returns the new value as, with generic parameters
+        /// erased, e.g. `Any` for `inout T`.
+        let erasedType: String
+        /// The parameter's own type, which the returned value is cast back to when
+        /// erasure changed it.
+        let castTarget: String
+    }
+
     /// The requirement's `inout` parameters, with both the erased type the handler
-    /// works in and the original type the witness writes back to. A stored handler
-    /// cannot take `inout`, so the mock instead has the handler *return* the new
-    /// values and assigns them after the call.
+    /// works in and the original type the witness writes back to.
     private static func extractInOutParameters(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String>
-    ) -> [(name: String, erasedType: String, castTarget: String)] {
+    ) -> [InOutParameter] {
         parameters.compactMap { param in
             guard specifiers(of: param.type).contains("inout") else {
                 return nil
@@ -424,7 +428,7 @@ if let \(handlerBinding) {
             // handler works in and the cast that writes its result back cannot drift.
             let declaredType = unspecifiedType(param.type)
             let erased = eraseGenericTypes(in: declaredType, genericParamNames: genericParamNames)
-            return (
+            return InOutParameter(
                 name: name,
                 erasedType: erased.trimmedDescription,
                 castTarget: castTargetType(for: declaredType.trimmed)
@@ -453,7 +457,7 @@ if let \(handlerBinding) {
     /// The assignments that copy the handler's returned values back into the `inout`
     /// arguments, casting back from the erased type where erasure changed it.
     private static func buildInOutWriteBackAssignments(
-        inOutParams: [(name: String, erasedType: String, castTarget: String)],
+        inOutParams: [InOutParameter],
         source: String
     ) -> [String] {
         if inOutParams.count == 1, let first = inOutParams.first {
@@ -467,14 +471,14 @@ if let \(handlerBinding) {
     /// The `as!` that converts the handler's erased value back to the parameter's own
     /// type, or nothing when erasure left the type as it was.
     private static func writeBackCastSuffix(
-        for param: (name: String, erasedType: String, castTarget: String)
+        for param: InOutParameter
     ) -> String {
         param.erasedType == param.castTarget ? "" : " as! \(param.castTarget)"
     }
 
     /// The write-back assignments as statements.
     private static func buildInOutWriteBackStatements(
-        inOutParams: [(name: String, erasedType: String, castTarget: String)],
+        inOutParams: [InOutParameter],
         source: String
     ) -> [CodeBlockItemSyntax] {
         buildInOutWriteBackAssignments(inOutParams: inOutParams, source: source).map {

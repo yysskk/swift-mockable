@@ -19,7 +19,7 @@ enum StorageModel {
 /// A field knows everything its consumers need: the storage-struct generator
 /// emits `var name: Type = initialValue`, the mock-member generator emits the
 /// same slot as a stored or lock-backed property, and `resetMock()` assigns
-/// `resetValue` back to it.
+/// `initialValue` back to it.
 struct TrackingField {
     /// What the slot stores.
     enum Role {
@@ -37,10 +37,9 @@ struct TrackingField {
     let name: String
     /// The exact emitted type.
     let type: TypeSyntax
-    /// The initial value expression (`0`, `[]`, `nil`).
+    /// The initial value expression (`0`, `[]`, `nil`), which `resetMock()` assigns
+    /// back to the slot.
     let initialValue: ExprSyntax
-    /// The right-hand side of the `resetMock()` assignment (`"0"`, `"[]"`, `"nil"`).
-    let resetValue: String
 }
 
 /// The tracking identity and shape of one protocol requirement, computed once and
@@ -72,11 +71,19 @@ struct TrackingRequirement {
     let kind: Kind
     /// The tuple element type of the `CallArgs` array; `nil` for properties.
     let callArgsTupleType: TypeSyntax?
-    /// The handler closure type, e.g. `(Int) async throws -> String`; `nil` for
-    /// initializers and stored properties.
-    let handlerClosureType: String?
-    /// The setter-handler closure type of a get-set subscript.
-    let setHandlerClosureType: String?
+    /// The type of the `<name>Handler` slot, an optional `@Sendable` closure such as
+    /// `(@Sendable (Int) async throws -> String)?`; `nil` for initializers and
+    /// stored properties, which have no handler.
+    let handlerType: TypeSyntax?
+    /// The type of the `<name>SetHandler` slot of a get-set subscript.
+    let setHandlerType: TypeSyntax?
+
+    /// The handler slot's type for a closure type: the closure made `@Sendable`, so a
+    /// test can install it on a mock shared across tasks, and optional, since it is
+    /// unset until the test installs one.
+    static func handlerType(forClosure closureType: String) -> TypeSyntax {
+        TypeSyntax(stringLiteral: "(@Sendable \(closureType))?")
+    }
 
     /// The requirement's stored tracking slots, in emission order. This order is
     /// the single source of truth: every consumer emits fields exactly as listed.
@@ -105,8 +112,7 @@ struct TrackingRequirement {
             role: .callCount,
             name: MockNaming.callCount(identifier),
             type: TypeSyntax(stringLiteral: "Int"),
-            initialValue: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0"))),
-            resetValue: "0"
+            initialValue: ExprSyntax(IntegerLiteralExprSyntax(literal: .integerLiteral("0")))
         )
     }
 
@@ -116,8 +122,7 @@ struct TrackingRequirement {
             role: .callArgs,
             name: MockNaming.callArgs(identifier),
             type: TypeSyntax(ArrayTypeSyntax(element: callArgsTupleType ?? TypeSyntax(stringLiteral: "Void"))),
-            initialValue: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([]))),
-            resetValue: "[]"
+            initialValue: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
         )
     }
 
@@ -126,9 +131,8 @@ struct TrackingRequirement {
         TrackingField(
             role: .handler,
             name: MockNaming.handler(identifier),
-            type: TypeSyntax(stringLiteral: "(@Sendable \(handlerClosureType ?? "() -> Void"))?"),
-            initialValue: ExprSyntax(NilLiteralExprSyntax()),
-            resetValue: "nil"
+            type: handlerType ?? Self.handlerType(forClosure: "() -> Void"),
+            initialValue: ExprSyntax(NilLiteralExprSyntax())
         )
     }
 
@@ -137,9 +141,8 @@ struct TrackingRequirement {
         TrackingField(
             role: .setHandler,
             name: MockNaming.setHandler(identifier),
-            type: TypeSyntax(stringLiteral: "(@Sendable \(setHandlerClosureType ?? "() -> Void"))?"),
-            initialValue: ExprSyntax(NilLiteralExprSyntax()),
-            resetValue: "nil"
+            type: setHandlerType ?? Self.handlerType(forClosure: "() -> Void"),
+            initialValue: ExprSyntax(NilLiteralExprSyntax())
         )
     }
 
@@ -166,8 +169,7 @@ struct TrackingRequirement {
             role: .backing,
             name: isSelfBacked ? identifier : MockNaming.variableBacking(identifier),
             type: storageType,
-            initialValue: ExprSyntax(NilLiteralExprSyntax()),
-            resetValue: "nil"
+            initialValue: ExprSyntax(NilLiteralExprSyntax())
         )
     }
 }
@@ -289,8 +291,8 @@ extension MockGenerator {
                 parameters: initDecl.signature.parameterClause.parameters,
                 genericParamNames: genericParamNames
             ),
-            handlerClosureType: nil,
-            setHandlerClosureType: nil
+            handlerType: nil,
+            setHandlerType: nil
         )
     }
 
@@ -320,14 +322,14 @@ extension MockGenerator {
             leavesMockIsolation: leavesMockIsolation,
             kind: .function,
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-            handlerClosureType: buildFunctionClosureType(
+            handlerType: TrackingRequirement.handlerType(forClosure: buildFunctionClosureType(
                 parameters: parameters,
                 returnType: funcDecl.signature.returnClause?.type,
                 isAsync: isAsync,
                 isThrows: handlerThrows,
                 genericParamNames: genericParamNames
-            ),
-            setHandlerClosureType: nil
+            )),
+            setHandlerType: nil
         )
     }
 
@@ -353,11 +355,11 @@ extension MockGenerator {
                 leavesMockIsolation: leavesMockIsolation,
                 kind: .effectfulVariable(varType: varType),
                 callArgsTupleType: nil,
-                handlerClosureType: Self.effectfulGetterClosureType(
+                handlerType: TrackingRequirement.handlerType(forClosure: Self.effectfulGetterClosureType(
                     varType: varType,
                     effects: effectfulGetter.effectSpecifiers
-                ),
-                setHandlerClosureType: nil
+                )),
+                setHandlerType: nil
             )
         }
 
@@ -372,8 +374,8 @@ extension MockGenerator {
                 isGetOnly: Self.isGetOnlyProperty(binding: binding)
             ),
             callArgsTupleType: nil,
-            handlerClosureType: nil,
-            setHandlerClosureType: nil
+            handlerType: nil,
+            setHandlerType: nil
         )
     }
 
@@ -399,17 +401,17 @@ extension MockGenerator {
             leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-            handlerClosureType: buildSubscriptGetterClosureType(
+            handlerType: TrackingRequirement.handlerType(forClosure: buildSubscriptGetterClosureType(
                 parameters: parameters,
                 returnType: returnType,
                 genericParamNames: genericParamNames,
                 effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
-            ),
-            setHandlerClosureType: isGetOnly ? nil : buildSubscriptSetterClosureType(
+            )),
+            setHandlerType: isGetOnly ? nil : TrackingRequirement.handlerType(forClosure: buildSubscriptSetterClosureType(
                 parameters: parameters,
                 returnType: returnType,
                 genericParamNames: genericParamNames
-            )
+            ))
         )
     }
 }

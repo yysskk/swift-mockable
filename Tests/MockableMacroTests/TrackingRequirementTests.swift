@@ -36,7 +36,7 @@ struct TrackingRequirementTests {
         #expect(requirement.scope == .instance)
         let fields = requirement.trackingFields(model: .lockBacked)
         #expect(fields.map(\.name) == ["fetchCallCount", "fetchCallArgs", "fetchHandler"])
-        #expect(fields.map(\.resetValue) == ["0", "[]", "nil"])
+        #expect(fields.map(\.initialValue.trimmedDescription) == ["0", "[]", "nil"])
         #expect(fields[0].type.trimmedDescription == "Int")
         #expect(fields[1].type.trimmedDescription == "[Int]")
         #expect(fields[2].type.trimmedDescription == "(@Sendable (Int) async throws -> String)?")
@@ -61,7 +61,7 @@ struct TrackingRequirementTests {
             func run(_ body: () throws -> Void) rethrows
         }
         """).first)
-        #expect(requirement.handlerClosureType == "(() throws -> Void) -> Void")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (() throws -> Void) -> Void)?")
     }
 
     @Test("Generic parameters are erased in the tracked types")
@@ -73,7 +73,7 @@ struct TrackingRequirementTests {
         """).first)
         let fields = requirement.trackingFields(model: .lockBacked)
         #expect(fields[1].type.trimmedDescription == "[Any]")
-        #expect(requirement.handlerClosureType == "(Any) -> Any")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Any) -> Any)?")
     }
 
     @Test("A static function is a type member")
@@ -99,7 +99,7 @@ struct TrackingRequirementTests {
         #expect(all.map(\.identifier) == ["init", "initString"])
         let fields = all[1].trackingFields(model: .lockBacked)
         #expect(fields.map(\.name) == ["initStringCallCount", "initStringCallArgs"])
-        #expect(all[1].handlerClosureType == nil)
+        #expect(all[1].handlerType == nil)
         #expect(all[1].scope == .instance)
     }
 
@@ -117,7 +117,7 @@ struct TrackingRequirementTests {
             let fields = requirement.trackingFields(model: model)
             #expect(fields.map(\.name) == ["_name"])
             #expect(fields[0].type.trimmedDescription == "String?")
-            #expect(fields[0].resetValue == "nil")
+            #expect(fields[0].initialValue.trimmedDescription == "nil")
         }
     }
 
@@ -181,7 +181,7 @@ struct TrackingRequirementTests {
             let fields = requirement.trackingFields(model: model)
             #expect(fields.map(\.name) == ["tokenCallCount", "tokenHandler"])
         }
-        #expect(requirement.handlerClosureType == "() async throws -> String")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable () async throws -> String)?")
     }
 
     @Test("A typed-throws accessor drops the error type from the handler")
@@ -191,7 +191,7 @@ struct TrackingRequirementTests {
             var config: Config { get throws(ConfigError) }
         }
         """).first)
-        #expect(requirement.handlerClosureType == "() throws -> Config")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable () throws -> Config)?")
     }
 
     // MARK: - Subscripts
@@ -223,8 +223,8 @@ struct TrackingRequirementTests {
         ])
         // Subscript closure types keep the return type's source trivia (the space
         // before the accessor block); the expansion tests pin the same spelling.
-        #expect(requirement.handlerClosureType == "(Int) -> String ")
-        #expect(requirement.setHandlerClosureType == "(Int, String ) -> Void")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Int) -> String )?")
+        #expect(requirement.setHandlerType?.trimmedDescription == "(@Sendable (Int, String ) -> Void)?")
     }
 
     @Test("An effectful subscript getter carries its effects in the handler type")
@@ -234,7 +234,7 @@ struct TrackingRequirementTests {
             subscript(id: Int) -> User { get async throws }
         }
         """).first)
-        #expect(requirement.handlerClosureType == "(Int) async throws -> User ")
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Int) async throws -> User )?")
     }
 
     // MARK: - Non-tracking members

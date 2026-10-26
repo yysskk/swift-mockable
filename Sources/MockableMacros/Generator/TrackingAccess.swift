@@ -77,12 +77,11 @@ enum TrackingAccess {
     }
 
     /// Records a call and binds the requirement's handler for the witness to invoke.
-    /// `handlerClosureType` is the handler's closure type without its `@Sendable` and
-    /// optional wrapping, e.g. `(Int) async throws -> String`.
+    /// `handlerType` is the handler slot's type, e.g. `(@Sendable (Int) -> String)?`.
     func handlerBinding(
         identifier: String,
         recordedArguments: ExprSyntax?,
-        handlerClosureType: String,
+        handlerType: TypeSyntax,
         names: MockGenerator.WitnessNames
     ) -> HandlerBinding {
         switch self {
@@ -97,7 +96,7 @@ enum TrackingAccess {
                 .map { "    \($0)" }
                 .joined(separator: "\n")
             let statement = CodeBlockItemSyntax(item: .decl(DeclSyntax(stringLiteral: """
-            let \(names.handler) = \(names.member(storageName)).withLock { \(names.storage) -> (@Sendable \(handlerClosureType))? in
+            let \(names.handler) = \(names.member(storageName)).withLock { \(names.storage) -> \(handlerType.trimmedDescription) in
             \(recording)
                 return \(names.storage).\(MockNaming.handler(identifier))
             }
