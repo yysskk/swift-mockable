@@ -42,6 +42,8 @@ struct MultiParameterHandlerTests {
                     addCallArgs = []
                     addHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -81,6 +83,8 @@ struct MultiParameterHandlerTests {
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -118,6 +122,8 @@ struct MultiParameterHandlerTests {
                     logCallCount = 0
                     logCallArgs = []
                     logHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -202,6 +208,8 @@ struct MultiParameterHandlerTests {
                         storage.addHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -249,6 +257,8 @@ struct MultiParameterHandlerTests {
                     subscriptIntIntCallArgs = []
                     subscriptIntIntHandler = nil
                     subscriptIntIntSetHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

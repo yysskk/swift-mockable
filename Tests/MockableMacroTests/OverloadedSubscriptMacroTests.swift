@@ -58,6 +58,8 @@ struct OverloadedSubscriptMacroTests {
                     subscriptStringBoolCallArgs = []
                     subscriptStringBoolHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -112,6 +114,8 @@ struct OverloadedSubscriptMacroTests {
                     subscriptFooBarBazInt2CallCount = 0
                     subscriptFooBarBazInt2CallArgs = []
                     subscriptFooBarBazInt2Handler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -185,6 +189,8 @@ struct OverloadedSubscriptMacroTests {
                     subscriptStringBoolCallArgs = []
                     subscriptStringBoolHandler = nil
                     subscriptStringBoolSetHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

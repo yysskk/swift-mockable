@@ -42,6 +42,8 @@ struct AccessLevelMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -82,6 +84,8 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
+                }
+                open class func resetMock() {
                 }
             }
             #endif
@@ -124,6 +128,8 @@ struct AccessLevelMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                package class func resetMock() {
+                }
             }
             #endif
             """,
@@ -158,6 +164,8 @@ struct AccessLevelMacroTests {
                 }
                 func resetMock() {
                     _apiKey = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -195,6 +203,8 @@ struct AccessLevelMacroTests {
                 }
                 open func resetMock() {
                     _apiKey = nil
+                }
+                open class func resetMock() {
                 }
             }
             #endif
@@ -239,6 +249,8 @@ struct AccessLevelMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                fileprivate class func resetMock() {
+                }
             }
             #endif
             """,
@@ -281,6 +293,8 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
+                }
+                fileprivate class func resetMock() {
                 }
             }
             #endif

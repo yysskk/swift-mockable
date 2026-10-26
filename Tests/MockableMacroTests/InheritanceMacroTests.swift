@@ -42,6 +42,9 @@ struct InheritanceMacroTests {
                     childMethodCallArgs = []
                     childMethodHandler = nil
                 }
+                override class func resetMock() {
+                    super.resetMock()
+                }
             }
             #endif
             """,
@@ -79,6 +82,8 @@ struct InheritanceMacroTests {
                     doSomethingCallCount = 0
                     doSomethingCallArgs = []
                     doSomethingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -118,6 +123,9 @@ struct InheritanceMacroTests {
                     childMethodCallCount = 0
                     childMethodCallArgs = []
                     childMethodHandler = nil
+                }
+                override class func resetMock() {
+                    super.resetMock()
                 }
             }
             #endif
@@ -159,6 +167,9 @@ struct InheritanceMacroTests {
                     fetchChildCallArgs = []
                     fetchChildHandler = nil
                 }
+                override class func resetMock() {
+                    super.resetMock()
+                }
             }
             #endif
             """,
@@ -198,6 +209,9 @@ struct InheritanceMacroTests {
                     fetchChildCallCount = 0
                     fetchChildCallArgs = []
                     fetchChildHandler = nil
+                }
+                open override class func resetMock() {
+                    super.resetMock()
                 }
             }
             #endif
@@ -283,6 +297,9 @@ struct InheritanceMacroTests {
                         storage.childMethodHandler = nil
                     }
                 }
+                override class func resetMock() {
+                    super.resetMock()
+                }
             }
             #endif
             """,
@@ -322,6 +339,9 @@ struct InheritanceMacroTests {
                     childMethodCallCount = 0
                     childMethodCallArgs = []
                     childMethodHandler = nil
+                }
+                override class func resetMock() {
+                    super.resetMock()
                 }
             }
             #endif

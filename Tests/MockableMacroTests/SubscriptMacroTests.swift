@@ -42,6 +42,8 @@ struct SubscriptMacroTests {
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -81,6 +83,8 @@ struct SubscriptMacroTests {
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -119,6 +123,8 @@ struct SubscriptMacroTests {
                     subscriptStringCallCount = 0
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -168,6 +174,8 @@ struct SubscriptMacroTests {
                     subscriptIntHandler = nil
                     subscriptIntSetHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -215,6 +223,8 @@ struct SubscriptMacroTests {
                     subscriptIntIntCallArgs = []
                     subscriptIntIntHandler = nil
                     subscriptIntIntSetHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -279,6 +289,8 @@ struct SubscriptMacroTests {
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
                     subscriptStringSetHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -362,6 +374,8 @@ struct SubscriptMacroTests {
                         storage.subscriptStringCallArgs = []
                         storage.subscriptStringHandler = nil
                     }
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -468,6 +482,8 @@ struct SubscriptMacroTests {
                         storage.subscriptIntSetHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -550,6 +566,8 @@ struct SubscriptMacroTests {
                         storage.subscriptStringCallArgs = []
                         storage.subscriptStringHandler = nil
                     }
+                }
+                static func resetMock() {
                 }
             }
             #endif
@@ -655,6 +673,8 @@ struct SubscriptMacroTests {
                         storage.subscriptIntHandler = nil
                         storage.subscriptIntSetHandler = nil
                     }
+                }
+                static func resetMock() {
                 }
             }
             #endif

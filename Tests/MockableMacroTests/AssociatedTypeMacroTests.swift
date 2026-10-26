@@ -60,6 +60,8 @@ struct AssociatedTypeMacroTests {
                     saveCallArgs = []
                     saveHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -101,6 +103,8 @@ struct AssociatedTypeMacroTests {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -162,6 +166,8 @@ struct AssociatedTypeMacroTests {
                     saveCallCount = 0
                     saveCallArgs = []
                     saveHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -248,6 +254,8 @@ struct AssociatedTypeMacroTests {
                         storage.fetchCallArgs = []
                         storage.fetchHandler = nil
                     }
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -389,6 +397,8 @@ struct AssociatedTypeMacroTests {
                         storage.setHandler = nil
                     }
                 }
+                static func resetMock() {
+                }
             }
             #endif
             """,
@@ -464,6 +474,8 @@ struct AssociatedTypeMacroTests {
                     decodeCallArgs = []
                     decodeHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -505,6 +517,8 @@ struct AssociatedTypeMacroTests {
                     makeCallCount = 0
                     makeCallArgs = []
                     makeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -548,6 +562,8 @@ struct AssociatedTypeMacroTests {
                     _currentState = nil
                     previousState = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -589,6 +605,8 @@ struct AssociatedTypeMacroTests {
                     getAllCallCount = 0
                     getAllCallArgs = []
                     getAllHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -632,6 +650,8 @@ struct AssociatedTypeMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -673,6 +693,8 @@ struct AssociatedTypeMacroTests {
                     processCallCount = 0
                     processCallArgs = []
                     processHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -730,6 +752,8 @@ struct AssociatedTypeMacroTests {
                     saveCallCount = 0
                     saveCallArgs = []
                     saveHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -820,6 +844,8 @@ struct AssociatedTypeMacroTests {
                         storage.getHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -860,6 +886,8 @@ struct AssociatedTypeMacroTests {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

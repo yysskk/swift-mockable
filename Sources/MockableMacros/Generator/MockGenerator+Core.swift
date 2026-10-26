@@ -78,7 +78,7 @@ struct MockGenerator {
     /// Builds the members shared by class and actor mocks, in emission order:
     /// associated-type aliases, lock-backed storage (instance, then static), an
     /// explicit initializer where the access level requires one, the per-requirement
-    /// mock members, and `resetMock()`. Instance lock storage is emitted for every
+    /// mock members, the instance `resetMock()`, and the type-level `resetMock()`. Instance lock storage is emitted for every
     /// actor mock and for `Sendable` class mocks (`usesInstanceStorageLock` covers both).
     private func buildMockMemberBlock() -> MemberBlockSyntax {
         var members: [MemberBlockItemSyntax] = []
@@ -110,8 +110,8 @@ struct MockGenerator {
 
         members.append(contentsOf: generateMockMembers())
 
-        let resetMethod = generateResetMethod()
-        members.append(MemberBlockItemSyntax(decl: resetMethod))
+        members.append(MemberBlockItemSyntax(decl: generateResetMethod()))
+        members.append(MemberBlockItemSyntax(decl: generateTypeResetMethod()))
 
         return MemberBlockSyntax(
             leftBrace: .leftBraceToken(trailingTrivia: .newline),

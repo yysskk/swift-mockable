@@ -44,6 +44,8 @@ struct EffectfulSubscriptMacroTests {
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -84,6 +86,8 @@ struct EffectfulSubscriptMacroTests {
                     subscriptStringCallCount = 0
                     subscriptStringCallArgs = []
                     subscriptStringHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -169,6 +173,8 @@ struct EffectfulSubscriptMacroTests {
                         storage.subscriptStringCallArgs = []
                         storage.subscriptStringHandler = nil
                     }
+                }
+                class func resetMock() {
                 }
             }
             #endif

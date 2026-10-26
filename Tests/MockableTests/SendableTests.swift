@@ -122,8 +122,7 @@ struct SendableIntegrationTests {
     @Test("Sendable static members are tracked and reset")
     func sendableStaticMembers() {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
-        let resetter = SendableStaticServiceMock()
-        resetter.resetMock()
+        SendableStaticServiceMock.resetMock()
 
         SendableStaticServiceMock.lookupHandler = { @Sendable key in
             "value-\(key)"
@@ -137,7 +136,7 @@ struct SendableIntegrationTests {
         #expect(SendableStaticServiceMock.lookupCallArgs == ["abc"])
         #expect(SendableStaticServiceMock.sharedToken == "token")
 
-        resetter.resetMock()
+        SendableStaticServiceMock.resetMock()
         #expect(SendableStaticServiceMock.lookupCallCount == 0)
         #expect(SendableStaticServiceMock.lookupCallArgs == [])
         #expect(SendableStaticServiceMock.lookupHandler == nil)

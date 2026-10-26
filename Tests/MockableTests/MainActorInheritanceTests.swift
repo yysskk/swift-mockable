@@ -27,6 +27,11 @@ struct MainActorInheritanceTests {
         #expect(mock.baseMethodCallCount == 0)
         #expect(mock.refreshCallCount == 0)
         #expect(mock.refreshHandler == nil)
+        // Static state belongs to the type, so an instance reset leaves it alone.
+        #expect(MainActorChildServiceMock.makeCallCount == 1)
+
+        MainActorChildServiceMock.resetMock()
+
         #expect(MainActorChildServiceMock.makeCallCount == 0)
         #expect(MainActorChildServiceMock.makeHandler == nil)
     }

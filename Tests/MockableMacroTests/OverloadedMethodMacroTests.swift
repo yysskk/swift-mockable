@@ -87,6 +87,8 @@ struct OverloadedMethodMacroTests {
                     getValueCallArgs = []
                     getValueHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -140,6 +142,8 @@ struct OverloadedMethodMacroTests {
                     saveDataCallCount = 0
                     saveDataCallArgs = []
                     saveDataHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -195,6 +199,8 @@ struct OverloadedMethodMacroTests {
                     getStringDataThrowingCallCount = 0
                     getStringDataThrowingCallArgs = []
                     getStringDataThrowingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -267,6 +273,8 @@ struct OverloadedMethodMacroTests {
                     fetchIntStringAsyncThrowingCallArgs = []
                     fetchIntStringAsyncThrowingHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -338,6 +346,8 @@ struct OverloadedMethodMacroTests {
                     processStringCallArgs = []
                     processStringHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -393,6 +403,8 @@ struct OverloadedMethodMacroTests {
                     handlePairAB2CallCount = 0
                     handlePairAB2CallArgs = []
                     handlePairAB2Handler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

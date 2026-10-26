@@ -51,7 +51,7 @@ struct NonisolatedMemberTests {
     @Test("A nonisolated static, subscript, and effectful property are all reachable")
     func nonisolatedRequirementKinds() throws {
         let mock = NonisolatedVarietyMock()
-        mock.resetMock()
+        NonisolatedVarietyMock.resetMock()
 
         NonisolatedVarietyMock.makeHandler = { 7 }
         mock.subscriptStringHandler = { $0.count }
@@ -62,6 +62,7 @@ struct NonisolatedMemberTests {
         #expect(try mock.token == "token")
 
         mock.resetMock()
+        NonisolatedVarietyMock.resetMock()
         #expect(NonisolatedVarietyMock.makeCallCount == 0)
         #expect(mock.subscriptStringCallCount == 0)
         #expect(mock.tokenCallCount == 0)

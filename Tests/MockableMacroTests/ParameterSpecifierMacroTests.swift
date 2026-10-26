@@ -45,6 +45,8 @@ struct ParameterSpecifierMacroTests {
                     consumeCallArgs = []
                     consumeHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -84,6 +86,8 @@ struct ParameterSpecifierMacroTests {
                     inspectCallArgs = []
                     inspectHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -121,6 +125,8 @@ struct ParameterSpecifierMacroTests {
                     sendCallCount = 0
                     sendCallArgs = []
                     sendHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -160,6 +166,8 @@ struct ParameterSpecifierMacroTests {
                     fillCallCount = 0
                     fillCallArgs = []
                     fillHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

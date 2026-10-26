@@ -187,7 +187,7 @@ If a protocol inherits from `Actor`, the generated mock type is an actor. Helper
 
 ## Static Members
 
-Static methods and properties are lock-backed through a shared static storage. `resetMock()` also resets static generated members.
+Static methods and properties are lock-backed through a shared static storage. Their tracking state belongs to the mock type, so the type's own `resetMock()` clears it (`ConfigurationMock.resetMock()`); an instance's `resetMock()` does not. Every mock declares the type-level method, with an empty body when the protocol has no `static` requirement.
 
 ## Initializer Requirements
 

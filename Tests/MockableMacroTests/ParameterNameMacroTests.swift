@@ -48,6 +48,8 @@ struct ParameterNameMacroTests {
                     handleCallArgs = []
                     handleHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -86,6 +88,8 @@ struct ParameterNameMacroTests {
                     pairCallArgs = []
                     pairHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -123,6 +127,8 @@ struct ParameterNameMacroTests {
                     takeCallCount = 0
                     takeCallArgs = []
                     takeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -163,6 +169,8 @@ struct ParameterNameMacroTests {
                     valueCallArgs = []
                     valueHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -200,6 +208,8 @@ struct ParameterNameMacroTests {
                     logCallCount = 0
                     logCallArgs = []
                     logHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -285,6 +295,8 @@ struct ParameterNameMacroTests {
                         storage.saveHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -323,6 +335,8 @@ struct ParameterNameMacroTests {
                     runCallArgs = []
                     runHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -360,6 +374,8 @@ struct ParameterNameMacroTests {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -437,6 +453,8 @@ struct ParameterNameMacroTests {
                     }
                 }
                 func resetMock() {
+                }
+                class func resetMock() {
                     Self._staticStorage.withLock { storage in
                         storage.storeCallCount = 0
                         storage.storeCallArgs = []
@@ -490,6 +508,8 @@ struct ParameterNameMacroTests {
                     subscriptIntCallArgs = []
                     subscriptIntHandler = nil
                     subscriptIntSetHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
