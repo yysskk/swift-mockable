@@ -41,24 +41,24 @@ struct OverloadSuffixTests {
     @Test("A function without parameters has an empty base suffix")
     func emptyParameterBaseSuffix() {
         let funcDecl = functions(["func fetch() -> Int"])[0]
-        #expect(MockGenerator.functionIdentifierSuffix(from: funcDecl) == "")
+        #expect(MockGenerator.functionIdentifierSuffix(from: funcDecl, in: [funcDecl]) == "")
     }
 
     @Test("The base suffix joins the sanitized parameter types")
     func baseSuffixJoinsParameterTypes() {
         let funcDecl = functions(["func set(_ value: Bool, forKey: Key) -> Int"])[0]
-        #expect(MockGenerator.functionIdentifierSuffix(from: funcDecl) == "BoolKey")
+        #expect(MockGenerator.functionIdentifierSuffix(from: funcDecl, in: [funcDecl]) == "BoolKey")
     }
 
     @Test("A subscript suffix is built from its parameter types, even for a sole subscript")
     func subscriptSuffix() {
         let subscriptDecl = DeclSyntax(stringLiteral: "subscript(key: String) -> Int { get }")
             .cast(SubscriptDeclSyntax.self)
-        #expect(MockGenerator.subscriptIdentifierSuffix(from: subscriptDecl) == "String")
+        #expect(MockGenerator.subscriptIdentifierSuffix(from: subscriptDecl, in: [subscriptDecl]) == "String")
 
         let emptyDecl = DeclSyntax(stringLiteral: "subscript() -> Int { get }")
             .cast(SubscriptDeclSyntax.self)
-        #expect(MockGenerator.subscriptIdentifierSuffix(from: emptyDecl) == "")
+        #expect(MockGenerator.subscriptIdentifierSuffix(from: emptyDecl, in: [emptyDecl]) == "")
     }
 
     // MARK: - Group disambiguation: functions
