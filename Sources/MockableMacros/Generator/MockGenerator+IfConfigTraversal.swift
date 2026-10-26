@@ -4,18 +4,6 @@ import SwiftSyntaxBuilder
 // MARK: - Conditional Compilation Traversal
 
 extension MockGenerator {
-    /// Every requirement the protocol declares, flattened out of any
-    /// conditional-compilation blocks, for analyses that need the whole set at once
-    /// (overload grouping, type-member detection, initializer collection).
-    ///
-    /// Flattening loses the `#if` structure, so this is only for analysis: generation
-    /// goes through the `map*PreservingIfConfig` drivers below, which keep it. Every
-    /// clause is collected, including `#else`, so these analyses see exactly the
-    /// requirements generation emits members for.
-    func collectRequirements() -> [Requirement] {
-        Requirement.all(in: members)
-    }
-
     /// Maps each requirement to mock members, re-emitting any `#if` block around the
     /// members generated from its clauses, so a conditionally declared requirement's
     /// mock is guarded by the same condition.

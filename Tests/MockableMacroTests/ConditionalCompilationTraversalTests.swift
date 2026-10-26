@@ -7,25 +7,12 @@ import Testing
 struct ConditionalCompilationTraversalTests {
     /// Builds a generator for the given protocol source, mirroring how
     /// `MockableMacro` constructs one from a parsed declaration.
-    private func makeGenerator(
-        _ source: String,
-        isSendable: Bool = false,
-        isActor: Bool = false
-    ) -> MockGenerator? {
+    private func makeGenerator(_ source: String) -> MockGenerator? {
         let decl: DeclSyntax = "\(raw: source)"
         guard let protocolDecl = decl.as(ProtocolDeclSyntax.self) else {
             return nil
         }
-        return MockGenerator(
-            protocolName: protocolDecl.name.text,
-            mockClassName: MockNaming.mockTypeName(forProtocol: protocolDecl.name.text),
-            members: protocolDecl.memberBlock.members,
-            isSendable: isSendable,
-            isActor: isActor,
-            globalActorName: nil,
-            accessLevel: .internal,
-            parentMockClassName: nil
-        )
+        return MockGenerator(shape: ProtocolShape(protocolDecl), members: protocolDecl.memberBlock.members)
     }
 
     private let conditionalSource = """
@@ -39,7 +26,7 @@ struct ConditionalCompilationTraversalTests {
     }
     """
 
-    // MARK: - collectRequirements
+    // MARK: - requirements
 
     @Test("Members of a conditional clause are collected alongside plain members")
     func collectsConditionalMembers() throws {
@@ -52,7 +39,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let names = generator.collectRequirements()
+        let names = generator.requirements
             .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["alpha", "beta"])
     }
@@ -69,7 +56,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let names = generator.collectRequirements()
+        let names = generator.requirements
             .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["nested"])
     }
@@ -81,7 +68,7 @@ struct ConditionalCompilationTraversalTests {
         // initializer detection disagree with the members that are emitted.
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let names = generator.collectRequirements()
+        let names = generator.requirements
             .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["alpha", "beta", "gamma"])
     }
@@ -98,7 +85,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        #expect(generator.hasTypeMembers())
+        #expect(generator.hasTypeMembers)
     }
 
     @Test("Overloads are grouped across an #else clause")
@@ -114,7 +101,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let groups = generator.groupMethodsByName()
+        let groups = generator.overloads.methodGroups
         #expect(groups["fetch"]?.count == 2)
     }
 
@@ -130,11 +117,11 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        #expect(generator.collectInitializers().count == 1)
+        #expect(generator.overloads.initializers.count == 1)
         #expect(generator.hasInitializerRequirements)
     }
 
-    // MARK: - groupMethodsByName
+    // MARK: - Overload grouping
 
     @Test("Overloads are grouped across conditional clauses")
     func groupsOverloadsAcrossClauses() throws {
@@ -147,7 +134,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let groups = generator.groupMethodsByName()
+        let groups = generator.overloads.methodGroups
         #expect(groups.count == 1)
         #expect(groups["fetch"]?.count == 2)
     }
@@ -165,7 +152,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        #expect(generator.hasTypeMembers())
+        #expect(generator.hasTypeMembers)
     }
 
     @Test("isTypeMember recognizes static and class modifiers")
@@ -195,11 +182,11 @@ struct ConditionalCompilationTraversalTests {
         #expect(!plain.usesLockBasedStorage(isTypeMember: false))
         #expect(plain.usesLockBasedStorage(isTypeMember: true))
 
-        let sendable = try #require(makeGenerator("protocol Service {}", isSendable: true))
+        let sendable = try #require(makeGenerator("protocol Service: Sendable {}"))
         #expect(sendable.usesInstanceStorageLock)
         #expect(sendable.usesLockBasedStorage(isTypeMember: false))
 
-        let actor = try #require(makeGenerator("protocol Service {}", isActor: true))
+        let actor = try #require(makeGenerator("protocol Service: Actor {}"))
         #expect(actor.usesInstanceStorageLock)
     }
 
@@ -310,7 +297,7 @@ struct ConditionalCompilationTraversalTests {
         #expect(lines.isEmpty)
     }
 
-    // MARK: - collectInitializers
+    // MARK: - Initializer collection
 
     @Test("Initializer requirements are collected across conditional clauses")
     func collectsInitializers() throws {
@@ -323,6 +310,6 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        #expect(generator.collectInitializers().count == 2)
+        #expect(generator.overloads.initializers.count == 2)
     }
 }

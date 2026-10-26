@@ -23,27 +23,31 @@ import SwiftSyntaxBuilder
 /// - `+IfConfigTraversal` keeps every generator's output aligned with the protocol's
 ///   conditional-compilation structure.
 struct MockGenerator {
-    let protocolName: String
-    let mockClassName: String
+    /// The protocol-level facts that drive generation: its name, conformances,
+    /// isolation, access level, and parent mock.
+    let shape: ProtocolShape
+    /// The protocol's member block, with every requirement's parameters renamed to
+    /// something the generated bodies can refer to (see `ParameterNameNormalizer`).
     let members: MemberBlockItemListSyntax
-    let isSendable: Bool
-    let isActor: Bool
-    /// The global actor the protocol is isolated to, as spelled in its attribute, or
-    /// `nil` for a protocol that declares no isolation of its own.
-    let globalActorName: String?
-    let accessLevel: AccessLevel
-    let parentMockClassName: String?
+    /// Every requirement, flattened out of conditional compilation, in declaration
+    /// order, for the analyses that need the whole set at once. Generation itself goes
+    /// through the `map*PreservingIfConfig` drivers, which keep the `#if` structure.
+    let requirements: [Requirement]
+    /// The overload groups and the tracking identifiers assigned across the whole
+    /// protocol, computed once so every consumer names a requirement the same way.
+    let overloads: OverloadContext
 
-    /// Whether the protocol is isolated to a global actor, so the mock's members are too.
-    var isGlobalActorIsolated: Bool {
-        globalActorName != nil
+    init(shape: ProtocolShape, members: MemberBlockItemListSyntax) {
+        self.shape = shape
+        self.members = members
+        self.requirements = Requirement.all(in: members)
+        self.overloads = OverloadContext(requirements: requirements)
     }
 
-    /// Whether the mock subclasses a parent protocol's mock, inheriting its members and
-    /// initializers. Actor mocks are final and never subclass, so an actor protocol
-    /// re-implements its parent's requirements instead.
-    var hasParentMock: Bool {
-        parentMockClassName != nil && !isActor
+    /// Whether the protocol declares at least one `init` requirement, in which case the
+    /// generated `required init` witnesses stand in for the synthesized `init()`.
+    var hasInitializerRequirements: Bool {
+        !overloads.initializers.isEmpty
     }
 
     /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
@@ -53,7 +57,7 @@ struct MockGenerator {
         isOverridable: Bool = false
     ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeMemberModifier(isOverridable: isOverridable) {
+        if let accessModifier = shape.accessLevel.makeMemberModifier(isOverridable: isOverridable) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
@@ -66,24 +70,18 @@ struct MockGenerator {
         supportsOpen: Bool = false
     ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = accessLevel.makeModifier(supportsOpen: supportsOpen) {
+        if let accessModifier = shape.accessLevel.makeModifier(supportsOpen: supportsOpen) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
         return DeclModifierListSyntax(modifiers)
     }
 
-    /// Whether the generated type can be subclassed from another module, which decides
-    /// whether `public` members are emitted as `open`. Actor mocks are always final.
-    var canBeSubclassedOutsideModule: Bool {
-        accessLevel == .public && !isActor
-    }
-
     /// Builds the mock declaration: an `actor` for `Actor` protocols, otherwise a `class`.
     /// `Sendable` and non-`Sendable` class mocks share the same builder; they differ only
     /// in whether members are lock-backed, which the builder decides per member.
     func generate() -> DeclSyntax {
-        if isActor {
+        if shape.isActor {
             return DeclSyntax(generateActorMock())
         }
 
@@ -108,7 +106,7 @@ struct MockGenerator {
             members.append(MemberBlockItemSyntax(decl: mutexProperty))
         }
 
-        if hasTypeMembers() {
+        if hasTypeMembers {
             let staticStorageStruct = generateStaticStorageStruct()
             members.append(MemberBlockItemSyntax(decl: staticStorageStruct))
 
@@ -128,7 +126,7 @@ struct MockGenerator {
         // - the mock subclasses a parent mock: it inherits the parent's initializers, so
         //   synthesizing its own would shadow an inherited `required init` and break protocols
         //   whose parent declares an `init` requirement. (An actor mock never has a parent.)
-        if (accessLevel == .public || accessLevel == .package) && !hasInitializerRequirements && !hasParentMock {
+        if (shape.accessLevel == .public || shape.accessLevel == .package) && !hasInitializerRequirements && !shape.subclassesParentMock {
             let initDecl = generateInit()
             members.append(MemberBlockItemSyntax(decl: initDecl))
         }
@@ -153,7 +151,7 @@ struct MockGenerator {
 
         var inheritedTypes: [InheritedTypeSyntax] = []
 
-        if hasParentMock, let parentMockClassName {
+        if shape.subclassesParentMock, let parentMockClassName = shape.parentMockClassName {
             inheritedTypes.append(
                 InheritedTypeSyntax(
                     type: TypeSyntax(stringLiteral: parentMockClassName),
@@ -163,10 +161,10 @@ struct MockGenerator {
         }
 
         inheritedTypes.append(
-            InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
+            InheritedTypeSyntax(type: TypeSyntax(stringLiteral: shape.protocolName))
         )
 
-        if isSendable {
+        if shape.isSendable {
             inheritedTypes[inheritedTypes.count - 1] = InheritedTypeSyntax(
                 type: inheritedTypes[inheritedTypes.count - 1].type,
                 trailingComma: .commaToken()
@@ -175,7 +173,7 @@ struct MockGenerator {
         }
 
         var classAttributes: [AttributeListSyntax.Element] = []
-        if let globalActorName {
+        if let globalActorName = shape.globalActorName {
             classAttributes.append(.attribute(
                 AttributeSyntax(attributeName: TypeSyntax(stringLiteral: globalActorName))
             ))
@@ -184,7 +182,7 @@ struct MockGenerator {
         return ClassDeclSyntax(
             attributes: AttributeListSyntax(classAttributes),
             modifiers: buildClassModifiers(supportsOpen: true),
-            name: .identifier(mockClassName),
+            name: .identifier(shape.mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
             ),
@@ -199,13 +197,13 @@ struct MockGenerator {
         let memberBlock = buildMockMemberBlock()
 
         let inheritedTypes: [InheritedTypeSyntax] = [
-            InheritedTypeSyntax(type: TypeSyntax(stringLiteral: protocolName))
+            InheritedTypeSyntax(type: TypeSyntax(stringLiteral: shape.protocolName))
         ]
 
         return ActorDeclSyntax(
             attributes: AttributeListSyntax([]),
             modifiers: buildClassModifiers(),
-            name: .identifier(mockClassName),
+            name: .identifier(shape.mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
             ),
@@ -217,8 +215,6 @@ struct MockGenerator {
     /// `#if` structure preserved. Each requirement's tracking model is computed once
     /// here and handed to the per-kind generator.
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
-        let overloads = makeOverloadContext()
-
         return mapMemberBlockItemsPreservingIfConfig { requirement in
             switch requirement {
             case .initializer(let initDecl):

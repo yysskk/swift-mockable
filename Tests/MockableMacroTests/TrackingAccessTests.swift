@@ -148,22 +148,13 @@ struct TrackingAccessTests {
 
     @Test("The generator selects lock-backed access for Sendable mocks and type members")
     func accessSelection() throws {
-        func generator(isSendable: Bool) throws -> MockGenerator {
-            let decl: DeclSyntax = "protocol Service {}"
+        func generator(ofProtocol source: String) throws -> MockGenerator {
+            let decl: DeclSyntax = "\(raw: source)"
             let protocolDecl = try #require(decl.as(ProtocolDeclSyntax.self))
-            return MockGenerator(
-                protocolName: protocolDecl.name.text,
-                mockClassName: MockNaming.mockTypeName(forProtocol: protocolDecl.name.text),
-                members: protocolDecl.memberBlock.members,
-                isSendable: isSendable,
-                isActor: false,
-                globalActorName: nil,
-                accessLevel: .internal,
-                parentMockClassName: nil
-            )
+            return MockGenerator(shape: ProtocolShape(protocolDecl), members: protocolDecl.memberBlock.members)
         }
 
-        let plain = try generator(isSendable: false)
+        let plain = try generator(ofProtocol: "protocol Service {}")
         guard case .direct = plain.trackingAccess(isTypeMember: false) else {
             Issue.record("expected direct access for an instance member of a plain mock")
             return
@@ -174,7 +165,7 @@ struct TrackingAccessTests {
         }
         #expect(staticStorage == "_staticStorage")
 
-        let sendable = try generator(isSendable: true)
+        let sendable = try generator(ofProtocol: "protocol Service: Sendable {}")
         guard case .lockBacked(let storage) = sendable.trackingAccess(isTypeMember: false) else {
             Issue.record("expected lock-backed access for an instance member of a Sendable mock")
             return

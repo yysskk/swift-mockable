@@ -174,6 +174,8 @@ struct TrackingRequirement {
 /// The overload information shared by every requirement of one protocol, computed
 /// once per `generate()` pass instead of re-walking the member tree per consumer.
 struct OverloadContext {
+    /// The protocol's method requirements grouped by name, so an overloaded method
+    /// can be told apart from a sole one.
     let methodGroups: [String: [FunctionDeclSyntax]]
     let initializers: [InitializerDeclSyntax]
     let subscripts: [SubscriptDeclSyntax]
@@ -191,29 +193,31 @@ struct OverloadContext {
     }
 }
 
-extension MockGenerator {
-    /// Collects the protocol's overload groups once, so each consumer can disambiguate
-    /// identifiers without re-walking the member tree.
-    func makeOverloadContext() -> OverloadContext {
-        let requirements = collectRequirements()
-        let methodGroups = groupMethodsByName(in: requirements)
+extension OverloadContext {
+    /// Groups the protocol's requirements once — methods by name, and every
+    /// initializer and subscript — and assigns their tracking identifiers, so each
+    /// consumer can disambiguate without re-walking the member tree.
+    init(requirements: [Requirement]) {
+        var methodGroups: [String: [FunctionDeclSyntax]] = [:]
         var initializers: [InitializerDeclSyntax] = []
         var subscripts: [SubscriptDeclSyntax] = []
         for requirement in requirements {
             switch requirement {
+            case .function(let funcDecl):
+                methodGroups[funcDecl.name.text, default: []].append(funcDecl)
             case .initializer(let initDecl):
                 initializers.append(initDecl)
             case .subscript(let subscriptDecl):
                 subscripts.append(subscriptDecl)
-            case .function, .variable, .associatedType, .typeAlias, .unsupported:
+            case .variable, .associatedType, .typeAlias, .unsupported:
                 continue
             }
         }
-        return OverloadContext(
+        self.init(
             methodGroups: methodGroups,
             initializers: initializers,
             subscripts: subscripts,
-            trackingIdentifiers: assignTrackingIdentifiers(
+            trackingIdentifiers: MockGenerator.assignTrackingIdentifiers(
                 in: requirements,
                 methodGroups: methodGroups,
                 initializers: initializers,
@@ -221,6 +225,9 @@ extension MockGenerator {
             )
         )
     }
+}
+
+extension MockGenerator {
 
     /// The tracking requirements declared by one protocol requirement: one per
     /// function, initializer, or subscript, one per property binding, and none for a

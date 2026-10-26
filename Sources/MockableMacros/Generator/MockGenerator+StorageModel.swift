@@ -7,8 +7,8 @@ extension MockGenerator {
     /// Whether the protocol declares any `static`/`class` requirement, and so needs a
     /// `StaticStorage` struct. Static tracking state is shared by every instance, so it
     /// is always lock-backed, even in a non-`Sendable` mock.
-    func hasTypeMembers() -> Bool {
-        collectRequirements().contains(where: \.isTypeMember)
+    var hasTypeMembers: Bool {
+        requirements.contains(where: \.isTypeMember)
     }
 
     /// The modifiers a generated member needs to mirror a type member: `static`, or
@@ -27,7 +27,7 @@ extension MockGenerator {
     /// mocks with a member outside their isolation need it because such a member cannot
     /// touch isolated state.
     var usesInstanceStorageLock: Bool {
-        isActor || isSendable || needsNonisolatedStorage
+        shape.isActor || shape.isSendable || needsNonisolatedStorage
     }
 
     /// Whether a member of a global-actor-isolated mock has to reach the tracking state
@@ -38,14 +38,14 @@ extension MockGenerator {
     /// isolated — a `@MainActor` mock of a child of a nonisolated protocol gets a
     /// nonisolated `resetMock()`, which could not clear isolated stored properties.
     var needsNonisolatedStorage: Bool {
-        hasRequirementsLeavingIsolation || (isGlobalActorIsolated && hasParentMock)
+        hasRequirementsLeavingIsolation || (shape.isGlobalActorIsolated && shape.subclassesParentMock)
     }
 
     /// Whether the protocol declares a requirement whose witness cannot assume the
     /// mock's isolation and so cannot reach isolated tracking state (see
     /// `Requirement.leavesMockIsolation`).
     var hasRequirementsLeavingIsolation: Bool {
-        collectRequirements().contains(where: \.leavesMockIsolation)
+        requirements.contains(where: \.leavesMockIsolation)
     }
 
     /// Whether a member's tracking state is lock-backed: every member of a

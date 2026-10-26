@@ -52,7 +52,7 @@ extension MockGenerator {
         // `required` initializer to force subclasses to provide it too. Actors are final and
         // reject `required`. Access uses the member modifier without `open`, since
         // initializers are never `open`.
-        let additionalModifiers: [DeclModifierSyntax] = isActor
+        let additionalModifiers: [DeclModifierSyntax] = shape.isActor
             ? []
             : [DeclModifierSyntax(name: .keyword(.required))]
         let modifiers = buildModifiers(additional: additionalModifiers, isOverridable: false)

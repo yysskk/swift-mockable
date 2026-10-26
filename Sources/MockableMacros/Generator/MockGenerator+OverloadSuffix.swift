@@ -4,40 +4,6 @@ import SwiftSyntaxBuilder
 // MARK: - Overload Identifier Suffixes
 
 extension MockGenerator {
-    /// Groups the protocol's method requirements by name, including those declared in
-    /// conditional-compilation blocks, to detect overloads. Pass the protocol's flattened
-    /// requirements when the caller already has them, to avoid re-walking the tree.
-    func groupMethodsByName(
-        in requirements: [Requirement]? = nil
-    ) -> [String: [FunctionDeclSyntax]] {
-        var methodGroups: [String: [FunctionDeclSyntax]] = [:]
-
-        for requirement in requirements ?? collectRequirements() {
-            if case .function(let funcDecl) = requirement {
-                methodGroups[funcDecl.name.text, default: []].append(funcDecl)
-            }
-        }
-
-        return methodGroups
-    }
-
-    /// All initializer requirements declared by the protocol, including those nested in
-    /// conditional-compilation blocks. Used to detect `init` overloads and to decide
-    /// whether the mock declares its own initializers.
-    func collectInitializers() -> [InitializerDeclSyntax] {
-        collectRequirements().compactMap { requirement in
-            if case .initializer(let initDecl) = requirement {
-                return initDecl
-            }
-            return nil
-        }
-    }
-
-    /// Whether the protocol declares at least one `init` requirement.
-    var hasInitializerRequirements: Bool {
-        !collectInitializers().isEmpty
-    }
-
     /// The tracking identifier for an initializer within its overload group, e.g. `init`
     /// for a sole initializer or `initString` for an overload taking a `String`.
     static func initializerIdentifier(for initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {

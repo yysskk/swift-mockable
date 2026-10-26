@@ -37,10 +37,22 @@ struct ProtocolShape {
         parentProtocolNames.first.map { MockNaming.mockTypeName(forProtocol: $0) }
     }
 
-    /// Whether the generated mock subclasses a parent protocol's mock. An actor mock
-    /// is final and cannot subclass, so it never does.
+    /// Whether the generated mock subclasses a parent protocol's mock, inheriting its
+    /// members and initializers. An actor mock is final and cannot subclass, so an
+    /// actor protocol re-implements its parent's requirements instead.
     var subclassesParentMock: Bool {
         parentMockClassName != nil && !isActor
+    }
+
+    /// Whether the protocol is isolated to a global actor, so the mock's members are too.
+    var isGlobalActorIsolated: Bool {
+        globalActorName != nil
+    }
+
+    /// Whether the generated type can be subclassed from another module, which decides
+    /// whether `public` members are emitted as `open`. Actor mocks are always final.
+    var canBeSubclassedOutsideModule: Bool {
+        accessLevel == .public && !isActor
     }
 
     init(_ protocolDecl: ProtocolDeclSyntax) {
