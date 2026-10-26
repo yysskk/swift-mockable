@@ -40,3 +40,7 @@ assert(mock.fetchUserCallCount == 1)
 ### Advanced
 
 - <doc:AdvancedUsage>
+
+### Migration
+
+- <doc:MigratingTo3>
