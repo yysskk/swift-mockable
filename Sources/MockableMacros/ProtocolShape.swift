@@ -103,25 +103,8 @@ struct UnsupportedInheritedType {
     let type: InheritedTypeSyntax
     /// The inherited type as written.
     let name: String
+    /// Why the mock cannot conform to it; `MockableDiagnostic` words the explanation.
     let reason: Reason
-
-    /// The diagnostic's explanation, naming the protocol and what to do instead.
-    var message: String {
-        switch reason {
-        case .requirementsCannotBeWitnessed:
-            return """
-                '\(name)' declares requirements @Mockable cannot generate witnesses for, \
-                so the generated mock would not conform to it. Drop the conformance from \
-                the protocol, or satisfy it in an extension of the generated mock.
-                """
-        case .parameterized:
-            return """
-                '\(name)' is a parent protocol written with generic arguments, which the \
-                generated mock cannot subclass. Inherit from an unparameterized protocol \
-                instead.
-                """
-        }
-    }
 }
 
 /// How an inherited type is treated when building the mock.

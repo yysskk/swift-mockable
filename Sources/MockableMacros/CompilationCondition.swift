@@ -1,4 +1,3 @@
-import SwiftDiagnostics
 import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxMacros
@@ -42,14 +41,7 @@ enum CompilationCondition: Equatable {
             return .debug
         }
         guard case .argumentList(let argumentList) = arguments else {
-            context.diagnose(
-                Diagnostic(
-                    node: Syntax(node),
-                    message: MockableError.invalidMacroArgument(
-                        "the only supported argument is 'condition:'"
-                    )
-                )
-            )
+            context.diagnose(.invalidMacroArgument(.notAnArgumentList), at: node)
             return nil
         }
 
@@ -58,40 +50,19 @@ enum CompilationCondition: Equatable {
 
         for argument in argumentList {
             guard let label = argument.label?.text else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument(
-                            "@Mockable does not accept unlabeled arguments; the only supported argument is 'condition:'"
-                        )
-                    )
-                )
+                context.diagnose(.invalidMacroArgument(.unlabeled), at: argument)
                 hasError = true
                 continue
             }
 
             guard label == "condition" else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument(
-                            "unexpected argument label '\(label)'; the only supported argument is 'condition:'"
-                        )
-                    )
-                )
+                context.diagnose(.invalidMacroArgument(.unexpectedLabel(label)), at: argument)
                 hasError = true
                 continue
             }
 
             guard condition == nil else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(argument),
-                        message: MockableError.invalidMacroArgument(
-                            "duplicate 'condition' argument"
-                        )
-                    )
-                )
+                context.diagnose(.invalidMacroArgument(.duplicateCondition), at: argument)
                 hasError = true
                 continue
             }
@@ -136,14 +107,7 @@ enum CompilationCondition: Equatable {
             return parseCustomCondition(call, in: context)
         }
 
-        context.diagnose(
-            Diagnostic(
-                node: Syntax(expression),
-                message: MockableError.invalidMacroArgument(
-                    "the 'condition' argument must be written literally as '.debug', '.always', or '.custom(\"CONDITION\")'"
-                )
-            )
-        )
+        context.diagnose(.invalidMacroArgument(.conditionNotLiteral), at: expression)
         return nil
     }
 
@@ -157,28 +121,14 @@ enum CompilationCondition: Equatable {
             argument.label == nil,
             let stringLiteral = argument.expression.as(StringLiteralExprSyntax.self)
         else {
-            context.diagnose(
-                Diagnostic(
-                    node: Syntax(call),
-                    message: MockableError.invalidMacroArgument(
-                        "'.custom' requires a single string literal, e.g. '.custom(\"MOCKING\")'"
-                    )
-                )
-            )
+            context.diagnose(.invalidMacroArgument(.customNotAStringLiteral), at: call)
             return nil
         }
 
         var conditionSource = ""
         for segment in stringLiteral.segments {
             guard let stringSegment = segment.as(StringSegmentSyntax.self) else {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(stringLiteral),
-                        message: MockableError.invalidMacroArgument(
-                            "the custom compilation condition must be a string literal without interpolation"
-                        )
-                    )
-                )
+                context.diagnose(.invalidMacroArgument(.customInterpolated), at: stringLiteral)
                 return nil
             }
             conditionSource += stringSegment.content.text
@@ -201,17 +151,8 @@ enum CompilationCondition: Equatable {
         at node: some SyntaxProtocol,
         in context: some MacroExpansionContext
     ) -> ExprSyntax? {
-        func diagnose(_ message: String) {
-            context.diagnose(
-                Diagnostic(
-                    node: Syntax(node),
-                    message: MockableError.invalidMacroArgument(message)
-                )
-            )
-        }
-
         guard !source.allSatisfy(\.isWhitespace) else {
-            diagnose("the custom compilation condition must not be empty")
+            context.diagnose(.invalidMacroArgument(.customEmpty), at: node)
             return nil
         }
 
@@ -219,7 +160,7 @@ enum CompilationCondition: Equatable {
         // everything after the first line fall out of the probe's condition
         // position and be dropped silently instead of rejected.
         guard !source.contains(where: \.isNewline) else {
-            diagnose("the custom compilation condition must be a single line")
+            context.diagnose(.invalidMacroArgument(.customMultiline), at: node)
             return nil
         }
 
@@ -238,16 +179,12 @@ enum CompilationCondition: Equatable {
             let condition = clause.condition,
             clauseBodyIsEmpty(clause)
         else {
-            diagnose("'\(source)' is not a valid compilation condition expression")
+            context.diagnose(.invalidMacroArgument(.customUnparsable(source)), at: node)
             return nil
         }
 
         guard isSupportedConditionExpression(condition) else {
-            diagnose(
-                "'\(source)' is not a supported compilation condition; use identifiers, 'true'/'false', "
-                    + "'!', '&&', '||', parentheses, and platform checks such as 'os(iOS)', "
-                    + "'canImport(UIKit)', or 'swift(>=6.0)'"
-            )
+            context.diagnose(.invalidMacroArgument(.customUnsupported(source)), at: node)
             return nil
         }
 

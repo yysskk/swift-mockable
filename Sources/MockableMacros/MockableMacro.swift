@@ -1,5 +1,4 @@
 import SwiftCompilerPlugin
-import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
@@ -12,7 +11,7 @@ import SwiftSyntaxMacros
 /// arguments, and exposes a configurable handler for every requirement. The protocol's
 /// shape drives the output: `Sendable`/`Actor` conformances select a lock-backed storage
 /// model, an inherited protocol produces a subclassing mock, and unsupported members are
-/// reported as diagnostics (see ``MockableError``) instead of generating invalid code.
+/// reported as diagnostics (see ``MockableDiagnostic``) instead of generating invalid code.
 public struct MockableMacro: PeerMacro {
     /// Generates the mock class peer for a `@Mockable` protocol.
     ///
@@ -25,7 +24,7 @@ public struct MockableMacro: PeerMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard let protocolDecl = declaration.as(ProtocolDeclSyntax.self) else {
-            context.diagnose(Diagnostic(node: Syntax(node), message: MockableError.notAProtocol))
+            context.diagnose(.notAProtocol, at: node)
             return []
         }
 
@@ -76,15 +75,7 @@ public struct MockableMacro: PeerMacro {
             return false
         }
 
-        let name = associatedType.name.text
-        context.diagnose(Diagnostic(
-            node: Syntax(associatedType),
-            message: MockableError.unsupportedAssociatedType("""
-                Cannot mock associated type '\(name)': the mock fulfills it with 'Any', \
-                which does not satisfy its constraints. Give it a default \
-                ('associatedtype \(name): ... = SomeType') so the mock has a type to use.
-                """)
-        ))
+        context.diagnose(.unsupportedAssociatedType(name: associatedType.name.text), at: associatedType)
         return true
     }
 
@@ -97,10 +88,10 @@ public struct MockableMacro: PeerMacro {
         context: some MacroExpansionContext
     ) -> Bool {
         for inherited in unsupported {
-            context.diagnose(Diagnostic(
-                node: Syntax(inherited.type),
-                message: MockableError.unsupportedInheritedType(inherited.message)
-            ))
+            context.diagnose(
+                .unsupportedInheritedType(name: inherited.name, reason: inherited.reason),
+                at: inherited.type
+            )
         }
         return !unsupported.isEmpty
     }
@@ -240,9 +231,7 @@ public struct MockableMacro: PeerMacro {
         _ decl: some DeclSyntaxProtocol,
         context: some MacroExpansionContext
     ) {
-        context.diagnose(
-            Diagnostic(node: Syntax(decl), message: MockableError.unsupportedMember(decl.trimmedDescription))
-        )
+        context.diagnose(.unsupportedMember(member: decl.trimmedDescription), at: decl)
     }
 
     /// Diagnoses a requirement whose name cannot be mocked. Generated members are named
@@ -255,22 +244,17 @@ public struct MockableMacro: PeerMacro {
         of node: Syntax,
         context: some MacroExpansionContext
     ) -> Bool {
-        let reason: String
+        let isOperator: Bool
         switch name.tokenKind {
         case .identifier(let text) where !text.contains("`"):
             return false
         case .binaryOperator, .prefixOperator, .postfixOperator:
-            reason = "operator requirements are not supported"
+            isOperator = true
         default:
-            reason = "only requirements whose name is a plain identifier can be mocked"
+            isOperator = false
         }
 
-        context.diagnose(
-            Diagnostic(
-                node: node,
-                message: MockableError.unsupportedMemberName("Cannot mock '\(name.text)': \(reason)")
-            )
-        )
+        context.diagnose(.unsupportedMemberName(name: name.text, isOperator: isOperator), at: node)
         return true
     }
 
@@ -326,16 +310,13 @@ public struct MockableMacro: PeerMacro {
                 continue
             }
 
-            let name = (param.secondName ?? param.firstName).text
-            let message: String
-            if inSubscript {
-                message = "Cannot mock @autoclosure parameter '\(name)': effectful autoclosures are not supported in subscript requirements"
-            } else {
-                let effects = uncoveredEffects.joined(separator: "' and '")
-                message = "Cannot mock @autoclosure parameter '\(name)': the mock evaluates autoclosure arguments when called, so the requirement must be declared '\(effects)'"
-            }
             context.diagnose(
-                Diagnostic(node: Syntax(param), message: MockableError.unsupportedAutoclosureEffect(message))
+                .unsupportedAutoclosureEffect(
+                    parameter: (param.secondName ?? param.firstName).text,
+                    uncoveredEffects: uncoveredEffects,
+                    inSubscript: inSubscript
+                ),
+                at: param
             )
             hasError = true
         }
@@ -360,19 +341,13 @@ public struct MockableMacro: PeerMacro {
             for: parameter.type,
             genericParamNames: genericParamNames
         ) {
-            let parameterName = (parameter.secondName ?? parameter.firstName).text
             context.diagnose(
-                Diagnostic(
-                    node: Syntax(parameter),
-                    message: MockableError.unsupportedGenericParameter(
-                        """
-                        Cannot mock '\(name)': the parameter '\(parameterName)' is a closure whose own \
-                        parameters mention a generic parameter. The mock forwards it to a handler that \
-                        erases generic parameters, and a closure taking '\(parameter.type.trimmedDescription)' \
-                        cannot be passed where one taking erased parameters is expected
-                        """
-                    )
-                )
+                .unsupportedGenericParameter(
+                    requirement: name,
+                    parameter: (parameter.secondName ?? parameter.firstName).text,
+                    parameterType: parameter.type.trimmedDescription
+                ),
+                at: parameter
             )
             hasError = true
         }
@@ -399,17 +374,8 @@ public struct MockableMacro: PeerMacro {
         }
 
         context.diagnose(
-            Diagnostic(
-                node: node,
-                message: MockableError.unsupportedGenericReturn(
-                    """
-                    Cannot mock '\(name)': its return type '\(returnType.trimmedDescription)' mentions a \
-                    generic parameter inside a function type. The mock erases generic parameters in its \
-                    handler and casts the result back, and Swift cannot convert between function types \
-                    at runtime
-                    """
-                )
-            )
+            .unsupportedGenericReturn(requirement: name, returnType: returnType.trimmedDescription),
+            at: node
         )
         return true
     }
@@ -432,14 +398,7 @@ public struct MockableMacro: PeerMacro {
             guard case .initializer(let initDecl) = requirement else {
                 continue
             }
-            context.diagnose(
-                Diagnostic(
-                    node: Syntax(initDecl),
-                    message: MockableError.unsupportedInitializer(
-                        "init requirements declared on an inheriting protocol are not yet supported"
-                    )
-                )
-            )
+            context.diagnose(.unsupportedInitializer, at: initDecl)
             hasError = true
         }
 
