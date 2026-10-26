@@ -9,7 +9,7 @@ Naming conventions, edge-case behavior, and constraints of `@Mockable`.
 For a non-overloaded method `fetch`, generated members are:
 
 - `fetchCallCount`
-- `fetchCallArgs`
+- `fetchCallArguments`
 - `fetchHandler`
 
 For overloaded methods, a suffix is appended:
@@ -34,24 +34,24 @@ Subscript-generated names use `subscript<suffix>...`, where the suffix is based 
 subscript(index: Int) -> String { get }
 ```
 
-Generates `subscriptIntCallCount`, `subscriptIntCallArgs`, and `subscriptIntHandler`. Get/set subscripts also generate `subscript<suffix>SetHandler`.
+Generates `subscriptIntCallCount`, `subscriptIntCallArguments`, and `subscriptIntHandler`. Get/set subscripts also generate `subscript<suffix>SetHandler`.
 
 ### Initializers
 
-A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArgs`). Overloaded initializers append a parameter-type suffix, matching the method scheme (`initStringCallCount`, `initStringIntCallCount`).
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a parameter-type suffix, matching the method scheme (`initStringCallCount`, `initStringIntCallCount`).
 
 ## Generic and Associated Types
 
 ### Generic Methods
 
-Generic type parameters are type-erased to `Any` in `CallArgs` storage and handlers. Generated method implementations cast generic returns back to the requested type.
+Generic type parameters are type-erased to `Any` in `CallArguments` storage and handlers. Generated method implementations cast generic returns back to the requested type.
 
 A generic parameter nested in a collection is erased in place, so the erased type keeps its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
 
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArgs: [[String: Any]] = []
+// var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -74,12 +74,12 @@ associatedtype Value         // -> typealias Value = Any
 
 ## `@autoclosure` Parameters
 
-`@autoclosure` arguments are evaluated exactly once per call, before the call is recorded. `CallArgs` and handlers observe the evaluated value, not the closure:
+`@autoclosure` arguments are evaluated exactly once per call, before the call is recorded. `CallArguments` and handlers observe the evaluated value, not the closure:
 
 ```swift
 func log(_ message: @autoclosure () -> String)
 // generates:
-// var logCallArgs: [String] = []
+// var logCallArguments: [String] = []
 // var logHandler: (@Sendable (String) -> Void)? = nil
 ```
 
@@ -87,16 +87,16 @@ The argument is evaluated even when no handler is set. If evaluating a throwing 
 
 ## Non-Escaping Closure Parameters
 
-A non-escaping closure parameter cannot be stored, so it is excluded from `CallArgs`. The call is still counted, and the closure is still forwarded to the handler:
+A non-escaping closure parameter cannot be stored, so it is excluded from `CallArguments`. The call is still counted, and the closure is still forwarded to the handler:
 
 ```swift
 func run(label: String, _ body: () -> Void)
 // generates:
-// var runCallArgs: [String] = []                         // only the storable `label`
+// var runCallArguments: [String] = []                         // only the storable `label`
 // var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
 ```
 
-Escaping (`@escaping`), optional, and variadic closures are storable and remain in `CallArgs` as before.
+Escaping (`@escaping`), optional, and variadic closures are storable and remain in `CallArguments` as before.
 
 ## `rethrows` Methods
 
@@ -137,11 +137,11 @@ func load(id: Int) throws(Never) -> String
 
 ### Variadic
 
-Variadic parameters are tracked as arrays in `CallArgs`.
+Variadic parameters are tracked as arrays in `CallArguments`.
 
 ### `inout`
 
-`CallArgs` stores the input snapshot before mutation. Handler return shapes:
+`CallArguments` stores the input snapshot before mutation. Handler return shapes:
 
 - Single `inout`, no return value: handler returns the updated value.
 - Multiple `inout`, no return value: handler returns a tuple with updated values.
@@ -197,14 +197,14 @@ A protocol `init` requirement is satisfied by a generated `required init` witnes
 init(configuration: Configuration)
 // generates:
 // var initCallCount: Int = 0
-// var initCallArgs: [Configuration] = []
+// var initCallArguments: [Configuration] = []
 // required init(configuration: Configuration) {
 //     initCallCount += 1
-//     initCallArgs.append(configuration)
+//     initCallArguments.append(configuration)
 // }
 ```
 
-Initializers record only — there is no `initHandler`, because a per-instance handler could never be set before the initializer runs. `async`, `throws`, failability (`init?`), and generic clauses are preserved. When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted. `resetMock()` clears `initCallCount` and `initCallArgs`. For `Sendable` and `actor` mocks the tracking is lock-backed like every other member, and the `actor` witness omits `required`.
+Initializers record only — there is no `initHandler`, because a per-instance handler could never be set before the initializer runs. `async`, `throws`, failability (`init?`), and generic clauses are preserved. When a protocol declares its own `init` requirements, the synthesized parameterless `init()` (normally generated for `public` / `package` mocks) is omitted. `resetMock()` clears `initCallCount` and `initCallArguments`. For `Sendable` and `actor` mocks the tracking is lock-backed like every other member, and the `actor` witness omits `required`.
 
 A child mock inherits its parent mock's initializers, so a protocol whose parent declares an `init` requirement is mockable through the inherited `required init`. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported and emits a diagnostic.
 

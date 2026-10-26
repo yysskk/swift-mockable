@@ -27,11 +27,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var getCallCount: Int = 0
-                var getCallArgs: [String] = []
+                var getCallArguments: [String] = []
                 var getHandler: (@Sendable (String) -> Any)? = nil
                 func get<T>(_ key: String) -> T {
                     getCallCount += 1
-                    getCallArgs.append(key)
+                    getCallArguments.append(key)
                     guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
@@ -39,7 +39,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {
@@ -68,18 +68,18 @@ struct GenericMacroTests {
             #if DEBUG
             class StorageMock: Storage {
                 var saveCallCount: Int = 0
-                var saveCallArgs: [(value: Any, key: String)] = []
+                var saveCallArguments: [(value: Any, key: String)] = []
                 var saveHandler: (@Sendable (Any, String) -> Void)? = nil
                 func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
-                    saveCallArgs.append((value: value, key: key))
+                    saveCallArguments.append((value: value, key: key))
                     if let _handler = saveHandler {
                         _handler(value, key)
                     }
                 }
                 func resetMock() {
                     saveCallCount = 0
-                    saveCallArgs = []
+                    saveCallArguments = []
                     saveHandler = nil
                 }
                 class func resetMock() {
@@ -110,32 +110,32 @@ struct GenericMacroTests {
             #if DEBUG
             class UserDefaultsClientMock: UserDefaultsClient {
                 var getCallCount: Int = 0
-                var getCallArgs: [Any] = []
+                var getCallArguments: [Any] = []
                 var getHandler: (@Sendable (Any) -> Any)? = nil
                 func get<T>(_ key: UserDefaultsKey<T>) -> T {
                     getCallCount += 1
-                    getCallArgs.append(key)
+                    getCallArguments.append(key)
                     guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
                     return _handler(key) as! T
                 }
                 var setCallCount: Int = 0
-                var setCallArgs: [(value: Any, key: Any)] = []
+                var setCallArguments: [(value: Any, key: Any)] = []
                 var setHandler: (@Sendable (Any, Any) -> Void)? = nil
                 func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
-                    setCallArgs.append((value: value, key: key))
+                    setCallArguments.append((value: value, key: key))
                     if let _handler = setHandler {
                         _handler(value, key)
                     }
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                     setCallCount = 0
-                    setCallArgs = []
+                    setCallArguments = []
                     setHandler = nil
                 }
                 class func resetMock() {
@@ -166,32 +166,32 @@ struct GenericMacroTests {
             #if DEBUG
             class UserDefaultsClientMock: UserDefaultsClient {
                 var integerCallCount: Int = 0
-                var integerCallArgs: [UserDefaultsKey<Int>] = []
+                var integerCallArguments: [UserDefaultsKey<Int>] = []
                 var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)? = nil
                 func integer(forKey key: UserDefaultsKey<Int>) -> Int {
                     integerCallCount += 1
-                    integerCallArgs.append(key)
+                    integerCallArguments.append(key)
                     guard let _handler = integerHandler else {
                         fatalError("\\(Self.self).integerHandler is not set")
                     }
                     return _handler(key)
                 }
                 var setIntegerCallCount: Int = 0
-                var setIntegerCallArgs: [(value: Int, key: UserDefaultsKey<Int>)] = []
+                var setIntegerCallArguments: [(value: Int, key: UserDefaultsKey<Int>)] = []
                 var setIntegerHandler: (@Sendable (Int, UserDefaultsKey<Int>) -> Void)? = nil
                 func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
-                    setIntegerCallArgs.append((value: value, key: key))
+                    setIntegerCallArguments.append((value: value, key: key))
                     if let _handler = setIntegerHandler {
                         _handler(value, key)
                     }
                 }
                 func resetMock() {
                     integerCallCount = 0
-                    integerCallArgs = []
+                    integerCallArguments = []
                     integerHandler = nil
                     setIntegerCallCount = 0
-                    setIntegerCallArgs = []
+                    setIntegerCallArguments = []
                     setIntegerHandler = nil
                 }
                 class func resetMock() {
@@ -220,11 +220,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var getCallCount: Int = 0
-                var getCallArgs: [String] = []
+                var getCallArguments: [String] = []
                 var getHandler: (@Sendable (String) -> Any?)? = nil
                 func get<T>(_ key: String) -> T? {
                     getCallCount += 1
-                    getCallArgs.append(key)
+                    getCallArguments.append(key)
                     guard let _handler = getHandler else {
                         return nil
                     }
@@ -232,7 +232,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {
@@ -261,11 +261,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var rewrapCallCount: Int = 0
-                var rewrapCallArgs: [Any] = []
+                var rewrapCallArguments: [Any] = []
                 var rewrapHandler: (@Sendable (Any) -> Any)? = nil
                 func rewrap<T>(_ box: Box<[T]>) -> Box<[T]> {
                     rewrapCallCount += 1
-                    rewrapCallArgs.append(box)
+                    rewrapCallArguments.append(box)
                     guard let _handler = rewrapHandler else {
                         fatalError("\\(Self.self).rewrapHandler is not set")
                     }
@@ -273,7 +273,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     rewrapCallCount = 0
-                    rewrapCallArgs = []
+                    rewrapCallArguments = []
                     rewrapHandler = nil
                 }
                 class func resetMock() {
@@ -302,18 +302,18 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var storeCallCount: Int = 0
-                var storeCallArgs: [(box: Any, container: MyModule.Container)] = []
+                var storeCallArguments: [(box: Any, container: MyModule.Container)] = []
                 var storeHandler: (@Sendable (Any, MyModule.Container) -> Void)? = nil
                 func store<T>(_ box: MyModule.Box<T>, in container: MyModule.Container) {
                     storeCallCount += 1
-                    storeCallArgs.append((box: box, container: container))
+                    storeCallArguments.append((box: box, container: container))
                     if let _handler = storeHandler {
                         _handler(box, container)
                     }
                 }
                 func resetMock() {
                     storeCallCount = 0
-                    storeCallArgs = []
+                    storeCallArguments = []
                     storeHandler = nil
                 }
                 class func resetMock() {
@@ -342,11 +342,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var firstElementCallCount: Int = 0
-                var firstElementCallArgs: [Any] = []
+                var firstElementCallArguments: [Any] = []
                 var firstElementHandler: (@Sendable (Any) -> Any)? = nil
                 func firstElement<T: Collection>(_ collection: T) -> T.Element {
                     firstElementCallCount += 1
-                    firstElementCallArgs.append(collection)
+                    firstElementCallArguments.append(collection)
                     guard let _handler = firstElementHandler else {
                         fatalError("\\(Self.self).firstElementHandler is not set")
                     }
@@ -354,7 +354,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     firstElementCallCount = 0
-                    firstElementCallArgs = []
+                    firstElementCallArguments = []
                     firstElementHandler = nil
                 }
                 class func resetMock() {
@@ -383,11 +383,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var decodeCallCount: Int = 0
-                var decodeCallArgs: [Any] = []
+                var decodeCallArguments: [Any] = []
                 var decodeHandler: (@Sendable (Any) -> Any)? = nil
                 func decode<T>(_ type: T.Type) -> any Sequence<T> {
                     decodeCallCount += 1
-                    decodeCallArgs.append(type)
+                    decodeCallArguments.append(type)
                     guard let _handler = decodeHandler else {
                         fatalError("\\(Self.self).decodeHandler is not set")
                     }
@@ -395,7 +395,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     decodeCallCount = 0
-                    decodeCallArgs = []
+                    decodeCallArguments = []
                     decodeHandler = nil
                 }
                 class func resetMock() {
@@ -424,11 +424,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var pairCallCount: Int = 0
-                var pairCallArgs: [String] = []
+                var pairCallArguments: [String] = []
                 var pairHandler: (@Sendable (String) -> (Any, String))? = nil
                 func pair<T>(_ key: String) -> (T, String) {
                     pairCallCount += 1
-                    pairCallArgs.append(key)
+                    pairCallArguments.append(key)
                     guard let _handler = pairHandler else {
                         fatalError("\\(Self.self).pairHandler is not set")
                     }
@@ -436,7 +436,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     pairCallCount = 0
-                    pairCallArgs = []
+                    pairCallArguments = []
                     pairHandler = nil
                 }
                 class func resetMock() {
@@ -465,11 +465,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var getCallCount: Int = 0
-                var getCallArgs: [String] = []
+                var getCallArguments: [String] = []
                 var getHandler: (@Sendable (String) -> Any?)? = nil
                 func get<T>(_ key: String) -> T! {
                     getCallCount += 1
-                    getCallArgs.append(key)
+                    getCallArguments.append(key)
                     guard let _handler = getHandler else {
                         return nil
                     }
@@ -477,7 +477,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {
@@ -536,18 +536,18 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [(() -> Any)?] = []
+                var loadCallArguments: [(() -> Any)?] = []
                 var loadHandler: (@Sendable ((() -> Any)?) -> Void)? = nil
                 func load<T>(_ make: (() -> T)?) {
                     loadCallCount += 1
-                    loadCallArgs.append(make)
+                    loadCallArguments.append(make)
                     if let _handler = loadHandler {
                         _handler(make)
                     }
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {
@@ -576,18 +576,18 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [(make: (@Sendable () -> Any)?, fallback: (@Sendable () -> Int)?)] = []
+                var loadCallArguments: [(make: (@Sendable () -> Any)?, fallback: (@Sendable () -> Int)?)] = []
                 var loadHandler: (@Sendable ((@Sendable () -> Any)?, (@Sendable () -> Int)?) -> Void)? = nil
                 func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?) {
                     loadCallCount += 1
-                    loadCallArgs.append((make: make, fallback: fallback))
+                    loadCallArguments.append((make: make, fallback: fallback))
                     if let _handler = loadHandler {
                         _handler(make, fallback)
                     }
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                 }
                 class func resetMock() {
@@ -646,11 +646,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var transformCallCount: Int = 0
-                var transformCallArgs: [[String: Any]] = []
+                var transformCallArguments: [[String: Any]] = []
                 var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
                 func transform<T>(_ map: [String: T]) -> [String: T] {
                     transformCallCount += 1
-                    transformCallArgs.append(map)
+                    transformCallArguments.append(map)
                     guard let _handler = transformHandler else {
                         return [:]
                     }
@@ -658,7 +658,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     transformCallCount = 0
-                    transformCallArgs = []
+                    transformCallArguments = []
                     transformHandler = nil
                 }
                 class func resetMock() {
@@ -687,11 +687,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var indexCallCount: Int = 0
-                var indexCallArgs: [Any] = []
+                var indexCallArguments: [Any] = []
                 var indexHandler: (@Sendable (Any) -> Any)? = nil
                 func index<T: Hashable>(_ map: [T: String]) -> [T: String] {
                     indexCallCount += 1
-                    indexCallArgs.append(map)
+                    indexCallArguments.append(map)
                     guard let _handler = indexHandler else {
                         return [:]
                     }
@@ -699,7 +699,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     indexCallCount = 0
-                    indexCallArgs = []
+                    indexCallArguments = []
                     indexHandler = nil
                 }
                 class func resetMock() {
@@ -728,11 +728,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var lookupCallCount: Int = 0
-                var lookupCallArgs: [[String: [Any]]?] = []
+                var lookupCallArguments: [[String: [Any]]?] = []
                 var lookupHandler: (@Sendable ([String: [Any]]?) -> [String: Any]?)? = nil
                 func lookup<T>(_ map: [String: [T]]?) -> [String: T]? {
                     lookupCallCount += 1
-                    lookupCallArgs.append(map)
+                    lookupCallArguments.append(map)
                     guard let _handler = lookupHandler else {
                         return nil
                     }
@@ -740,7 +740,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     lookupCallCount = 0
-                    lookupCallArgs = []
+                    lookupCallArguments = []
                     lookupHandler = nil
                 }
                 class func resetMock() {
@@ -769,18 +769,18 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var storeCallCount: Int = 0
-                var storeCallArgs: [(value: Any, metadata: [String: Int])] = []
+                var storeCallArguments: [(value: Any, metadata: [String: Int])] = []
                 var storeHandler: (@Sendable (Any, [String: Int]) -> Void)? = nil
                 func store<T>(_ value: T, metadata: [String: Int]) {
                     storeCallCount += 1
-                    storeCallArgs.append((value: value, metadata: metadata))
+                    storeCallArguments.append((value: value, metadata: metadata))
                     if let _handler = storeHandler {
                         _handler(value, metadata)
                     }
                 }
                 func resetMock() {
                     storeCallCount = 0
-                    storeCallArgs = []
+                    storeCallArguments = []
                     storeHandler = nil
                 }
                 class func resetMock() {
@@ -809,11 +809,11 @@ struct GenericMacroTests {
             #if DEBUG
             class CacheMock: Cache {
                 var getCallCount: Int = 0
-                var getCallArgs: [String] = []
+                var getCallArguments: [String] = []
                 var getHandler: (@Sendable (String) -> [Any])? = nil
                 func get<T>(_ key: String) -> [T] {
                     getCallCount += 1
-                    getCallArgs.append(key)
+                    getCallArguments.append(key)
                     guard let _handler = getHandler else {
                         return []
                     }
@@ -821,7 +821,7 @@ struct GenericMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {

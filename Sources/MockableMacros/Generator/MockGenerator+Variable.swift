@@ -143,7 +143,7 @@ extension MockGenerator {
         getterStatements.append(Self.makeHandlerReturnStatement(
             invokePrefix: invokePrefix,
             handlerName: names.handler,
-            handlerCallArgs: "",
+            handlerCallArguments: "",
             errorType: errorType,
             leadingTrivia: .newline
         ))

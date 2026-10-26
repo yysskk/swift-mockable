@@ -34,7 +34,7 @@ extension MockGenerator {
         }
     }
 
-    /// Builds one tracking member (`CallCount`, `CallArgs`, `Handler`, a property's
+    /// Builds one tracking member (`CallCount`, `CallArguments`, `Handler`, a property's
     /// `_name` backing slot, ...): a plain stored property, or a computed property
     /// reading and writing the storage-struct field of the same name through the lock
     /// when the storage model requires it. Shared by the function, variable, subscript,
@@ -108,7 +108,7 @@ extension MockGenerator {
                 parameters: parameters,
                 memberNames: access.referencedMembers([
                     MockNaming.callCount(identifier),
-                    MockNaming.callArgs(identifier),
+                    MockNaming.callArguments(identifier),
                     MockNaming.handler(identifier),
                 ]),
                 scope: scope
@@ -159,13 +159,13 @@ extension MockGenerator {
 
         let binding = access.handlerBinding(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
             handlerType: handlerType,
             names: names
         )
         statements.append(contentsOf: binding.statements)
 
-        let handlerCallArgs = buildHandlerCallArguments(parameters: parameters)
+        let handlerCallArguments = buildHandlerCallArguments(parameters: parameters)
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if Self.hasReturnValue(returnType) {
@@ -176,7 +176,7 @@ extension MockGenerator {
             ))
             statements.append(contentsOf: Self.buildHandlerInvocationStatements(
                 invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
+                handlerCallArguments: handlerCallArguments,
                 inOutParams: inOutParams,
                 hasGenericReturn: hasGenericReturn,
                 returnTypeStr: returnTypeStr,
@@ -187,7 +187,7 @@ extension MockGenerator {
             statements.append(Self.buildOptionalHandlerCallStatement(
                 handlerBinding: binding.pattern,
                 invokePrefix: invokePrefix,
-                handlerCallArgs: handlerCallArgs,
+                handlerCallArguments: handlerCallArguments,
                 inOutParams: inOutParams,
                 errorType: handlerCallErrorType,
                 names: names
@@ -278,7 +278,7 @@ extension MockGenerator {
     /// `do`/`catch` that re-throws the caught error as the requirement's error type.
     private static func buildHandlerInvocationStatements(
         invokePrefix: String,
-        handlerCallArgs: String,
+        handlerCallArguments: String,
         inOutParams: [InOutParameter],
         hasGenericReturn: Bool,
         returnTypeStr: String,
@@ -286,7 +286,7 @@ extension MockGenerator {
         names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         let castSuffix = hasGenericReturn ? " as! \(returnTypeStr)" : ""
-        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArgs))"
+        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArguments))"
 
         if let errorType {
             var innerLines: [String] = []
@@ -345,12 +345,12 @@ extension MockGenerator {
     private static func buildOptionalHandlerCallStatement(
         handlerBinding: String,
         invokePrefix: String,
-        handlerCallArgs: String,
+        handlerCallArguments: String,
         inOutParams: [InOutParameter],
         errorType: String? = nil,
         names: WitnessNames
     ) -> CodeBlockItemSyntax {
-        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArgs))"
+        let call = "\(invokePrefix)\(names.handler)(\(handlerCallArguments))"
         var ifBodyLines: [String]
         if !inOutParams.isEmpty {
             ifBodyLines = ["let \(names.writeBack) = \(call)"]

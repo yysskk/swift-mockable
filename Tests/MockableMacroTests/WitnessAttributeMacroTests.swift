@@ -31,12 +31,12 @@ struct WitnessAttributeMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable () -> Int)? = nil
                 @discardableResult
                 func run() -> Int {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     guard let _handler = runHandler else {
                         fatalError("\\(Self.self).runHandler is not set")
                     }
@@ -44,7 +44,7 @@ struct WitnessAttributeMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -75,11 +75,11 @@ struct WitnessAttributeMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable () -> Int)? = nil
                 func run() -> Int {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     guard let _handler = runHandler else {
                         fatalError("\\(Self.self).runHandler is not set")
                     }
@@ -87,7 +87,7 @@ struct WitnessAttributeMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {

@@ -29,7 +29,7 @@ struct IsolatedParameterTests {
         #expect(await mock[on: worker] == 3)
 
         #expect(mock.runCallCount == 1)
-        #expect(mock.runCallArgs.count == 1)
+        #expect(mock.runCallArguments.count == 1)
         #expect(mock.subscriptIsolatedanyActorCallCount == 1)
 
         mock.resetMock()

@@ -50,7 +50,7 @@ extension MockGenerator {
             parameters: parameters,
             memberNames: access.referencedMembers([
                 MockNaming.callCount(identifier),
-                MockNaming.callArgs(identifier),
+                MockNaming.callArguments(identifier),
                 MockNaming.handler(identifier),
                 MockNaming.setHandler(identifier),
             ])
@@ -151,7 +151,7 @@ extension MockGenerator {
 
         let binding = access.handlerBinding(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgsExpression(parameters: parameters),
+            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
             handlerType: handlerType,
             names: names
         )
@@ -194,7 +194,7 @@ extension MockGenerator {
         let returnStmt = Self.makeHandlerReturnStatement(
             invokePrefix: invokePrefix,
             handlerName: names.handler,
-            handlerCallArgs: buildHandlerCallArguments(parameters: parameters),
+            handlerCallArguments: buildHandlerCallArguments(parameters: parameters),
             castSuffix: hasGenericReturn ? " as! \(returnTypeStr)" : "",
             errorType: errorType
         )
@@ -212,12 +212,12 @@ extension MockGenerator {
         names: WitnessNames,
         valueName: String
     ) -> CodeBlockItemSyntax {
-        let handlerCallArgs = setHandlerCallArguments(parameters: parameters, valueName: valueName)
+        let handlerCallArguments = setHandlerCallArguments(parameters: parameters, valueName: valueName)
         let pattern = access.handlerReadPattern(handlerName: MockNaming.setHandler(identifier), names: names)
 
         return CodeBlockItemSyntax(item: .stmt(StmtSyntax(stringLiteral: """
 if let \(pattern) {
-    \(names.handler)(\(handlerCallArgs))
+    \(names.handler)(\(handlerCallArguments))
 }
 """)))
     }

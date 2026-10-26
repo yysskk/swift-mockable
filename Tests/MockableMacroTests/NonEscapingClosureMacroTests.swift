@@ -10,8 +10,8 @@ struct NonEscapingClosureMacroTests {
         "Mockable": MockableMacro.self
     ]
 
-    @Test("Non-escaping closure parameter is excluded from CallArgs but forwarded to the handler")
-    func nonEscapingClosureExcludedFromCallArgs() {
+    @Test("Non-escaping closure parameter is excluded from CallArguments but forwarded to the handler")
+    func nonEscapingClosureExcludedFromCallArguments() {
         assertMacroExpansionForTesting(
             """
             @Mockable
@@ -27,18 +27,18 @@ struct NonEscapingClosureMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable (() -> Void) -> Void)? = nil
                 func run(_ body: () -> Void) {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler(body)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -67,11 +67,11 @@ struct NonEscapingClosureMacroTests {
             #if DEBUG
             class ExecutorMock: Executor {
                 var runCallCount: Int = 0
-                var runCallArgs: [String] = []
+                var runCallArguments: [String] = []
                 var runHandler: (@Sendable (String, () -> Void) -> Int)? = nil
                 func run(label: String, _ body: () -> Void) -> Int {
                     runCallCount += 1
-                    runCallArgs.append(label)
+                    runCallArguments.append(label)
                     guard let _handler = runHandler else {
                         fatalError("\\(Self.self).runHandler is not set")
                     }
@@ -79,7 +79,7 @@ struct NonEscapingClosureMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -91,7 +91,7 @@ struct NonEscapingClosureMacroTests {
         )
     }
 
-    @Test("Escaping closure parameters are still recorded in CallArgs")
+    @Test("Escaping closure parameters are still recorded in CallArguments")
     func escapingClosureStillRecorded() {
         assertMacroExpansionForTesting(
             """
@@ -108,18 +108,18 @@ struct NonEscapingClosureMacroTests {
             #if DEBUG
             class SubscriberMock: Subscriber {
                 var subscribeCallCount: Int = 0
-                var subscribeCallArgs: [(Int) -> Void] = []
+                var subscribeCallArguments: [(Int) -> Void] = []
                 var subscribeHandler: (@Sendable ((Int) -> Void) -> Void)? = nil
                 func subscribe(_ handler: @escaping (Int) -> Void) {
                     subscribeCallCount += 1
-                    subscribeCallArgs.append(handler)
+                    subscribeCallArguments.append(handler)
                     if let _handler = subscribeHandler {
                         _handler(handler)
                     }
                 }
                 func resetMock() {
                     subscribeCallCount = 0
-                    subscribeCallArgs = []
+                    subscribeCallArguments = []
                     subscribeHandler = nil
                 }
                 class func resetMock() {

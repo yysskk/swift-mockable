@@ -31,31 +31,31 @@ struct VoidReturnMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var qualifiedCallCount: Int = 0
-                var qualifiedCallArgs: [()] = []
+                var qualifiedCallArguments: [()] = []
                 var qualifiedHandler: (@Sendable () -> Swift.Void)? = nil
                 func qualified() -> Swift.Void {
                     qualifiedCallCount += 1
-                    qualifiedCallArgs.append(())
+                    qualifiedCallArguments.append(())
                     if let _handler = qualifiedHandler {
                         _handler()
                     }
                 }
                 var parenthesizedCallCount: Int = 0
-                var parenthesizedCallArgs: [()] = []
+                var parenthesizedCallArguments: [()] = []
                 var parenthesizedHandler: (@Sendable () -> Void)? = nil
                 func parenthesized() -> (Void) {
                     parenthesizedCallCount += 1
-                    parenthesizedCallArgs.append(())
+                    parenthesizedCallArguments.append(())
                     if let _handler = parenthesizedHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     qualifiedCallCount = 0
-                    qualifiedCallArgs = []
+                    qualifiedCallArguments = []
                     qualifiedHandler = nil
                     parenthesizedCallCount = 0
-                    parenthesizedCallArgs = []
+                    parenthesizedCallArguments = []
                     parenthesizedHandler = nil
                 }
                 class func resetMock() {
@@ -86,21 +86,21 @@ struct VoidReturnMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var runCallCount: Int = 0
-                var runCallArgs: [()] = []
+                var runCallArguments: [()] = []
                 var runHandler: (@Sendable () -> Swift.Void)? = nil
                 func run() -> Swift.Void {
                     runCallCount += 1
-                    runCallArgs.append(())
+                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler()
                     }
                 }
                 var runIntCallCount: Int = 0
-                var runIntCallArgs: [()] = []
+                var runIntCallArguments: [()] = []
                 var runIntHandler: (@Sendable () -> Int)? = nil
                 func run() -> Int {
                     runIntCallCount += 1
-                    runIntCallArgs.append(())
+                    runIntCallArguments.append(())
                     guard let _handler = runIntHandler else {
                         fatalError("\\(Self.self).runIntHandler is not set")
                     }
@@ -108,10 +108,10 @@ struct VoidReturnMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArgs = []
+                    runCallArguments = []
                     runHandler = nil
                     runIntCallCount = 0
-                    runIntCallArgs = []
+                    runIntCallArguments = []
                     runIntHandler = nil
                 }
                 class func resetMock() {

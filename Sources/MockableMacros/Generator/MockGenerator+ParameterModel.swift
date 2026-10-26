@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 // MARK: - Parameter Model
 
 extension MockGenerator {
-    /// The parameters that can be recorded in `CallArgs`. Non-escaping closure
+    /// The parameters that can be recorded in `CallArguments`. Non-escaping closure
     /// parameters are excluded because a non-escaping value cannot be stored; the
     /// call is still counted and the closure is still forwarded to the handler.
     static func storableParameters(_ parameters: FunctionParameterListSyntax) -> FunctionParameterListSyntax {
@@ -15,20 +15,20 @@ extension MockGenerator {
         return FunctionParameterListSyntax(storable)
     }
 
-    /// The element type of the `CallArgs` array, built from the storable parameters only.
-    static func buildCallArgsTupleType(
+    /// The element type of the `CallArguments` array, built from the storable parameters only.
+    static func buildCallArgumentsTupleType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String> = []
     ) -> TypeSyntax {
         buildParameterTupleType(parameters: storableParameters(parameters), genericParamNames: genericParamNames)
     }
 
-    /// The value appended to `CallArgs`, built from the storable parameters only.
-    static func buildCallArgsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
+    /// The value appended to `CallArguments`, built from the storable parameters only.
+    static func buildCallArgumentsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
         buildArgsExpression(parameters: storableParameters(parameters))
     }
 
-    /// Whether a parameter is a non-escaping closure that cannot be stored in `CallArgs`.
+    /// Whether a parameter is a non-escaping closure that cannot be stored in `CallArguments`.
     /// Escaping, optional, `@autoclosure`, and variadic closures are all storable and
     /// therefore excluded from this check.
     static func isNonEscapingClosureParameter(_ param: FunctionParameterSyntax) -> Bool {
@@ -63,7 +63,7 @@ extension MockGenerator {
         return type.is(FunctionTypeSyntax.self)
     }
 
-    /// The element type of the `CallArgs` array: an empty tuple for no parameters, the
+    /// The element type of the `CallArguments` array: an empty tuple for no parameters, the
     /// bare storage type for one, and a labeled tuple (`(a: Int, b: String)`) for several,
     /// so recorded calls keep their argument labels.
     static func buildParameterTupleType(

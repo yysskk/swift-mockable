@@ -23,10 +23,10 @@ struct ResetMockIntegrationTests {
 
         // Verify all counts and args are reset
         #expect(mock.doSomethingCallCount == 0)
-        #expect(mock.doSomethingCallArgs.isEmpty)
+        #expect(mock.doSomethingCallArguments.isEmpty)
         #expect(mock.doSomethingHandler == nil)
         #expect(mock.getValueCallCount == 0)
-        #expect(mock.getValueCallArgs.isEmpty)
+        #expect(mock.getValueCallArguments.isEmpty)
         #expect(mock.getValueHandler == nil)
     }
 
@@ -58,7 +58,7 @@ struct ResetMockIntegrationTests {
     }
 
     @Test("resetMock resets call args for methods with parameters")
-    func resetMockResetsCallArgs() {
+    func resetMockResetsCallArguments() {
         let mock = MultiParameterServiceMock()
         mock.calculateHandler = { @Sendable a, b, c in a + b + c }
 
@@ -66,12 +66,12 @@ struct ResetMockIntegrationTests {
         _ = mock.calculate(a: 4, b: 5, c: 6)
 
         #expect(mock.calculateCallCount == 2)
-        #expect(mock.calculateCallArgs.count == 2)
+        #expect(mock.calculateCallArguments.count == 2)
 
         mock.resetMock()
 
         #expect(mock.calculateCallCount == 0)
-        #expect(mock.calculateCallArgs.isEmpty)
+        #expect(mock.calculateCallArguments.isEmpty)
         #expect(mock.calculateHandler == nil)
     }
 
@@ -103,12 +103,12 @@ struct ResetMockIntegrationTests {
         _ = try await mock.fetchData(id: 2)
 
         #expect(mock.fetchDataCallCount == 2)
-        #expect(mock.fetchDataCallArgs == [1, 2])
+        #expect(mock.fetchDataCallArguments == [1, 2])
 
         mock.resetMock()
 
         #expect(mock.fetchDataCallCount == 0)
-        #expect(mock.fetchDataCallArgs == [])
+        #expect(mock.fetchDataCallArguments == [])
         #expect(mock.fetchDataHandler == nil)
     }
 
@@ -127,10 +127,10 @@ struct ResetMockIntegrationTests {
         mock.resetMock()
 
         #expect(mock.getCallCount == 0)
-        #expect(mock.getCallArgs == [])
+        #expect(mock.getCallArguments == [])
         #expect(mock.getHandler == nil)
         #expect(mock.setCallCount == 0)
-        #expect(mock.setCallArgs.isEmpty)
+        #expect(mock.setCallArguments.isEmpty)
         #expect(mock.setHandler == nil)
     }
 }

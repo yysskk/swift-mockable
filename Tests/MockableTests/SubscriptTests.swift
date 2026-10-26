@@ -67,7 +67,7 @@ struct SubscriptMockTests {
 
         #expect(result == "value at 5")
         #expect(mock.subscriptIntCallCount == 1)
-        #expect(mock.subscriptIntCallArgs == [5])
+        #expect(mock.subscriptIntCallArguments == [5])
     }
 
     @Test("Get-only subscript tracks multiple calls")
@@ -83,7 +83,7 @@ struct SubscriptMockTests {
         _ = mock[2]
 
         #expect(mock.subscriptIntCallCount == 3)
-        #expect(mock.subscriptIntCallArgs == [0, 1, 2])
+        #expect(mock.subscriptIntCallArguments == [0, 1, 2])
     }
 
     @Test("Get-set subscript getter can be mocked")
@@ -98,7 +98,7 @@ struct SubscriptMockTests {
 
         #expect(result == 42)
         #expect(mock.subscriptStringCallCount == 1)
-        #expect(mock.subscriptStringCallArgs == ["answer"])
+        #expect(mock.subscriptStringCallArguments == ["answer"])
     }
 
     @Test("Get-set subscript setter can be mocked")
@@ -129,9 +129,9 @@ struct SubscriptMockTests {
 
         #expect(result == 23.0)
         #expect(mock.subscriptIntIntCallCount == 1)
-        #expect(mock.subscriptIntIntCallArgs.count == 1)
-        #expect(mock.subscriptIntIntCallArgs[0].row == 2)
-        #expect(mock.subscriptIntIntCallArgs[0].column == 3)
+        #expect(mock.subscriptIntIntCallArguments.count == 1)
+        #expect(mock.subscriptIntIntCallArguments[0].row == 2)
+        #expect(mock.subscriptIntIntCallArguments[0].column == 3)
     }
 
     @Test("Multi-index subscript setter can be mocked")
@@ -181,7 +181,7 @@ struct SendableSubscriptMockTests {
 
         #expect(result == "value at 5")
         #expect(mock.subscriptIntCallCount == 1)
-        #expect(mock.subscriptIntCallArgs == [5])
+        #expect(mock.subscriptIntCallArguments == [5])
     }
 
     @Test("Sendable get-set subscript can be mocked")
@@ -244,7 +244,7 @@ struct ActorSubscriptMockTests {
 
         #expect(result == "value at 5")
         #expect(mock.subscriptIntCallCount == 1)
-        #expect(mock.subscriptIntCallArgs == [5])
+        #expect(mock.subscriptIntCallArguments == [5])
     }
 
     @Test("Actor get-set subscript getter can be mocked")
@@ -260,7 +260,7 @@ struct ActorSubscriptMockTests {
 
         #expect(result == 42)
         #expect(mock.subscriptStringCallCount == 1)
-        #expect(mock.subscriptStringCallArgs == ["answer"])
+        #expect(mock.subscriptStringCallArguments == ["answer"])
     }
 
     @Test("Actor get-set subscript setter handler can be set")
@@ -318,12 +318,12 @@ struct ActorSubscriptMockTests {
         _ = await mock[2]
 
         #expect(mock.subscriptIntCallCount == 2)
-        #expect(mock.subscriptIntCallArgs == [1, 2])
+        #expect(mock.subscriptIntCallArguments == [1, 2])
 
         mock.resetMock()
 
         #expect(mock.subscriptIntCallCount == 0)
-        #expect(mock.subscriptIntCallArgs == [])
+        #expect(mock.subscriptIntCallArguments == [])
         #expect(mock.subscriptIntHandler == nil)
     }
 }
@@ -353,20 +353,20 @@ struct MultipleSubscriptOverloadsTests {
         let intResult = mock[5]
         #expect(intResult == "value at 5")
         #expect(mock.subscriptIntCallCount == 1)
-        #expect(mock.subscriptIntCallArgs == [5])
+        #expect(mock.subscriptIntCallArguments == [5])
 
         // Test String subscript
         let stringResult = mock["hello"]
         #expect(stringResult == 5)
         #expect(mock.subscriptStringCallCount == 1)
-        #expect(mock.subscriptStringCallArgs == ["hello"])
+        #expect(mock.subscriptStringCallArguments == ["hello"])
 
         // Test Int,Int subscript
         let intIntResult = mock[2, 3]
         #expect(intIntResult == 5.0)
         #expect(mock.subscriptIntIntCallCount == 1)
-        #expect(mock.subscriptIntIntCallArgs[0].row == 2)
-        #expect(mock.subscriptIntIntCallArgs[0].column == 3)
+        #expect(mock.subscriptIntIntCallArguments[0].row == 2)
+        #expect(mock.subscriptIntIntCallArguments[0].column == 3)
     }
 
     @Test("Multiple subscript overloads setter works")
@@ -405,7 +405,7 @@ struct MultipleSubscriptOverloadsTests {
         // Test String subscript
         _ = mock["test"]
         #expect(mock.subscriptStringCallCount == 1)
-        #expect(mock.subscriptStringCallArgs == ["test"])
+        #expect(mock.subscriptStringCallArguments == ["test"])
     }
 
     @Test("Multiple subscript overloads can be reset independently")
@@ -428,13 +428,13 @@ struct MultipleSubscriptOverloadsTests {
         mock.resetMock()
 
         #expect(mock.subscriptIntCallCount == 0)
-        #expect(mock.subscriptIntCallArgs == [])
+        #expect(mock.subscriptIntCallArguments == [])
         #expect(mock.subscriptIntHandler == nil)
         #expect(mock.subscriptStringCallCount == 0)
-        #expect(mock.subscriptStringCallArgs == [])
+        #expect(mock.subscriptStringCallArguments == [])
         #expect(mock.subscriptStringHandler == nil)
         #expect(mock.subscriptIntIntCallCount == 0)
-        #expect(mock.subscriptIntIntCallArgs.isEmpty)
+        #expect(mock.subscriptIntIntCallArguments.isEmpty)
         #expect(mock.subscriptIntIntHandler == nil)
     }
 }

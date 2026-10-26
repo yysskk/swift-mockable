@@ -145,7 +145,7 @@ enum TrackingAccess {
     private func recordingLines(identifier: String, recordedArguments: ExprSyntax?, prefix: String) -> [String] {
         var lines = ["\(prefix)\(MockNaming.callCount(identifier)) += 1"]
         if let recordedArguments {
-            lines.append("\(prefix)\(MockNaming.callArgs(identifier)).append(\(recordedArguments))")
+            lines.append("\(prefix)\(MockNaming.callArguments(identifier)).append(\(recordedArguments))")
         }
         return lines
     }

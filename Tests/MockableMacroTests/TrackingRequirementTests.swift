@@ -35,7 +35,7 @@ struct TrackingRequirementTests {
         #expect(requirement.identifier == "fetch")
         #expect(requirement.scope == .instance)
         let fields = requirement.trackingFields(model: .lockBacked)
-        #expect(fields.map(\.name) == ["fetchCallCount", "fetchCallArgs", "fetchHandler"])
+        #expect(fields.map(\.name) == ["fetchCallCount", "fetchCallArguments", "fetchHandler"])
         #expect(fields.map(\.initialValue.trimmedDescription) == ["0", "[]", "nil"])
         #expect(fields[0].type.trimmedDescription == "Int")
         #expect(fields[1].type.trimmedDescription == "[Int]")
@@ -98,7 +98,7 @@ struct TrackingRequirementTests {
         """)
         #expect(all.map(\.identifier) == ["init", "initString"])
         let fields = all[1].trackingFields(model: .lockBacked)
-        #expect(fields.map(\.name) == ["initStringCallCount", "initStringCallArgs"])
+        #expect(fields.map(\.name) == ["initStringCallCount", "initStringCallArguments"])
         #expect(all[1].handlerType == nil)
         #expect(all[1].scope == .instance)
     }
@@ -206,7 +206,7 @@ struct TrackingRequirementTests {
 
         #expect(requirement.identifier == "subscriptString")
         #expect(fieldNames(requirement, model: .lockBacked) == [
-            "subscriptStringCallCount", "subscriptStringCallArgs", "subscriptStringHandler",
+            "subscriptStringCallCount", "subscriptStringCallArguments", "subscriptStringHandler",
         ])
     }
 
@@ -219,7 +219,7 @@ struct TrackingRequirementTests {
         """).first)
 
         #expect(fieldNames(requirement, model: .lockBacked) == [
-            "subscriptIntCallCount", "subscriptIntCallArgs", "subscriptIntHandler", "subscriptIntSetHandler",
+            "subscriptIntCallCount", "subscriptIntCallArguments", "subscriptIntHandler", "subscriptIntSetHandler",
         ])
         // Subscript closure types keep the return type's source trivia (the space
         // before the accessor block); the expansion tests pin the same spelling.

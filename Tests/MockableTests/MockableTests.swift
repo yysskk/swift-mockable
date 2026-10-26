@@ -60,7 +60,7 @@ struct MockableIntegrationTests {
 
         #expect(result == "data for 42")
         #expect(mock.fetchDataCallCount == 1)
-        #expect(mock.fetchDataCallArgs == [42])
+        #expect(mock.fetchDataCallArguments == [42])
     }
 
     @Test("Async throws method can throw")
@@ -120,10 +120,10 @@ struct MockableIntegrationTests {
 
         #expect(result == 6)
         #expect(mock.calculateCallCount == 1)
-        #expect(mock.calculateCallArgs.count == 1)
-        #expect(mock.calculateCallArgs[0].a == 1)
-        #expect(mock.calculateCallArgs[0].b == 2)
-        #expect(mock.calculateCallArgs[0].c == 3)
+        #expect(mock.calculateCallArguments.count == 1)
+        #expect(mock.calculateCallArguments[0].a == 1)
+        #expect(mock.calculateCallArguments[0].b == 2)
+        #expect(mock.calculateCallArguments[0].c == 3)
     }
 
     @Test("Variadic parameters are tracked as arrays")
@@ -134,9 +134,9 @@ struct MockableIntegrationTests {
         mock.log("c")
 
         #expect(mock.logCallCount == 2)
-        #expect(mock.logCallArgs.count == 2)
-        #expect(mock.logCallArgs[0] == ["a", "b"])
-        #expect(mock.logCallArgs[1] == ["c"])
+        #expect(mock.logCallArguments.count == 2)
+        #expect(mock.logCallArguments[0] == ["a", "b"])
+        #expect(mock.logCallArguments[1] == ["c"])
     }
 
     @Test("Variadic handler receives array argument")
@@ -171,7 +171,7 @@ struct MockableIntegrationTests {
         #expect(number == 42)
         #expect(string == "default")
         #expect(mock.getCallCount == 2)
-        #expect(mock.getCallArgs == ["number", "string"])
+        #expect(mock.getCallArguments == ["number", "string"])
     }
 
     @Test("Generic method with generic parameter")
@@ -184,11 +184,11 @@ struct MockableIntegrationTests {
         mock.set("hello", forKey: "greeting")
 
         #expect(mock.setCallCount == 2)
-        #expect(mock.setCallArgs.count == 2)
-        #expect(mock.setCallArgs[0].key == "number")
-        #expect(mock.setCallArgs[0].value as? Int == 42)
-        #expect(mock.setCallArgs[1].key == "greeting")
-        #expect(mock.setCallArgs[1].value as? String == "hello")
+        #expect(mock.setCallArguments.count == 2)
+        #expect(mock.setCallArguments[0].key == "number")
+        #expect(mock.setCallArguments[0].value as? Int == 42)
+        #expect(mock.setCallArguments[1].key == "greeting")
+        #expect(mock.setCallArguments[1].value as? String == "hello")
     }
 
     @Test("Generic method with dictionary parameter and return")
@@ -205,7 +205,7 @@ struct MockableIntegrationTests {
 
         #expect(doubled == ["a": 2, "b": 4])
         #expect(mock.transformCallCount == 1)
-        #expect(mock.transformCallArgs.first?["a"] as? Int == 1)
+        #expect(mock.transformCallArguments.first?["a"] as? Int == 1)
     }
 
     @Test("Generic method with dictionary key")
@@ -220,7 +220,7 @@ struct MockableIntegrationTests {
 
         #expect(indexed == [1: "one"])
         #expect(mock.indexCallCount == 1)
-        #expect(mock.indexCallArgs.first as? [Int: String] == [1: "one"])
+        #expect(mock.indexCallArguments.first as? [Int: String] == [1: "one"])
     }
 
     @Test("Generic method with dictionary nested in an optional")
@@ -235,7 +235,7 @@ struct MockableIntegrationTests {
 
         #expect(first == ["a": 1])
         #expect(mock.lookupCallCount == 1)
-        #expect(mock.lookupCallArgs.first??["a"] as? [Int] == [1, 2])
+        #expect(mock.lookupCallArguments.first??["a"] as? [Int] == [1, 2])
     }
 
     @Test("Generic method with dictionary return defaults to empty dictionary")
@@ -260,7 +260,7 @@ struct MockableIntegrationTests {
 
         #expect(rewrapped.value == [1, 2])
         #expect(mock.rewrapCallCount == 1)
-        #expect((mock.rewrapCallArgs.first as? Box<[Int]>)?.value == [1, 2])
+        #expect((mock.rewrapCallArguments.first as? Box<[Int]>)?.value == [1, 2])
     }
 
     @Test("Generic method with a module-qualified type")
@@ -318,7 +318,7 @@ struct MockableIntegrationTests {
 
         #expect(Array(values) == [1, 2])
         #expect(mock.decodeCallCount == 1)
-        #expect(mock.decodeCallArgs.first is Int.Type)
+        #expect(mock.decodeCallArguments.first is Int.Type)
     }
 
     @Test("Generic method returning a tuple")
@@ -333,7 +333,7 @@ struct MockableIntegrationTests {
 
         #expect(pair.0 == 42)
         #expect(pair.1 == "answer")
-        #expect(mock.pairCallArgs == ["answer"])
+        #expect(mock.pairCallArguments == ["answer"])
     }
 
     @Test("Generic method returning an implicitly unwrapped optional")
@@ -366,7 +366,7 @@ struct MockableIntegrationTests {
         #expect(loaded == 3)
         #expect(missing == nil)
         #expect(mock.loadCallCount == 2)
-        #expect(mock.loadCallArgs.first??() as? Int == 3)
+        #expect(mock.loadCallArguments.first??() as? Int == 3)
     }
 
     @Test("Generic method taking an optional Sendable closure over a generic parameter")
@@ -383,7 +383,7 @@ struct MockableIntegrationTests {
         #expect(made == 3)
         #expect(fellBack == 5)
         #expect(mock.loadSendableCallCount == 2)
-        #expect(mock.loadSendableCallArgs.first?.fallback?() == 5)
+        #expect(mock.loadSendableCallArguments.first?.fallback?() == 5)
     }
 
     @Test("Mock conforms to protocol")
@@ -480,7 +480,7 @@ struct MockableIntegrationTests {
 
         #expect(result == "user-mock")
         #expect(StaticServiceMock.makeIdentifierCallCount == 1)
-        #expect(StaticServiceMock.makeIdentifierCallArgs == ["user"])
+        #expect(StaticServiceMock.makeIdentifierCallArguments == ["user"])
 
         StaticServiceMock.readOnlyToken = "token"
         StaticServiceMock.cachedValue = "cached"
@@ -499,11 +499,11 @@ struct MockableIntegrationTests {
         }
 
         #expect(StaticServiceMock.makeIdentifierCallCount == 101)
-        #expect(StaticServiceMock.makeIdentifierCallArgs.count == 101)
+        #expect(StaticServiceMock.makeIdentifierCallArguments.count == 101)
 
         StaticServiceMock.resetMock()
         #expect(StaticServiceMock.makeIdentifierCallCount == 0)
-        #expect(StaticServiceMock.makeIdentifierCallArgs == [])
+        #expect(StaticServiceMock.makeIdentifierCallArguments == [])
         #expect(StaticServiceMock.makeIdentifierHandler == nil)
         #expect(StaticServiceMock.cachedValue == nil)
     }
@@ -537,7 +537,7 @@ struct MockableIntegrationTests {
         mock.sort(&values)
 
         #expect(mock.sortCallCount == 1)
-        #expect(mock.sortCallArgs == [[3, 1, 2]])
+        #expect(mock.sortCallArguments == [[3, 1, 2]])
         #expect(values == [1, 2, 3])
     }
 
@@ -555,7 +555,7 @@ struct MockableIntegrationTests {
         #expect(removed == "a")
         #expect(items == ["b", "c"])
         #expect(mock.removeFirstCallCount == 1)
-        #expect(mock.removeFirstCallArgs == [["a", "b", "c"]])
+        #expect(mock.removeFirstCallArguments == [["a", "b", "c"]])
     }
 
     @Test("Multiple inout parameters")

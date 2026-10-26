@@ -42,7 +42,7 @@ struct TypeAliasIntegrationTests {
         mock.didUpdate(type: "delete")
 
         #expect(mock.didUpdateCallCount == 2)
-        #expect(mock.didUpdateCallArgs == ["insert", "delete"])
+        #expect(mock.didUpdateCallArguments == ["insert", "delete"])
     }
 
     @Test("TypeAlias return value method with handler")
@@ -73,10 +73,10 @@ struct TypeAliasIntegrationTests {
         mock.resetMock()
 
         #expect(mock.currentUpdateTypeCallCount == 0)
-        #expect(mock.currentUpdateTypeCallArgs.isEmpty)
+        #expect(mock.currentUpdateTypeCallArguments.isEmpty)
         #expect(mock.currentUpdateTypeHandler == nil)
         #expect(mock.didUpdateCallCount == 0)
-        #expect(mock.didUpdateCallArgs.isEmpty)
+        #expect(mock.didUpdateCallArguments.isEmpty)
         #expect(mock.didUpdateHandler == nil)
     }
 

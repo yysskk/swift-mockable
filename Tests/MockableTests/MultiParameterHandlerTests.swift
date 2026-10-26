@@ -29,10 +29,10 @@ struct MultiParameterHandlerRuntimeTests {
 
         #expect(mock.add(a: 2, b: 3) == 5)
         #expect(mock.addCallCount == 1)
-        // CallArgs remains a labeled tuple regardless of handler style.
-        #expect(mock.addCallArgs.count == 1)
-        #expect(mock.addCallArgs[0].a == 2)
-        #expect(mock.addCallArgs[0].b == 3)
+        // CallArguments remains a labeled tuple regardless of handler style.
+        #expect(mock.addCallArguments.count == 1)
+        #expect(mock.addCallArguments[0].a == 2)
+        #expect(mock.addCallArguments[0].b == 3)
     }
 
     @Test("Sendable mock (lock-based) uses individual-parameter handler")
@@ -43,8 +43,8 @@ struct MultiParameterHandlerRuntimeTests {
 
         #expect(mock.combine(x: 1, y: 2) == "1-2")
         #expect(mock.combineCallCount == 1)
-        #expect(mock.combineCallArgs[0].x == 1)
-        #expect(mock.combineCallArgs[0].y == 2)
+        #expect(mock.combineCallArguments[0].x == 1)
+        #expect(mock.combineCallArguments[0].y == 2)
     }
 
     @Test("Subscript getter and setter handlers take individual parameters")
@@ -54,8 +54,8 @@ struct MultiParameterHandlerRuntimeTests {
         mock.subscriptIntIntHandler = { row, col in row * 10 + col }
         #expect(mock[1, 2] == 12)
         #expect(mock.subscriptIntIntCallCount == 1)
-        #expect(mock.subscriptIntIntCallArgs[0].row == 1)
-        #expect(mock.subscriptIntIntCallArgs[0].col == 2)
+        #expect(mock.subscriptIntIntCallArguments[0].row == 1)
+        #expect(mock.subscriptIntIntCallArguments[0].col == 2)
 
         nonisolated(unsafe) var captured: (Int, Int, Int)?
         mock.subscriptIntIntSetHandler = { row, col, value in

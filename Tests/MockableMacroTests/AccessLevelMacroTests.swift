@@ -27,11 +27,11 @@ struct AccessLevelMacroTests {
             #if DEBUG
             class InternalServiceMock: InternalService {
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [()] = []
+                var fetchCallArguments: [()] = []
                 var fetchHandler: (@Sendable () -> String)? = nil
                 func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -39,7 +39,7 @@ struct AccessLevelMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -70,11 +70,11 @@ struct AccessLevelMacroTests {
                 public init() {
                 }
                 public var fetchCallCount: Int = 0
-                public var fetchCallArgs: [()] = []
+                public var fetchCallArguments: [()] = []
                 public var fetchHandler: (@Sendable () -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -82,7 +82,7 @@ struct AccessLevelMacroTests {
                 }
                 open func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 open class func resetMock() {
@@ -113,11 +113,11 @@ struct AccessLevelMacroTests {
                 package init() {
                 }
                 package var fetchCallCount: Int = 0
-                package var fetchCallArgs: [()] = []
+                package var fetchCallArguments: [()] = []
                 package var fetchHandler: (@Sendable () -> String)? = nil
                 package func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -125,7 +125,7 @@ struct AccessLevelMacroTests {
                 }
                 package func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 package class func resetMock() {
@@ -234,11 +234,11 @@ struct AccessLevelMacroTests {
             #if DEBUG
             fileprivate class FileprivateServiceMock: FileprivateService {
                 fileprivate var fetchCallCount: Int = 0
-                fileprivate var fetchCallArgs: [()] = []
+                fileprivate var fetchCallArguments: [()] = []
                 fileprivate var fetchHandler: (@Sendable () -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -246,7 +246,7 @@ struct AccessLevelMacroTests {
                 }
                 fileprivate func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 fileprivate class func resetMock() {
@@ -279,11 +279,11 @@ struct AccessLevelMacroTests {
             #if DEBUG
             private class PrivateServiceMock: PrivateService {
                 fileprivate var fetchCallCount: Int = 0
-                fileprivate var fetchCallArgs: [()] = []
+                fileprivate var fetchCallArguments: [()] = []
                 fileprivate var fetchHandler: (@Sendable () -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -291,7 +291,7 @@ struct AccessLevelMacroTests {
                 }
                 fileprivate func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 fileprivate class func resetMock() {

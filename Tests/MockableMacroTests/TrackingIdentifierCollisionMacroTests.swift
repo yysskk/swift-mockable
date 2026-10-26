@@ -33,44 +33,44 @@ struct TrackingIdentifierCollisionMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var loadCallCount: Int = 0
-                var loadCallArgs: [()] = []
+                var loadCallArguments: [()] = []
                 var loadHandler: (@Sendable () -> Void)? = nil
                 func load() {
                     loadCallCount += 1
-                    loadCallArgs.append(())
+                    loadCallArguments.append(())
                     if let _handler = loadHandler {
                         _handler()
                     }
                 }
                 var loadItem2CallCount: Int = 0
-                var loadItem2CallArgs: [Item] = []
+                var loadItem2CallArguments: [Item] = []
                 var loadItem2Handler: (@Sendable (Item) -> Void)? = nil
                 func load(_ item: Item) {
                     loadItem2CallCount += 1
-                    loadItem2CallArgs.append(item)
+                    loadItem2CallArguments.append(item)
                     if let _handler = loadItem2Handler {
                         _handler(item)
                     }
                 }
                 var loadItemCallCount: Int = 0
-                var loadItemCallArgs: [()] = []
+                var loadItemCallArguments: [()] = []
                 var loadItemHandler: (@Sendable () -> Void)? = nil
                 func loadItem() {
                     loadItemCallCount += 1
-                    loadItemCallArgs.append(())
+                    loadItemCallArguments.append(())
                     if let _handler = loadItemHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     loadCallCount = 0
-                    loadCallArgs = []
+                    loadCallArguments = []
                     loadHandler = nil
                     loadItem2CallCount = 0
-                    loadItem2CallArgs = []
+                    loadItem2CallArguments = []
                     loadItem2Handler = nil
                     loadItemCallCount = 0
-                    loadItemCallArgs = []
+                    loadItemCallArguments = []
                     loadItemHandler = nil
                 }
                 class func resetMock() {
@@ -104,13 +104,13 @@ struct TrackingIdentifierCollisionMacroTests {
             class ServiceMock: Service, @unchecked Sendable {
                 private struct Storage {
                     var loadItem2CallCount: Int = 0
-                    var loadItem2CallArgs: [Item] = []
+                    var loadItem2CallArguments: [Item] = []
                     var loadItem2Handler: (@Sendable (Item) -> Void)? = nil
                     var loadCallCount: Int = 0
-                    var loadCallArgs: [()] = []
+                    var loadCallArguments: [()] = []
                     var loadHandler: (@Sendable () -> Void)? = nil
                     var loadItemCallCount: Int = 0
-                    var loadItemCallArgs: [()] = []
+                    var loadItemCallArguments: [()] = []
                     var loadItemHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -126,15 +126,15 @@ struct TrackingIdentifierCollisionMacroTests {
                         }
                     }
                 }
-                var loadItem2CallArgs: [Item] {
+                var loadItem2CallArguments: [Item] {
                     get {
                         _storage.withLock {
-                            $0.loadItem2CallArgs
+                            $0.loadItem2CallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.loadItem2CallArgs = newValue
+                            $0.loadItem2CallArguments = newValue
                         }
                     }
                 }
@@ -153,7 +153,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 func load(_ item: Item) {
                     let _handler = _storage.withLock { storage -> (@Sendable (Item) -> Void)? in
                         storage.loadItem2CallCount += 1
-                        storage.loadItem2CallArgs.append(item)
+                        storage.loadItem2CallArguments.append(item)
                         return storage.loadItem2Handler
                     }
                     if let _handler {
@@ -172,15 +172,15 @@ struct TrackingIdentifierCollisionMacroTests {
                         }
                     }
                 }
-                var loadCallArgs: [()] {
+                var loadCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.loadCallArgs
+                            $0.loadCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.loadCallArgs = newValue
+                            $0.loadCallArguments = newValue
                         }
                     }
                 }
@@ -199,7 +199,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 func load() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.loadCallCount += 1
-                        storage.loadCallArgs.append(())
+                        storage.loadCallArguments.append(())
                         return storage.loadHandler
                     }
                     if let _handler {
@@ -218,15 +218,15 @@ struct TrackingIdentifierCollisionMacroTests {
                         }
                     }
                 }
-                var loadItemCallArgs: [()] {
+                var loadItemCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.loadItemCallArgs
+                            $0.loadItemCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.loadItemCallArgs = newValue
+                            $0.loadItemCallArguments = newValue
                         }
                     }
                 }
@@ -245,7 +245,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 func loadItem() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.loadItemCallCount += 1
-                        storage.loadItemCallArgs.append(())
+                        storage.loadItemCallArguments.append(())
                         return storage.loadItemHandler
                     }
                     if let _handler {
@@ -255,13 +255,13 @@ struct TrackingIdentifierCollisionMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.loadItem2CallCount = 0
-                        storage.loadItem2CallArgs = []
+                        storage.loadItem2CallArguments = []
                         storage.loadItem2Handler = nil
                         storage.loadCallCount = 0
-                        storage.loadCallArgs = []
+                        storage.loadCallArguments = []
                         storage.loadHandler = nil
                         storage.loadItemCallCount = 0
-                        storage.loadItemCallArgs = []
+                        storage.loadItemCallArguments = []
                         storage.loadItemHandler = nil
                     }
                 }
@@ -293,21 +293,21 @@ struct TrackingIdentifierCollisionMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArgs: [()] = []
+                var subscriptStringCallArguments: [()] = []
                 var subscriptStringHandler: (@Sendable () -> Void)? = nil
                 func subscriptString() {
                     subscriptStringCallCount += 1
-                    subscriptStringCallArgs.append(())
+                    subscriptStringCallArguments.append(())
                     if let _handler = subscriptStringHandler {
                         _handler()
                     }
                 }
                 var subscriptString2CallCount: Int = 0
-                var subscriptString2CallArgs: [String] = []
+                var subscriptString2CallArguments: [String] = []
                 var subscriptString2Handler: (@Sendable (String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptString2CallCount += 1
-                    subscriptString2CallArgs.append(key)
+                    subscriptString2CallArguments.append(key)
                     guard let _handler = subscriptString2Handler else {
                         fatalError("\\(Self.self).subscriptString2Handler is not set")
                     }
@@ -315,10 +315,10 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 func resetMock() {
                     subscriptStringCallCount = 0
-                    subscriptStringCallArgs = []
+                    subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                     subscriptString2CallCount = 0
-                    subscriptString2CallArgs = []
+                    subscriptString2CallArguments = []
                     subscriptString2Handler = nil
                 }
                 class func resetMock() {

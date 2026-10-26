@@ -73,11 +73,11 @@ struct CompilationConditionArgumentTests {
 
         #expect(mock.greet(name: "World") == "Hello, World!")
         #expect(mock.greetCallCount == 1)
-        #expect(mock.greetCallArgs == ["World"])
+        #expect(mock.greetCallArguments == ["World"])
 
         mock.resetMock()
         #expect(mock.greetCallCount == 0)
-        #expect(mock.greetCallArgs.isEmpty)
+        #expect(mock.greetCallArguments.isEmpty)
     }
 
     @Test("Type-qualified .always mock works")
@@ -129,7 +129,7 @@ struct CompilationConditionArgumentTests {
 
         #expect(mock.compute(x: 21) == 42)
         #expect(mock.computeCallCount == 1)
-        #expect(mock.computeCallArgs == [21])
+        #expect(mock.computeCallArguments == [21])
     }
 
     @Test(".custom mock with a negated condition works")

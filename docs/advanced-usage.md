@@ -9,7 +9,7 @@ This guide explains generated naming, edge-case behavior, and constraints of `@M
 For a non-overloaded method `fetch`, generated members are:
 
 - `fetchCallCount`
-- `fetchCallArgs`
+- `fetchCallArguments`
 - `fetchHandler`
 
 For overloaded methods, a suffix is appended:
@@ -59,7 +59,7 @@ subscript(index: Int) -> String { get }
 Generates:
 
 - `subscriptIntCallCount`
-- `subscriptIntCallArgs`
+- `subscriptIntCallArguments`
 - `subscriptIntHandler`
 
 Get/set subscripts also generate `subscript<suffix>SetHandler`.
@@ -69,7 +69,7 @@ Get/set subscripts also generate `subscript<suffix>SetHandler`.
 A sole `init` requirement generates members based on the identifier `init`:
 
 - `initCallCount`
-- `initCallArgs`
+- `initCallArguments`
 
 Overloaded initializers append a parameter-type suffix, matching the method scheme:
 
@@ -80,8 +80,8 @@ init(host: String, port: Int)
 
 Generates:
 
-- `initStringCallCount` / `initStringCallArgs`
-- `initStringIntCallCount` / `initStringIntCallArgs`
+- `initStringCallCount` / `initStringCallArguments`
+- `initStringIntCallCount` / `initStringIntCallArguments`
 
 ### Properties
 
@@ -114,7 +114,7 @@ property is `nonisolated`, so a test sets it up without hopping to the actor.
 
 When method signatures contain generic type parameters:
 
-- `CallArgs` storage uses type erasure (`Any`) where needed.
+- `CallArguments` storage uses type erasure (`Any`) where needed.
 - Handler parameter/return types are also erased where needed.
 - Generated method implementations cast generic returns back to the requested type.
 
@@ -126,7 +126,7 @@ its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArgs: [[String: Any]] = []
+// var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -203,7 +203,7 @@ and `where` clauses intact.
 ## `@autoclosure` Parameters
 
 `@autoclosure` arguments are evaluated exactly once per call, before the call is
-recorded. `CallArgs` and handlers observe the evaluated value, not the closure:
+recorded. `CallArguments` and handlers observe the evaluated value, not the closure:
 
 ```swift
 func log(_ message: @autoclosure () -> String)
@@ -212,7 +212,7 @@ func log(_ message: @autoclosure () -> String)
 Generates:
 
 ```swift
-var logCallArgs: [String] = []
+var logCallArguments: [String] = []
 var logHandler: (@Sendable (String) -> Void)? = nil
 ```
 
@@ -229,7 +229,7 @@ Notes:
 ## Non-Escaping Closure Parameters
 
 A non-escaping closure parameter cannot be stored, so it is excluded from
-`CallArgs`. The call is still counted, and the closure is still forwarded to the
+`CallArguments`. The call is still counted, and the closure is still forwarded to the
 handler:
 
 ```swift
@@ -239,12 +239,12 @@ func run(label: String, _ body: () -> Void)
 Generates:
 
 ```swift
-var runCallArgs: [String] = []                         // only the storable `label`
+var runCallArguments: [String] = []                         // only the storable `label`
 var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
 ```
 
 Escaping (`@escaping`), optional, and variadic closures are storable and remain
-in `CallArgs` as before.
+in `CallArguments` as before.
 
 ## `rethrows` Methods
 
@@ -294,7 +294,7 @@ If a handler throws an error of a different type, the mock traps — throwing th
 requirement's declared error type is a contract you control.
 
 A typed-throws closure *parameter* (`func run(_ body: () throws(MyError) -> Void)`)
-is likewise stored untyped: its `CallArgs`/handler entry uses `() throws -> Void`,
+is likewise stored untyped: its `CallArguments`/handler entry uses `() throws -> Void`,
 so the mock never embeds a typed-throws function value.
 
 A throwing `@autoclosure` argument is evaluated inside the same conversion, so its
@@ -351,11 +351,11 @@ parameter or type alias named `Never` or `Error` is classified by its name.
 
 ### Variadic
 
-Variadic parameters are tracked as arrays in `CallArgs`.
+Variadic parameters are tracked as arrays in `CallArguments`.
 
 ### `inout`
 
-`CallArgs` stores the input snapshot before mutation.
+`CallArguments` stores the input snapshot before mutation.
 
 For handlers:
 
@@ -438,10 +438,10 @@ Generates:
 
 ```swift
 var initCallCount: Int = 0
-var initCallArgs: [Configuration] = []
+var initCallArguments: [Configuration] = []
 required init(configuration: Configuration) {
     initCallCount += 1
-    initCallArgs.append(configuration)
+    initCallArguments.append(configuration)
 }
 ```
 
@@ -453,7 +453,7 @@ Notes:
 
 - Initializers **record only** — there is no `initHandler`. The recording state lives on the
   instance being created, so a per-instance handler could never be set before the initializer
-  runs. Inspect `initCallCount` / `initCallArgs` (or the arguments you passed) to verify
+  runs. Inspect `initCallCount` / `initCallArguments` (or the arguments you passed) to verify
   construction.
 - `async`, `throws`, failability (`init?`), and generic clauses are preserved on the witness.
   A throwing initializer keeps its `throws` signature but never throws.
@@ -462,9 +462,9 @@ Notes:
 - When a protocol declares its own `init` requirements, the synthesized parameterless `init()`
   (normally generated for `public` / `package` mocks) is omitted — the `required init`
   witnesses already provide accessible initializers.
-- `resetMock()` clears `initCallCount` and `initCallArgs` alongside the other tracking state.
+- `resetMock()` clears `initCallCount` and `initCallArguments` alongside the other tracking state.
 - For `Sendable` and `actor` mocks the recording goes through `MockableLock` like every other
-  member, so `initCallCount` / `initCallArgs` are lock-backed (and `nonisolated` on actors).
+  member, so `initCallCount` / `initCallArguments` are lock-backed (and `nonisolated` on actors).
   An `actor` witness omits `required`, since actors are `final`.
 
 A child mock inherits its parent mock's initializers, so a protocol whose **parent** declares

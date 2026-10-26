@@ -27,11 +27,11 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
-                var fetchUserCallArgs: [Int] = []
+                var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
-                    fetchUserCallArgs.append(id)
+                    fetchUserCallArguments.append(id)
                     guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
@@ -39,7 +39,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     fetchUserCallCount = 0
-                    fetchUserCallArgs = []
+                    fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
                 class func resetMock() {
@@ -67,11 +67,11 @@ struct CompilationConditionArgumentMacroTests {
 
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
-                var fetchUserCallArgs: [Int] = []
+                var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
-                    fetchUserCallArgs.append(id)
+                    fetchUserCallArguments.append(id)
                     guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
@@ -79,7 +79,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     fetchUserCallCount = 0
-                    fetchUserCallArgs = []
+                    fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
                 class func resetMock() {
@@ -107,11 +107,11 @@ struct CompilationConditionArgumentMacroTests {
             #if MOCKING
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
-                var fetchUserCallArgs: [Int] = []
+                var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
-                    fetchUserCallArgs.append(id)
+                    fetchUserCallArguments.append(id)
                     guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
@@ -119,7 +119,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     fetchUserCallCount = 0
-                    fetchUserCallArgs = []
+                    fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
                 class func resetMock() {
@@ -148,11 +148,11 @@ struct CompilationConditionArgumentMacroTests {
             #if MOCKING
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
-                var fetchUserCallArgs: [Int] = []
+                var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
-                    fetchUserCallArgs.append(id)
+                    fetchUserCallArguments.append(id)
                     guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
@@ -160,7 +160,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     fetchUserCallCount = 0
-                    fetchUserCallArgs = []
+                    fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
                 class func resetMock() {
@@ -189,18 +189,18 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG || UITESTS
             class UserServiceMock: UserService {
                 var pingCallCount: Int = 0
-                var pingCallArgs: [()] = []
+                var pingCallArguments: [()] = []
                 var pingHandler: (@Sendable () -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
-                    pingCallArgs.append(())
+                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArgs = []
+                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {
@@ -279,18 +279,18 @@ struct CompilationConditionArgumentMacroTests {
             #if _ENABLE_MOCKS_2
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
-                var clearCallArgs: [()] = []
+                var clearCallArguments: [()] = []
                 var clearHandler: (@Sendable () -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArgs.append(())
+                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArgs = []
+                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -331,18 +331,18 @@ struct CompilationConditionArgumentMacroTests {
             #if \(expression)
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
-                var clearCallArgs: [()] = []
+                var clearCallArguments: [()] = []
                 var clearHandler: (@Sendable () -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArgs.append(())
+                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArgs = []
+                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -371,18 +371,18 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
-                var clearCallArgs: [()] = []
+                var clearCallArguments: [()] = []
                 var clearHandler: (@Sendable () -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArgs.append(())
+                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArgs = []
+                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -410,11 +410,11 @@ struct CompilationConditionArgumentMacroTests {
 
             class PingServiceMock: PingService {
                 var pingCallCount: Int = 0
-                var pingCallArgs: [()] = []
+                var pingCallArguments: [()] = []
                 var pingHandler: (@Sendable () -> Bool)? = nil
                 func ping() -> Bool {
                     pingCallCount += 1
-                    pingCallArgs.append(())
+                    pingCallArguments.append(())
                     guard let _handler = pingHandler else {
                         fatalError("\\(Self.self).pingHandler is not set")
                     }
@@ -422,7 +422,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArgs = []
+                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {
@@ -451,11 +451,11 @@ struct CompilationConditionArgumentMacroTests {
                 public init() {
                 }
                 public var fetchCallCount: Int = 0
-                public var fetchCallArgs: [()] = []
+                public var fetchCallArguments: [()] = []
                 public var fetchHandler: (@Sendable () -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -463,7 +463,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 open func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 open class func resetMock() {
@@ -491,18 +491,18 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG
             class PingServiceMock: PingService {
                 var pingCallCount: Int = 0
-                var pingCallArgs: [()] = []
+                var pingCallArguments: [()] = []
                 var pingHandler: (@Sendable () -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
-                    pingCallArgs.append(())
+                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArgs = []
+                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {

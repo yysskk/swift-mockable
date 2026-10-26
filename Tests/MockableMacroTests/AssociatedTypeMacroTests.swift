@@ -32,32 +32,32 @@ struct AssociatedTypeMacroTests {
             class DataStoreMock: DataStore {
                 typealias Model = Any
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [()] = []
+                var fetchCallArguments: [()] = []
                 var fetchHandler: (@Sendable () -> Model)? = nil
                 func fetch() -> Model {
                     fetchCallCount += 1
-                    fetchCallArgs.append(())
+                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
                     return _handler()
                 }
                 var saveCallCount: Int = 0
-                var saveCallArgs: [Model] = []
+                var saveCallArguments: [Model] = []
                 var saveHandler: (@Sendable (Model) -> Void)? = nil
                 func save(_ model: Model) {
                     saveCallCount += 1
-                    saveCallArgs.append(model)
+                    saveCallArguments.append(model)
                     if let _handler = saveHandler {
                         _handler(model)
                     }
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                     saveCallCount = 0
-                    saveCallArgs = []
+                    saveCallArguments = []
                     saveHandler = nil
                 }
                 class func resetMock() {
@@ -89,11 +89,11 @@ struct AssociatedTypeMacroTests {
             class StringStoreMock: StringStore {
                 typealias Element = String
                 var getCallCount: Int = 0
-                var getCallArgs: [()] = []
+                var getCallArguments: [()] = []
                 var getHandler: (@Sendable () -> Element)? = nil
                 func get() -> Element {
                     getCallCount += 1
-                    getCallArgs.append(())
+                    getCallArguments.append(())
                     guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
@@ -101,7 +101,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArgs = []
+                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {
@@ -138,22 +138,22 @@ struct AssociatedTypeMacroTests {
                 typealias Entity = Any
                 typealias ID = String
                 var findCallCount: Int = 0
-                var findCallArgs: [ID] = []
+                var findCallArguments: [ID] = []
                 var findHandler: (@Sendable (ID) -> Entity?)? = nil
                 func find(by id: ID) -> Entity? {
                     findCallCount += 1
-                    findCallArgs.append(id)
+                    findCallArguments.append(id)
                     guard let _handler = findHandler else {
                         return nil
                     }
                     return _handler(id)
                 }
                 var saveCallCount: Int = 0
-                var saveCallArgs: [Entity] = []
+                var saveCallArguments: [Entity] = []
                 var saveHandler: (@Sendable (Entity) -> ID)? = nil
                 func save(_ entity: Entity) -> ID {
                     saveCallCount += 1
-                    saveCallArgs.append(entity)
+                    saveCallArguments.append(entity)
                     guard let _handler = saveHandler else {
                         fatalError("\\(Self.self).saveHandler is not set")
                     }
@@ -161,10 +161,10 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     findCallCount = 0
-                    findCallArgs = []
+                    findCallArguments = []
                     findHandler = nil
                     saveCallCount = 0
-                    saveCallArgs = []
+                    saveCallArguments = []
                     saveHandler = nil
                 }
                 class func resetMock() {
@@ -197,7 +197,7 @@ struct AssociatedTypeMacroTests {
                 typealias Item = String
                 private struct Storage {
                     var fetchCallCount: Int = 0
-                    var fetchCallArgs: [()] = []
+                    var fetchCallArguments: [()] = []
                     var fetchHandler: (@Sendable () async -> Item)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -213,15 +213,15 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                var fetchCallArgs: [()] {
+                var fetchCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.fetchCallArgs
+                            $0.fetchCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.fetchCallArgs = newValue
+                            $0.fetchCallArguments = newValue
                         }
                     }
                 }
@@ -240,7 +240,7 @@ struct AssociatedTypeMacroTests {
                 func fetch() async -> Item {
                     let _handler = _storage.withLock { storage -> (@Sendable () async -> Item)? in
                         storage.fetchCallCount += 1
-                        storage.fetchCallArgs.append(())
+                        storage.fetchCallArguments.append(())
                         return storage.fetchHandler
                     }
                     guard let _handler else {
@@ -251,7 +251,7 @@ struct AssociatedTypeMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.fetchCallCount = 0
-                        storage.fetchCallArgs = []
+                        storage.fetchCallArguments = []
                         storage.fetchHandler = nil
                     }
                 }
@@ -287,10 +287,10 @@ struct AssociatedTypeMacroTests {
                 typealias Value = Data
                 private struct Storage {
                     var getCallCount: Int = 0
-                    var getCallArgs: [String] = []
+                    var getCallArguments: [String] = []
                     var getHandler: (@Sendable (String) -> Value?)? = nil
                     var setCallCount: Int = 0
-                    var setCallArgs: [(key: String, value: Value)] = []
+                    var setCallArguments: [(key: String, value: Value)] = []
                     var setHandler: (@Sendable (String, Value) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -306,15 +306,15 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                nonisolated var getCallArgs: [String] {
+                nonisolated var getCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.getCallArgs
+                            $0.getCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.getCallArgs = newValue
+                            $0.getCallArguments = newValue
                         }
                     }
                 }
@@ -333,7 +333,7 @@ struct AssociatedTypeMacroTests {
                 func get(key: String) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Value?)? in
                         storage.getCallCount += 1
-                        storage.getCallArgs.append(key)
+                        storage.getCallArguments.append(key)
                         return storage.getHandler
                     }
                     guard let _handler else {
@@ -353,15 +353,15 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                nonisolated var setCallArgs: [(key: String, value: Value)] {
+                nonisolated var setCallArguments: [(key: String, value: Value)] {
                     get {
                         _storage.withLock {
-                            $0.setCallArgs
+                            $0.setCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.setCallArgs = newValue
+                            $0.setCallArguments = newValue
                         }
                     }
                 }
@@ -380,7 +380,7 @@ struct AssociatedTypeMacroTests {
                 func set(key: String, value: Value) {
                     let _handler = _storage.withLock { storage -> (@Sendable (String, Value) -> Void)? in
                         storage.setCallCount += 1
-                        storage.setCallArgs.append((key: key, value: value))
+                        storage.setCallArguments.append((key: key, value: value))
                         return storage.setHandler
                     }
                     if let _handler {
@@ -390,10 +390,10 @@ struct AssociatedTypeMacroTests {
                 nonisolated func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
-                        storage.getCallArgs = []
+                        storage.getCallArguments = []
                         storage.getHandler = nil
                         storage.setCallCount = 0
-                        storage.setCallArgs = []
+                        storage.setCallArguments = []
                         storage.setHandler = nil
                     }
                 }
@@ -459,11 +459,11 @@ struct AssociatedTypeMacroTests {
             class DecodableStoreMock: DecodableStore {
                 typealias Item = Data
                 var decodeCallCount: Int = 0
-                var decodeCallArgs: [Data] = []
+                var decodeCallArguments: [Data] = []
                 var decodeHandler: (@Sendable (Data) -> Item)? = nil
                 func decode(from data: Data) -> Item {
                     decodeCallCount += 1
-                    decodeCallArgs.append(data)
+                    decodeCallArguments.append(data)
                     guard let _handler = decodeHandler else {
                         fatalError("\\(Self.self).decodeHandler is not set")
                     }
@@ -471,7 +471,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     decodeCallCount = 0
-                    decodeCallArgs = []
+                    decodeCallArguments = []
                     decodeHandler = nil
                 }
                 class func resetMock() {
@@ -503,11 +503,11 @@ struct AssociatedTypeMacroTests {
             class AliasHostMock: AliasHost {
                 typealias Pair<T> = (T, T)
                 var makeCallCount: Int = 0
-                var makeCallArgs: [()] = []
+                var makeCallArguments: [()] = []
                 var makeHandler: (@Sendable () -> Int)? = nil
                 func make() -> Int {
                     makeCallCount += 1
-                    makeCallArgs.append(())
+                    makeCallArguments.append(())
                     guard let _handler = makeHandler else {
                         fatalError("\\(Self.self).makeHandler is not set")
                     }
@@ -515,7 +515,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     makeCallCount = 0
-                    makeCallArgs = []
+                    makeCallArguments = []
                     makeHandler = nil
                 }
                 class func resetMock() {
@@ -591,11 +591,11 @@ struct AssociatedTypeMacroTests {
             class ArrayStoreMock: ArrayStore {
                 typealias Element = [String: Int]
                 var getAllCallCount: Int = 0
-                var getAllCallArgs: [()] = []
+                var getAllCallArguments: [()] = []
                 var getAllHandler: (@Sendable () -> Element)? = nil
                 func getAll() -> Element {
                     getAllCallCount += 1
-                    getAllCallArgs.append(())
+                    getAllCallArguments.append(())
                     guard let _handler = getAllHandler else {
                         fatalError("\\(Self.self).getAllHandler is not set")
                     }
@@ -603,7 +603,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     getAllCallCount = 0
-                    getAllCallArgs = []
+                    getAllCallArguments = []
                     getAllHandler = nil
                 }
                 class func resetMock() {
@@ -635,11 +635,11 @@ struct AssociatedTypeMacroTests {
             class OptionalFetcherMock: OptionalFetcher {
                 typealias Result = Any
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [String] = []
+                var fetchCallArguments: [String] = []
                 var fetchHandler: (@Sendable (String) -> Result?)? = nil
                 func fetch(id: String) -> Result? {
                     fetchCallCount += 1
-                    fetchCallArgs.append(id)
+                    fetchCallArguments.append(id)
                     guard let _handler = fetchHandler else {
                         return nil
                     }
@@ -647,7 +647,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -679,11 +679,11 @@ struct AssociatedTypeMacroTests {
             class BatchProcessorMock: BatchProcessor {
                 typealias Item = Int
                 var processCallCount: Int = 0
-                var processCallArgs: [[Item]] = []
+                var processCallArguments: [[Item]] = []
                 var processHandler: (@Sendable ([Item]) -> Int)? = nil
                 func process(items: [Item]) -> Int {
                     processCallCount += 1
-                    processCallArgs.append(items)
+                    processCallArguments.append(items)
                     guard let _handler = processHandler else {
                         fatalError("\\(Self.self).processHandler is not set")
                     }
@@ -691,7 +691,7 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     processCallCount = 0
-                    processCallArgs = []
+                    processCallArguments = []
                     processHandler = nil
                 }
                 class func resetMock() {
@@ -725,32 +725,32 @@ struct AssociatedTypeMacroTests {
             class AsyncRepositoryMock: AsyncRepository {
                 typealias Entity = Any
                 var fetchCallCount: Int = 0
-                var fetchCallArgs: [String] = []
+                var fetchCallArguments: [String] = []
                 var fetchHandler: (@Sendable (String) async throws -> Entity)? = nil
                 func fetch(id: String) async throws -> Entity {
                     fetchCallCount += 1
-                    fetchCallArgs.append(id)
+                    fetchCallArguments.append(id)
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
                     return try await _handler(id)
                 }
                 var saveCallCount: Int = 0
-                var saveCallArgs: [Entity] = []
+                var saveCallArguments: [Entity] = []
                 var saveHandler: (@Sendable (Entity) async throws -> Void)? = nil
                 func save(_ entity: Entity) async throws {
                     saveCallCount += 1
-                    saveCallArgs.append(entity)
+                    saveCallArguments.append(entity)
                     if let _handler = saveHandler {
                         try await _handler(entity)
                     }
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArgs = []
+                    fetchCallArguments = []
                     fetchHandler = nil
                     saveCallCount = 0
-                    saveCallArgs = []
+                    saveCallArguments = []
                     saveHandler = nil
                 }
                 class func resetMock() {
@@ -786,7 +786,7 @@ struct AssociatedTypeMacroTests {
                 typealias Value = Any
                 private struct Storage {
                     var getCallCount: Int = 0
-                    var getCallArgs: [Key] = []
+                    var getCallArguments: [Key] = []
                     var getHandler: (@Sendable (Key) -> Value?)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -802,15 +802,15 @@ struct AssociatedTypeMacroTests {
                         }
                     }
                 }
-                var getCallArgs: [Key] {
+                var getCallArguments: [Key] {
                     get {
                         _storage.withLock {
-                            $0.getCallArgs
+                            $0.getCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.getCallArgs = newValue
+                            $0.getCallArguments = newValue
                         }
                     }
                 }
@@ -829,7 +829,7 @@ struct AssociatedTypeMacroTests {
                 func get(key: Key) -> Value? {
                     let _handler = _storage.withLock { storage -> (@Sendable (Key) -> Value?)? in
                         storage.getCallCount += 1
-                        storage.getCallArgs.append(key)
+                        storage.getCallArguments.append(key)
                         return storage.getHandler
                     }
                     guard let _handler else {
@@ -840,7 +840,7 @@ struct AssociatedTypeMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.getCallCount = 0
-                        storage.getCallArgs = []
+                        storage.getCallArguments = []
                         storage.getHandler = nil
                     }
                 }
@@ -873,18 +873,18 @@ struct AssociatedTypeMacroTests {
             class EventEmitterMock: EventEmitter {
                 typealias Event = String
                 var subscribeCallCount: Int = 0
-                var subscribeCallArgs: [(Event) -> Void] = []
+                var subscribeCallArguments: [(Event) -> Void] = []
                 var subscribeHandler: (@Sendable ((Event) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping (Event) -> Void) {
                     subscribeCallCount += 1
-                    subscribeCallArgs.append(handler)
+                    subscribeCallArguments.append(handler)
                     if let _handler = subscribeHandler {
                         _handler(handler)
                     }
                 }
                 func resetMock() {
                     subscribeCallCount = 0
-                    subscribeCallArgs = []
+                    subscribeCallArguments = []
                     subscribeHandler = nil
                 }
                 class func resetMock() {

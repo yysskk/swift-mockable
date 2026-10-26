@@ -48,7 +48,7 @@ struct ParameterNameTests {
 
         #expect(mock.handle(21) == 42)
         #expect(mock.handleCallCount == 1)
-        #expect(mock.handleCallArgs == [21])
+        #expect(mock.handleCallArguments == [21])
     }
 
     @Test("Several wildcard parameters are recorded under their synthesized labels")
@@ -60,8 +60,8 @@ struct ParameterNameTests {
         mock.pair(1, "a")
 
         #expect(mock.pairCallCount == 1)
-        #expect(mock.pairCallArgs.first?.param0 == 1)
-        #expect(mock.pairCallArgs.first?.param1 == "a")
+        #expect(mock.pairCallArguments.first?.param0 == 1)
+        #expect(mock.pairCallArguments.first?.param1 == "a")
         #expect(received?.0 == 1)
         #expect(received?.1 == "a")
     }
@@ -72,14 +72,14 @@ struct ParameterNameTests {
         mock.valueHandler = { $0 + 1 }
 
         #expect(mock.value(for: 41) == 42)
-        #expect(mock.valueCallArgs == [41])
+        #expect(mock.valueCallArguments == [41])
 
         mock.logHandler = { _, _ in }
         mock.log(for: 1, in: "scope")
 
         // The recorded-arguments label is the parameter's own name, unescaped.
-        #expect(mock.logCallArgs.first?.for == 1)
-        #expect(mock.logCallArgs.first?.in == "scope")
+        #expect(mock.logCallArguments.first?.for == 1)
+        #expect(mock.logCallArguments.first?.in == "scope")
     }
 
     @Test("A parameter named after a generated local does not capture it")
@@ -91,7 +91,7 @@ struct ParameterNameTests {
         mock.run(_handler: 7)
 
         #expect(mock.runCallCount == 1)
-        #expect(mock.runCallArgs == [7])
+        #expect(mock.runCallArguments == [7])
         #expect(received == 7)
     }
 
@@ -105,7 +105,7 @@ struct ParameterNameTests {
 
         // The counter is the mock's own member, not the argument that was passed.
         #expect(mock.fetchCallCount == 1)
-        #expect(mock.fetchCallArgs == [99])
+        #expect(mock.fetchCallArguments == [99])
         #expect(received == 99)
     }
 
@@ -117,7 +117,7 @@ struct ParameterNameTests {
         mock.save(storage: 5)
 
         #expect(mock.saveCallCount == 1)
-        #expect(mock.saveCallArgs == [5])
+        #expect(mock.saveCallArguments == [5])
     }
 
     @Test("A static requirement's parameter named after the storage is recorded correctly")
@@ -130,7 +130,7 @@ struct ParameterNameTests {
         ShadowingParameterStaticServiceMock.store(_staticStorage: 11)
 
         #expect(ShadowingParameterStaticServiceMock.storeCallCount == 1)
-        #expect(ShadowingParameterStaticServiceMock.storeCallArgs == [11])
+        #expect(ShadowingParameterStaticServiceMock.storeCallArguments == [11])
         #expect(received == 11)
 
         mock.resetMock()

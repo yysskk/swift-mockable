@@ -19,7 +19,7 @@ struct TypedThrowsTests {
 
         #expect(value == "item-7")
         #expect(mock.loadCallCount == 1)
-        #expect(mock.loadCallArgs == [7])
+        #expect(mock.loadCallArguments == [7])
     }
 
     @Test("typed throws method re-throws the typed error")
@@ -109,7 +109,7 @@ struct TypedThrowsTests {
 
         #expect(result == 42)
         #expect(mock.computeCallCount == 1)
-        #expect(mock.computeCallArgs == [21])
+        #expect(mock.computeCallArguments == [21])
     }
 
     @Test("typed throws method converts an error thrown by the @autoclosure argument")
@@ -139,7 +139,7 @@ struct TypedThrowsTests {
 
         #expect(value == "item-4")
         #expect(mock.subscriptIntCallCount == 1)
-        #expect(mock.subscriptIntCallArgs == [4])
+        #expect(mock.subscriptIntCallArguments == [4])
     }
 
     @Test("typed throws subscript re-throws the typed error")
@@ -157,7 +157,7 @@ struct TypedThrowsTests {
         let mock = try TypedThrowingRepositoryMock(id: "repo")
 
         #expect(mock.initCallCount == 1)
-        #expect(mock.initCallArgs == ["repo"])
+        #expect(mock.initCallArguments == ["repo"])
     }
 
     @Test("typed throws method writes inout arguments back")
@@ -173,7 +173,7 @@ struct TypedThrowsTests {
         #expect(value == "hello")
         #expect(buffer == [])
         #expect(mock.parseCallCount == 1)
-        #expect(mock.parseCallArgs == [Array("hello".utf8)])
+        #expect(mock.parseCallArguments == [Array("hello".utf8)])
     }
 
     @Test("typed throws method with an inout parameter re-throws the typed error")
@@ -196,7 +196,7 @@ struct TypedThrowsTests {
 
         #expect(value == "item-7")
         #expect(mock.loadCallCount == 1)
-        #expect(mock.loadCallArgs == [7])
+        #expect(mock.loadCallArguments == [7])
     }
 
     @Test("throws(Never) property is read without try")
@@ -226,7 +226,7 @@ struct TypedThrowsTests {
 
         #expect(value == "item-3")
         #expect(mock.loadCallCount == 1)
-        #expect(mock.loadCallArgs == [3])
+        #expect(mock.loadCallArguments == [3])
     }
 
     @Test("throws(any Error) method re-throws the handler error unchanged")

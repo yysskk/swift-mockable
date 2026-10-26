@@ -29,9 +29,9 @@ struct OverloadedSubscriptTests {
         #expect(count == 5)
         #expect(isEmpty)
         #expect(mock.subscriptStringIntCallCount == 1)
-        #expect(mock.subscriptStringIntCallArgs == ["swift"])
+        #expect(mock.subscriptStringIntCallArguments == ["swift"])
         #expect(mock.subscriptStringBoolCallCount == 1)
-        #expect(mock.subscriptStringBoolCallArgs == [""])
+        #expect(mock.subscriptStringBoolCallArguments == [""])
     }
 
     @Test("The overloaded get-set subscript uses its own set handler")
@@ -59,10 +59,10 @@ struct OverloadedSubscriptTests {
         mock.resetMock()
 
         #expect(mock.subscriptStringIntCallCount == 0)
-        #expect(mock.subscriptStringIntCallArgs.isEmpty)
+        #expect(mock.subscriptStringIntCallArguments.isEmpty)
         #expect(mock.subscriptStringIntHandler == nil)
         #expect(mock.subscriptStringBoolCallCount == 0)
-        #expect(mock.subscriptStringBoolCallArgs.isEmpty)
+        #expect(mock.subscriptStringBoolCallArguments.isEmpty)
         #expect(mock.subscriptStringBoolHandler == nil)
     }
 

@@ -34,16 +34,16 @@ struct SendableMacroTests {
             open class KeychainClientProtocolMock: KeychainClientProtocol, @unchecked Sendable {
                 private struct Storage {
                     var saveCallCount: Int = 0
-                    var saveCallArgs: [(data: Data, key: String)] = []
+                    var saveCallArguments: [(data: Data, key: String)] = []
                     var saveHandler: (@Sendable (Data, String) throws -> Void)? = nil
                     var loadCallCount: Int = 0
-                    var loadCallArgs: [String] = []
+                    var loadCallArguments: [String] = []
                     var loadHandler: (@Sendable (String) throws -> Data?)? = nil
                     var deleteCallCount: Int = 0
-                    var deleteCallArgs: [String] = []
+                    var deleteCallArguments: [String] = []
                     var deleteHandler: (@Sendable (String) throws -> Void)? = nil
                     var existsCallCount: Int = 0
-                    var existsCallArgs: [String] = []
+                    var existsCallArguments: [String] = []
                     var existsHandler: (@Sendable (String) -> Bool)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -61,15 +61,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var saveCallArgs: [(data: Data, key: String)] {
+                public var saveCallArguments: [(data: Data, key: String)] {
                     get {
                         _storage.withLock {
-                            $0.saveCallArgs
+                            $0.saveCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.saveCallArgs = newValue
+                            $0.saveCallArguments = newValue
                         }
                     }
                 }
@@ -88,7 +88,7 @@ struct SendableMacroTests {
                 public func save(_ data: Data, forKey key: String) throws {
                     let _handler = _storage.withLock { storage -> (@Sendable (Data, String) throws -> Void)? in
                         storage.saveCallCount += 1
-                        storage.saveCallArgs.append((data: data, key: key))
+                        storage.saveCallArguments.append((data: data, key: key))
                         return storage.saveHandler
                     }
                     if let _handler {
@@ -107,15 +107,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var loadCallArgs: [String] {
+                public var loadCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.loadCallArgs
+                            $0.loadCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.loadCallArgs = newValue
+                            $0.loadCallArguments = newValue
                         }
                     }
                 }
@@ -134,7 +134,7 @@ struct SendableMacroTests {
                 public func load(forKey key: String) throws -> Data? {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Data?)? in
                         storage.loadCallCount += 1
-                        storage.loadCallArgs.append(key)
+                        storage.loadCallArguments.append(key)
                         return storage.loadHandler
                     }
                     guard let _handler else {
@@ -154,15 +154,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var deleteCallArgs: [String] {
+                public var deleteCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.deleteCallArgs
+                            $0.deleteCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.deleteCallArgs = newValue
+                            $0.deleteCallArguments = newValue
                         }
                     }
                 }
@@ -181,7 +181,7 @@ struct SendableMacroTests {
                 public func delete(forKey key: String) throws {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) throws -> Void)? in
                         storage.deleteCallCount += 1
-                        storage.deleteCallArgs.append(key)
+                        storage.deleteCallArguments.append(key)
                         return storage.deleteHandler
                     }
                     if let _handler {
@@ -200,15 +200,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                public var existsCallArgs: [String] {
+                public var existsCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.existsCallArgs
+                            $0.existsCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.existsCallArgs = newValue
+                            $0.existsCallArguments = newValue
                         }
                     }
                 }
@@ -227,7 +227,7 @@ struct SendableMacroTests {
                 public func exists(forKey key: String) -> Bool {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Bool)? in
                         storage.existsCallCount += 1
-                        storage.existsCallArgs.append(key)
+                        storage.existsCallArguments.append(key)
                         return storage.existsHandler
                     }
                     guard let _handler else {
@@ -238,16 +238,16 @@ struct SendableMacroTests {
                 open func resetMock() {
                     _storage.withLock { storage in
                         storage.saveCallCount = 0
-                        storage.saveCallArgs = []
+                        storage.saveCallArguments = []
                         storage.saveHandler = nil
                         storage.loadCallCount = 0
-                        storage.loadCallArgs = []
+                        storage.loadCallArguments = []
                         storage.loadHandler = nil
                         storage.deleteCallCount = 0
-                        storage.deleteCallArgs = []
+                        storage.deleteCallArguments = []
                         storage.deleteHandler = nil
                         storage.existsCallCount = 0
-                        storage.existsCallArgs = []
+                        storage.existsCallArguments = []
                         storage.existsHandler = nil
                     }
                 }
@@ -280,7 +280,7 @@ struct SendableMacroTests {
             class LoggerMock: Logger, @unchecked Sendable {
                 private struct Storage {
                     var logCallCount: Int = 0
-                    var logCallArgs: [String] = []
+                    var logCallArguments: [String] = []
                     var logHandler: (@Sendable (String) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -296,15 +296,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                var logCallArgs: [String] {
+                var logCallArguments: [String] {
                     get {
                         _storage.withLock {
-                            $0.logCallArgs
+                            $0.logCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.logCallArgs = newValue
+                            $0.logCallArguments = newValue
                         }
                     }
                 }
@@ -323,7 +323,7 @@ struct SendableMacroTests {
                 func log(message: String) {
                     let _handler = _storage.withLock { storage -> (@Sendable (String) -> Void)? in
                         storage.logCallCount += 1
-                        storage.logCallArgs.append(message)
+                        storage.logCallArguments.append(message)
                         return storage.logHandler
                     }
                     if let _handler {
@@ -333,7 +333,7 @@ struct SendableMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.logCallCount = 0
-                        storage.logCallArgs = []
+                        storage.logCallArguments = []
                         storage.logHandler = nil
                     }
                 }
@@ -364,7 +364,7 @@ struct SendableMacroTests {
             class EventServiceMock: EventService, @unchecked Sendable {
                 private struct Storage {
                     var registerCallCount: Int = 0
-                    var registerCallArgs: [@Sendable (String) -> Void] = []
+                    var registerCallArguments: [@Sendable (String) -> Void] = []
                     var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -380,15 +380,15 @@ struct SendableMacroTests {
                         }
                     }
                 }
-                var registerCallArgs: [@Sendable (String) -> Void] {
+                var registerCallArguments: [@Sendable (String) -> Void] {
                     get {
                         _storage.withLock {
-                            $0.registerCallArgs
+                            $0.registerCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.registerCallArgs = newValue
+                            $0.registerCallArguments = newValue
                         }
                     }
                 }
@@ -407,7 +407,7 @@ struct SendableMacroTests {
                 func register(handler: @escaping @Sendable (String) -> Void) async {
                     let _handler = _storage.withLock { storage -> (@Sendable (@Sendable (String) -> Void) async -> Void)? in
                         storage.registerCallCount += 1
-                        storage.registerCallArgs.append(handler)
+                        storage.registerCallArguments.append(handler)
                         return storage.registerHandler
                     }
                     if let _handler {
@@ -417,7 +417,7 @@ struct SendableMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.registerCallCount = 0
-                        storage.registerCallArgs = []
+                        storage.registerCallArguments = []
                         storage.registerHandler = nil
                     }
                 }

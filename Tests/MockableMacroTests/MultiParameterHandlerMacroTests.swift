@@ -27,11 +27,11 @@ struct MultiParameterHandlerTests {
             #if DEBUG
             class CalculatorMock: Calculator {
                 var addCallCount: Int = 0
-                var addCallArgs: [(a: Int, b: Int)] = []
+                var addCallArguments: [(a: Int, b: Int)] = []
                 var addHandler: (@Sendable (Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
-                    addCallArgs.append((a: a, b: b))
+                    addCallArguments.append((a: a, b: b))
                     guard let _handler = addHandler else {
                         fatalError("\\(Self.self).addHandler is not set")
                     }
@@ -39,7 +39,7 @@ struct MultiParameterHandlerTests {
                 }
                 func resetMock() {
                     addCallCount = 0
-                    addCallArgs = []
+                    addCallArguments = []
                     addHandler = nil
                 }
                 class func resetMock() {
@@ -68,11 +68,11 @@ struct MultiParameterHandlerTests {
             #if DEBUG
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
-                var fetchUserCallArgs: [Int] = []
+                var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: (@Sendable (Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
-                    fetchUserCallArgs.append(id)
+                    fetchUserCallArguments.append(id)
                     guard let _handler = fetchUserHandler else {
                         fatalError("\\(Self.self).fetchUserHandler is not set")
                     }
@@ -80,7 +80,7 @@ struct MultiParameterHandlerTests {
                 }
                 func resetMock() {
                     fetchUserCallCount = 0
-                    fetchUserCallArgs = []
+                    fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
                 class func resetMock() {
@@ -109,18 +109,18 @@ struct MultiParameterHandlerTests {
             #if DEBUG
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
-                var logCallArgs: [(tag: String, messages: [String])] = []
+                var logCallArguments: [(tag: String, messages: [String])] = []
                 var logHandler: (@Sendable (String, [String]) -> Void)? = nil
                 func log(_ tag: String, _ messages: String...) {
                     logCallCount += 1
-                    logCallArgs.append((tag: tag, messages: messages))
+                    logCallArguments.append((tag: tag, messages: messages))
                     if let _handler = logHandler {
                         _handler(tag, messages)
                     }
                 }
                 func resetMock() {
                     logCallCount = 0
-                    logCallArgs = []
+                    logCallArguments = []
                     logHandler = nil
                 }
                 class func resetMock() {
@@ -150,7 +150,7 @@ struct MultiParameterHandlerTests {
             class AdderMock: Adder, @unchecked Sendable {
                 private struct Storage {
                     var addCallCount: Int = 0
-                    var addCallArgs: [(a: Int, b: Int)] = []
+                    var addCallArguments: [(a: Int, b: Int)] = []
                     var addHandler: (@Sendable (Int, Int) -> Int)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -166,15 +166,15 @@ struct MultiParameterHandlerTests {
                         }
                     }
                 }
-                var addCallArgs: [(a: Int, b: Int)] {
+                var addCallArguments: [(a: Int, b: Int)] {
                     get {
                         _storage.withLock {
-                            $0.addCallArgs
+                            $0.addCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.addCallArgs = newValue
+                            $0.addCallArguments = newValue
                         }
                     }
                 }
@@ -193,7 +193,7 @@ struct MultiParameterHandlerTests {
                 func add(a: Int, b: Int) -> Int {
                     let _handler = _storage.withLock { storage -> (@Sendable (Int, Int) -> Int)? in
                         storage.addCallCount += 1
-                        storage.addCallArgs.append((a: a, b: b))
+                        storage.addCallArguments.append((a: a, b: b))
                         return storage.addHandler
                     }
                     guard let _handler else {
@@ -204,7 +204,7 @@ struct MultiParameterHandlerTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.addCallCount = 0
-                        storage.addCallArgs = []
+                        storage.addCallArguments = []
                         storage.addHandler = nil
                     }
                 }
@@ -234,13 +234,13 @@ struct MultiParameterHandlerTests {
             #if DEBUG
             class GridMock: Grid {
                 var subscriptIntIntCallCount: Int = 0
-                var subscriptIntIntCallArgs: [(row: Int, col: Int)] = []
+                var subscriptIntIntCallArguments: [(row: Int, col: Int)] = []
                 var subscriptIntIntHandler: (@Sendable (Int, Int) -> Int )? = nil
                 var subscriptIntIntSetHandler: (@Sendable (Int, Int, Int ) -> Void)? = nil
                 subscript(row: Int, col: Int) -> Int {
                     get {
                         subscriptIntIntCallCount += 1
-                        subscriptIntIntCallArgs.append((row: row, col: col))
+                        subscriptIntIntCallArguments.append((row: row, col: col))
                         guard let _handler = subscriptIntIntHandler else {
                             fatalError("\\(Self.self).subscriptIntIntHandler is not set")
                         }
@@ -254,7 +254,7 @@ struct MultiParameterHandlerTests {
                 }
                 func resetMock() {
                     subscriptIntIntCallCount = 0
-                    subscriptIntIntCallArgs = []
+                    subscriptIntIntCallArguments = []
                     subscriptIntIntHandler = nil
                     subscriptIntIntSetHandler = nil
                 }

@@ -27,11 +27,11 @@ struct InheritanceMacroTests {
             #if DEBUG
             class ChildMock: BaseMock, Child {
                 var childMethodCallCount: Int = 0
-                var childMethodCallArgs: [()] = []
+                var childMethodCallArguments: [()] = []
                 var childMethodHandler: (@Sendable () -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
-                    childMethodCallArgs.append(())
+                    childMethodCallArguments.append(())
                     if let _handler = childMethodHandler {
                         _handler()
                     }
@@ -39,7 +39,7 @@ struct InheritanceMacroTests {
                 override func resetMock() {
                     super.resetMock()
                     childMethodCallCount = 0
-                    childMethodCallArgs = []
+                    childMethodCallArguments = []
                     childMethodHandler = nil
                 }
                 override class func resetMock() {
@@ -69,18 +69,18 @@ struct InheritanceMacroTests {
             #if DEBUG
             class MyProtocolMock: MyProtocol {
                 var doSomethingCallCount: Int = 0
-                var doSomethingCallArgs: [()] = []
+                var doSomethingCallArguments: [()] = []
                 var doSomethingHandler: (@Sendable () -> Void)? = nil
                 func doSomething() {
                     doSomethingCallCount += 1
-                    doSomethingCallArgs.append(())
+                    doSomethingCallArguments.append(())
                     if let _handler = doSomethingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     doSomethingCallCount = 0
-                    doSomethingCallArgs = []
+                    doSomethingCallArguments = []
                     doSomethingHandler = nil
                 }
                 class func resetMock() {
@@ -109,11 +109,11 @@ struct InheritanceMacroTests {
             #if DEBUG
             class ChildMock: ParentAMock, Child {
                 var childMethodCallCount: Int = 0
-                var childMethodCallArgs: [()] = []
+                var childMethodCallArguments: [()] = []
                 var childMethodHandler: (@Sendable () -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
-                    childMethodCallArgs.append(())
+                    childMethodCallArguments.append(())
                     if let _handler = childMethodHandler {
                         _handler()
                     }
@@ -121,7 +121,7 @@ struct InheritanceMacroTests {
                 override func resetMock() {
                     super.resetMock()
                     childMethodCallCount = 0
-                    childMethodCallArgs = []
+                    childMethodCallArguments = []
                     childMethodHandler = nil
                 }
                 override class func resetMock() {
@@ -151,11 +151,11 @@ struct InheritanceMacroTests {
             #if DEBUG
             class ChildServiceMock: BaseServiceMock, ChildService {
                 var fetchChildCallCount: Int = 0
-                var fetchChildCallArgs: [Int] = []
+                var fetchChildCallArguments: [Int] = []
                 var fetchChildHandler: (@Sendable (Int) -> String)? = nil
                 func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
-                    fetchChildCallArgs.append(id)
+                    fetchChildCallArguments.append(id)
                     guard let _handler = fetchChildHandler else {
                         fatalError("\\(Self.self).fetchChildHandler is not set")
                     }
@@ -164,7 +164,7 @@ struct InheritanceMacroTests {
                 override func resetMock() {
                     super.resetMock()
                     fetchChildCallCount = 0
-                    fetchChildCallArgs = []
+                    fetchChildCallArguments = []
                     fetchChildHandler = nil
                 }
                 override class func resetMock() {
@@ -194,11 +194,11 @@ struct InheritanceMacroTests {
             #if DEBUG
             open class ChildServiceMock: BaseServiceMock, ChildService {
                 public var fetchChildCallCount: Int = 0
-                public var fetchChildCallArgs: [Int] = []
+                public var fetchChildCallArguments: [Int] = []
                 public var fetchChildHandler: (@Sendable (Int) -> String)? = nil
                 public func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
-                    fetchChildCallArgs.append(id)
+                    fetchChildCallArguments.append(id)
                     guard let _handler = fetchChildHandler else {
                         fatalError("\\(Self.self).fetchChildHandler is not set")
                     }
@@ -207,7 +207,7 @@ struct InheritanceMacroTests {
                 open override func resetMock() {
                     super.resetMock()
                     fetchChildCallCount = 0
-                    fetchChildCallArgs = []
+                    fetchChildCallArguments = []
                     fetchChildHandler = nil
                 }
                 open override class func resetMock() {
@@ -238,7 +238,7 @@ struct InheritanceMacroTests {
             class ChildMock: BaseMock, Child, @unchecked Sendable {
                 private struct Storage {
                     var childMethodCallCount: Int = 0
-                    var childMethodCallArgs: [()] = []
+                    var childMethodCallArguments: [()] = []
                     var childMethodHandler: (@Sendable () -> String)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -254,15 +254,15 @@ struct InheritanceMacroTests {
                         }
                     }
                 }
-                var childMethodCallArgs: [()] {
+                var childMethodCallArguments: [()] {
                     get {
                         _storage.withLock {
-                            $0.childMethodCallArgs
+                            $0.childMethodCallArguments
                         }
                     }
                     set {
                         _storage.withLock {
-                            $0.childMethodCallArgs = newValue
+                            $0.childMethodCallArguments = newValue
                         }
                     }
                 }
@@ -281,7 +281,7 @@ struct InheritanceMacroTests {
                 func childMethod() -> String {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> String)? in
                         storage.childMethodCallCount += 1
-                        storage.childMethodCallArgs.append(())
+                        storage.childMethodCallArguments.append(())
                         return storage.childMethodHandler
                     }
                     guard let _handler else {
@@ -293,7 +293,7 @@ struct InheritanceMacroTests {
                     super.resetMock()
                     _storage.withLock { storage in
                         storage.childMethodCallCount = 0
-                        storage.childMethodCallArgs = []
+                        storage.childMethodCallArguments = []
                         storage.childMethodHandler = nil
                     }
                 }
@@ -324,11 +324,11 @@ struct InheritanceMacroTests {
             #if DEBUG
             class ChildMock: SendableBaseMock, Child {
                 var childMethodCallCount: Int = 0
-                var childMethodCallArgs: [()] = []
+                var childMethodCallArguments: [()] = []
                 var childMethodHandler: (@Sendable () -> Int)? = nil
                 func childMethod() -> Int {
                     childMethodCallCount += 1
-                    childMethodCallArgs.append(())
+                    childMethodCallArguments.append(())
                     guard let _handler = childMethodHandler else {
                         fatalError("\\(Self.self).childMethodHandler is not set")
                     }
@@ -337,7 +337,7 @@ struct InheritanceMacroTests {
                 override func resetMock() {
                     super.resetMock()
                     childMethodCallCount = 0
-                    childMethodCallArgs = []
+                    childMethodCallArguments = []
                     childMethodHandler = nil
                 }
                 override class func resetMock() {

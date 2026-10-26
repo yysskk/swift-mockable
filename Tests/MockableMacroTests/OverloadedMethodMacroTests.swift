@@ -33,41 +33,41 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class UserDefaultsMock: UserDefaults {
                 var setBoolStringCallCount: Int = 0
-                var setBoolStringCallArgs: [(value: Bool, forKey: String)] = []
+                var setBoolStringCallArguments: [(value: Bool, forKey: String)] = []
                 var setBoolStringHandler: (@Sendable (Bool, String) -> Void)? = nil
                 func set(_ value: Bool, forKey: String) {
                     setBoolStringCallCount += 1
-                    setBoolStringCallArgs.append((value: value, forKey: forKey))
+                    setBoolStringCallArguments.append((value: value, forKey: forKey))
                     if let _handler = setBoolStringHandler {
                         _handler(value, forKey)
                     }
                 }
                 var setIntStringCallCount: Int = 0
-                var setIntStringCallArgs: [(value: Int, forKey: String)] = []
+                var setIntStringCallArguments: [(value: Int, forKey: String)] = []
                 var setIntStringHandler: (@Sendable (Int, String) -> Void)? = nil
                 func set(_ value: Int, forKey: String) {
                     setIntStringCallCount += 1
-                    setIntStringCallArgs.append((value: value, forKey: forKey))
+                    setIntStringCallArguments.append((value: value, forKey: forKey))
                     if let _handler = setIntStringHandler {
                         _handler(value, forKey)
                     }
                 }
                 var setStringStringCallCount: Int = 0
-                var setStringStringCallArgs: [(value: String, forKey: String)] = []
+                var setStringStringCallArguments: [(value: String, forKey: String)] = []
                 var setStringStringHandler: (@Sendable (String, String) -> Void)? = nil
                 func set(_ value: String, forKey: String) {
                     setStringStringCallCount += 1
-                    setStringStringCallArgs.append((value: value, forKey: forKey))
+                    setStringStringCallArguments.append((value: value, forKey: forKey))
                     if let _handler = setStringStringHandler {
                         _handler(value, forKey)
                     }
                 }
                 var getValueCallCount: Int = 0
-                var getValueCallArgs: [()] = []
+                var getValueCallArguments: [()] = []
                 var getValueHandler: (@Sendable () -> String)? = nil
                 func getValue() -> String {
                     getValueCallCount += 1
-                    getValueCallArgs.append(())
+                    getValueCallArguments.append(())
                     guard let _handler = getValueHandler else {
                         fatalError("\\(Self.self).getValueHandler is not set")
                     }
@@ -75,16 +75,16 @@ struct OverloadedMethodMacroTests {
                 }
                 func resetMock() {
                     setBoolStringCallCount = 0
-                    setBoolStringCallArgs = []
+                    setBoolStringCallArguments = []
                     setBoolStringHandler = nil
                     setIntStringCallCount = 0
-                    setIntStringCallArgs = []
+                    setIntStringCallArguments = []
                     setIntStringHandler = nil
                     setStringStringCallCount = 0
-                    setStringStringCallArgs = []
+                    setStringStringCallArguments = []
                     setStringStringHandler = nil
                     getValueCallCount = 0
-                    getValueCallArgs = []
+                    getValueCallArguments = []
                     getValueHandler = nil
                 }
                 class func resetMock() {
@@ -115,32 +115,32 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class SimpleServiceMock: SimpleService {
                 var fetchDataCallCount: Int = 0
-                var fetchDataCallArgs: [Int] = []
+                var fetchDataCallArguments: [Int] = []
                 var fetchDataHandler: (@Sendable (Int) -> String)? = nil
                 func fetchData(id: Int) -> String {
                     fetchDataCallCount += 1
-                    fetchDataCallArgs.append(id)
+                    fetchDataCallArguments.append(id)
                     guard let _handler = fetchDataHandler else {
                         fatalError("\\(Self.self).fetchDataHandler is not set")
                     }
                     return _handler(id)
                 }
                 var saveDataCallCount: Int = 0
-                var saveDataCallArgs: [String] = []
+                var saveDataCallArguments: [String] = []
                 var saveDataHandler: (@Sendable (String) -> Void)? = nil
                 func saveData(data: String) {
                     saveDataCallCount += 1
-                    saveDataCallArgs.append(data)
+                    saveDataCallArguments.append(data)
                     if let _handler = saveDataHandler {
                         _handler(data)
                     }
                 }
                 func resetMock() {
                     fetchDataCallCount = 0
-                    fetchDataCallArgs = []
+                    fetchDataCallArguments = []
                     fetchDataHandler = nil
                     saveDataCallCount = 0
-                    saveDataCallArgs = []
+                    saveDataCallArguments = []
                     saveDataHandler = nil
                 }
                 class func resetMock() {
@@ -171,22 +171,22 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class HttpServiceMock: HttpService {
                 var getStringStringCallCount: Int = 0
-                var getStringStringCallArgs: [String] = []
+                var getStringStringCallArguments: [String] = []
                 var getStringStringHandler: (@Sendable (String) -> String)? = nil
                 func get(url: String) -> String {
                     getStringStringCallCount += 1
-                    getStringStringCallArgs.append(url)
+                    getStringStringCallArguments.append(url)
                     guard let _handler = getStringStringHandler else {
                         fatalError("\\(Self.self).getStringStringHandler is not set")
                     }
                     return _handler(url)
                 }
                 var getStringDataThrowingCallCount: Int = 0
-                var getStringDataThrowingCallArgs: [String] = []
+                var getStringDataThrowingCallArguments: [String] = []
                 var getStringDataThrowingHandler: (@Sendable (String) throws -> Data)? = nil
                 func get(url: String) throws -> Data {
                     getStringDataThrowingCallCount += 1
-                    getStringDataThrowingCallArgs.append(url)
+                    getStringDataThrowingCallArguments.append(url)
                     guard let _handler = getStringDataThrowingHandler else {
                         fatalError("\\(Self.self).getStringDataThrowingHandler is not set")
                     }
@@ -194,10 +194,10 @@ struct OverloadedMethodMacroTests {
                 }
                 func resetMock() {
                     getStringStringCallCount = 0
-                    getStringStringCallArgs = []
+                    getStringStringCallArguments = []
                     getStringStringHandler = nil
                     getStringDataThrowingCallCount = 0
-                    getStringDataThrowingCallArgs = []
+                    getStringDataThrowingCallArguments = []
                     getStringDataThrowingHandler = nil
                 }
                 class func resetMock() {
@@ -230,33 +230,33 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class DataServiceMock: DataService {
                 var fetchIntStringCallCount: Int = 0
-                var fetchIntStringCallArgs: [Int] = []
+                var fetchIntStringCallArguments: [Int] = []
                 var fetchIntStringHandler: (@Sendable (Int) -> String)? = nil
                 func fetch(id: Int) -> String {
                     fetchIntStringCallCount += 1
-                    fetchIntStringCallArgs.append(id)
+                    fetchIntStringCallArguments.append(id)
                     guard let _handler = fetchIntStringHandler else {
                         fatalError("\\(Self.self).fetchIntStringHandler is not set")
                     }
                     return _handler(id)
                 }
                 var fetchIntStringAsyncCallCount: Int = 0
-                var fetchIntStringAsyncCallArgs: [Int] = []
+                var fetchIntStringAsyncCallArguments: [Int] = []
                 var fetchIntStringAsyncHandler: (@Sendable (Int) async -> String)? = nil
                 func fetch(id: Int) async -> String {
                     fetchIntStringAsyncCallCount += 1
-                    fetchIntStringAsyncCallArgs.append(id)
+                    fetchIntStringAsyncCallArguments.append(id)
                     guard let _handler = fetchIntStringAsyncHandler else {
                         fatalError("\\(Self.self).fetchIntStringAsyncHandler is not set")
                     }
                     return await _handler(id)
                 }
                 var fetchIntStringAsyncThrowingCallCount: Int = 0
-                var fetchIntStringAsyncThrowingCallArgs: [Int] = []
+                var fetchIntStringAsyncThrowingCallArguments: [Int] = []
                 var fetchIntStringAsyncThrowingHandler: (@Sendable (Int) async throws -> String)? = nil
                 func fetch(id: Int) async throws -> String {
                     fetchIntStringAsyncThrowingCallCount += 1
-                    fetchIntStringAsyncThrowingCallArgs.append(id)
+                    fetchIntStringAsyncThrowingCallArguments.append(id)
                     guard let _handler = fetchIntStringAsyncThrowingHandler else {
                         fatalError("\\(Self.self).fetchIntStringAsyncThrowingHandler is not set")
                     }
@@ -264,13 +264,13 @@ struct OverloadedMethodMacroTests {
                 }
                 func resetMock() {
                     fetchIntStringCallCount = 0
-                    fetchIntStringCallArgs = []
+                    fetchIntStringCallArguments = []
                     fetchIntStringHandler = nil
                     fetchIntStringAsyncCallCount = 0
-                    fetchIntStringAsyncCallArgs = []
+                    fetchIntStringAsyncCallArguments = []
                     fetchIntStringAsyncHandler = nil
                     fetchIntStringAsyncThrowingCallCount = 0
-                    fetchIntStringAsyncThrowingCallArgs = []
+                    fetchIntStringAsyncThrowingCallArguments = []
                     fetchIntStringAsyncThrowingHandler = nil
                 }
                 class func resetMock() {
@@ -303,33 +303,33 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class MixedServiceMock: MixedService {
                 var processIntStringCallCount: Int = 0
-                var processIntStringCallArgs: [Int] = []
+                var processIntStringCallArguments: [Int] = []
                 var processIntStringHandler: (@Sendable (Int) -> String)? = nil
                 func process(value: Int) -> String {
                     processIntStringCallCount += 1
-                    processIntStringCallArgs.append(value)
+                    processIntStringCallArguments.append(value)
                     guard let _handler = processIntStringHandler else {
                         fatalError("\\(Self.self).processIntStringHandler is not set")
                     }
                     return _handler(value)
                 }
                 var processIntDataThrowingCallCount: Int = 0
-                var processIntDataThrowingCallArgs: [Int] = []
+                var processIntDataThrowingCallArguments: [Int] = []
                 var processIntDataThrowingHandler: (@Sendable (Int) throws -> Data)? = nil
                 func process(value: Int) throws -> Data {
                     processIntDataThrowingCallCount += 1
-                    processIntDataThrowingCallArgs.append(value)
+                    processIntDataThrowingCallArguments.append(value)
                     guard let _handler = processIntDataThrowingHandler else {
                         fatalError("\\(Self.self).processIntDataThrowingHandler is not set")
                     }
                     return try _handler(value)
                 }
                 var processStringCallCount: Int = 0
-                var processStringCallArgs: [String] = []
+                var processStringCallArguments: [String] = []
                 var processStringHandler: (@Sendable (String) -> String)? = nil
                 func process(value: String) -> String {
                     processStringCallCount += 1
-                    processStringCallArgs.append(value)
+                    processStringCallArguments.append(value)
                     guard let _handler = processStringHandler else {
                         fatalError("\\(Self.self).processStringHandler is not set")
                     }
@@ -337,13 +337,13 @@ struct OverloadedMethodMacroTests {
                 }
                 func resetMock() {
                     processIntStringCallCount = 0
-                    processIntStringCallArgs = []
+                    processIntStringCallArguments = []
                     processIntStringHandler = nil
                     processIntDataThrowingCallCount = 0
-                    processIntDataThrowingCallArgs = []
+                    processIntDataThrowingCallArguments = []
                     processIntDataThrowingHandler = nil
                     processStringCallCount = 0
-                    processStringCallArgs = []
+                    processStringCallArguments = []
                     processStringHandler = nil
                 }
                 class func resetMock() {
@@ -377,31 +377,31 @@ struct OverloadedMethodMacroTests {
             #if DEBUG
             class HandlerMock: Handler {
                 var handlePairABCallCount: Int = 0
-                var handlePairABCallArgs: [Pair<A, B>] = []
+                var handlePairABCallArguments: [Pair<A, B>] = []
                 var handlePairABHandler: (@Sendable (Pair<A, B>) -> Void)? = nil
                 func handle(_ value: Pair<A, B>) {
                     handlePairABCallCount += 1
-                    handlePairABCallArgs.append(value)
+                    handlePairABCallArguments.append(value)
                     if let _handler = handlePairABHandler {
                         _handler(value)
                     }
                 }
                 var handlePairAB2CallCount: Int = 0
-                var handlePairAB2CallArgs: [Pair<AB>] = []
+                var handlePairAB2CallArguments: [Pair<AB>] = []
                 var handlePairAB2Handler: (@Sendable (Pair<AB>) -> Void)? = nil
                 func handle(_ value: Pair<AB>) {
                     handlePairAB2CallCount += 1
-                    handlePairAB2CallArgs.append(value)
+                    handlePairAB2CallArguments.append(value)
                     if let _handler = handlePairAB2Handler {
                         _handler(value)
                     }
                 }
                 func resetMock() {
                     handlePairABCallCount = 0
-                    handlePairABCallArgs = []
+                    handlePairABCallArguments = []
                     handlePairABHandler = nil
                     handlePairAB2CallCount = 0
-                    handlePairAB2CallArgs = []
+                    handlePairAB2CallArguments = []
                     handlePairAB2Handler = nil
                 }
                 class func resetMock() {

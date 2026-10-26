@@ -30,18 +30,18 @@ struct TypeAliasMacroTests {
             class PresenterMock: Presenter {
                 typealias UpdateType = String
                 var updateCallCount: Int = 0
-                var updateCallArgs: [UpdateType] = []
+                var updateCallArguments: [UpdateType] = []
                 var updateHandler: (@Sendable (UpdateType) -> Void)? = nil
                 func update(type: UpdateType) {
                     updateCallCount += 1
-                    updateCallArgs.append(type)
+                    updateCallArguments.append(type)
                     if let _handler = updateHandler {
                         _handler(type)
                     }
                 }
                 func resetMock() {
                     updateCallCount = 0
-                    updateCallArgs = []
+                    updateCallArguments = []
                     updateHandler = nil
                 }
                 class func resetMock() {
@@ -76,18 +76,18 @@ struct TypeAliasMacroTests {
                 typealias Callback = (String) -> Void
                 typealias ID = Int
                 var registerCallCount: Int = 0
-                var registerCallArgs: [(id: ID, callback: Callback)] = []
+                var registerCallArguments: [(id: ID, callback: Callback)] = []
                 var registerHandler: (@Sendable (ID, Callback) -> Void)? = nil
                 func register(id: ID, callback: @escaping Callback) {
                     registerCallCount += 1
-                    registerCallArgs.append((id: id, callback: callback))
+                    registerCallArguments.append((id: id, callback: callback))
                     if let _handler = registerHandler {
                         _handler(id, callback)
                     }
                 }
                 func resetMock() {
                     registerCallCount = 0
-                    registerCallArgs = []
+                    registerCallArguments = []
                     registerHandler = nil
                 }
                 class func resetMock() {
@@ -149,18 +149,18 @@ struct TypeAliasMacroTests {
                 public init() {
                 }
                 public var didUpdateCallCount: Int = 0
-                public var didUpdateCallArgs: [TableViewUpdateType] = []
+                public var didUpdateCallArguments: [TableViewUpdateType] = []
                 public var didUpdateHandler: (@Sendable (TableViewUpdateType) -> Void)? = nil
                 public func didUpdate(type: TableViewUpdateType) {
                     didUpdateCallCount += 1
-                    didUpdateCallArgs.append(type)
+                    didUpdateCallArguments.append(type)
                     if let _handler = didUpdateHandler {
                         _handler(type)
                     }
                 }
                 open func resetMock() {
                     didUpdateCallCount = 0
-                    didUpdateCallArgs = []
+                    didUpdateCallArguments = []
                     didUpdateHandler = nil
                 }
                 open class func resetMock() {

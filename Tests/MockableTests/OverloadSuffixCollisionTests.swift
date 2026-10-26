@@ -30,8 +30,8 @@ struct OverloadSuffixCollisionTests {
         #expect(structResult == 2)
         #expect(mock.handleCollisionFooArrayIntCallCount == 1)
         #expect(mock.handleCollisionFooArrayInt2CallCount == 1)
-        #expect(mock.handleCollisionFooArrayIntCallArgs == [[CollisionFoo()]])
-        #expect(mock.handleCollisionFooArrayInt2CallArgs == [CollisionFooArray()])
+        #expect(mock.handleCollisionFooArrayIntCallArguments == [[CollisionFoo()]])
+        #expect(mock.handleCollisionFooArrayInt2CallArguments == [CollisionFooArray()])
     }
 
     @Test("resetMock clears both colliding overloads")
