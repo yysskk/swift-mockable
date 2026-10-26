@@ -17,7 +17,7 @@ extension MockGenerator {
                 // constraint on them lives in the `where` clause, so both have to come
                 // along or the alias no longer describes the same type.
                 let rebuilt = TypeAliasDeclSyntax(
-                    modifiers: buildModifiers(),
+                    modifiers: modifiers(for: .member),
                     name: .identifier(typeAliasDecl.name.text),
                     genericParameterClause: typeAliasDecl.genericParameterClause?.trimmed,
                     initializer: TypeInitializerClauseSyntax(
@@ -50,7 +50,7 @@ extension MockGenerator {
         }
 
         return TypeAliasDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: modifiers(for: .member),
             name: .identifier(name),
             initializer: TypeInitializerClauseSyntax(
                 equal: .equalToken(leadingTrivia: .space, trailingTrivia: .space),

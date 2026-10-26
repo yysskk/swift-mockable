@@ -62,9 +62,26 @@ enum MockNaming {
         "init\(suffix)"
     }
 
-    /// The lock-backed storage property name for instance or static members.
-    static func storageName(isTypeMember: Bool) -> String {
-        isTypeMember ? staticStorageName : instanceStorageName
+    /// The lock-backed storage property holding the tracking state of members in
+    /// `scope`: `_storage` for instance members, `_staticStorage` for type members.
+    static func storageName(for scope: MemberScope) -> String {
+        switch scope {
+        case .instance:
+            return instanceStorageName
+        case .type:
+            return staticStorageName
+        }
+    }
+
+    /// The storage struct type holding the tracking state of members in `scope`:
+    /// `Storage` for instance members, `StaticStorage` for type members.
+    static func storageTypeName(for scope: MemberScope) -> String {
+        switch scope {
+        case .instance:
+            return storageTypeName
+        case .type:
+            return staticStorageTypeName
+        }
     }
 }
 

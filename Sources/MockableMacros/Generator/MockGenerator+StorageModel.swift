@@ -8,18 +8,7 @@ extension MockGenerator {
     /// `StaticStorage` struct. Static tracking state is shared by every instance, so it
     /// is always lock-backed, even in a non-`Sendable` mock.
     var hasTypeMembers: Bool {
-        requirements.contains(where: \.isTypeMember)
-    }
-
-    /// The modifiers a generated member needs to mirror a type member: `static`, or
-    /// nothing for an instance member. The mock always spells it `static`, even for a
-    /// `class` requirement, since the mock's own members are never overridden.
-    static func typeMemberModifiers(isTypeMember: Bool) -> [DeclModifierSyntax] {
-        guard isTypeMember else {
-            return []
-        }
-
-        return [DeclModifierSyntax(name: .keyword(.static))]
+        requirements.contains { $0.scope == .type }
     }
 
     /// Whether the mock's instance tracking state is lock-backed. `Sendable` mocks need
@@ -48,9 +37,9 @@ extension MockGenerator {
         requirements.contains(where: \.leavesMockIsolation)
     }
 
-    /// Whether a member's tracking state is lock-backed: every member of a
-    /// `Sendable`/actor mock, plus every type member (shared across instances).
-    func usesLockBasedStorage(isTypeMember: Bool) -> Bool {
-        usesInstanceStorageLock || isTypeMember
+    /// Whether the tracking state of a member in `scope` is lock-backed: every member
+    /// of a `Sendable`/actor mock, plus every type member (shared across instances).
+    func usesLockBasedStorage(for scope: MemberScope) -> Bool {
+        usesInstanceStorageLock || scope == .type
     }
 }

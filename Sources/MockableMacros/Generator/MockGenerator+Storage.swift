@@ -8,15 +8,13 @@ extension MockGenerator {
     /// `_staticStorage`) that guards a `Sendable`/actor mock's tracking state. The lock
     /// wraps a `Storage`/`StaticStorage` value holding every requirement's counters,
     /// captured arguments, and handlers.
-    func generateLockProperty(
-        propertyName: String = MockNaming.instanceStorageName,
-        storageTypeName: String = MockNaming.storageTypeName,
-        isStatic: Bool = false
-    ) -> VariableDeclSyntax {
+    func generateLockProperty(for scope: MemberScope) -> VariableDeclSyntax {
+        let propertyName = MockNaming.storageName(for: scope)
+        let storageTypeName = MockNaming.storageTypeName(for: scope)
         var modifiers = [
             DeclModifierSyntax(name: .keyword(.private))
         ]
-        modifiers.append(contentsOf: Self.typeMemberModifiers(isTypeMember: isStatic))
+        modifiers.append(contentsOf: scope.modifiers)
         // A `let` of a Sendable type is safe to read from anywhere, and a nonisolated
         // member has to: on an isolated mock the lock would otherwise be as isolated
         // as the state it guards. Actor mocks need no modifier — an actor's stored
@@ -61,27 +59,15 @@ extension MockGenerator {
         )
     }
 
-    /// The `Storage` struct holding the tracking state for the mock's instance members.
-    func generateStorageStruct() -> StructDeclSyntax {
-        generateStorageStruct(named: MockNaming.storageTypeName, includeTypeMembers: false)
-    }
-
-    /// The `StaticStorage` struct holding the tracking state for the mock's `static` members.
-    func generateStaticStorageStruct() -> StructDeclSyntax {
-        generateStorageStruct(named: MockNaming.staticStorageTypeName, includeTypeMembers: true)
-    }
-
-    /// Builds one storage struct from the tracking model: a stored field per slot of
-    /// every requirement on the matching side of the instance/static split, with the
-    /// protocol's `#if` structure preserved.
-    private func generateStorageStruct(
-        named storageName: String,
-        includeTypeMembers: Bool
-    ) -> StructDeclSyntax {
+    /// Builds the storage struct for the members in `scope` from the tracking model —
+    /// `Storage` for instance members, `StaticStorage` for type members — with a stored
+    /// field per slot of every such requirement and the protocol's `#if` structure
+    /// preserved.
+    func generateStorageStruct(for scope: MemberScope) -> StructDeclSyntax {
         let storageMembers = mapMemberBlockItemsPreservingIfConfig { requirement in
             // Initializers are never type members, so their tracking fields live only
             // in the instance `Storage` struct.
-            guard requirement.isTypeMember == includeTypeMembers else {
+            guard requirement.scope == scope else {
                 return []
             }
 
@@ -100,7 +86,7 @@ extension MockGenerator {
             modifiers: DeclModifierListSyntax([
                 DeclModifierSyntax(name: .keyword(.private))
             ]),
-            name: .identifier(storageName),
+            name: .identifier(MockNaming.storageTypeName(for: scope)),
             memberBlock: MemberBlockSyntax(
                 leftBrace: .leftBraceToken(trailingTrivia: .newline),
                 members: MemberBlockItemListSyntax(storageMembers),

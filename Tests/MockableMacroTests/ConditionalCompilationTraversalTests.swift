@@ -155,22 +155,22 @@ struct ConditionalCompilationTraversalTests {
         #expect(generator.hasTypeMembers)
     }
 
-    @Test("isTypeMember recognizes static and class modifiers")
+    @Test("The scope recognizes static and class modifiers")
     func recognizesTypeMemberModifiers() {
         let staticDecl: DeclSyntax = "static func beta() -> Int"
         let classDecl: DeclSyntax = "class func gamma() -> Int"
         let instanceDecl: DeclSyntax = "func alpha() -> Int"
-        #expect(Requirement(staticDecl).isTypeMember)
-        #expect(Requirement(classDecl).isTypeMember)
-        #expect(!Requirement(instanceDecl).isTypeMember)
+        #expect(Requirement(staticDecl).scope == .type)
+        #expect(Requirement(classDecl).scope == .type)
+        #expect(Requirement(instanceDecl).scope == .instance)
 
         let staticVar: DeclSyntax = "static var count: Int { get }"
         let staticSubscript: DeclSyntax = "static subscript(index: Int) -> Int { get }"
-        #expect(Requirement(staticVar).isTypeMember)
-        #expect(Requirement(staticSubscript).isTypeMember)
+        #expect(Requirement(staticVar).scope == .type)
+        #expect(Requirement(staticSubscript).scope == .type)
 
         let associatedType: DeclSyntax = "associatedtype Item"
-        #expect(!Requirement(associatedType).isTypeMember)
+        #expect(Requirement(associatedType).scope == .instance)
     }
 
     // MARK: - Storage-model predicates
@@ -179,12 +179,12 @@ struct ConditionalCompilationTraversalTests {
     func lockBasedStoragePredicates() throws {
         let plain = try #require(makeGenerator("protocol Service {}"))
         #expect(!plain.usesInstanceStorageLock)
-        #expect(!plain.usesLockBasedStorage(isTypeMember: false))
-        #expect(plain.usesLockBasedStorage(isTypeMember: true))
+        #expect(!plain.usesLockBasedStorage(for: .instance))
+        #expect(plain.usesLockBasedStorage(for: .type))
 
         let sendable = try #require(makeGenerator("protocol Service: Sendable {}"))
         #expect(sendable.usesInstanceStorageLock)
-        #expect(sendable.usesLockBasedStorage(isTypeMember: false))
+        #expect(sendable.usesLockBasedStorage(for: .instance))
 
         let actor = try #require(makeGenerator("protocol Service: Actor {}"))
         #expect(actor.usesInstanceStorageLock)

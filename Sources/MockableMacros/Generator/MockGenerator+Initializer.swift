@@ -33,7 +33,7 @@ extension MockGenerator {
         let parameters = initDecl.signature.parameterClause.parameters
         let throwsErrorType = initDecl.signature.effectSpecifiers?.throwsErrorType
         // Initializers are never type members, so their state is instance state.
-        let access = trackingAccess(isTypeMember: false)
+        let access = trackingAccess(for: .instance)
         let body = buildInitializerBody(
             parameters: parameters,
             identifier: identifier,
@@ -55,7 +55,7 @@ extension MockGenerator {
         let additionalModifiers: [DeclModifierSyntax] = shape.isActor
             ? []
             : [DeclModifierSyntax(name: .keyword(.required))]
-        let modifiers = buildModifiers(additional: additionalModifiers, isOverridable: false)
+        let modifiers = modifiers(for: .member, additional: additionalModifiers)
 
         return InitializerDeclSyntax(
             modifiers: modifiers,

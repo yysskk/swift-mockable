@@ -50,27 +50,14 @@ struct MockGenerator {
         !overloads.initializers.isEmpty
     }
 
-    /// Builds a DeclModifierListSyntax with the appropriate access level modifier for members.
-    /// For `private` protocols, members use `fileprivate` to satisfy protocol requirements.
-    func buildModifiers(
-        additional: [DeclModifierSyntax] = [],
-        isOverridable: Bool = false
+    /// The modifiers of a generated declaration: the protocol's access level as spelled
+    /// for `role` (see `AccessLevel.DeclarationRole`), followed by `additional`.
+    func modifiers(
+        for role: AccessLevel.DeclarationRole,
+        additional: [DeclModifierSyntax] = []
     ) -> DeclModifierListSyntax {
         var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = shape.accessLevel.makeMemberModifier(isOverridable: isOverridable) {
-            modifiers.append(accessModifier)
-        }
-        modifiers.append(contentsOf: additional)
-        return DeclModifierListSyntax(modifiers)
-    }
-
-    /// Builds a DeclModifierListSyntax for the class/actor declaration itself.
-    func buildClassModifiers(
-        additional: [DeclModifierSyntax] = [],
-        supportsOpen: Bool = false
-    ) -> DeclModifierListSyntax {
-        var modifiers: [DeclModifierSyntax] = []
-        if let accessModifier = shape.accessLevel.makeModifier(supportsOpen: supportsOpen) {
+        if let accessModifier = shape.accessLevel.modifier(for: role) {
             modifiers.append(accessModifier)
         }
         modifiers.append(contentsOf: additional)
@@ -99,23 +86,13 @@ struct MockGenerator {
         members.append(contentsOf: generateAssociatedTypeMembers())
 
         if usesInstanceStorageLock {
-            let storageStruct = generateStorageStruct()
-            members.append(MemberBlockItemSyntax(decl: storageStruct))
-
-            let mutexProperty = generateLockProperty()
-            members.append(MemberBlockItemSyntax(decl: mutexProperty))
+            members.append(MemberBlockItemSyntax(decl: generateStorageStruct(for: .instance)))
+            members.append(MemberBlockItemSyntax(decl: generateLockProperty(for: .instance)))
         }
 
         if hasTypeMembers {
-            let staticStorageStruct = generateStaticStorageStruct()
-            members.append(MemberBlockItemSyntax(decl: staticStorageStruct))
-
-            let staticMutexProperty = generateLockProperty(
-                propertyName: MockNaming.staticStorageName,
-                storageTypeName: MockNaming.staticStorageTypeName,
-                isStatic: true
-            )
-            members.append(MemberBlockItemSyntax(decl: staticMutexProperty))
+            members.append(MemberBlockItemSyntax(decl: generateStorageStruct(for: .type)))
+            members.append(MemberBlockItemSyntax(decl: generateLockProperty(for: .type)))
         }
 
         // Generate explicit init when access level requires it (e.g., public/package)
@@ -181,7 +158,7 @@ struct MockGenerator {
 
         return ClassDeclSyntax(
             attributes: AttributeListSyntax(classAttributes),
-            modifiers: buildClassModifiers(supportsOpen: true),
+            modifiers: modifiers(for: .subclassableMockType),
             name: .identifier(shape.mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
@@ -202,7 +179,7 @@ struct MockGenerator {
 
         return ActorDeclSyntax(
             attributes: AttributeListSyntax([]),
-            modifiers: buildClassModifiers(),
+            modifiers: modifiers(for: .mockType),
             name: .identifier(shape.mockClassName),
             inheritanceClause: InheritanceClauseSyntax(
                 inheritedTypes: InheritedTypeListSyntax(inheritedTypes)
@@ -228,7 +205,7 @@ struct MockGenerator {
                     funcDecl,
                     requirement: functionTrackingRequirement(
                         for: funcDecl,
-                        isTypeMember: requirement.isTypeMember,
+                        scope: requirement.scope,
                         leavesMockIsolation: requirement.leavesMockIsolation,
                         overloads: overloads
                     )
@@ -237,7 +214,7 @@ struct MockGenerator {
             case .variable(let varDecl):
                 return generateVariableMock(
                     varDecl,
-                    isTypeMember: requirement.isTypeMember,
+                    scope: requirement.scope,
                     leavesMockIsolation: requirement.leavesMockIsolation
                 )
 
@@ -267,7 +244,7 @@ struct MockGenerator {
     /// initializers instead.
     private func generateInit() -> DeclSyntax {
         let initDecl = InitializerDeclSyntax(
-            modifiers: buildModifiers(isOverridable: false),
+            modifiers: modifiers(for: .member),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     parameters: FunctionParameterListSyntax([])

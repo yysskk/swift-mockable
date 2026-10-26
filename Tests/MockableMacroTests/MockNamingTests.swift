@@ -41,7 +41,9 @@ struct MockNamingTests {
 
     @Test("storageName selects the static or instance storage property")
     func storageName() {
-        #expect(MockNaming.storageName(isTypeMember: true) == "_staticStorage")
-        #expect(MockNaming.storageName(isTypeMember: false) == "_storage")
+        #expect(MockNaming.storageName(for: .type) == "_staticStorage")
+        #expect(MockNaming.storageName(for: .instance) == "_storage")
+        #expect(MockNaming.storageTypeName(for: .type) == "StaticStorage")
+        #expect(MockNaming.storageTypeName(for: .instance) == "Storage")
     }
 }

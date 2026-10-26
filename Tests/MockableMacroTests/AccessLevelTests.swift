@@ -39,55 +39,43 @@ struct AccessLevelTests {
         #expect(accessLevel(ofProtocol: "public protocol Service: Sendable {}") == .public)
     }
 
-    // MARK: - makeModifier(supportsOpen:)
+    // MARK: - modifier(for:)
 
-    @Test("makeModifier returns nil for internal")
+    @Test("internal needs no modifier in any role")
     func internalHasNoModifier() {
-        #expect(AccessLevel.internal.makeModifier() == nil)
-        #expect(AccessLevel.internal.makeModifier(supportsOpen: true) == nil)
+        for role in [AccessLevel.DeclarationRole.mockType, .subclassableMockType, .member, .overridableMember] {
+            #expect(AccessLevel.internal.modifier(for: role) == nil)
+        }
     }
 
-    @Test("makeModifier keeps public when open is unsupported")
-    func publicStaysPublic() {
-        #expect(AccessLevel.public.makeModifier()?.name.text == "public")
+    @Test("A public mock type is open only where it may be subclassed")
+    func publicMockType() {
+        #expect(AccessLevel.public.modifier(for: .mockType)?.name.text == "public")
+        #expect(AccessLevel.public.modifier(for: .subclassableMockType)?.name.text == "open")
     }
 
-    @Test("makeModifier promotes public to open when open is supported")
-    func publicBecomesOpen() {
-        #expect(AccessLevel.public.makeModifier(supportsOpen: true)?.name.text == "open")
+    @Test("A private mock type stays private")
+    func privateMockType() {
+        #expect(AccessLevel.private.modifier(for: .mockType)?.name.text == "private")
+        #expect(AccessLevel.private.modifier(for: .subclassableMockType)?.name.text == "private")
     }
 
-    @Test("makeModifier keeps private as private for the type declaration")
-    func privateTypeModifier() {
-        #expect(AccessLevel.private.makeModifier()?.name.text == "private")
-        #expect(AccessLevel.private.makeModifier(supportsOpen: true)?.name.text == "private")
-    }
-
-    // MARK: - makeMemberModifier(isOverridable:)
-
-    @Test("makeMemberModifier returns nil for internal")
-    func internalHasNoMemberModifier() {
-        #expect(AccessLevel.internal.makeMemberModifier() == nil)
-    }
-
-    @Test("makeMemberModifier maps private members to fileprivate")
+    @Test("Members of a private protocol are fileprivate")
     func privateMembersAreFileprivate() {
-        #expect(AccessLevel.private.makeMemberModifier()?.name.text == "fileprivate")
+        #expect(AccessLevel.private.modifier(for: .member)?.name.text == "fileprivate")
+        #expect(AccessLevel.private.modifier(for: .overridableMember)?.name.text == "fileprivate")
+        #expect(AccessLevel.fileprivate.modifier(for: .member)?.name.text == "fileprivate")
     }
 
-    @Test("makeMemberModifier keeps fileprivate members fileprivate")
-    func fileprivateMembersStayFileprivate() {
-        #expect(AccessLevel.fileprivate.makeMemberModifier()?.name.text == "fileprivate")
+    @Test("A public member is open only where it may be overridden")
+    func publicMember() {
+        #expect(AccessLevel.public.modifier(for: .member)?.name.text == "public")
+        #expect(AccessLevel.public.modifier(for: .overridableMember)?.name.text == "open")
     }
 
-    @Test("makeMemberModifier promotes public members to open only when overridable")
-    func publicMemberPromotion() {
-        #expect(AccessLevel.public.makeMemberModifier()?.name.text == "public")
-        #expect(AccessLevel.public.makeMemberModifier(isOverridable: true)?.name.text == "open")
-    }
-
-    @Test("makeMemberModifier never promotes package members to open")
+    @Test("A package member is never open")
     func packageMembersStayPackage() {
-        #expect(AccessLevel.package.makeMemberModifier(isOverridable: true)?.name.text == "package")
+        #expect(AccessLevel.package.modifier(for: .member)?.name.text == "package")
+        #expect(AccessLevel.package.modifier(for: .overridableMember)?.name.text == "package")
     }
 }

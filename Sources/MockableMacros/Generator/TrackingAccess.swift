@@ -153,12 +153,12 @@ enum TrackingAccess {
 }
 
 extension MockGenerator {
-    /// How the witnesses of a requirement reach its tracking state: through the lock
-    /// for `Sendable`/actor mocks and for type members, directly otherwise.
-    func trackingAccess(isTypeMember: Bool) -> TrackingAccess {
-        guard usesLockBasedStorage(isTypeMember: isTypeMember) else {
+    /// How the witnesses of a requirement in `scope` reach its tracking state: through
+    /// the lock for `Sendable`/actor mocks and for type members, directly otherwise.
+    func trackingAccess(for scope: MemberScope) -> TrackingAccess {
+        guard usesLockBasedStorage(for: scope) else {
             return .direct
         }
-        return .lockBacked(storageName: MockNaming.storageName(isTypeMember: isTypeMember))
+        return .lockBacked(storageName: MockNaming.storageName(for: scope))
     }
 }

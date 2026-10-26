@@ -33,7 +33,7 @@ struct TrackingRequirementTests {
         """).first)
 
         #expect(requirement.identifier == "fetch")
-        #expect(!requirement.isTypeMember)
+        #expect(requirement.scope == .instance)
         let fields = requirement.trackingFields(model: .lockBacked)
         #expect(fields.map(\.name) == ["fetchCallCount", "fetchCallArgs", "fetchHandler"])
         #expect(fields.map(\.resetValue) == ["0", "[]", "nil"])
@@ -83,7 +83,7 @@ struct TrackingRequirementTests {
             static func reset()
         }
         """).first)
-        #expect(requirement.isTypeMember)
+        #expect(requirement.scope == .type)
     }
 
     // MARK: - Initializers
@@ -100,7 +100,7 @@ struct TrackingRequirementTests {
         let fields = all[1].trackingFields(model: .lockBacked)
         #expect(fields.map(\.name) == ["initStringCallCount", "initStringCallArgs"])
         #expect(all[1].handlerClosureType == nil)
-        #expect(!all[1].isTypeMember)
+        #expect(all[1].scope == .instance)
     }
 
     // MARK: - Stored variables
