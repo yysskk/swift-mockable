@@ -42,6 +42,8 @@ struct BasicMacroTests {
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -80,6 +82,8 @@ struct BasicMacroTests {
                     loadDataCallCount = 0
                     loadDataCallArgs = []
                     loadDataHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -120,6 +124,8 @@ struct BasicMacroTests {
                     addCallArgs = []
                     addHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -157,6 +163,8 @@ struct BasicMacroTests {
                     logCallCount = 0
                     logCallArgs = []
                     logHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -196,6 +204,8 @@ struct BasicMacroTests {
                     logCallArgs = []
                     logHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -230,6 +240,8 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     _currentUser = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -266,6 +278,8 @@ struct BasicMacroTests {
                 func resetMock() {
                     _theme = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -292,6 +306,8 @@ struct BasicMacroTests {
                 var lastValue: String? = nil
                 func resetMock() {
                     lastValue = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -400,6 +416,8 @@ struct BasicMacroTests {
                     }
                 }
                 func resetMock() {
+                }
+                class func resetMock() {
                     Self._staticStorage.withLock { storage in
                         storage.makeValueCallCount = 0
                         storage.makeValueCallArgs = []
@@ -667,6 +685,8 @@ struct BasicMacroTests {
                     subscribeCallArgs = []
                     subscribeHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -704,6 +724,8 @@ struct BasicMacroTests {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -743,6 +765,8 @@ struct BasicMacroTests {
                     doSomethingCallArgs = []
                     doSomethingHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -780,6 +804,8 @@ struct BasicMacroTests {
                     doSomethingCallCount = 0
                     doSomethingCallArgs = []
                     doSomethingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -820,6 +846,8 @@ struct BasicMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -858,6 +886,8 @@ struct BasicMacroTests {
                     itemsCallCount = 0
                     itemsCallArgs = []
                     itemsHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -898,6 +928,8 @@ struct BasicMacroTests {
                     tagsCallArgs = []
                     tagsHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -936,6 +968,8 @@ struct BasicMacroTests {
                     mappingCallCount = 0
                     mappingCallArgs = []
                     mappingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -1007,6 +1041,8 @@ struct BasicMacroTests {
                     dictionaryValueCallCount = 0
                     dictionaryValueCallArgs = []
                     dictionaryValueHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -1095,6 +1131,8 @@ struct BasicMacroTests {
                     dictionaryValueCallArgs = []
                     dictionaryValueHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -1133,6 +1171,8 @@ struct BasicMacroTests {
                     fetchCallCount = 0
                     fetchCallArgs = []
                     fetchHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -1188,6 +1228,8 @@ struct BasicMacroTests {
                     arrayOfOptionalCallCount = 0
                     arrayOfOptionalCallArgs = []
                     arrayOfOptionalHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

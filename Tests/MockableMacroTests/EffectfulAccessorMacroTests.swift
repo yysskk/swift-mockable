@@ -41,6 +41,8 @@ struct EffectfulAccessorMacroTests {
                     tokenCallCount = 0
                     tokenHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -79,6 +81,8 @@ struct EffectfulAccessorMacroTests {
                     maxRetryCountCallCount = 0
                     maxRetryCountHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -116,6 +120,8 @@ struct EffectfulAccessorMacroTests {
                 func resetMock() {
                     cachedValueCallCount = 0
                     cachedValueHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -187,6 +193,8 @@ struct EffectfulAccessorMacroTests {
                         storage.flagHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -257,6 +265,8 @@ struct EffectfulAccessorMacroTests {
                         storage.tokenHandler = nil
                     }
                 }
+                static func resetMock() {
+                }
             }
             #endif
             """,
@@ -322,6 +332,8 @@ struct EffectfulAccessorMacroTests {
                     }
                 }
                 func resetMock() {
+                }
+                class func resetMock() {
                     Self._staticStorage.withLock { storage in
                         storage.apiKeyCallCount = 0
                         storage.apiKeyHandler = nil

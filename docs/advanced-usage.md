@@ -498,8 +498,12 @@ For test ergonomics, helper members are generated as `nonisolated` where possibl
 
 Static methods/properties are always lock-backed through a shared static storage.
 
-`resetMock()` also resets static generated members, clearing them in a single lock
-acquisition so a concurrent caller never observes a partly reset mock.
+Their tracking state belongs to the mock type, not to an instance, so it is cleared
+through the type: `ServiceMock.resetMock()`. An instance's `resetMock()` leaves it
+alone, since every other instance (and every test sharing the mock type) sees the
+same state. The type-level `resetMock()` clears the static slots in a single lock
+acquisition, so a concurrent caller never observes a partly reset mock. Every mock
+declares it, with an empty body when the protocol has no `static` requirement.
 
 ## Thread Safety
 
@@ -534,7 +538,8 @@ attached to:
 If a protocol inherits from another protocol and a parent mock exists:
 
 - child mock inherits from `<Parent>Mock`
-- child `resetMock()` calls `super.resetMock()` first
+- child `resetMock()` calls `super.resetMock()` first, and so does the child's
+  type-level `resetMock()`, which overrides the parent's (a `class` method)
 - the child mock inherits the parent mock's initializers (it does not synthesize its own),
   so a parent `init` requirement is satisfied through the inherited `required init`
 - a global-actor-isolated child mock keeps its tracking state behind a `nonisolated` lock. Its

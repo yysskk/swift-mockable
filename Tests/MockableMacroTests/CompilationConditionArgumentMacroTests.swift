@@ -42,6 +42,8 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -80,6 +82,8 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             """,
             macros: testMacros
@@ -117,6 +121,8 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallCount = 0
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -157,6 +163,8 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArgs = []
                     fetchUserHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -194,6 +202,8 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingCallArgs = []
                     pingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -283,6 +293,8 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallArgs = []
                     clearHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -333,6 +345,8 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallArgs = []
                     clearHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -371,6 +385,8 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallArgs = []
                     clearHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -408,6 +424,8 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingCallArgs = []
                     pingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             """,
@@ -448,6 +466,8 @@ struct CompilationConditionArgumentMacroTests {
                     fetchCallArgs = []
                     fetchHandler = nil
                 }
+                open class func resetMock() {
+                }
             }
             """,
             macros: testMacros
@@ -484,6 +504,8 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingCallArgs = []
                     pingHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

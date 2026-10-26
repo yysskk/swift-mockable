@@ -41,6 +41,8 @@ struct NonEscapingClosureMacroTests {
                     runCallArgs = []
                     runHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -80,6 +82,8 @@ struct NonEscapingClosureMacroTests {
                     runCallArgs = []
                     runHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -117,6 +121,8 @@ struct NonEscapingClosureMacroTests {
                     subscribeCallCount = 0
                     subscribeCallArgs = []
                     subscribeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

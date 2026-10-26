@@ -40,15 +40,17 @@ extension MockGenerator {
 """
     }
 
-    /// Generates `resetMock()`, which clears every requirement's call count, captured
-    /// arguments, and handler back to its initial state. The lock-backed variant (for
+    /// Generates the instance `resetMock()`, which clears every instance requirement's
+    /// call count, captured arguments, handler, and stored property back to its initial
+    /// state. Type state is shared by every instance and is cleared by the type-level
+    /// ``generateTypeResetMethod()`` instead. The lock-backed variant (for
     /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
     /// `super.resetMock()` first when the mock inherits from a parent mock.
     func generateResetMethod() -> FunctionDeclSyntax {
         // The two variants address a requirement's slots by different names — an
-        // optional get-set property is its own storage on the direct path but has a
-        // `_name` field in the storage struct — so the choice has to follow the same
-        // predicate the members were generated from.
+        // optional property is its own storage on the direct path but has a `_name`
+        // field in the storage struct — so the choice has to follow the same predicate
+        // the members were generated from.
         if usesInstanceStorageLock {
             return generateLockBackedResetMethod()
         } else {
@@ -56,9 +58,9 @@ extension MockGenerator {
         }
     }
 
-    /// The plain `resetMock()`: one assignment per tracking slot, addressed through the
-    /// mock's own members (`Self.` for type members). Overridden and chained to the
-    /// parent's implementation when the mock subclasses one.
+    /// The plain `resetMock()`: one assignment per instance tracking slot, addressed
+    /// through the mock's own members. Overridden and chained to the parent's
+    /// implementation when the mock subclasses one.
     private func generateRegularResetMethod() -> FunctionDeclSyntax {
         var statements: [CodeBlockItemSyntax] = []
 
@@ -75,77 +77,34 @@ extension MockGenerator {
             }
         }
 
-        // Add super.resetMock() call if inheriting from parent mock
         if shape.subclassesParentMock {
             statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()"))))
         }
 
         statements.append(contentsOf: resetStatements)
 
-        // Static slots are lock-backed even in a mock whose instance state is not, so
-        // they are cleared in one acquisition rather than one per slot: a caller
-        // recording a call concurrently would otherwise see a half-reset mock.
-        let staticResetLines = resetLines(for: .type, overloads: overloads)
-        if !staticResetLines.isEmpty {
-            statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
-                storageName: "Self.\(MockNaming.staticStorageName)",
-                resetLines: staticResetLines
-            )))))
-        }
-
-        let body = CodeBlockSyntax(
-            leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(statements),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
-        )
-
         let additionalModifiers: [DeclModifierSyntax] = shape.subclassesParentMock
             ? [DeclModifierSyntax(name: .keyword(.override))]
             : []
 
-        return FunctionDeclSyntax(
-            modifiers: modifiers(
-                for: shape.canBeSubclassedOutsideModule ? .overridableMember : .member,
-                additional: additionalModifiers
-            ),
-            name: .identifier(MockNaming.resetMethodName),
-            signature: FunctionSignatureSyntax(
-                parameterClause: FunctionParameterClauseSyntax(
-                    leftParen: .leftParenToken(),
-                    parameters: FunctionParameterListSyntax([]),
-                    rightParen: .rightParenToken()
-                )
-            ),
-            body: body
-        )
+        return makeResetMethod(additionalModifiers: additionalModifiers, statements: statements)
     }
 
-    /// The lock-backed `resetMock()`: instance slots are cleared in one `withLock` and
-    /// static slots in another, so each storage struct is reset atomically. On an actor
-    /// mock the method is `nonisolated`, so a test can reset without awaiting.
+    /// The lock-backed `resetMock()`: the instance slots are cleared in one `withLock`,
+    /// so the storage struct is reset atomically. On an actor mock the method is
+    /// `nonisolated`, so a test can reset without awaiting.
     private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
-        let instanceResetLines = resetLines(for: .instance, overloads: overloads)
-        let staticResetLines = resetLines(for: .type, overloads: overloads)
-
-        var bodyStatements: [CodeBlockItemSyntax] = []
+        var statements: [CodeBlockItemSyntax] = []
         if shape.subclassesParentMock {
-            bodyStatements.append(
+            statements.append(
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
             )
         }
-        bodyStatements.append(
-            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: MockNaming.instanceStorageName, resetLines: instanceResetLines))))
-        )
-        if !staticResetLines.isEmpty {
-            bodyStatements.append(
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(storageName: "Self.\(MockNaming.staticStorageName)", resetLines: staticResetLines))))
-            )
-        }
-
-        let body = CodeBlockSyntax(
-            leftBrace: .leftBraceToken(trailingTrivia: .newline),
-            statements: CodeBlockItemListSyntax(bodyStatements),
-            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        statements.append(
+            CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
+                storageName: MockNaming.instanceStorageName,
+                resetLines: resetLines(for: .instance, overloads: overloads)
+            ))))
         )
 
         // This body only touches the lock, so it is nonisolated wherever the mock has
@@ -161,7 +120,63 @@ extension MockGenerator {
             additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
         }
 
-        return FunctionDeclSyntax(
+        return makeResetMethod(additionalModifiers: additionalModifiers, statements: statements)
+    }
+
+    /// Generates the type-level `resetMock()`, which clears every `static` requirement's
+    /// tracking state. Type state is shared by every instance, so clearing it from an
+    /// instance would be a side effect on every other instance and on every test that
+    /// shares the mock type; it is cleared through the type instead:
+    /// `ServiceMock.resetMock()`.
+    ///
+    /// Every mock declares it, with an empty body when the protocol has no `static`
+    /// requirement, so that a child mock can override its parent's and chain to it
+    /// without the macro knowing whether the parent protocol declares any: a class
+    /// mock's is a `class` method, and a child mock's overrides it and calls
+    /// `super.resetMock()` first. An actor mock, which cannot be subclassed, declares a
+    /// `static` method. The static slots are lock-backed even in a mock whose instance
+    /// state is not, and are cleared in one acquisition rather than one per slot: a
+    /// caller recording a call concurrently would otherwise see a half-reset mock.
+    func generateTypeResetMethod() -> FunctionDeclSyntax {
+        var statements: [CodeBlockItemSyntax] = []
+        if shape.subclassesParentMock {
+            statements.append(
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
+            )
+        }
+        let staticResetLines = resetLines(for: .type, overloads: overloads)
+        if !staticResetLines.isEmpty {
+            statements.append(
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
+                    storageName: "Self.\(MockNaming.staticStorageName)",
+                    resetLines: staticResetLines
+                ))))
+            )
+        }
+
+        // The body only touches the static lock, so on a global-actor-isolated mock
+        // with members outside its isolation it is nonisolated, like the instance
+        // method, and a test clears both the same way. An actor's static members are
+        // nonisolated already, and an override takes the parent's isolation.
+        var additionalModifiers: [DeclModifierSyntax] = []
+        if shape.subclassesParentMock {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.override)))
+        } else if !shape.isActor, hasRequirementsLeavingIsolation {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
+        }
+        additionalModifiers.append(DeclModifierSyntax(name: .keyword(shape.isActor ? .static : .class)))
+
+        return makeResetMethod(additionalModifiers: additionalModifiers, statements: statements)
+    }
+
+    /// Builds a `resetMock()` declaration with the given modifiers and body. The
+    /// method is overridable from other modules wherever the mock type can be
+    /// subclassed there.
+    private func makeResetMethod(
+        additionalModifiers: [DeclModifierSyntax],
+        statements: [CodeBlockItemSyntax]
+    ) -> FunctionDeclSyntax {
+        FunctionDeclSyntax(
             modifiers: modifiers(
                 for: shape.canBeSubclassedOutsideModule ? .overridableMember : .member,
                 additional: additionalModifiers
@@ -174,8 +189,19 @@ extension MockGenerator {
                     rightParen: .rightParenToken()
                 )
             ),
-            body: body
+            body: Self.makeBody(statements)
         )
     }
 
+    /// A method body laid out one statement per line, or an empty pair of braces.
+    private static func makeBody(_ statements: [CodeBlockItemSyntax]) -> CodeBlockSyntax {
+        guard !statements.isEmpty else {
+            return CodeBlockSyntax(statements: CodeBlockItemListSyntax([]))
+        }
+        return CodeBlockSyntax(
+            leftBrace: .leftBraceToken(trailingTrivia: .newline),
+            statements: CodeBlockItemListSyntax(statements),
+            rightBrace: .rightBraceToken(leadingTrivia: .newline)
+        )
+    }
 }

@@ -73,6 +73,8 @@ struct TrackingIdentifierCollisionMacroTests {
                     loadItemCallArgs = []
                     loadItemHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -263,6 +265,8 @@ struct TrackingIdentifierCollisionMacroTests {
                         storage.loadItemHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -316,6 +320,8 @@ struct TrackingIdentifierCollisionMacroTests {
                     subscriptString2CallCount = 0
                     subscriptString2CallArgs = []
                     subscriptString2Handler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

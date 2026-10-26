@@ -41,6 +41,8 @@ struct RethrowsMacroTests {
                     runCallArgs = []
                     runHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -79,6 +81,8 @@ struct RethrowsMacroTests {
                     transformCallCount = 0
                     transformCallArgs = []
                     transformHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -162,6 +166,8 @@ struct RethrowsMacroTests {
                         storage.runHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -199,6 +205,8 @@ struct RethrowsMacroTests {
                     executeCallCount = 0
                     executeCallArgs = []
                     executeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

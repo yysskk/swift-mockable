@@ -42,6 +42,8 @@ struct GenericMacroTests {
                     getCallArgs = []
                     getHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -79,6 +81,8 @@ struct GenericMacroTests {
                     saveCallCount = 0
                     saveCallArgs = []
                     saveHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -134,6 +138,8 @@ struct GenericMacroTests {
                     setCallArgs = []
                     setHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -188,6 +194,8 @@ struct GenericMacroTests {
                     setIntegerCallArgs = []
                     setIntegerHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -226,6 +234,8 @@ struct GenericMacroTests {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -266,6 +276,8 @@ struct GenericMacroTests {
                     rewrapCallArgs = []
                     rewrapHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -303,6 +315,8 @@ struct GenericMacroTests {
                     storeCallCount = 0
                     storeCallArgs = []
                     storeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -343,6 +357,8 @@ struct GenericMacroTests {
                     firstElementCallArgs = []
                     firstElementHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -381,6 +397,8 @@ struct GenericMacroTests {
                     decodeCallCount = 0
                     decodeCallArgs = []
                     decodeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -421,6 +439,8 @@ struct GenericMacroTests {
                     pairCallArgs = []
                     pairHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -459,6 +479,8 @@ struct GenericMacroTests {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -528,6 +550,8 @@ struct GenericMacroTests {
                     loadCallArgs = []
                     loadHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -565,6 +589,8 @@ struct GenericMacroTests {
                     loadCallCount = 0
                     loadCallArgs = []
                     loadHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -635,6 +661,8 @@ struct GenericMacroTests {
                     transformCallArgs = []
                     transformHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -673,6 +701,8 @@ struct GenericMacroTests {
                     indexCallCount = 0
                     indexCallArgs = []
                     indexHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -713,6 +743,8 @@ struct GenericMacroTests {
                     lookupCallArgs = []
                     lookupHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -750,6 +782,8 @@ struct GenericMacroTests {
                     storeCallCount = 0
                     storeCallArgs = []
                     storeHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -789,6 +823,8 @@ struct GenericMacroTests {
                     getCallCount = 0
                     getCallArgs = []
                     getHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

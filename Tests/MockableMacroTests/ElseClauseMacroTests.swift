@@ -113,6 +113,8 @@ struct ElseClauseMacroTests {
                     alphaHandler = nil
                     #else
                     #endif
+                }
+                class func resetMock() {
                     Self._staticStorage.withLock { storage in
                         #if CUSTOM
                         #else
@@ -204,6 +206,8 @@ struct ElseClauseMacroTests {
                     fetchStringHandler = nil
                     #endif
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -263,6 +267,8 @@ struct ElseClauseMacroTests {
                     initCallCount = 0
                     initCallArgs = []
                     #endif
+                }
+                open class func resetMock() {
                 }
             }
             #endif

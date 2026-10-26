@@ -98,6 +98,8 @@ struct ConditionalCompilationMacroTests {
                     getAllObjectsHandler = nil
                     #endif
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -154,6 +156,8 @@ struct ConditionalCompilationMacroTests {
                     #if DEBUG
                     _debugInfo = nil
                     #endif
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -238,6 +242,8 @@ struct ConditionalCompilationMacroTests {
                     logToFallbackCallArgs = []
                     logToFallbackHandler = nil
                     #endif
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -448,6 +454,8 @@ struct ConditionalCompilationMacroTests {
                         storage.logToFallbackHandler = nil
                         #endif
                     }
+                }
+                class func resetMock() {
                 }
             }
             #endif

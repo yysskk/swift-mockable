@@ -55,6 +55,8 @@ struct MainActorMacroTests {
                     loadDataHandler = nil
                     _title = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -95,6 +97,8 @@ struct MainActorMacroTests {
                     fetchItemsCallCount = 0
                     fetchItemsCallArgs = []
                     fetchItemsHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -195,6 +199,8 @@ struct MainActorMacroTests {
                         storage.trackCallArgs = []
                         storage.trackHandler = nil
                     }
+                }
+                nonisolated class func resetMock() {
                 }
             }
             #endif
@@ -335,6 +341,9 @@ struct MainActorMacroTests {
                         storage.loadCallArgs = []
                         storage.loadHandler = nil
                     }
+                }
+                override class func resetMock() {
+                    super.resetMock()
                     Self._staticStorage.withLock { storage in
                         storage.makeCallCount = 0
                         storage.makeCallArgs = []
@@ -425,6 +434,9 @@ struct MainActorMacroTests {
                         storage.trackCallArgs = []
                         storage.trackHandler = nil
                     }
+                }
+                override class func resetMock() {
+                    super.resetMock()
                 }
             }
             #endif
@@ -563,6 +575,8 @@ struct MainActorMacroTests {
                         storage.loadCallArgs = []
                         storage.loadHandler = nil
                     }
+                }
+                nonisolated class func resetMock() {
                 }
             }
             #endif

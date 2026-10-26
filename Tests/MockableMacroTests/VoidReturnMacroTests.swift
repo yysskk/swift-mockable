@@ -58,6 +58,8 @@ struct VoidReturnMacroTests {
                     parenthesizedCallArgs = []
                     parenthesizedHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -111,6 +113,8 @@ struct VoidReturnMacroTests {
                     runIntCallCount = 0
                     runIntCallArgs = []
                     runIntHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

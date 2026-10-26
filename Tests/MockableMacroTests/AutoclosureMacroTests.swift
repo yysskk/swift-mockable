@@ -42,6 +42,8 @@ struct AutoclosureMacroTests {
                     logCallArgs = []
                     logHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -82,6 +84,8 @@ struct AutoclosureMacroTests {
                     computeCallArgs = []
                     computeHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -121,6 +125,8 @@ struct AutoclosureMacroTests {
                     scheduleCallArgs = []
                     scheduleHandler = nil
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -159,6 +165,8 @@ struct AutoclosureMacroTests {
                     recordCallCount = 0
                     recordCallArgs = []
                     recordHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif
@@ -243,6 +251,8 @@ struct AutoclosureMacroTests {
                         storage.recordHandler = nil
                     }
                 }
+                class func resetMock() {
+                }
             }
             #endif
             """,
@@ -281,6 +291,8 @@ struct AutoclosureMacroTests {
                     logCallCount = 0
                     logCallArgs = []
                     logHandler = nil
+                }
+                class func resetMock() {
                 }
             }
             #endif

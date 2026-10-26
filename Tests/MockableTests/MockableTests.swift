@@ -470,8 +470,7 @@ struct MockableIntegrationTests {
 
     @Test("Static members are lock-backed and resettable")
     func staticMembers() async {
-        let resetter = StaticServiceMock()
-        resetter.resetMock()
+        StaticServiceMock.resetMock()
 
         StaticServiceMock.makeIdentifierHandler = { @Sendable prefix in
             "\(prefix)-mock"
@@ -502,7 +501,7 @@ struct MockableIntegrationTests {
         #expect(StaticServiceMock.makeIdentifierCallCount == 101)
         #expect(StaticServiceMock.makeIdentifierCallArgs.count == 101)
 
-        resetter.resetMock()
+        StaticServiceMock.resetMock()
         #expect(StaticServiceMock.makeIdentifierCallCount == 0)
         #expect(StaticServiceMock.makeIdentifierCallArgs == [])
         #expect(StaticServiceMock.makeIdentifierHandler == nil)
