@@ -95,7 +95,7 @@ struct CompilationConditionArgumentTests {
         let mock = CustomConditionServiceMock()
 
         mock.isEnabledHandler = { true }
-        mock._identifier = "custom"
+        mock.identifier = "custom"
 
         #expect(mock.isEnabled())
         #expect(mock.isEnabledCallCount == 1)
@@ -103,7 +103,6 @@ struct CompilationConditionArgumentTests {
 
         mock.resetMock()
         #expect(mock.isEnabledCallCount == 0)
-        #expect(mock._identifier == nil)
     }
 
     @Test("A string-literal condition mock exists when its flag is defined")

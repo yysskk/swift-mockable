@@ -79,7 +79,7 @@ struct MockableIntegrationTests {
     @Test("Get-only property")
     func getOnlyProperty() {
         let mock = ServiceWithPropertiesMock()
-        mock._readOnlyValue = 42
+        mock.readOnlyValue = 42
 
         #expect(mock.readOnlyValue == 42)
     }
@@ -483,7 +483,7 @@ struct MockableIntegrationTests {
         #expect(StaticServiceMock.makeIdentifierCallCount == 1)
         #expect(StaticServiceMock.makeIdentifierCallArgs == ["user"])
 
-        StaticServiceMock._readOnlyToken = "token"
+        StaticServiceMock.readOnlyToken = "token"
         StaticServiceMock.cachedValue = "cached"
         StaticServiceMock.retryCount = 3
 
@@ -506,9 +506,7 @@ struct MockableIntegrationTests {
         #expect(StaticServiceMock.makeIdentifierCallCount == 0)
         #expect(StaticServiceMock.makeIdentifierCallArgs == [])
         #expect(StaticServiceMock.makeIdentifierHandler == nil)
-        #expect(StaticServiceMock._readOnlyToken == nil)
         #expect(StaticServiceMock.cachedValue == nil)
-        #expect(StaticServiceMock._retryCount == nil)
     }
 
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)

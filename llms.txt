@@ -5,7 +5,7 @@
 swift-mockable provides a single `@Mockable` macro that you attach to any Swift protocol. It generates a `<ProtocolName>Mock` class wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom flag or removes the guard) with:
 
 - `<method>CallCount` / `<method>CallArgs` / `<method>Handler` for every method
-- `_<property>` backing storage and protocol-conforming computed properties
+- Settable properties, even for `{ get }` requirements (`mock.currentUser = user`)
 - `subscript<suffix>CallCount` / `CallArgs` / `Handler` / `SetHandler` for subscripts
 - `initCallCount` / `initCallArgs` for `init` requirements (recording `required init`; lock-backed on `Sendable`/`actor` mocks)
 - `resetMock()` to clear all tracking state

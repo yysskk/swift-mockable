@@ -9,7 +9,7 @@ struct MainActorInheritanceTests {
     func childOfNonisolatedParent() {
         let mock = MainActorChildServiceMock()
         mock.baseMethodHandler = { "base" }
-        mock._baseName = "name"
+        mock.baseName = "name"
         mock.refreshHandler = { }
         mock.subtitle = "sub"
         MainActorChildServiceMock.makeHandler = { 7 }
@@ -25,10 +25,8 @@ struct MainActorInheritanceTests {
         mock.resetMock()
 
         #expect(mock.baseMethodCallCount == 0)
-        #expect(mock._baseName == nil)
         #expect(mock.refreshCallCount == 0)
         #expect(mock.refreshHandler == nil)
-        #expect(mock._subtitle == nil)
         #expect(MainActorChildServiceMock.makeCallCount == 0)
         #expect(MainActorChildServiceMock.makeHandler == nil)
     }

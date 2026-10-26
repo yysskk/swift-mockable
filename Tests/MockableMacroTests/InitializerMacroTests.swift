@@ -285,9 +285,14 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class WidgetMock: Widget {
-                var _name: String? = nil
+                private var _name: String? = nil
                 var name: String {
-                    _name!
+                    get {
+                        _name!
+                    }
+                    set {
+                        _name = newValue
+                    }
                 }
                 var initCallCount: Int = 0
                 var initCallArgs: [String] = []

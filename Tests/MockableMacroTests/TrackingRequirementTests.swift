@@ -134,7 +134,7 @@ struct TrackingRequirementTests {
         #expect(requirement.trackingFields(model: .lockBacked)[0].type.trimmedDescription == "Theme?")
     }
 
-    @Test("An optional get-only variable keeps its _name backing on both paths")
+    @Test("An optional get-only variable is its own storage on the direct path, like a get-set one")
     func optionalGetOnlyVariable() throws {
         let requirement = try #require(requirements(ofProtocol: """
         protocol Service {
@@ -142,7 +142,7 @@ struct TrackingRequirementTests {
         }
         """).first)
 
-        #expect(fieldNames(requirement, model: .direct) == ["_lastValue"])
+        #expect(fieldNames(requirement, model: .direct) == ["lastValue"])
         #expect(fieldNames(requirement, model: .lockBacked) == ["_lastValue"])
     }
 

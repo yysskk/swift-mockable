@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** A stored property is set up through the property itself. The generated mock no longer exposes a `_<property>` backing member; its property is settable even for a `{ get }` requirement (a get-set property satisfies one), so `mock._currentUser = user` becomes `mock.currentUser = user`. A leading underscore marks an implementation detail in Swift, and the member was the one piece of the generated API a test had to write on every setup. The backing slot is now `private` on plain mocks and a field of the private storage struct on `Sendable`, actor, and type-member state, so the two kinds of mock expose the same members. On an `actor` mock the property is `nonisolated`, as the backing member was, so setup still needs no `await`. A non-optional property still traps when read before it is set, and `resetMock()` still puts it back in that state; the one thing a test can no longer do is observe that state as `nil`.
+
 - The swift-docc-plugin dependency is no longer part of the package's regular dependency graph: it only builds the documentation site, yet every package depending on Mockable resolved and fetched it. The manifest now adds it only when the `MOCKABLE_ENABLE_DOCC` environment variable is set, which the `Deploy DocC` workflow does.
 
 ### Added

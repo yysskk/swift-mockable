@@ -251,7 +251,7 @@ struct SendableIntegrationTests {
     func sendableConfigProviderGetOnlyProperty() {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = SendableConfigProviderMock()
-        mock._apiKey = "secret-key"
+        mock.apiKey = "secret-key"
 
         #expect(mock.apiKey == "secret-key")
     }
@@ -286,7 +286,7 @@ struct SendableIntegrationTests {
     func sendableConfigProviderIsSendable() {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = SendableConfigProviderMock()
-        mock._apiKey = "test"
+        mock.apiKey = "test"
         mock.timeout = 10
 
         // Verify the mock conforms to Sendable
@@ -299,7 +299,7 @@ struct SendableIntegrationTests {
     func sendableConfigProviderConcurrentAccess() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = SendableConfigProviderMock()
-        mock._apiKey = "initial"
+        mock.apiKey = "initial"
         mock.timeout = 0
 
         await withTaskGroup(of: Void.self) { group in
@@ -383,13 +383,12 @@ struct SendableIntegrationTests {
     func sendableConfigProviderResetMockResetsProperties() {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = SendableConfigProviderMock()
-        mock._apiKey = "secret"
+        mock.apiKey = "secret"
         mock.timeout = 30
         mock.optionalEndpoint = "https://example.com"
 
         mock.resetMock()
 
-        #expect(mock._apiKey == nil)
         // timeout's backing storage is reset inside _storage (not externally accessible)
         #expect(mock.optionalEndpoint == nil)
     }

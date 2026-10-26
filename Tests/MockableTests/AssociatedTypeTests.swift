@@ -135,7 +135,7 @@ struct AssociatedTypeIntegrationTests {
     func associatedTypeInProperty() {
         let mock = StateContainerMock()
 
-        mock._currentState = "active"
+        mock.currentState = "active"
         mock.previousState = "inactive"
 
         #expect(mock.currentState == "active")

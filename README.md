@@ -10,7 +10,7 @@
 `swift-mockable` provides a `@Mockable` macro that generates protocol mocks for tests.
 
 - Generated mocks are emitted inside `#if DEBUG` by default; the `condition:` argument selects a different compilation condition, or none (see [Choosing When Mocks Are Compiled](#choosing-when-mocks-are-compiled)).
-- Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`).
+- Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArgs`, `<name>Handler`), and every property is settable on the mock, even a `{ get }` requirement.
 - `resetMock()` is generated to clear all tracking state.
 
 ## Installation
@@ -56,7 +56,7 @@ mock.fetchUserHandler = { id in
     User(id: id, name: "Test User")
 }
 
-mock._currentUser = User(id: 1, name: "Current")
+mock.currentUser = User(id: 1, name: "Current")
 mock.isLoggedIn = true
 
 let user = try await mock.fetchUser(id: 42)
@@ -78,8 +78,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
   - `<method>CallArgs`
   - `<method>Handler`
 - Properties:
-  - Backing storage for setup (for example `_<property>`)
-  - Computed protocol-conforming property (`property`)
+  - The property itself, settable on the mock even for a `{ get }` requirement (`mock.currentUser = user`)
 - Subscripts:
   - `subscript<suffix>CallCount`
   - `subscript<suffix>CallArgs`
@@ -178,14 +177,14 @@ the macro expands at compile time and cannot read runtime values.
 ## Behavioral Notes
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
-- Properties with effectful getters (`get async`/`get throws`) generate `<name>CallCount` and `<name>Handler` instead of `_<name>` backing storage; the same unset-handler defaults apply.
+- A stored property is settable on the mock whatever the requirement allows (`mock.currentUser = user` sets up a `{ get }` requirement). Reading a non-optional property before setting it traps; an optional one reads `nil`. Properties with effectful getters (`get async`/`get throws`) generate `<name>CallCount` and `<name>Handler` instead; the same unset-handler defaults apply.
 - Void-return methods and subscript setters are no-op when handler is `nil`.
 - `@autoclosure` arguments are evaluated exactly once per call (even when no handler is set); if evaluating a throwing autoclosure throws, the error propagates before the call is recorded.
 - Non-escaping closure arguments are forwarded to the handler but excluded from `CallArgs` (a non-escaping value cannot be stored); the call is still counted.
 - `rethrows` methods generate a non-throwing handler that receives the throwing closure arguments (a stored handler cannot satisfy `rethrows` on its own). The handler decides whether to invoke those closures; the mock itself does not re-throw their errors.
 - Typed throws (`throws(MyError)`) keeps the `throws(MyError)` signature and generates a plain untyped-throwing handler; the body re-throws the handler's error as the declared type. Configure the handler normally (`mock.loadHandler = { id in throw MyError() }`). If the handler throws a different error type, the mock traps. An error thrown while evaluating a throwing `@autoclosure` argument is re-thrown as the declared type in the same way.
 - `throws(Never)` keeps its signature but is mocked as non-throwing: the handler cannot throw and the mock is called without `try`. `throws(any Error)` (and the bare `throws(Error)` spelling) is mocked exactly like untyped `throws`, with no re-throw.
-- `resetMock()` clears handlers, call counts, call arguments, and backing properties.
+- `resetMock()` clears handlers, call counts, call arguments, and stored properties (a non-optional property is unset again, and traps when read before it is set).
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members, and the child mock inherits the parent mock's initializers (including a parent `init` requirement's `required init`).
 
 ## Diagnostics and Limitations
@@ -198,7 +197,7 @@ the macro expands at compile time and cannot read runtime values.
 - A parent protocol must itself be `@Mockable`: the mock subclasses the parent's generated mock. Conformances that declare nothing to witness (`Sendable`, `Actor`, `AnyObject`, `AnyActor`, `Error`, also spelled `Swift.`-qualified) are not parents and are left to the mock's own conformance. Inheriting a standard-library protocol with requirements (`Hashable`, `Codable`, `Identifiable`, `Comparable`, `Sequence`, and the like) emits a diagnostic, because the mock has no way to witness them — drop the conformance, or satisfy it in an extension of the generated mock. A parent written with generic arguments (`Container<Int>`) emits a diagnostic as well.
 - Static/class subscripts are not supported.
 - The `Never` and `any Error` typed-throws error types are recognized by spelling, so a generic parameter or type alias named `Never` or `Error` is classified by its name.
-- Operator requirements (for example `static func == (lhs: Self, rhs: Self) -> Bool`) and method or property names that need backtick escaping (`` func `repeat`() ``, `` var `default`: Int { get } ``) are not supported and emit a diagnostic. The generated members are named after the requirement (`fetch` becomes `fetchCallCount`, `name` becomes `_name`), so such names cannot produce legal identifiers.
+- Operator requirements (for example `static func == (lhs: Self, rhs: Self) -> Bool`) and method or property names that need backtick escaping (`` func `repeat`() ``, `` var `default`: Int { get } ``) are not supported and emit a diagnostic. The generated members are named after the requirement (`fetch` becomes `fetchCallCount`, `fetchHandler`), so such names cannot produce legal identifiers.
 - For protocols with multiple parent protocols, the first parent is used as the mock superclass.
 
 ## Troubleshooting

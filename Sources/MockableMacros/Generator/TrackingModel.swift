@@ -51,8 +51,8 @@ struct TrackingRequirement {
         /// Initializers record calls but have no handler.
         case initializer
         /// A property backed by stored state. `isOptional` includes implicitly
-        /// unwrapped optionals; an optional get-set property on the direct path is
-        /// its own storage (no `_name` backing).
+        /// unwrapped optionals; an optional property on the direct path is its own
+        /// storage (no `_name` backing).
         case storedVariable(varType: TypeSyntax, isOptional: Bool, isGetOnly: Bool)
         /// A `get async`/`get throws` property: handler-based, no backing storage.
         case effectfulVariable(varType: TypeSyntax)
@@ -101,8 +101,8 @@ struct TrackingRequirement {
                 fields.append(setHandlerField)
             }
             return fields
-        case .storedVariable(let varType, let isOptional, let isGetOnly):
-            return [backingField(model: model, varType: varType, isOptional: isOptional, isGetOnly: isGetOnly)]
+        case .storedVariable(let varType, let isOptional, _):
+            return [backingField(model: model, varType: varType, isOptional: isOptional)]
         }
     }
 
@@ -148,17 +148,17 @@ struct TrackingRequirement {
 
     /// The stored slot behind a property requirement. It is always optional so an
     /// unset non-optional property traps on read rather than needing a placeholder,
-    /// and it is named `_name` except for an optional get-set property on the direct
-    /// path, where the property itself is the storage.
+    /// and it is named `_name` except for an optional property on the direct path,
+    /// where the property itself is the storage.
     private func backingField(
         model: StorageModel,
         varType: TypeSyntax,
-        isOptional: Bool,
-        isGetOnly: Bool
+        isOptional: Bool
     ) -> TrackingField {
-        // An optional get-set property on the direct path is its own storage: the
-        // mock declares `var theme: Theme? = nil` and resets the property itself.
-        let isSelfBacked = model == .direct && isOptional && !isGetOnly
+        // An optional property on the direct path is its own storage: the mock
+        // declares `var theme: Theme? = nil`, which satisfies a get-only requirement
+        // as well as a get-set one, and resets the property itself.
+        let isSelfBacked = model == .direct && isOptional
         let storageType: TypeSyntax
         if isOptional {
             storageType = varType.trimmed

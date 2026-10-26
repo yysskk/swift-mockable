@@ -37,21 +37,16 @@ struct GlobalActorMacroTests {
                     var saveHandler: (@Sendable (String) -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
-                nonisolated var _id: String? {
+                nonisolated var id: String {
                     get {
                         _storage.withLock {
-                            $0._id
+                            $0._id!
                         }
                     }
                     set {
                         _storage.withLock {
                             $0._id = newValue
                         }
-                    }
-                }
-                var id: String {
-                    _storage.withLock {
-                        $0._id!
                     }
                 }
                 var saveCallCount: Int {

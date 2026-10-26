@@ -219,9 +219,14 @@ struct BasicMacroTests {
 
             #if DEBUG
             class UserProviderMock: UserProvider {
-                var _currentUser: String? = nil
+                private var _currentUser: String? = nil
                 var currentUser: String {
-                    _currentUser!
+                    get {
+                        _currentUser!
+                    }
+                    set {
+                        _currentUser = newValue
+                    }
                 }
                 func resetMock() {
                     _currentUser = nil
@@ -249,7 +254,7 @@ struct BasicMacroTests {
 
             #if DEBUG
             class SettingsMock: Settings {
-                var _theme: String? = nil
+                private var _theme: String? = nil
                 var theme: String {
                     get {
                         _theme!
@@ -370,32 +375,15 @@ struct BasicMacroTests {
                     }
                     return _handler(prefix)
                 }
-                static var _cachedToken: String? {
+                static var cachedToken: String {
                     get {
                         _staticStorage.withLock {
-                            $0._cachedToken
+                            $0._cachedToken!
                         }
                     }
                     set {
                         _staticStorage.withLock {
                             $0._cachedToken = newValue
-                        }
-                    }
-                }
-                static var cachedToken: String {
-                    _staticStorage.withLock {
-                        $0._cachedToken!
-                    }
-                }
-                static var _cachedCount: Int? {
-                    get {
-                        _staticStorage.withLock {
-                            $0._cachedCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0._cachedCount = newValue
                         }
                     }
                 }

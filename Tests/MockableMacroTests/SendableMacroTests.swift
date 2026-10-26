@@ -447,32 +447,15 @@ struct SendableMacroTests {
                     var _timeout: Int? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
-                var _apiKey: String? {
+                var apiKey: String {
                     get {
                         _storage.withLock {
-                            $0._apiKey
+                            $0._apiKey!
                         }
                     }
                     set {
                         _storage.withLock {
                             $0._apiKey = newValue
-                        }
-                    }
-                }
-                var apiKey: String {
-                    _storage.withLock {
-                        $0._apiKey!
-                    }
-                }
-                var _timeout: Int? {
-                    get {
-                        _storage.withLock {
-                            $0._timeout
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0._timeout = newValue
                         }
                     }
                 }
