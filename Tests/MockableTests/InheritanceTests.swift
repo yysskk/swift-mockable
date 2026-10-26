@@ -9,7 +9,7 @@ struct InheritanceTests {
         let mock = ChildServiceMock()
 
         // Set up parent protocol members
-        mock._baseName = "test"
+        mock.baseName = "test"
         mock.baseMethodHandler = { "base result" }
 
         // Set up child protocol members
@@ -29,7 +29,7 @@ struct InheritanceTests {
     func childMockAsParentType() {
         let mock = ChildServiceMock()
         mock.baseMethodHandler = { "value" }
-        mock._baseName = "name"
+        mock.baseName = "name"
 
         let baseService: BaseService = mock
         #expect(baseService.baseMethod() == "value")
@@ -40,7 +40,7 @@ struct InheritanceTests {
     func childMockAsChildType() {
         let mock = ChildServiceMock()
         mock.baseMethodHandler = { "base" }
-        mock._baseName = "name"
+        mock.baseName = "name"
         mock.childMethodHandler = { 99 }
 
         let childService: ChildService = mock
@@ -51,7 +51,7 @@ struct InheritanceTests {
     @Test("resetMock resets both parent and child members")
     func resetMockResetsAll() {
         let mock = ChildServiceMock()
-        mock._baseName = "test"
+        mock.baseName = "test"
         mock.baseMethodHandler = { "result" }
         mock.childMethodHandler = { 1 }
 
@@ -66,7 +66,6 @@ struct InheritanceTests {
         #expect(mock.baseMethodCallCount == 0)
         #expect(mock.baseMethodCallArgs.isEmpty)
         #expect(mock.baseMethodHandler == nil)
-        #expect(mock._baseName == nil)
         #expect(mock.childMethodCallCount == 0)
         #expect(mock.childMethodCallArgs.isEmpty)
         #expect(mock.childMethodHandler == nil)

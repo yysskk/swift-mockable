@@ -162,7 +162,7 @@ mock.removeFirstHandler = { array in
 
 ## Effectful Read-Only Properties
 
-Read-only properties with `get async`, `get throws`, or `get async throws` are mocked with a handler and a call counter instead of `_name` backing storage:
+Read-only properties with `get async`, `get throws`, or `get async throws` are mocked with a handler and a call counter instead of a settable property:
 
 ```swift
 var token: String { get async throws }
@@ -183,7 +183,7 @@ If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked S
 
 ### `Actor`
 
-If a protocol inherits from `Actor`, the generated mock type is an actor. Helper members (call counters, argument collections, handlers, backing properties, `resetMock()`) are generated as `nonisolated` for test ergonomics.
+If a protocol inherits from `Actor`, the generated mock type is an actor. Helper members (call counters, argument collections, handlers, stored properties, `resetMock()`) are generated as `nonisolated` for test ergonomics.
 
 ## Static Members
 
@@ -254,6 +254,6 @@ Compilation errors are emitted when:
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- Operator requirements and method or property names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`, `name` becomes `_name`), so a name that is not a plain identifier cannot produce legal identifiers.
+- Operator requirements and method or property names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`, `fetchHandler`), so a name that is not a plain identifier cannot produce legal identifiers.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

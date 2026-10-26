@@ -150,7 +150,7 @@ struct ActorIntegrationTests {
     func actorMockGetOnlyProperty() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock._profiles = ["key1": "profile1", "key2": "profile2"]
+        mock.profiles = ["key1": "profile1", "key2": "profile2"]
 
         let profiles = await mock.profiles
         #expect(profiles.count == 2)
@@ -233,7 +233,7 @@ struct ActorIntegrationTests {
     func actorConfigProviderGetOnlyProperty() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = ActorConfigProviderMock()
-        mock._apiKey = "secret-key"
+        mock.apiKey = "secret-key"
 
         let apiKey = await mock.apiKey
         #expect(apiKey == "secret-key")
@@ -243,12 +243,12 @@ struct ActorIntegrationTests {
     func actorConfigProviderGetSetProperty() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = ActorConfigProviderMock()
-        mock._timeout = 30
+        mock.timeout = 30
 
         let timeout = await mock.timeout
         #expect(timeout == 30)
 
-        mock._timeout = 60
+        mock.timeout = 60
         let newTimeout = await mock.timeout
         #expect(newTimeout == 60)
     }
@@ -261,11 +261,11 @@ struct ActorIntegrationTests {
         let initialValue = await mock.optionalEndpoint
         #expect(initialValue == nil)
 
-        mock._optionalEndpoint = "https://api.example.com"
+        mock.optionalEndpoint = "https://api.example.com"
         let setValue = await mock.optionalEndpoint
         #expect(setValue == "https://api.example.com")
 
-        mock._optionalEndpoint = nil
+        mock.optionalEndpoint = nil
         let clearedValue = await mock.optionalEndpoint
         #expect(clearedValue == nil)
     }
@@ -342,14 +342,13 @@ struct ActorIntegrationTests {
     func actorMockResetMockResetsProperties() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = UserProfileStoreMock()
-        mock._profiles = ["key1": "profile1", "key2": "profile2"]
+        mock.profiles = ["key1": "profile1", "key2": "profile2"]
 
         let profiles = await mock.profiles
         #expect(profiles.count == 2)
 
         mock.resetMock()
 
-        #expect(mock._profiles == nil)
     }
 
     @Test("Actor mock resetMock allows reuse")
@@ -406,15 +405,13 @@ struct ActorIntegrationTests {
     func actorConfigProviderResetMockResetsProperties() async {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
         let mock = ActorConfigProviderMock()
-        mock._apiKey = "secret"
-        mock._timeout = 30
-        mock._optionalEndpoint = "https://example.com"
+        mock.apiKey = "secret"
+        mock.timeout = 30
+        mock.optionalEndpoint = "https://example.com"
 
         mock.resetMock()
 
-        #expect(mock._apiKey == nil)
-        #expect(mock._timeout == nil)
-        #expect(mock._optionalEndpoint == nil)
+        #expect(mock.optionalEndpoint == nil)
     }
 
     @Test("Actor mock resetMock is nonisolated")

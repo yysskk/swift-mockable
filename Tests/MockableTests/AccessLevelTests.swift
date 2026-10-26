@@ -53,7 +53,7 @@ struct AccessLevelIntegrationTests {
         mock.fetchUserHandler = { @Sendable id in
             "User \(id)"
         }
-        mock._currentUser = "John"
+        mock.currentUser = "John"
 
         let result = mock.fetchUser(id: 42)
 
@@ -84,7 +84,7 @@ struct AccessLevelIntegrationTests {
         mock.getConfigHandler = { @Sendable key in
             "value for \(key)"
         }
-        mock._environment = "production"
+        mock.environment = "production"
 
         let result = mock.getConfig(key: "api_url")
 
@@ -115,7 +115,7 @@ struct AccessLevelIntegrationTests {
         mock.loadDataHandler = { @Sendable in
             Data([0x01, 0x02, 0x03])
         }
-        mock._isReady = true
+        mock.isReady = true
 
         let result = mock.loadData()
 
@@ -131,7 +131,7 @@ struct AccessLevelIntegrationTests {
         }
 
         let mock = PackageDataServiceMock()
-        mock._isReady = true
+        mock.isReady = true
 
         let result = useDataService(mock)
 
@@ -145,7 +145,7 @@ struct AccessLevelIntegrationTests {
         mock.fetchUserHandler = { @Sendable _ in "user" }
         _ = mock.fetchUser(id: 1)
         _ = mock.fetchUser(id: 2)
-        mock._currentUser = "Jane"
+        mock.currentUser = "Jane"
 
         #expect(mock.fetchUserCallCount == 2)
         #expect(mock.fetchUserCallArgs == [1, 2])
@@ -155,7 +155,6 @@ struct AccessLevelIntegrationTests {
         #expect(mock.fetchUserCallCount == 0)
         #expect(mock.fetchUserCallArgs == [])
         #expect(mock.fetchUserHandler == nil)
-        #expect(mock._currentUser == nil)
     }
 
     @Test("Public protocol mock reset works")
@@ -164,7 +163,7 @@ struct AccessLevelIntegrationTests {
 
         mock.getConfigHandler = { @Sendable _ in "config" }
         _ = mock.getConfig(key: "a")
-        mock._environment = "test"
+        mock.environment = "test"
 
         #expect(mock.getConfigCallCount == 1)
 
@@ -173,7 +172,6 @@ struct AccessLevelIntegrationTests {
         #expect(mock.getConfigCallCount == 0)
         #expect(mock.getConfigCallArgs == [])
         #expect(mock.getConfigHandler == nil)
-        #expect(mock._environment == nil)
     }
 
     @Test("Package protocol mock reset works")
@@ -182,7 +180,7 @@ struct AccessLevelIntegrationTests {
 
         mock.loadDataHandler = { @Sendable in nil }
         _ = mock.loadData()
-        mock._isReady = true
+        mock.isReady = true
 
         #expect(mock.loadDataCallCount == 1)
 
@@ -191,7 +189,6 @@ struct AccessLevelIntegrationTests {
         #expect(mock.loadDataCallCount == 0)
         #expect(mock.loadDataCallArgs.isEmpty)
         #expect(mock.loadDataHandler == nil)
-        #expect(mock._isReady == nil)
     }
 
     // MARK: - Edge Cases: fileprivate and private protocols
@@ -201,7 +198,7 @@ struct AccessLevelIntegrationTests {
         let mock = FileprivateStorageServiceMock()
 
         mock.saveHandler = { @Sendable _ in }
-        mock._lastSaved = "test value"
+        mock.lastSaved = "test value"
 
         mock.save(value: "hello")
 
@@ -230,7 +227,7 @@ struct AccessLevelIntegrationTests {
 
         mock.saveHandler = { @Sendable _ in }
         mock.save(value: "test")
-        mock._lastSaved = "saved"
+        mock.lastSaved = "saved"
 
         #expect(mock.saveCallCount == 1)
 
@@ -239,7 +236,7 @@ struct AccessLevelIntegrationTests {
         #expect(mock.saveCallCount == 0)
         #expect(mock.saveCallArgs == [])
         #expect(mock.saveHandler == nil)
-        #expect(mock._lastSaved == nil)
+        #expect(mock.lastSaved == nil)
     }
 
     @Test("Private protocol mock can be instantiated and used")
@@ -249,7 +246,7 @@ struct AccessLevelIntegrationTests {
         mock.computeHandler = { @Sendable input in
             input * 2
         }
-        mock._cachedResult = 100
+        mock.cachedResult = 100
 
         let result = mock.compute(input: 5)
 
@@ -279,7 +276,7 @@ struct AccessLevelIntegrationTests {
 
         mock.computeHandler = { @Sendable input in input }
         _ = mock.compute(input: 1)
-        mock._cachedResult = 50
+        mock.cachedResult = 50
 
         #expect(mock.computeCallCount == 1)
 
@@ -288,6 +285,6 @@ struct AccessLevelIntegrationTests {
         #expect(mock.computeCallCount == 0)
         #expect(mock.computeCallArgs == [])
         #expect(mock.computeHandler == nil)
-        #expect(mock._cachedResult == nil)
+        #expect(mock.cachedResult == nil)
     }
 }

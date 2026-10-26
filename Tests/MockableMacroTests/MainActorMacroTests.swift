@@ -40,9 +40,14 @@ struct MainActorMacroTests {
                         _handler()
                     }
                 }
-                var _title: String? = nil
+                private var _title: String? = nil
                 var title: String {
-                    _title!
+                    get {
+                        _title!
+                    }
+                    set {
+                        _title = newValue
+                    }
                 }
                 func resetMock() {
                     loadDataCallCount = 0
@@ -125,21 +130,16 @@ struct MainActorMacroTests {
                     var trackHandler: (@Sendable (String) -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
-                nonisolated var _id: String? {
+                nonisolated var id: String {
                     get {
                         _storage.withLock {
-                            $0._id
+                            $0._id!
                         }
                     }
                     set {
                         _storage.withLock {
                             $0._id = newValue
                         }
-                    }
-                }
-                var id: String {
-                    _storage.withLock {
-                        $0._id!
                     }
                 }
                 nonisolated var trackCallCount: Int {

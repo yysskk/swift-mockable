@@ -45,21 +45,16 @@ struct ActorMacroTests {
                     var resetHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
-                nonisolated var _profiles: [String: String]? {
+                nonisolated var profiles: [String: String] {
                     get {
                         _storage.withLock {
-                            $0._profiles
+                            $0._profiles!
                         }
                     }
                     set {
                         _storage.withLock {
                             $0._profiles = newValue
                         }
-                    }
-                }
-                var profiles: [String: String] {
-                    _storage.withLock {
-                        $0._profiles!
                     }
                 }
                 nonisolated var updateProfileCallCount: Int {
@@ -245,10 +240,10 @@ struct ActorMacroTests {
                     var _timeout: Int? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
-                nonisolated var _apiKey: String? {
+                nonisolated var apiKey: String {
                     get {
                         _storage.withLock {
-                            $0._apiKey
+                            $0._apiKey!
                         }
                     }
                     set {
@@ -257,24 +252,7 @@ struct ActorMacroTests {
                         }
                     }
                 }
-                var apiKey: String {
-                    _storage.withLock {
-                        $0._apiKey!
-                    }
-                }
-                nonisolated var _timeout: Int? {
-                    get {
-                        _storage.withLock {
-                            $0._timeout
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0._timeout = newValue
-                        }
-                    }
-                }
-                var timeout: Int {
+                nonisolated var timeout: Int {
                     get {
                         _storage.withLock {
                             $0._timeout!

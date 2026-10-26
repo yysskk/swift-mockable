@@ -44,13 +44,12 @@ struct GlobalActorTests {
     @Test("A nonisolated requirement of a custom-actor protocol is usable from anywhere")
     func nonisolatedMembersAreReachable() {
         let mock = DataStoreMock()
-        mock._id = "store"
+        mock.id = "store"
 
         #expect(mock.id == "store")
 
         mock.resetMock()
 
-        #expect(mock._id == nil)
     }
 
     @Test("A nonisolated static requirement of a custom-actor protocol is usable from anywhere")

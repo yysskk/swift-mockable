@@ -74,7 +74,7 @@ struct MainActorIntegrationTests {
     @MainActor
     func getOnlyProperty() {
         let mock = MainActorPresenterMock()
-        mock._title = "Hello"
+        mock.title = "Hello"
 
         #expect(mock.title == "Hello")
     }
@@ -126,7 +126,7 @@ struct MainActorIntegrationTests {
     func resetMock() {
         let mock = MainActorPresenterMock()
         mock.loadDataHandler = { }
-        mock._title = "Title"
+        mock.title = "Title"
         mock.subtitle = "Sub"
         mock.optionalNote = "Note"
 
@@ -141,8 +141,6 @@ struct MainActorIntegrationTests {
         #expect(mock.fetchItemsCallCount == 0)
         #expect(mock.fetchItemsCallArgs.isEmpty)
         #expect(mock.fetchItemsHandler == nil)
-        #expect(mock._title == nil)
-        #expect(mock._subtitle == nil)
         #expect(mock.optionalNote == nil)
     }
 }

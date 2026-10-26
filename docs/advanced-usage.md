@@ -83,6 +83,31 @@ Generates:
 - `initStringCallCount` / `initStringCallArgs`
 - `initStringIntCallCount` / `initStringIntCallArgs`
 
+### Properties
+
+A stored property requirement is mocked as a property the test can set, whatever
+the requirement allows: a `{ get }` requirement is satisfied by a get-set
+property, so there is no separate backing member to reach for.
+
+```swift
+@Mockable
+protocol Session {
+    var user: User { get }
+    var token: String? { get }
+    var isActive: Bool { get set }
+}
+
+let mock = SessionMock()
+mock.user = User(id: 1)   // sets up the get-only requirement
+mock.isActive = true
+#expect(mock.token == nil) // an optional property reads nil until it is set
+```
+
+A non-optional property traps when it is read before the test sets it, rather
+than returning a placeholder; `resetMock()` puts it back in that state. On an
+`actor` mock, and wherever else the tracking state lives behind the lock, the
+property is `nonisolated`, so a test sets it up without hopping to the actor.
+
 ## Generic and Associated Types
 
 ### Generic Methods
@@ -359,7 +384,7 @@ mock.removeFirstHandler = { array in
 ## Effectful Read-Only Properties
 
 Read-only properties with `get async`, `get throws`, or `get async throws` are
-mocked with a handler and a call counter instead of `_name` backing storage —
+mocked with a handler and a call counter instead of a settable property —
 a stored value cannot model a thrown error, and the handler mirrors the
 function model:
 
@@ -466,7 +491,7 @@ For test ergonomics, helper members are generated as `nonisolated` where possibl
 - call counters
 - call argument collections
 - handlers
-- backing properties (for setup)
+- stored properties (settable for setup)
 - `resetMock()`
 
 ## Static Members
@@ -594,6 +619,6 @@ Compilation errors are emitted when:
 ## Current Constraints
 
 - Static/class subscripts are not supported.
-- Operator requirements and method or property names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`, `name` becomes `_name`), so a name that is not a plain identifier cannot produce legal identifiers.
+- Operator requirements and method or property names that need backtick escaping are not supported. Every generated member is named after the requirement (`fetch` becomes `fetchCallCount`, `fetchHandler`), so a name that is not a plain identifier cannot produce legal identifiers.
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks. Declaring a new `init` requirement directly on an inheriting protocol is not yet supported.
 - Return-value methods and get-only subscript getters trigger `fatalError` when the handler is unset, unless the return type has a natural empty value: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary.

@@ -48,14 +48,12 @@ struct ResetMockIntegrationTests {
     @Test("resetMock resets properties")
     func resetMockResetsProperties() {
         let mock = ServiceWithPropertiesMock()
-        mock._readOnlyValue = 42
-        mock._readWriteValue = "hello"
+        mock.readOnlyValue = 42
+        mock.readWriteValue = "hello"
         mock.optionalValue = 3.14
 
         mock.resetMock()
 
-        #expect(mock._readOnlyValue == nil)
-        #expect(mock._readWriteValue == nil)
         #expect(mock.optionalValue == nil)
     }
 

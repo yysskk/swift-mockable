@@ -31,7 +31,7 @@ struct NonisolatedMemberTests {
         let mock = NonisolatedPresenterMock()
 
         // Set up and read the tracking state from a nonisolated context.
-        mock._id = "mock-id"
+        mock.id = "mock-id"
         mock.trackHandler = { _ in }
 
         #expect(mock.id == "mock-id")

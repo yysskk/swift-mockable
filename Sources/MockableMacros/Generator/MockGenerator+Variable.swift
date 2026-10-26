@@ -5,9 +5,11 @@ import SwiftSyntaxBuilder
 
 extension MockGenerator {
     /// Generates the members that mock a property requirement. A plain stored property is
-    /// backed by a settable `_name` (or the property itself, for optional get-set), while an
-    /// effectful read-only requirement (`get async`/`throws`) is handler-based like a method
-    /// (see `generateEffectfulGetterMock`). Handles one `VariableDeclSyntax`, which may
+    /// settable on the mock whatever the requirement allows, so a test sets it up as
+    /// `mock.name = value`: it is either its own stored property (an optional one on the
+    /// direct path) or a computed property over a private `_name` slot. An effectful
+    /// read-only requirement (`get async`/`throws`) is handler-based like a method (see
+    /// `generateEffectfulGetterMock`). Handles one `VariableDeclSyntax`, which may
     /// declare several bindings; `scope` and `leavesMockIsolation` are the
     /// declaration's, read from its `Requirement`.
     func generateVariableMock(
@@ -39,23 +41,34 @@ extension MockGenerator {
                     ))
                 }
 
-            case .storedVariable(let varType, let isOptional, let isGetOnly):
-                // The backing slot: a settable `_name`, or — for an optional get-set
-                // property on the direct path — the property itself, which then
+            case .storedVariable(let varType, let isOptional, _):
+                let field = requirement.trackingFields(model: access.model)[0]
+
+                // An optional property on the direct path is its own storage, and
                 // satisfies the requirement on its own.
-                members.append(contentsOf: trackingMemberItems(for: requirement))
-                let isSelfBacked = requirement.trackingFields(model: access.model)
-                    .contains { $0.name == requirement.identifier }
-                if isSelfBacked {
+                if field.name == requirement.identifier {
+                    members.append(contentsOf: trackingMemberItems(for: requirement))
                     continue
+                }
+
+                // Otherwise the slot is private to the mock — on the direct path a
+                // stored `_name`, on the lock-backed path a field of the storage
+                // struct — and the settable witness is the only way to reach it.
+                if case .direct = access {
+                    members.append(MemberBlockItemSyntax(decl: Self.makeStoredProperty(
+                        modifiers: DeclModifierListSyntax([DeclModifierSyntax(name: .keyword(.private))] + scope.modifiers),
+                        name: field.name,
+                        type: field.type,
+                        initializer: field.initialValue
+                    )))
                 }
 
                 members.append(MemberBlockItemSyntax(decl: generateVariableWitness(
                     varName: requirement.identifier,
                     varType: varType,
                     isOptional: isOptional,
-                    isGetOnly: isGetOnly,
                     scope: scope,
+                    leavesMockIsolation: requirement.leavesMockIsolation,
                     access: access
                 )))
 
@@ -166,30 +179,35 @@ extension MockGenerator {
         return members
     }
 
-    /// The property witness of a stored property: reads its `_name` backing slot the
-    /// way `access` prescribes, and writes it for a get-set requirement. A non-optional
+    /// The property witness of a stored property: reads and writes its private
+    /// `_name` slot the way `access` prescribes. It is settable even for a get-only
+    /// requirement, which a get-set property satisfies, so a test sets it up as
+    /// `mock.name = value` and the slot needs no public spelling. A non-optional
     /// requirement force-unwraps the optional slot, so reading before the test sets a
     /// value traps rather than silently returning a placeholder.
+    ///
+    /// On lock-backed access the witness is `nonisolated` wherever the slot it reads
+    /// has to be reachable from outside the mock's isolation (see
+    /// `storageBackedMemberModifiers`): a test then sets up an actor mock's property
+    /// without hopping to the actor, as it already sets its handlers.
     private func generateVariableWitness(
         varName: String,
         varType: TypeSyntax,
         isOptional: Bool,
-        isGetOnly: Bool,
         scope: MemberScope,
+        leavesMockIsolation: Bool,
         access: TrackingAccess
     ) -> VariableDeclSyntax {
         let backingName = MockNaming.variableBacking(varName)
-        let modifiers = modifiers(for: .member, additional: scope.modifiers)
-        let getterBody = access.read(isOptional ? backingName : "\(backingName)!")
-
-        if isGetOnly {
-            return Self.makeGetOnlyProperty(
-                modifiers: modifiers,
-                name: varName,
-                type: varType.trimmed,
-                getterBody: getterBody
-            )
+        var additionalModifiers = scope.modifiers
+        if case .lockBacked = access {
+            additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
+                leavesMockIsolation: leavesMockIsolation,
+                scope: scope
+            ))
         }
+        let modifiers = modifiers(for: .member, additional: additionalModifiers)
+        let getterBody = access.read(isOptional ? backingName : "\(backingName)!")
 
         return Self.makeGetSetProperty(
             modifiers: modifiers,

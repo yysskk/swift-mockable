@@ -53,7 +53,7 @@ mock.fetchUserHandler = { id in
 }
 
 // Set properties
-mock._currentUser = User(id: 1, name: "Current")
+mock.currentUser = User(id: 1, name: "Current")
 mock.isLoggedIn = true
 
 // Call methods
@@ -78,8 +78,7 @@ For each protocol requirement, `@Mockable` generates:
   - `<method>CallArgs` -- array of captured arguments
   - `<method>Handler` -- configurable closure
 - **Properties**:
-  - `_<property>` -- backing storage for get-only properties
-  - `<property>` -- computed property for get/set properties
+  - `<property>` -- the property itself, settable on the mock even for a `{ get }` requirement
 - **Subscripts**:
   - `subscript<suffix>CallCount`
   - `subscript<suffix>CallArgs`
@@ -92,5 +91,5 @@ For each protocol requirement, `@Mockable` generates:
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-ops when handler is `nil`.
-- `resetMock()` clears handlers, call counts, call arguments, and backing properties.
+- `resetMock()` clears handlers, call counts, call arguments, and stored properties.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.

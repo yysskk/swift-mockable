@@ -54,7 +54,7 @@ struct InheritedTypeTests {
     @Test("An Error conformance produces a mock usable as an error")
     func errorConformance() {
         let mock = FailureReasonMock()
-        mock._code = 42
+        mock.code = 42
 
         #expect(mock.code == 42)
 

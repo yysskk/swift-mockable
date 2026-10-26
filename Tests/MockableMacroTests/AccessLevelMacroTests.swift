@@ -147,9 +147,14 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             class InternalConfigMock: InternalConfig {
-                var _apiKey: String? = nil
+                private var _apiKey: String? = nil
                 var apiKey: String {
-                    _apiKey!
+                    get {
+                        _apiKey!
+                    }
+                    set {
+                        _apiKey = newValue
+                    }
                 }
                 func resetMock() {
                     _apiKey = nil
@@ -179,9 +184,14 @@ struct AccessLevelMacroTests {
             open class PublicConfigMock: PublicConfig {
                 public init() {
                 }
-                public var _apiKey: String? = nil
+                private var _apiKey: String? = nil
                 public var apiKey: String {
-                    _apiKey!
+                    get {
+                        _apiKey!
+                    }
+                    set {
+                        _apiKey = newValue
+                    }
                 }
                 open func resetMock() {
                     _apiKey = nil

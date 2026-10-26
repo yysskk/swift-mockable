@@ -129,12 +129,17 @@ struct ConditionalCompilationMacroTests {
 
             #if DEBUG
             class DebugServiceMock: DebugService {
-                var _isEnabled: Bool? = nil
+                private var _isEnabled: Bool? = nil
                 var isEnabled: Bool {
-                    _isEnabled!
+                    get {
+                        _isEnabled!
+                    }
+                    set {
+                        _isEnabled = newValue
+                    }
                 }
                 #if DEBUG
-                var _debugInfo: String? = nil
+                private var _debugInfo: String? = nil
                 var debugInfo: String {
                     get {
                         _debugInfo!

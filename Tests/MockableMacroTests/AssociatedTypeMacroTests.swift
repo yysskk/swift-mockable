@@ -534,9 +534,14 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class StateHolderMock: StateHolder {
                 typealias State = String
-                var _currentState: State? = nil
+                private var _currentState: State? = nil
                 var currentState: State {
-                    _currentState!
+                    get {
+                        _currentState!
+                    }
+                    set {
+                        _currentState = newValue
+                    }
                 }
                 var previousState: State? = nil
                 func resetMock() {

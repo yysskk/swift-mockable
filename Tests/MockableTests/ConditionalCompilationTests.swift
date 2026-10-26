@@ -38,7 +38,7 @@ struct ConditionalCompilationTests {
         let mock = ConditionalServiceMock()
 
         mock.publicMethodHandler = { "public result" }
-        mock._publicValue = 42
+        mock.publicValue = 42
 
         let result = mock.publicMethod()
 
@@ -84,7 +84,7 @@ struct ConditionalCompilationTests {
         let mock = ConditionalServiceMock()
 
         mock.publicMethodHandler = { "public" }
-        mock._publicValue = 100
+        mock.publicValue = 100
         mock.debugOnlyMethodHandler = { }
         mock.debugGetInfoHandler = { "info" }
         mock.debugValue = "debug"
@@ -102,8 +102,6 @@ struct ConditionalCompilationTests {
         #expect(mock.publicMethodCallCount == 0)
         #expect(mock.debugOnlyMethodCallCount == 0)
         #expect(mock.debugGetInfoCallCount == 0)
-        #expect(mock._publicValue == nil)
-        #expect(mock._debugValue == nil)
     }
     #endif
 
