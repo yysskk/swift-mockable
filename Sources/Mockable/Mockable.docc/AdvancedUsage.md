@@ -226,14 +226,14 @@ By default the generated mock is wrapped in `#if DEBUG`. The `condition:` argume
 @Mockable                                    // #if DEBUG (default)
 protocol UserService { ... }
 
-@Mockable(condition: .custom("MOCKING"))     // #if MOCKING
+@Mockable(condition: "MOCKING")              // #if MOCKING
 protocol PaymentService { ... }
 
 @Mockable(condition: .always)                // no #if guard
 protocol PreviewDataService { ... }
 ```
 
-- ``MockCompilationCondition/custom(_:)`` accepts any compilation condition expression, spelled as a string literal: a flag (`"MOCKING"`), or a compound condition built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks — for example `"DEBUG || UITESTS"` or `"os(iOS) && !RELEASE"`. Define each flag in every target that references the mock, via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM).
+- A string literal `"CONDITION"` accepts any compilation condition expression: a flag (`"MOCKING"`), or a compound condition built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and platform checks — for example `"DEBUG || UITESTS"` or `"os(iOS) && !RELEASE"`. It is ``MockCompilationCondition/custom(_:)`` with that condition, which spells the same thing explicitly. Define each flag in every target that references the mock, via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` (Xcode) or `.define("FLAG")` in `swiftSettings` (SwiftPM).
 - ``MockCompilationCondition/always`` emits the mock in every build configuration, including release. Use it deliberately — typically in a module that never ships.
 - The condition must be written literally at the attachment site; runtime values and interpolated strings emit a diagnostic.
 - The condition only controls the `#if` wrapper around the mock; members of the protocol that sit inside their own `#if` blocks keep those inner guards.
@@ -249,7 +249,7 @@ Compilation errors are emitted when:
 - A requirement's return type mentions a generic parameter inside a function type (for example `func makeSetter<T>() -> (T) -> Void`).
 - A requirement takes a closure whose own parameters mention a generic parameter (for example `func observe<T>(_ handler: (T) -> Void)`).
 - An argument other than `condition:` is passed to `@Mockable`.
-- The `condition:` value is not written literally as `.debug`, `.always`, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression.
+- The `condition:` value is not written literally as `.debug`, `.always`, a string literal, or `.custom("CONDITION")`, or the custom condition is not a valid compilation condition expression.
 
 ## Current Constraints
 

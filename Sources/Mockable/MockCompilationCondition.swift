@@ -9,16 +9,17 @@
 /// @Mockable                                    // #if DEBUG (default)
 /// protocol UserService { ... }
 ///
-/// @Mockable(condition: .custom("MOCKING"))     // #if MOCKING
+/// @Mockable(condition: "MOCKING")              // #if MOCKING
 /// protocol PaymentService { ... }
 ///
 /// @Mockable(condition: .always)                // no #if guard
 /// protocol PreviewDataService { ... }
 /// ```
 ///
-/// The condition must be written literally at the attachment site (`.debug`,
-/// `.always`, or `.custom("FLAG")` with a string literal) — the macro expands at
-/// compile time and cannot read runtime values.
+/// A string literal is a custom condition: `"MOCKING"` is ``custom(_:)`` with that
+/// condition. The condition must be written literally at the attachment site
+/// (`.debug`, `.always`, or a string literal, also spelled `.custom("FLAG")`) — the
+/// macro expands at compile time and cannot read runtime values.
 public enum MockCompilationCondition: Equatable, Sendable {
     /// Wraps the generated mock in `#if DEBUG`. This is the default.
     case debug
@@ -35,11 +36,13 @@ public enum MockCompilationCondition: Equatable, Sendable {
     /// The associated value must be a compilation condition expression, spelled
     /// as a string literal — a flag such as `"MOCKING"`, or a compound condition
     /// built from identifiers, `true`/`false`, `!`, `&&`, `||`, parentheses, and
-    /// platform checks:
+    /// platform checks. A string literal passed to `condition:` directly is the
+    /// same condition, so the `.custom` spelling is only needed where the type is
+    /// not inferred:
     ///
     /// ```swift
-    /// @Mockable(condition: .custom("MOCKING"))
-    /// @Mockable(condition: .custom("DEBUG || UITESTS"))
+    /// @Mockable(condition: "MOCKING")
+    /// @Mockable(condition: "DEBUG || UITESTS")
     /// @Mockable(condition: .custom("os(iOS) && !RELEASE"))
     /// ```
     ///
@@ -47,4 +50,11 @@ public enum MockCompilationCondition: Equatable, Sendable {
     /// mock — via `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or
     /// `.define("MOCKING")` in a package manifest's `swiftSettings`.
     case custom(String)
+}
+
+extension MockCompilationCondition: ExpressibleByStringLiteral {
+    /// A string literal is a custom condition: `"MOCKING"` is `.custom("MOCKING")`.
+    public init(stringLiteral value: String) {
+        self = .custom(value)
+    }
 }
