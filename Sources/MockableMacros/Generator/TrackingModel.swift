@@ -195,16 +195,26 @@ extension MockGenerator {
     /// Collects the protocol's overload groups once, so each consumer can disambiguate
     /// identifiers without re-walking the member tree.
     func makeOverloadContext() -> OverloadContext {
-        let decls = collectDeclsIncludingConditional()
-        let methodGroups = groupMethodsByNameIncludingConditional(in: decls)
-        let initializers = decls.compactMap { $0.as(InitializerDeclSyntax.self) }
-        let subscripts = decls.compactMap { $0.as(SubscriptDeclSyntax.self) }
+        let requirements = collectRequirements()
+        let methodGroups = groupMethodsByName(in: requirements)
+        var initializers: [InitializerDeclSyntax] = []
+        var subscripts: [SubscriptDeclSyntax] = []
+        for requirement in requirements {
+            switch requirement {
+            case .initializer(let initDecl):
+                initializers.append(initDecl)
+            case .subscript(let subscriptDecl):
+                subscripts.append(subscriptDecl)
+            case .function, .variable, .associatedType, .typeAlias, .unsupported:
+                continue
+            }
+        }
         return OverloadContext(
             methodGroups: methodGroups,
             initializers: initializers,
             subscripts: subscripts,
             trackingIdentifiers: assignTrackingIdentifiers(
-                in: decls,
+                in: requirements,
                 methodGroups: methodGroups,
                 initializers: initializers,
                 subscripts: subscripts
@@ -212,38 +222,45 @@ extension MockGenerator {
         )
     }
 
-    /// The tracking requirements declared by one member declaration: one per
-    /// function, initializer, or subscript, and one per property binding.
+    /// The tracking requirements declared by one protocol requirement: one per
+    /// function, initializer, or subscript, one per property binding, and none for a
+    /// type declaration.
     ///
-    /// Must be handed the original declaration nodes from `members` — overload
-    /// ordinals compare node identity, so a re-parsed copy would break the
-    /// `...2` suffixes.
-    func trackingRequirements(for decl: DeclSyntax, overloads: OverloadContext) -> [TrackingRequirement] {
-        if let initDecl = decl.as(InitializerDeclSyntax.self) {
+    /// Must be handed a requirement built from the original declaration nodes in
+    /// `members` — overload ordinals compare node identity, so a re-parsed copy would
+    /// break the `...2` suffixes.
+    func trackingRequirements(for requirement: Requirement, overloads: OverloadContext) -> [TrackingRequirement] {
+        switch requirement {
+        case .initializer(let initDecl):
             return [initializerTrackingRequirement(for: initDecl, overloads: overloads)]
-        }
 
-        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-            return [functionTrackingRequirement(for: funcDecl, overloads: overloads)]
-        }
+        case .function(let funcDecl):
+            return [functionTrackingRequirement(
+                for: funcDecl,
+                isTypeMember: requirement.isTypeMember,
+                leavesMockIsolation: requirement.leavesMockIsolation,
+                overloads: overloads
+            )]
 
-        if let varDecl = decl.as(VariableDeclSyntax.self) {
-            let isTypeMember = Self.isTypeMember(varDecl.modifiers)
-            let leavesMockIsolation = Self.leavesMockIsolation(DeclSyntax(varDecl))
+        case .variable(let varDecl):
             return varDecl.bindings.compactMap { binding in
                 variableTrackingRequirement(
                     for: binding,
-                    isTypeMember: isTypeMember,
-                    leavesMockIsolation: leavesMockIsolation
+                    isTypeMember: requirement.isTypeMember,
+                    leavesMockIsolation: requirement.leavesMockIsolation
                 )
             }
-        }
 
-        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return [subscriptTrackingRequirement(for: subscriptDecl, overloads: overloads)]
-        }
+        case .subscript(let subscriptDecl):
+            return [subscriptTrackingRequirement(
+                for: subscriptDecl,
+                leavesMockIsolation: requirement.leavesMockIsolation,
+                overloads: overloads
+            )]
 
-        return []
+        case .associatedType, .typeAlias, .unsupported:
+            return []
+        }
     }
 
     /// The tracking requirement of an `init` requirement. Initializers record calls but
@@ -270,9 +287,12 @@ extension MockGenerator {
     }
 
     /// The tracking requirement of a method, with its identifier disambiguated against
-    /// the protocol's other methods of the same name.
+    /// the protocol's other methods of the same name. `isTypeMember` and
+    /// `leavesMockIsolation` are the declaration's, read from its `Requirement`.
     func functionTrackingRequirement(
         for funcDecl: FunctionDeclSyntax,
+        isTypeMember: Bool,
+        leavesMockIsolation: Bool,
         overloads: OverloadContext
     ) -> TrackingRequirement {
         let funcName = funcDecl.name.text
@@ -288,8 +308,8 @@ extension MockGenerator {
                 for: funcDecl.id,
                 suggestion: Self.suggestedIdentifier(for: funcDecl, in: methodGroup)
             ),
-            isTypeMember: Self.isTypeMember(funcDecl.modifiers),
-            leavesMockIsolation: Self.leavesMockIsolation(DeclSyntax(funcDecl)),
+            isTypeMember: isTypeMember,
+            leavesMockIsolation: leavesMockIsolation,
             kind: .function,
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerClosureType: buildFunctionClosureType(
@@ -351,9 +371,11 @@ extension MockGenerator {
 
     /// The tracking requirement of a subscript. Generated members cannot be named after
     /// a subscript's (absent) base name, so the identifier always carries a type suffix,
-    /// disambiguated against the protocol's other subscripts.
+    /// disambiguated against the protocol's other subscripts. `leavesMockIsolation` is
+    /// the declaration's, read from its `Requirement`.
     func subscriptTrackingRequirement(
         for subscriptDecl: SubscriptDeclSyntax,
+        leavesMockIsolation: Bool,
         overloads: OverloadContext
     ) -> TrackingRequirement {
         let parameters = subscriptDecl.parameterClause.parameters
@@ -366,7 +388,7 @@ extension MockGenerator {
                 suggestion: Self.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
             ),
             isTypeMember: false,
-            leavesMockIsolation: Self.leavesMockIsolation(DeclSyntax(subscriptDecl)),
+            leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerClosureType: buildSubscriptGetterClosureType(

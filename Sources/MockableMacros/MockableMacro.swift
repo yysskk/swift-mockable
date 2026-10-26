@@ -117,146 +117,143 @@ public struct MockableMacro: PeerMacro {
     }
 
     /// Reports every member the macro cannot mock, returning whether any was found.
-    /// All members are visited so one expansion surfaces every problem, rather than
-    /// making the author fix them one build at a time.
+    /// All members are visited, in every conditional-compilation clause, so one
+    /// expansion surfaces every problem rather than making the author fix them one
+    /// build at a time.
     private static func diagnoseUnsupportedMembers(
         in members: MemberBlockItemListSyntax,
         context: some MacroExpansionContext
     ) -> Bool {
         var hasError = false
 
-        for member in members {
-            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                for clauseMembers in declClauses(of: ifConfigDecl) where diagnoseUnsupportedMembers(in: clauseMembers, context: context) {
-                    hasError = true
-                }
-                continue
+        for requirement in Requirement.all(in: members) {
+            if diagnoseUnsupportedRequirement(requirement, context: context) {
+                hasError = true
             }
-
-            if let functionDecl = member.decl.as(FunctionDeclSyntax.self) {
-                if diagnoseUnsupportedName(functionDecl.name, of: Syntax(functionDecl), context: context) {
-                    hasError = true
-                    continue
-                }
-
-                // Generated mock members evaluate @autoclosure arguments to record them,
-                // so an autoclosure's own effects must be covered by the requirement.
-                let effects = functionDecl.signature.effectSpecifiers
-                if diagnoseAutoclosureParameters(
-                    functionDecl.signature.parameterClause.parameters,
-                    coversThrows: effects?.hasThrowsEffect ?? false,
-                    coversAsync: effects?.asyncSpecifier != nil,
-                    inSubscript: false,
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-                let genericParamNames = MockGenerator.extractGenericParameterNames(from: functionDecl)
-                if diagnoseGenericFunctionReturn(
-                    returnType: functionDecl.signature.returnClause?.type,
-                    genericParamNames: genericParamNames,
-                    node: Syntax(functionDecl),
-                    name: functionDecl.name.text,
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-                if diagnoseGenericClosureParameters(
-                    functionDecl.signature.parameterClause.parameters,
-                    genericParamNames: genericParamNames,
-                    name: functionDecl.name.text,
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-            }
-
-            if let subscriptDecl = member.decl.as(SubscriptDeclSyntax.self) {
-                if diagnoseAutoclosureParameters(
-                    subscriptDecl.parameterClause.parameters,
-                    coversThrows: false,
-                    coversAsync: false,
-                    inSubscript: true,
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-                let genericParamNames = MockGenerator.extractGenericParameterNames(from: subscriptDecl)
-                if diagnoseGenericFunctionReturn(
-                    returnType: subscriptDecl.returnClause.type,
-                    genericParamNames: genericParamNames,
-                    node: Syntax(subscriptDecl),
-                    name: "subscript",
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-                if diagnoseGenericClosureParameters(
-                    subscriptDecl.parameterClause.parameters,
-                    genericParamNames: genericParamNames,
-                    name: "subscript",
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-            }
-
-            // Initializer witnesses evaluate @autoclosure arguments to record them, so an
-            // autoclosure's own effects must be covered by the requirement, as for methods.
-            if let initDecl = member.decl.as(InitializerDeclSyntax.self) {
-                let effects = initDecl.signature.effectSpecifiers
-                if diagnoseAutoclosureParameters(
-                    initDecl.signature.parameterClause.parameters,
-                    coversThrows: effects?.hasThrowsEffect ?? false,
-                    coversAsync: effects?.asyncSpecifier != nil,
-                    inSubscript: false,
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-                if diagnoseGenericClosureParameters(
-                    initDecl.signature.parameterClause.parameters,
-                    genericParamNames: MockGenerator.extractGenericParameterNames(from: initDecl),
-                    name: "init",
-                    context: context
-                ) {
-                    hasError = true
-                    continue
-                }
-            }
-
-            if let associatedType = member.decl.as(AssociatedTypeDeclSyntax.self) {
-                if diagnoseConstrainedAssociatedType(associatedType, context: context) {
-                    hasError = true
-                }
-                continue
-            }
-
-            if let variableDecl = member.decl.as(VariableDeclSyntax.self) {
-                if diagnoseVariableNames(variableDecl, context: context) {
-                    hasError = true
-                    continue
-                }
-            }
-
-            if memberIsSupported(member.decl) {
-                continue
-            }
-
-            context.diagnose(
-                Diagnostic(node: Syntax(member.decl), message: MockableError.unsupportedMember(member.decl.trimmedDescription))
-            )
-            hasError = true
         }
 
         return hasError
+    }
+
+    /// Reports everything that prevents one requirement from being mocked, returning
+    /// whether anything was found. The checks of a kind stop at the first finding, so a
+    /// requirement is reported once.
+    private static func diagnoseUnsupportedRequirement(
+        _ requirement: Requirement,
+        context: some MacroExpansionContext
+    ) -> Bool {
+        switch requirement {
+        case .function(let functionDecl):
+            if diagnoseUnsupportedName(functionDecl.name, of: Syntax(functionDecl), context: context) {
+                return true
+            }
+
+            // Generated mock members evaluate @autoclosure arguments to record them,
+            // so an autoclosure's own effects must be covered by the requirement.
+            let effects = functionDecl.signature.effectSpecifiers
+            if diagnoseAutoclosureParameters(
+                functionDecl.signature.parameterClause.parameters,
+                coversThrows: effects?.hasThrowsEffect ?? false,
+                coversAsync: effects?.asyncSpecifier != nil,
+                inSubscript: false,
+                context: context
+            ) {
+                return true
+            }
+            let genericParamNames = MockGenerator.extractGenericParameterNames(from: functionDecl)
+            if diagnoseGenericFunctionReturn(
+                returnType: functionDecl.signature.returnClause?.type,
+                genericParamNames: genericParamNames,
+                node: Syntax(functionDecl),
+                name: functionDecl.name.text,
+                context: context
+            ) {
+                return true
+            }
+            return diagnoseGenericClosureParameters(
+                functionDecl.signature.parameterClause.parameters,
+                genericParamNames: genericParamNames,
+                name: functionDecl.name.text,
+                context: context
+            )
+
+        case .subscript(let subscriptDecl):
+            // A static subscript has no storage to track.
+            guard !requirement.isTypeMember else {
+                diagnoseUnsupportedMember(subscriptDecl, context: context)
+                return true
+            }
+            if diagnoseAutoclosureParameters(
+                subscriptDecl.parameterClause.parameters,
+                coversThrows: false,
+                coversAsync: false,
+                inSubscript: true,
+                context: context
+            ) {
+                return true
+            }
+            let genericParamNames = MockGenerator.extractGenericParameterNames(from: subscriptDecl)
+            if diagnoseGenericFunctionReturn(
+                returnType: subscriptDecl.returnClause.type,
+                genericParamNames: genericParamNames,
+                node: Syntax(subscriptDecl),
+                name: "subscript",
+                context: context
+            ) {
+                return true
+            }
+            return diagnoseGenericClosureParameters(
+                subscriptDecl.parameterClause.parameters,
+                genericParamNames: genericParamNames,
+                name: "subscript",
+                context: context
+            )
+
+        case .initializer(let initDecl):
+            // Initializer witnesses evaluate @autoclosure arguments to record them, so an
+            // autoclosure's own effects must be covered by the requirement, as for methods.
+            let effects = initDecl.signature.effectSpecifiers
+            if diagnoseAutoclosureParameters(
+                initDecl.signature.parameterClause.parameters,
+                coversThrows: effects?.hasThrowsEffect ?? false,
+                coversAsync: effects?.asyncSpecifier != nil,
+                inSubscript: false,
+                context: context
+            ) {
+                return true
+            }
+            return diagnoseGenericClosureParameters(
+                initDecl.signature.parameterClause.parameters,
+                genericParamNames: MockGenerator.extractGenericParameterNames(from: initDecl),
+                name: "init",
+                context: context
+            )
+
+        case .associatedType(let associatedType):
+            return diagnoseConstrainedAssociatedType(associatedType, context: context)
+
+        case .variable(let variableDecl):
+            return diagnoseVariableNames(variableDecl, context: context)
+
+        case .typeAlias:
+            return false
+
+        // A nested type, an operator declaration, or any other member kind the macro
+        // cannot mock is reported rather than silently dropped from the mock.
+        case .unsupported(let decl):
+            diagnoseUnsupportedMember(decl, context: context)
+            return true
+        }
+    }
+
+    /// Reports a member kind the macro cannot mock at all.
+    private static func diagnoseUnsupportedMember(
+        _ decl: some DeclSyntaxProtocol,
+        context: some MacroExpansionContext
+    ) {
+        context.diagnose(
+            Diagnostic(node: Syntax(decl), message: MockableError.unsupportedMember(decl.trimmedDescription))
+        )
     }
 
     /// Diagnoses a requirement whose name cannot be mocked. Generated members are named
@@ -442,72 +439,21 @@ public struct MockableMacro: PeerMacro {
 
         var hasError = false
 
-        for member in members {
-            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                for clauseMembers in declClauses(of: ifConfigDecl) where diagnoseInitializerContext(in: clauseMembers, isUnsupportedContext: true, context: context) {
-                    hasError = true
-                }
+        for requirement in Requirement.all(in: members) {
+            guard case .initializer(let initDecl) = requirement else {
                 continue
             }
-
-            if member.decl.is(InitializerDeclSyntax.self) {
-                context.diagnose(
-                    Diagnostic(
-                        node: Syntax(member.decl),
-                        message: MockableError.unsupportedInitializer(
-                            "init requirements declared on an inheriting protocol are not yet supported"
-                        )
+            context.diagnose(
+                Diagnostic(
+                    node: Syntax(initDecl),
+                    message: MockableError.unsupportedInitializer(
+                        "init requirements declared on an inheriting protocol are not yet supported"
                     )
                 )
-                hasError = true
-            }
+            )
+            hasError = true
         }
 
         return hasError
-    }
-
-    /// The member lists of every `.decls` clause in a conditional-compilation block,
-    /// including `#else` and `#elseif` clauses. Diagnostics must visit every branch;
-    /// this deliberately differs from generation-time collection, which only reads
-    /// condition-bearing clauses.
-    private static func declClauses(of ifConfigDecl: IfConfigDeclSyntax) -> [MemberBlockItemListSyntax] {
-        ifConfigDecl.clauses.compactMap { clause in
-            guard let elements = clause.elements,
-                  case .decls(let decls) = elements else {
-                return nil
-            }
-            return decls
-        }
-    }
-
-    /// Whether the macro can mock a member kind at all. Anything else — a nested type,
-    /// an operator declaration, a static subscript (which has no storage to track) —
-    /// is reported rather than silently dropped from the mock.
-    private static func memberIsSupported(_ decl: DeclSyntax) -> Bool {
-        if decl.is(InitializerDeclSyntax.self) {
-            return true
-        }
-
-        if decl.is(AssociatedTypeDeclSyntax.self) {
-            return true
-        }
-
-        if decl.is(TypeAliasDeclSyntax.self) {
-            return true
-        }
-
-        if decl.is(FunctionDeclSyntax.self) {
-            return true
-        }
-
-        if decl.is(VariableDeclSyntax.self) {
-            return true
-        }
-
-        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return !MockGenerator.isTypeMember(subscriptDecl.modifiers)
-        }
-
-        return false
     }
 }

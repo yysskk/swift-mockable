@@ -8,34 +8,7 @@ extension MockGenerator {
     /// `StaticStorage` struct. Static tracking state is shared by every instance, so it
     /// is always lock-backed, even in a non-`Sendable` mock.
     func hasTypeMembers() -> Bool {
-        collectDeclsIncludingConditional().contains { Self.isTypeMember($0) }
-    }
-
-    /// Whether a member declaration is a type member. Only functions, properties, and
-    /// subscripts can be; `static subscript` is rejected by diagnostics before generation.
-    static func isTypeMember(_ decl: DeclSyntax) -> Bool {
-        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-            return isTypeMember(funcDecl.modifiers)
-        }
-
-        if let varDecl = decl.as(VariableDeclSyntax.self) {
-            return isTypeMember(varDecl.modifiers)
-        }
-
-        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return isTypeMember(subscriptDecl.modifiers)
-        }
-
-        return false
-    }
-
-    /// Whether a modifier list marks a type member (`static` or the `class` spelling
-    /// protocols use for class-only requirements).
-    static func isTypeMember(_ modifiers: DeclModifierListSyntax) -> Bool {
-        modifiers.contains { modifier in
-            let modifierName = modifier.name.text
-            return modifierName == "static" || modifierName == "class"
-        }
+        collectRequirements().contains(where: \.isTypeMember)
     }
 
     /// The modifiers a generated member needs to mirror a type member: `static`, or
@@ -75,53 +48,10 @@ extension MockGenerator {
     }
 
     /// Whether the protocol declares a requirement whose witness cannot assume the
-    /// mock's isolation and so cannot reach isolated tracking state. Swift infers the
-    /// isolation of a witness from the requirement it satisfies: a `nonisolated`
-    /// requirement of a `@MainActor` protocol gets a `nonisolated` witness, and a
-    /// requirement with an `isolated` parameter gets a witness isolated to its
-    /// argument — neither can read the mock's isolated stored properties. The
-    /// protocol's own attributes are not consulted: the modifier only means something
-    /// on an isolated protocol, and a protocol can inherit its isolation from a parent
-    /// the macro cannot see.
+    /// mock's isolation and so cannot reach isolated tracking state (see
+    /// `Requirement.leavesMockIsolation`).
     var hasRequirementsLeavingIsolation: Bool {
-        collectDeclsIncludingConditional().contains { Self.leavesMockIsolation($0) }
-    }
-
-    /// Whether a requirement's witness takes an isolation other than the mock's: the
-    /// requirement is declared `nonisolated`, or one of its parameters is `isolated`.
-    static func leavesMockIsolation(_ decl: DeclSyntax) -> Bool {
-        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
-            return isNonisolated(funcDecl.modifiers)
-                || hasIsolatedParameter(funcDecl.signature.parameterClause.parameters)
-        }
-
-        if let initDecl = decl.as(InitializerDeclSyntax.self) {
-            return hasIsolatedParameter(initDecl.signature.parameterClause.parameters)
-        }
-
-        if let varDecl = decl.as(VariableDeclSyntax.self) {
-            return isNonisolated(varDecl.modifiers)
-        }
-
-        if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
-            return isNonisolated(subscriptDecl.modifiers)
-                || hasIsolatedParameter(subscriptDecl.parameterClause.parameters)
-        }
-
-        return false
-    }
-
-    /// Whether a parameter list carries the `isolated` specifier, e.g.
-    /// `func run(on actor: isolated any Actor)`.
-    static func hasIsolatedParameter(_ parameters: FunctionParameterListSyntax) -> Bool {
-        parameters.contains { parameter in
-            specifiers(of: parameter.type).contains("isolated")
-        }
-    }
-
-    /// Whether a modifier list marks a member `nonisolated`.
-    static func isNonisolated(_ modifiers: DeclModifierListSyntax) -> Bool {
-        modifiers.contains { $0.name.text == "nonisolated" }
+        collectRequirements().contains(where: \.leavesMockIsolation)
     }
 
     /// Whether a member's tracking state is lock-backed: every member of a

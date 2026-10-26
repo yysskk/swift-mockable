@@ -12,8 +12,8 @@ extension MockGenerator {
     /// goes through the `map*PreservingIfConfig` drivers below, which keep it. Every
     /// clause is collected, including `#else`, so these analyses see exactly the
     /// requirements generation emits members for.
-    func collectDeclsIncludingConditional(from members: MemberBlockItemListSyntax? = nil) -> [DeclSyntax] {
-        collectDecls(from: members ?? self.members)
+    func collectRequirements() -> [Requirement] {
+        Requirement.all(in: members)
     }
 
     /// Maps each requirement to mock members, re-emitting any `#if` block around the
@@ -21,7 +21,7 @@ extension MockGenerator {
     /// mock is guarded by the same condition.
     func mapMemberBlockItemsPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
-        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+        transform: (Requirement) -> [MemberBlockItemSyntax]
     ) -> [MemberBlockItemSyntax] {
         var result: [MemberBlockItemSyntax] = []
 
@@ -32,7 +32,7 @@ extension MockGenerator {
                 }
                 result.append(MemberBlockItemSyntax(decl: DeclSyntax(mappedIfConfig)))
             } else {
-                result.append(contentsOf: transform(member.decl))
+                result.append(contentsOf: transform(Requirement(member.decl)))
             }
         }
 
@@ -44,7 +44,7 @@ extension MockGenerator {
     /// statements generated from its clauses.
     func mapCodeBlockItemsPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
-        transform: (DeclSyntax) -> [CodeBlockItemSyntax]
+        transform: (Requirement) -> [CodeBlockItemSyntax]
     ) -> [CodeBlockItemSyntax] {
         var result: [CodeBlockItemSyntax] = []
 
@@ -55,7 +55,7 @@ extension MockGenerator {
                 }
                 result.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(mappedIfConfig))))
             } else {
-                result.append(contentsOf: transform(member.decl))
+                result.append(contentsOf: transform(Requirement(member.decl)))
             }
         }
 
@@ -67,7 +67,7 @@ extension MockGenerator {
     /// clauses are emitted as literal `#if`/`#elseif`/`#else`/`#endif` lines.
     func mapLinesPreservingIfConfig(
         from members: MemberBlockItemListSyntax? = nil,
-        transform: (DeclSyntax) -> [String]
+        transform: (Requirement) -> [String]
     ) -> [String] {
         var result: [String] = []
 
@@ -75,46 +75,8 @@ extension MockGenerator {
             if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
                 result.append(contentsOf: mapIfConfigDeclToLines(ifConfigDecl, transform: transform))
             } else {
-                result.append(contentsOf: transform(member.decl))
+                result.append(contentsOf: transform(Requirement(member.decl)))
             }
-        }
-
-        return result
-    }
-
-    /// Flattens a member list, recursing into conditional-compilation blocks.
-    private func collectDecls(from members: MemberBlockItemListSyntax) -> [DeclSyntax] {
-        var result: [DeclSyntax] = []
-
-        for member in members {
-            if let ifConfigDecl = member.decl.as(IfConfigDeclSyntax.self) {
-                result.append(contentsOf: collectDecls(from: ifConfigDecl))
-            } else {
-                result.append(member.decl)
-            }
-        }
-
-        return result
-    }
-
-    /// Flattens the clauses of a conditional-compilation block.
-    ///
-    /// Every clause is collected, `#else` included, so these analyses cover the same
-    /// requirements the mapping drivers generate members for. Clauses are mutually
-    /// exclusive at compile time, but the mock declares the members of all of them
-    /// (each under its own condition), so requirements in sibling clauses share one
-    /// namespace and are grouped and disambiguated together. This matches
-    /// `MockableMacro.declClauses(of:)`, which visits every clause for diagnostics.
-    private func collectDecls(from ifConfigDecl: IfConfigDeclSyntax) -> [DeclSyntax] {
-        var result: [DeclSyntax] = []
-
-        for clause in ifConfigDecl.clauses {
-            guard let elements = clause.elements,
-                  case .decls(let decls) = elements else {
-                continue
-            }
-
-            result.append(contentsOf: collectDecls(from: decls))
         }
 
         return result
@@ -163,7 +125,7 @@ extension MockGenerator {
     /// The member-producing case of `mapIfConfigDeclClauses`.
     private func mapIfConfigDeclToMembers(
         _ ifConfigDecl: IfConfigDeclSyntax,
-        transform: (DeclSyntax) -> [MemberBlockItemSyntax]
+        transform: (Requirement) -> [MemberBlockItemSyntax]
     ) -> IfConfigDeclSyntax? {
         mapIfConfigDeclClauses(
             ifConfigDecl,
@@ -175,7 +137,7 @@ extension MockGenerator {
     /// The statement-producing case of `mapIfConfigDeclClauses`.
     private func mapIfConfigDeclToStatements(
         _ ifConfigDecl: IfConfigDeclSyntax,
-        transform: (DeclSyntax) -> [CodeBlockItemSyntax]
+        transform: (Requirement) -> [CodeBlockItemSyntax]
     ) -> IfConfigDeclSyntax? {
         mapIfConfigDeclClauses(
             ifConfigDecl,
@@ -190,7 +152,7 @@ extension MockGenerator {
     /// rebuilt syntax node. Returns an empty array when no clause produced lines.
     private func mapIfConfigDeclToLines(
         _ ifConfigDecl: IfConfigDeclSyntax,
-        transform: (DeclSyntax) -> [String]
+        transform: (Requirement) -> [String]
     ) -> [String] {
         var lines: [String] = []
         var hasGeneratedContent = false

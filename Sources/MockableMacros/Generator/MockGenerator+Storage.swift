@@ -80,15 +80,15 @@ extension MockGenerator {
     ) -> StructDeclSyntax {
         let overloads = makeOverloadContext()
 
-        let storageMembers = mapMemberBlockItemsPreservingIfConfig { decl in
+        let storageMembers = mapMemberBlockItemsPreservingIfConfig { requirement in
             // Initializers are never type members, so their tracking fields live only
             // in the instance `Storage` struct.
-            guard Self.isTypeMember(decl) == includeTypeMembers else {
+            guard requirement.isTypeMember == includeTypeMembers else {
                 return []
             }
 
-            return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
-                requirement.trackingFields(model: .lockBacked).map { field in
+            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+                tracking.trackingFields(model: .lockBacked).map { field in
                     MemberBlockItemSyntax(decl: Self.makeStoredProperty(
                         name: field.name,
                         type: field.type,

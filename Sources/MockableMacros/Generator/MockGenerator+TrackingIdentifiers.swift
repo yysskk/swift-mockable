@@ -21,21 +21,22 @@ extension MockGenerator {
     /// continuing to count (`loadItem2`), so identifiers are unchanged for a protocol
     /// whose requirements do not collide.
     ///
-    /// `decls` is the protocol's requirements flattened out of any conditional
+    /// `requirements` is the protocol's requirements flattened out of any conditional
     /// compilation, in declaration order, which the caller already has.
     func assignTrackingIdentifiers(
-        in decls: [DeclSyntax],
+        in requirements: [Requirement],
         methodGroups: [String: [FunctionDeclSyntax]],
         initializers: [InitializerDeclSyntax],
         subscripts: [SubscriptDeclSyntax]
     ) -> [SyntaxIdentifier: String] {
         // Names the requirements declare themselves, which no other requirement may take.
-        var taken = Set(decls.flatMap(Self.declaredIdentifiers))
+        var taken = Set(requirements.flatMap(Self.declaredIdentifiers))
         var suffixed: [(id: SyntaxIdentifier, suggestion: String)] = []
         var identifiers: [SyntaxIdentifier: String] = [:]
 
-        for decl in decls {
-            if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+        for requirement in requirements {
+            switch requirement {
+            case .function(let funcDecl):
                 let suggestion = Self.suggestedIdentifier(for: funcDecl, in: methodGroups[funcDecl.name.text] ?? [])
                 // A method that needed no suffix is tracked under its own name, which
                 // is already reserved above.
@@ -44,10 +45,14 @@ extension MockGenerator {
                 } else {
                     suffixed.append((funcDecl.id, suggestion))
                 }
-            } else if let initDecl = decl.as(InitializerDeclSyntax.self) {
+            case .initializer(let initDecl):
                 suffixed.append((initDecl.id, Self.suggestedIdentifier(for: initDecl, in: initializers)))
-            } else if let subscriptDecl = decl.as(SubscriptDeclSyntax.self) {
+            case .subscript(let subscriptDecl):
                 suffixed.append((subscriptDecl.id, Self.suggestedIdentifier(for: subscriptDecl, in: subscripts)))
+            // A property is tracked under its own name, reserved above; a type
+            // declaration has no tracking members.
+            case .variable, .associatedType, .typeAlias, .unsupported:
+                continue
             }
         }
 
@@ -58,16 +63,17 @@ extension MockGenerator {
         return identifiers
     }
 
-    /// The identifiers a declaration reserves by naming them: a property is tracked
+    /// The identifiers a requirement reserves by naming them: a property is tracked
     /// under its own name, and a method under its name unless it is overloaded.
-    private static func declaredIdentifiers(of decl: DeclSyntax) -> [String] {
-        if let funcDecl = decl.as(FunctionDeclSyntax.self) {
+    private static func declaredIdentifiers(of requirement: Requirement) -> [String] {
+        switch requirement {
+        case .function(let funcDecl):
             return [funcDecl.name.text]
-        }
-        if let varDecl = decl.as(VariableDeclSyntax.self) {
+        case .variable(let varDecl):
             return varDecl.bindings.compactMap { $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.text }
+        case .initializer, .subscript, .associatedType, .typeAlias, .unsupported:
+            return []
         }
-        return []
     }
 
     /// The suggestion counted on until it is free, e.g. `loadItem` -> `loadItem2`.

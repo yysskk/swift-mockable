@@ -39,7 +39,7 @@ struct ConditionalCompilationTraversalTests {
     }
     """
 
-    // MARK: - collectDeclsIncludingConditional
+    // MARK: - collectRequirements
 
     @Test("Members of a conditional clause are collected alongside plain members")
     func collectsConditionalMembers() throws {
@@ -52,8 +52,8 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let names = generator.collectDeclsIncludingConditional()
-            .compactMap { $0.as(FunctionDeclSyntax.self)?.name.text }
+        let names = generator.collectRequirements()
+            .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["alpha", "beta"])
     }
 
@@ -69,8 +69,8 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let names = generator.collectDeclsIncludingConditional()
-            .compactMap { $0.as(FunctionDeclSyntax.self)?.name.text }
+        let names = generator.collectRequirements()
+            .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["nested"])
     }
 
@@ -81,8 +81,8 @@ struct ConditionalCompilationTraversalTests {
         // initializer detection disagree with the members that are emitted.
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let names = generator.collectDeclsIncludingConditional()
-            .compactMap { $0.as(FunctionDeclSyntax.self)?.name.text }
+        let names = generator.collectRequirements()
+            .compactMap { $0.decl.as(FunctionDeclSyntax.self)?.name.text }
         #expect(names == ["alpha", "beta", "gamma"])
     }
 
@@ -114,7 +114,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let groups = generator.groupMethodsByNameIncludingConditional()
+        let groups = generator.groupMethodsByName()
         #expect(groups["fetch"]?.count == 2)
     }
 
@@ -134,7 +134,7 @@ struct ConditionalCompilationTraversalTests {
         #expect(generator.hasInitializerRequirements)
     }
 
-    // MARK: - groupMethodsByNameIncludingConditional
+    // MARK: - groupMethodsByName
 
     @Test("Overloads are grouped across conditional clauses")
     func groupsOverloadsAcrossClauses() throws {
@@ -147,7 +147,7 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let groups = generator.groupMethodsByNameIncludingConditional()
+        let groups = generator.groupMethodsByName()
         #expect(groups.count == 1)
         #expect(groups["fetch"]?.count == 2)
     }
@@ -173,17 +173,17 @@ struct ConditionalCompilationTraversalTests {
         let staticDecl: DeclSyntax = "static func beta() -> Int"
         let classDecl: DeclSyntax = "class func gamma() -> Int"
         let instanceDecl: DeclSyntax = "func alpha() -> Int"
-        #expect(MockGenerator.isTypeMember(staticDecl))
-        #expect(MockGenerator.isTypeMember(classDecl))
-        #expect(!MockGenerator.isTypeMember(instanceDecl))
+        #expect(Requirement(staticDecl).isTypeMember)
+        #expect(Requirement(classDecl).isTypeMember)
+        #expect(!Requirement(instanceDecl).isTypeMember)
 
         let staticVar: DeclSyntax = "static var count: Int { get }"
         let staticSubscript: DeclSyntax = "static subscript(index: Int) -> Int { get }"
-        #expect(MockGenerator.isTypeMember(staticVar))
-        #expect(MockGenerator.isTypeMember(staticSubscript))
+        #expect(Requirement(staticVar).isTypeMember)
+        #expect(Requirement(staticSubscript).isTypeMember)
 
         let associatedType: DeclSyntax = "associatedtype Item"
-        #expect(!MockGenerator.isTypeMember(associatedType))
+        #expect(!Requirement(associatedType).isTypeMember)
     }
 
     // MARK: - Storage-model predicates
@@ -209,8 +209,8 @@ struct ConditionalCompilationTraversalTests {
     func memberMappingPreservesStructure() throws {
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let mapped = generator.mapMemberBlockItemsPreservingIfConfig { decl in
-            guard let funcDecl = decl.as(FunctionDeclSyntax.self) else {
+        let mapped = generator.mapMemberBlockItemsPreservingIfConfig { requirement in
+            guard case .function(let funcDecl) = requirement else {
                 return []
             }
             let marker: DeclSyntax = "var \(raw: funcDecl.name.text)Marker: Int"
@@ -232,11 +232,11 @@ struct ConditionalCompilationTraversalTests {
     func emptyMemberMappingDropsIfConfig() throws {
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let mapped = generator.mapMemberBlockItemsPreservingIfConfig { decl in
-            guard decl.as(FunctionDeclSyntax.self)?.name.text == "alpha" else {
+        let mapped = generator.mapMemberBlockItemsPreservingIfConfig { requirement in
+            guard case .function(let funcDecl) = requirement, funcDecl.name.text == "alpha" else {
                 return []
             }
-            return [MemberBlockItemSyntax(decl: decl)]
+            return [MemberBlockItemSyntax(decl: requirement.decl)]
         }
 
         #expect(mapped.count == 1)
@@ -249,8 +249,8 @@ struct ConditionalCompilationTraversalTests {
     func statementMappingPreservesStructure() throws {
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let mapped = generator.mapCodeBlockItemsPreservingIfConfig { decl in
-            guard let funcDecl = decl.as(FunctionDeclSyntax.self) else {
+        let mapped = generator.mapCodeBlockItemsPreservingIfConfig { requirement in
+            guard case .function(let funcDecl) = requirement else {
                 return []
             }
             let statement: StmtSyntax = "\(raw: funcDecl.name.text)Count = 0"
@@ -273,8 +273,8 @@ struct ConditionalCompilationTraversalTests {
     func lineMappingRendersClauses() throws {
         let generator = try #require(makeGenerator(conditionalSource))
 
-        let lines = generator.mapLinesPreservingIfConfig { decl in
-            guard let funcDecl = decl.as(FunctionDeclSyntax.self) else {
+        let lines = generator.mapLinesPreservingIfConfig { requirement in
+            guard case .function(let funcDecl) = requirement else {
                 return []
             }
             return ["\(funcDecl.name.text)Count = 0"]
@@ -300,8 +300,11 @@ struct ConditionalCompilationTraversalTests {
         }
         """))
 
-        let lines = generator.mapLinesPreservingIfConfig { decl in
-            decl.is(FunctionDeclSyntax.self) ? ["marker"] : []
+        let lines = generator.mapLinesPreservingIfConfig { requirement in
+            if case .function = requirement {
+                return ["marker"]
+            }
+            return []
         }
 
         #expect(lines.isEmpty)

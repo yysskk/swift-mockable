@@ -27,7 +27,7 @@ struct TrackingRequirementTests {
             parentMockClassName: nil
         )
         let overloads = generator.makeOverloadContext()
-        return generator.collectDeclsIncludingConditional().flatMap {
+        return generator.collectRequirements().flatMap {
             generator.trackingRequirements(for: $0, overloads: overloads)
         }
     }

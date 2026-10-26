@@ -7,12 +7,12 @@ extension MockGenerator {
     /// The assignments that clear one storage struct's fields, addressed through the
     /// `withLock` closure's `storage` binding and keeping the protocol's `#if` structure.
     private func resetLines(forTypeMembers includeTypeMembers: Bool, overloads: OverloadContext) -> [String] {
-        mapLinesPreservingIfConfig { decl in
-            guard Self.isTypeMember(decl) == includeTypeMembers else {
+        mapLinesPreservingIfConfig { requirement in
+            guard requirement.isTypeMember == includeTypeMembers else {
                 return []
             }
-            return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
-                requirement.trackingFields(model: .lockBacked).map { field in
+            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+                tracking.trackingFields(model: .lockBacked).map { field in
                     "storage.\(field.name) = \(field.resetValue)"
                 }
             }
@@ -65,12 +65,12 @@ extension MockGenerator {
 
         // Instance slots are plain stored properties here, so they are assigned through
         // the direct-model names.
-        let resetStatements = mapCodeBlockItemsPreservingIfConfig { decl in
-            guard !Self.isTypeMember(decl) else {
+        let resetStatements = mapCodeBlockItemsPreservingIfConfig { requirement in
+            guard !requirement.isTypeMember else {
                 return []
             }
-            return trackingRequirements(for: decl, overloads: overloads).flatMap { requirement in
-                requirement.trackingFields(model: .direct).map { field in
+            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+                tracking.trackingFields(model: .direct).map { field in
                     CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(field.name) = \(field.resetValue)")))
                 }
             }
