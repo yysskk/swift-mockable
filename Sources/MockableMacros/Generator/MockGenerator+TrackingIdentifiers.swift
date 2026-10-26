@@ -23,21 +23,21 @@ extension MockGenerator {
     ///
     /// `requirements` is the protocol's requirements flattened out of any conditional
     /// compilation, in declaration order, which the caller already has.
-    func assignTrackingIdentifiers(
+    static func assignTrackingIdentifiers(
         in requirements: [Requirement],
         methodGroups: [String: [FunctionDeclSyntax]],
         initializers: [InitializerDeclSyntax],
         subscripts: [SubscriptDeclSyntax]
     ) -> [SyntaxIdentifier: String] {
         // Names the requirements declare themselves, which no other requirement may take.
-        var taken = Set(requirements.flatMap(Self.declaredIdentifiers))
+        var taken = Set(requirements.flatMap(declaredIdentifiers))
         var suffixed: [(id: SyntaxIdentifier, suggestion: String)] = []
         var identifiers: [SyntaxIdentifier: String] = [:]
 
         for requirement in requirements {
             switch requirement {
             case .function(let funcDecl):
-                let suggestion = Self.suggestedIdentifier(for: funcDecl, in: methodGroups[funcDecl.name.text] ?? [])
+                let suggestion = suggestedIdentifier(for: funcDecl, in: methodGroups[funcDecl.name.text] ?? [])
                 // A method that needed no suffix is tracked under its own name, which
                 // is already reserved above.
                 if suggestion == funcDecl.name.text {
@@ -46,9 +46,9 @@ extension MockGenerator {
                     suffixed.append((funcDecl.id, suggestion))
                 }
             case .initializer(let initDecl):
-                suffixed.append((initDecl.id, Self.suggestedIdentifier(for: initDecl, in: initializers)))
+                suffixed.append((initDecl.id, suggestedIdentifier(for: initDecl, in: initializers)))
             case .subscript(let subscriptDecl):
-                suffixed.append((subscriptDecl.id, Self.suggestedIdentifier(for: subscriptDecl, in: subscripts)))
+                suffixed.append((subscriptDecl.id, suggestedIdentifier(for: subscriptDecl, in: subscripts)))
             // A property is tracked under its own name, reserved above; a type
             // declaration has no tracking members.
             case .variable, .associatedType, .typeAlias, .unsupported:
@@ -57,7 +57,7 @@ extension MockGenerator {
         }
 
         for (id, suggestion) in suffixed {
-            identifiers[id] = Self.unusedIdentifier(from: suggestion, avoiding: &taken)
+            identifiers[id] = unusedIdentifier(from: suggestion, avoiding: &taken)
         }
 
         return identifiers

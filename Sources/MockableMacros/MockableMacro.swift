@@ -56,18 +56,7 @@ public struct MockableMacro: PeerMacro {
         // pass looking at the same nodes.
         let members = ParameterNameNormalizer().visit(protocolDecl.memberBlock.members)
 
-        let generator = MockGenerator(
-            protocolName: shape.protocolName,
-            mockClassName: shape.mockClassName,
-            members: members,
-            isSendable: shape.isSendable,
-            isActor: shape.isActor,
-            globalActorName: shape.globalActorName,
-            accessLevel: shape.accessLevel,
-            parentMockClassName: shape.parentMockClassName
-        )
-
-        let mockClass = generator.generate()
+        let mockClass = MockGenerator(shape: shape, members: members).generate()
 
         return [condition.wrapping(mockClass)]
     }

@@ -21,7 +21,7 @@ extension MockGenerator {
         // member has to: on an isolated mock the lock would otherwise be as isolated
         // as the state it guards. Actor mocks need no modifier — an actor's stored
         // `let` and its static members are already reachable from outside.
-        if needsNonisolatedStorage && !isActor {
+        if needsNonisolatedStorage && !shape.isActor {
             modifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
         }
 
@@ -78,8 +78,6 @@ extension MockGenerator {
         named storageName: String,
         includeTypeMembers: Bool
     ) -> StructDeclSyntax {
-        let overloads = makeOverloadContext()
-
         let storageMembers = mapMemberBlockItemsPreservingIfConfig { requirement in
             // Initializers are never type members, so their tracking fields live only
             // in the instance `Storage` struct.

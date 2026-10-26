@@ -7,28 +7,14 @@ import Testing
 struct TrackingRequirementTests {
     /// Builds a generator plus overload context for the given protocol source and
     /// returns the tracking requirements of every member, in declaration order.
-    private func requirements(
-        ofProtocol source: String,
-        isSendable: Bool = false,
-        isActor: Bool = false
-    ) -> [TrackingRequirement] {
+    private func requirements(ofProtocol source: String) -> [TrackingRequirement] {
         let decl: DeclSyntax = "\(raw: source)"
         guard let protocolDecl = decl.as(ProtocolDeclSyntax.self) else {
             return []
         }
-        let generator = MockGenerator(
-            protocolName: protocolDecl.name.text,
-            mockClassName: MockNaming.mockTypeName(forProtocol: protocolDecl.name.text),
-            members: protocolDecl.memberBlock.members,
-            isSendable: isSendable,
-            isActor: isActor,
-            globalActorName: nil,
-            accessLevel: .internal,
-            parentMockClassName: nil
-        )
-        let overloads = generator.makeOverloadContext()
-        return generator.collectRequirements().flatMap {
-            generator.trackingRequirements(for: $0, overloads: overloads)
+        let generator = MockGenerator(shape: ProtocolShape(protocolDecl), members: protocolDecl.memberBlock.members)
+        return generator.requirements.flatMap {
+            generator.trackingRequirements(for: $0, overloads: generator.overloads)
         }
     }
 

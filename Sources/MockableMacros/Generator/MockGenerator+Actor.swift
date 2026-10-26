@@ -13,7 +13,7 @@ extension MockGenerator {
         // An actor's static members are already reachable from outside it, so only its
         // instance members need the modifier. On a global-actor-isolated class every
         // member is isolated, static ones included.
-        if isActor {
+        if shape.isActor {
             return isTypeMember ? [] : [DeclModifierSyntax(name: .keyword(.nonisolated))]
         }
         return leavesMockIsolation ? [DeclModifierSyntax(name: .keyword(.nonisolated))] : []

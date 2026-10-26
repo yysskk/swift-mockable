@@ -61,7 +61,6 @@ extension MockGenerator {
     /// parent's implementation when the mock subclasses one.
     private func generateRegularResetMethod() -> FunctionDeclSyntax {
         var statements: [CodeBlockItemSyntax] = []
-        let overloads = makeOverloadContext()
 
         // Instance slots are plain stored properties here, so they are assigned through
         // the direct-model names.
@@ -77,7 +76,7 @@ extension MockGenerator {
         }
 
         // Add super.resetMock() call if inheriting from parent mock
-        if hasParentMock {
+        if shape.subclassesParentMock {
             statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()"))))
         }
 
@@ -100,14 +99,14 @@ extension MockGenerator {
             rightBrace: .rightBraceToken(leadingTrivia: .newline)
         )
 
-        let additionalModifiers: [DeclModifierSyntax] = hasParentMock
+        let additionalModifiers: [DeclModifierSyntax] = shape.subclassesParentMock
             ? [DeclModifierSyntax(name: .keyword(.override))]
             : []
 
         return FunctionDeclSyntax(
             modifiers: buildModifiers(
                 additional: additionalModifiers,
-                isOverridable: canBeSubclassedOutsideModule
+                isOverridable: shape.canBeSubclassedOutsideModule
             ),
             name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(
@@ -125,12 +124,11 @@ extension MockGenerator {
     /// static slots in another, so each storage struct is reset atomically. On an actor
     /// mock the method is `nonisolated`, so a test can reset without awaiting.
     private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
-        let overloads = makeOverloadContext()
         let instanceResetLines = resetLines(forTypeMembers: false, overloads: overloads)
         let staticResetLines = resetLines(forTypeMembers: true, overloads: overloads)
 
         var bodyStatements: [CodeBlockItemSyntax] = []
-        if hasParentMock {
+        if shape.subclassesParentMock {
             bodyStatements.append(
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
             )
@@ -157,16 +155,16 @@ extension MockGenerator {
         // unmarked: it takes the isolation of the parent's `resetMock()`, which the
         // macro cannot see and the `super` call has to be able to reach.
         var additionalModifiers: [DeclModifierSyntax] = []
-        if hasParentMock {
+        if shape.subclassesParentMock {
             additionalModifiers.append(DeclModifierSyntax(name: .keyword(.override)))
-        } else if isActor || hasRequirementsLeavingIsolation {
+        } else if shape.isActor || hasRequirementsLeavingIsolation {
             additionalModifiers.append(DeclModifierSyntax(name: .keyword(.nonisolated)))
         }
 
         return FunctionDeclSyntax(
             modifiers: buildModifiers(
                 additional: additionalModifiers,
-                isOverridable: canBeSubclassedOutsideModule
+                isOverridable: shape.canBeSubclassedOutsideModule
             ),
             name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(
