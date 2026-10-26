@@ -23,6 +23,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Build documentation
+        env:
+          MOCKABLE_ENABLE_DOCC: "1"
         run: |
           swift package --allow-writing-to-directory ./docs \
             generate-documentation --target Mockable \

@@ -1,6 +1,7 @@
 // swift-tools-version: 6.2
 
 import CompilerPluginSupport
+import Foundation
 import PackageDescription
 
 let package = Package(
@@ -21,7 +22,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "509.0.0"..<"605.0.0"),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.5.0"),
     ],
     targets: [
         .macro(
@@ -57,3 +57,13 @@ let package = Package(
         ),
     ]
 )
+
+// The DocC plugin only builds the documentation site (see
+// .github/workflows/deploy-docs.yml and CONTRIBUTING.md). It is added to the
+// package only when asked for, so a package that depends on Mockable does not
+// resolve and fetch it as well.
+if ProcessInfo.processInfo.environment["MOCKABLE_ENABLE_DOCC"] != nil {
+    package.dependencies.append(
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.5.0")
+    )
+}

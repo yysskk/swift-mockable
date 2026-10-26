@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The swift-docc-plugin dependency is no longer part of the package's regular dependency graph: it only builds the documentation site, yet every package depending on Mockable resolved and fetched it. The manifest now adds it only when the `MOCKABLE_ENABLE_DOCC` environment variable is set, which the `Deploy DocC` workflow does.
+
 ### Added
 
 - A string literal as the `condition:` argument of `@Mockable`: `@Mockable(condition: "MOCKING")` wraps the mock in `#if MOCKING`, exactly like `.custom("MOCKING")`. `MockCompilationCondition` conforms to `ExpressibleByStringLiteral`, so the `.custom` spelling is only needed where the type is not inferred. A string literal is validated the same way: an interpolated, empty, multi-line, or malformed condition emits the same diagnostic.
