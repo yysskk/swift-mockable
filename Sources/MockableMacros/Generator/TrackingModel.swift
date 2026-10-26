@@ -63,7 +63,8 @@ struct TrackingRequirement {
     /// The disambiguated base identifier, e.g. `fetchUser`, `fetchUserIntString`,
     /// `subscriptInt`, `init`, `theme`.
     let identifier: String
-    let isTypeMember: Bool
+    /// Whether the requirement is instance or type state.
+    let scope: MemberScope
     /// Whether the requirement's witness takes an isolation other than the mock's —
     /// it is declared `nonisolated`, or has an `isolated` parameter — so the tracking
     /// members that witness reaches have to be nonisolated.
@@ -244,7 +245,7 @@ extension MockGenerator {
         case .function(let funcDecl):
             return [functionTrackingRequirement(
                 for: funcDecl,
-                isTypeMember: requirement.isTypeMember,
+                scope: requirement.scope,
                 leavesMockIsolation: requirement.leavesMockIsolation,
                 overloads: overloads
             )]
@@ -253,7 +254,7 @@ extension MockGenerator {
             return varDecl.bindings.compactMap { binding in
                 variableTrackingRequirement(
                     for: binding,
-                    isTypeMember: requirement.isTypeMember,
+                    scope: requirement.scope,
                     leavesMockIsolation: requirement.leavesMockIsolation
                 )
             }
@@ -282,7 +283,7 @@ extension MockGenerator {
                 for: initDecl.id,
                 suggestion: Self.suggestedIdentifier(for: initDecl, in: overloads.initializers)
             ),
-            isTypeMember: false,
+            scope: .instance,
             kind: .initializer,
             callArgsTupleType: Self.buildCallArgsTupleType(
                 parameters: initDecl.signature.parameterClause.parameters,
@@ -294,11 +295,11 @@ extension MockGenerator {
     }
 
     /// The tracking requirement of a method, with its identifier disambiguated against
-    /// the protocol's other methods of the same name. `isTypeMember` and
+    /// the protocol's other methods of the same name. `scope` and
     /// `leavesMockIsolation` are the declaration's, read from its `Requirement`.
     func functionTrackingRequirement(
         for funcDecl: FunctionDeclSyntax,
-        isTypeMember: Bool,
+        scope: MemberScope,
         leavesMockIsolation: Bool,
         overloads: OverloadContext
     ) -> TrackingRequirement {
@@ -315,7 +316,7 @@ extension MockGenerator {
                 for: funcDecl.id,
                 suggestion: Self.suggestedIdentifier(for: funcDecl, in: methodGroup)
             ),
-            isTypeMember: isTypeMember,
+            scope: scope,
             leavesMockIsolation: leavesMockIsolation,
             kind: .function,
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),
@@ -334,8 +335,8 @@ extension MockGenerator {
     /// without a name or type annotation (which cannot be mocked).
     func variableTrackingRequirement(
         for binding: PatternBindingSyntax,
-        isTypeMember: Bool,
-        leavesMockIsolation: Bool = false
+        scope: MemberScope,
+        leavesMockIsolation: Bool
     ) -> TrackingRequirement? {
         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
               let typeAnnotation = binding.typeAnnotation else {
@@ -348,7 +349,7 @@ extension MockGenerator {
         if let effectfulGetter = Self.effectfulGetter(of: binding) {
             return TrackingRequirement(
                 identifier: varName,
-                isTypeMember: isTypeMember,
+                scope: scope,
                 leavesMockIsolation: leavesMockIsolation,
                 kind: .effectfulVariable(varType: varType),
                 callArgsTupleType: nil,
@@ -363,7 +364,7 @@ extension MockGenerator {
         let isOptional = varType.is(OptionalTypeSyntax.self) || varType.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
         return TrackingRequirement(
             identifier: varName,
-            isTypeMember: isTypeMember,
+            scope: scope,
             leavesMockIsolation: leavesMockIsolation,
             kind: .storedVariable(
                 varType: varType,
@@ -394,7 +395,7 @@ extension MockGenerator {
                 for: subscriptDecl.id,
                 suggestion: Self.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
             ),
-            isTypeMember: false,
+            scope: .instance,
             leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgsTupleType: Self.buildCallArgsTupleType(parameters: parameters, genericParamNames: genericParamNames),

@@ -31,42 +31,39 @@ enum AccessLevel: String {
         }
     }
 
-    /// Creates a DeclModifierSyntax for the class/actor declaration.
-    /// When `supportsOpen` is true, `public` becomes `open` so generated mock classes
-    /// can be subclassed from other modules.
-    /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
-    func makeModifier(supportsOpen: Bool = false) -> DeclModifierSyntax? {
-        // internal is the default, no modifier needed
-        if self == .internal {
-            return nil
-        }
-
-        let modifierKeyword: Keyword
-        if supportsOpen, self == .public {
-            modifierKeyword = .open
-        } else {
-            modifierKeyword = keyword
-        }
-
-        return DeclModifierSyntax(name: .keyword(modifierKeyword))
+    /// What a generated declaration is, which decides how the protocol's access level
+    /// is spelled on it.
+    enum DeclarationRole {
+        /// The mock type itself.
+        case mockType
+        /// The mock type where other modules may subclass it: a `public` protocol's
+        /// mock is declared `open`.
+        case subclassableMockType
+        /// A member of the mock. A `private` protocol's members are `fileprivate`,
+        /// since that is the access a witness of its requirements needs.
+        case member
+        /// A member subclasses in other modules may override: a `public` protocol's
+        /// is declared `open`.
+        case overridableMember
     }
 
-    /// Creates a DeclModifierSyntax for member declarations.
-    /// When `isOverridable` is true, `public` becomes `open` so subclasses in other
-    /// modules can override the generated member.
-    /// Returns nil for `internal` since it's the default and doesn't need explicit modifier.
-    /// For `private` protocols, returns `fileprivate` since members must be fileprivate.
-    func makeMemberModifier(isOverridable: Bool = false) -> DeclModifierSyntax? {
-        // internal is the default, no modifier needed
+    /// The access modifier a generated declaration carries for `role`, or `nil` for
+    /// `internal`, which is the default and needs no modifier.
+    func modifier(for role: DeclarationRole) -> DeclModifierSyntax? {
         if self == .internal {
             return nil
         }
 
         let modifierKeyword: Keyword
-        if isOverridable, self == .public {
-            modifierKeyword = .open
-        } else {
+        switch role {
+        case .mockType:
+            modifierKeyword = keyword
+        case .subclassableMockType:
+            modifierKeyword = self == .public ? .open : keyword
+        case .member:
             modifierKeyword = memberKeyword
+        case .overridableMember:
+            modifierKeyword = self == .public ? .open : memberKeyword
         }
 
         return DeclModifierSyntax(name: .keyword(modifierKeyword))

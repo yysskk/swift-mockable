@@ -8,20 +8,20 @@ extension MockGenerator {
     /// backed by a settable `_name` (or the property itself, for optional get-set), while an
     /// effectful read-only requirement (`get async`/`throws`) is handler-based like a method
     /// (see `generateEffectfulGetterMock`). Handles one `VariableDeclSyntax`, which may
-    /// declare several bindings; `isTypeMember` and `leavesMockIsolation` are the
+    /// declare several bindings; `scope` and `leavesMockIsolation` are the
     /// declaration's, read from its `Requirement`.
     func generateVariableMock(
         _ varDecl: VariableDeclSyntax,
-        isTypeMember: Bool,
+        scope: MemberScope,
         leavesMockIsolation: Bool
     ) -> [MemberBlockItemSyntax] {
         var members: [MemberBlockItemSyntax] = []
-        let access = trackingAccess(isTypeMember: isTypeMember)
+        let access = trackingAccess(for: scope)
 
         for binding in varDecl.bindings {
             guard let requirement = variableTrackingRequirement(
                 for: binding,
-                isTypeMember: isTypeMember,
+                scope: scope,
                 leavesMockIsolation: leavesMockIsolation
             ) else {
                 continue
@@ -55,7 +55,7 @@ extension MockGenerator {
                     varType: varType,
                     isOptional: isOptional,
                     isGetOnly: isGetOnly,
-                    isTypeMember: isTypeMember,
+                    scope: scope,
                     access: access
                 )))
 
@@ -100,7 +100,7 @@ extension MockGenerator {
         }
 
         let varName = requirement.identifier
-        let isTypeMember = requirement.isTypeMember
+        let scope = requirement.scope
         let effects = getter.effectSpecifiers
         let isAsync = effects?.asyncSpecifier != nil
         let isThrows = effects?.hasThrowsEffect ?? false
@@ -116,7 +116,7 @@ extension MockGenerator {
         // body binds and they keep their default names. The call is counted but has no
         // arguments to record.
         let names = WitnessNames(parameters: FunctionParameterListSyntax([]))
-        let binding = trackingAccess(isTypeMember: isTypeMember).handlerBinding(
+        let binding = trackingAccess(for: scope).handlerBinding(
             identifier: varName,
             recordedArguments: nil,
             handlerClosureType: closureType,
@@ -141,7 +141,7 @@ extension MockGenerator {
         // generated witness); only the auxiliary CallCount/Handler storage members are
         // `nonisolated`, which they already get via `generateTrackingStorageProperty`.
         let property = VariableDeclSyntax(
-            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
+            modifiers: modifiers(for: .member, additional: scope.modifiers),
             bindingSpecifier: .keyword(.var),
             bindings: PatternBindingListSyntax([
                 PatternBindingSyntax(
@@ -177,11 +177,11 @@ extension MockGenerator {
         varType: TypeSyntax,
         isOptional: Bool,
         isGetOnly: Bool,
-        isTypeMember: Bool,
+        scope: MemberScope,
         access: TrackingAccess
     ) -> VariableDeclSyntax {
         let backingName = MockNaming.variableBacking(varName)
-        let modifiers = buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember))
+        let modifiers = modifiers(for: .member, additional: scope.modifiers)
         let getterBody = access.read(isOptional ? backingName : "\(backingName)!")
 
         if isGetOnly {

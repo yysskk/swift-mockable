@@ -63,20 +63,19 @@ enum Requirement {
         }
     }
 
-    /// Whether the requirement is a type member (`static`, or the `class` spelling
-    /// protocols use for class-only requirements). Only functions, properties, and
-    /// subscripts can be; a `static subscript` is rejected by diagnostics before
-    /// generation.
-    var isTypeMember: Bool {
+    /// Whether the requirement belongs to the type or to each instance. Only functions,
+    /// properties, and subscripts can be type members; a `static subscript` is rejected
+    /// by diagnostics before generation.
+    var scope: MemberScope {
         switch self {
         case .function(let decl):
-            return decl.modifiers.declaresTypeMember
+            return decl.modifiers.declaresTypeMember ? .type : .instance
         case .variable(let decl):
-            return decl.modifiers.declaresTypeMember
+            return decl.modifiers.declaresTypeMember ? .type : .instance
         case .subscript(let decl):
-            return decl.modifiers.declaresTypeMember
+            return decl.modifiers.declaresTypeMember ? .type : .instance
         case .initializer, .associatedType, .typeAlias, .unsupported:
-            return false
+            return .instance
         }
     }
 

@@ -6,9 +6,9 @@ import SwiftSyntaxBuilder
 extension MockGenerator {
     /// The assignments that clear one storage struct's fields, addressed through the
     /// `withLock` closure's `storage` binding and keeping the protocol's `#if` structure.
-    private func resetLines(forTypeMembers includeTypeMembers: Bool, overloads: OverloadContext) -> [String] {
+    private func resetLines(for scope: MemberScope, overloads: OverloadContext) -> [String] {
         mapLinesPreservingIfConfig { requirement in
-            guard requirement.isTypeMember == includeTypeMembers else {
+            guard requirement.scope == scope else {
                 return []
             }
             return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
@@ -65,7 +65,7 @@ extension MockGenerator {
         // Instance slots are plain stored properties here, so they are assigned through
         // the direct-model names.
         let resetStatements = mapCodeBlockItemsPreservingIfConfig { requirement in
-            guard !requirement.isTypeMember else {
+            guard requirement.scope == .instance else {
                 return []
             }
             return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
@@ -85,7 +85,7 @@ extension MockGenerator {
         // Static slots are lock-backed even in a mock whose instance state is not, so
         // they are cleared in one acquisition rather than one per slot: a caller
         // recording a call concurrently would otherwise see a half-reset mock.
-        let staticResetLines = resetLines(forTypeMembers: true, overloads: overloads)
+        let staticResetLines = resetLines(for: .type, overloads: overloads)
         if !staticResetLines.isEmpty {
             statements.append(CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
                 storageName: "Self.\(MockNaming.staticStorageName)",
@@ -104,9 +104,9 @@ extension MockGenerator {
             : []
 
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(
-                additional: additionalModifiers,
-                isOverridable: shape.canBeSubclassedOutsideModule
+            modifiers: modifiers(
+                for: shape.canBeSubclassedOutsideModule ? .overridableMember : .member,
+                additional: additionalModifiers
             ),
             name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(
@@ -124,8 +124,8 @@ extension MockGenerator {
     /// static slots in another, so each storage struct is reset atomically. On an actor
     /// mock the method is `nonisolated`, so a test can reset without awaiting.
     private func generateLockBackedResetMethod() -> FunctionDeclSyntax {
-        let instanceResetLines = resetLines(forTypeMembers: false, overloads: overloads)
-        let staticResetLines = resetLines(forTypeMembers: true, overloads: overloads)
+        let instanceResetLines = resetLines(for: .instance, overloads: overloads)
+        let staticResetLines = resetLines(for: .type, overloads: overloads)
 
         var bodyStatements: [CodeBlockItemSyntax] = []
         if shape.subclassesParentMock {
@@ -162,9 +162,9 @@ extension MockGenerator {
         }
 
         return FunctionDeclSyntax(
-            modifiers: buildModifiers(
-                additional: additionalModifiers,
-                isOverridable: shape.canBeSubclassedOutsideModule
+            modifiers: modifiers(
+                for: shape.canBeSubclassedOutsideModule ? .overridableMember : .member,
+                additional: additionalModifiers
             ),
             name: .identifier(MockNaming.resetMethodName),
             signature: FunctionSignatureSyntax(

@@ -17,7 +17,7 @@ extension MockGenerator {
             funcDecl,
             identifier: requirement.identifier,
             genericParamNames: Self.extractGenericParameterNames(from: funcDecl),
-            isTypeMember: requirement.isTypeMember
+            scope: requirement.scope
         )
         members.append(MemberBlockItemSyntax(decl: mockFunction))
 
@@ -27,13 +27,13 @@ extension MockGenerator {
     /// The requirement's tracking slots as mock members, one stored or lock-backed
     /// property per `TrackingField`.
     func trackingMemberItems(for requirement: TrackingRequirement) -> [MemberBlockItemSyntax] {
-        let access = trackingAccess(isTypeMember: requirement.isTypeMember)
+        let access = trackingAccess(for: requirement.scope)
         return requirement.trackingFields(model: access.model).map { field in
             MemberBlockItemSyntax(decl: generateTrackingStorageProperty(
                 name: field.name,
                 type: field.type,
                 initializer: field.initialValue,
-                isTypeMember: requirement.isTypeMember,
+                scope: requirement.scope,
                 leavesMockIsolation: requirement.leavesMockIsolation
             ))
         }
@@ -48,15 +48,15 @@ extension MockGenerator {
         name fullName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
-        isTypeMember: Bool,
-        leavesMockIsolation: Bool = false
+        scope: MemberScope,
+        leavesMockIsolation: Bool
     ) -> VariableDeclSyntax {
-        var additionalModifiers = Self.typeMemberModifiers(isTypeMember: isTypeMember)
+        var additionalModifiers = scope.modifiers
 
-        switch trackingAccess(isTypeMember: isTypeMember) {
+        switch trackingAccess(for: scope) {
         case .direct:
             return Self.makeStoredProperty(
-                modifiers: buildModifiers(additional: additionalModifiers),
+                modifiers: modifiers(for: .member, additional: additionalModifiers),
                 name: fullName,
                 type: type,
                 initializer: initializer
@@ -65,10 +65,10 @@ extension MockGenerator {
         case .lockBacked(let storageName):
             additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
                 leavesMockIsolation: leavesMockIsolation,
-                isTypeMember: isTypeMember
+                scope: scope
             ))
             return Self.makeLockBackedProperty(
-                modifiers: buildModifiers(additional: additionalModifiers),
+                modifiers: modifiers(for: .member, additional: additionalModifiers),
                 name: fullName,
                 type: type,
                 storageName: storageName,
@@ -84,7 +84,7 @@ extension MockGenerator {
         _ funcDecl: FunctionDeclSyntax,
         identifier: String,
         genericParamNames: Set<String>,
-        isTypeMember: Bool
+        scope: MemberScope
     ) -> FunctionDeclSyntax {
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
@@ -95,7 +95,7 @@ extension MockGenerator {
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let throwsErrorType = funcDecl.signature.effectSpecifiers?.throwsErrorType
         let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
-        let access = trackingAccess(isTypeMember: isTypeMember)
+        let access = trackingAccess(for: scope)
 
         let body = buildFunctionBody(
             identifier: identifier,
@@ -114,13 +114,13 @@ extension MockGenerator {
                     MockNaming.callArgs(identifier),
                     MockNaming.handler(identifier),
                 ]),
-                isTypeMember: isTypeMember
+                scope: scope
             )
         )
 
         return FunctionDeclSyntax(
             attributes: Self.witnessAttributes(of: funcDecl.attributes),
-            modifiers: buildModifiers(additional: Self.typeMemberModifiers(isTypeMember: isTypeMember)),
+            modifiers: modifiers(for: .member, additional: scope.modifiers),
             name: funcDecl.name,
             genericParameterClause: funcDecl.genericParameterClause,
             signature: funcDecl.signature,

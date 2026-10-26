@@ -155,18 +155,18 @@ struct TrackingAccessTests {
         }
 
         let plain = try generator(ofProtocol: "protocol Service {}")
-        guard case .direct = plain.trackingAccess(isTypeMember: false) else {
+        guard case .direct = plain.trackingAccess(for: .instance) else {
             Issue.record("expected direct access for an instance member of a plain mock")
             return
         }
-        guard case .lockBacked(let staticStorage) = plain.trackingAccess(isTypeMember: true) else {
+        guard case .lockBacked(let staticStorage) = plain.trackingAccess(for: .type) else {
             Issue.record("expected lock-backed access for a type member")
             return
         }
         #expect(staticStorage == "_staticStorage")
 
         let sendable = try generator(ofProtocol: "protocol Service: Sendable {}")
-        guard case .lockBacked(let storage) = sendable.trackingAccess(isTypeMember: false) else {
+        guard case .lockBacked(let storage) = sendable.trackingAccess(for: .instance) else {
             Issue.record("expected lock-backed access for an instance member of a Sendable mock")
             return
         }

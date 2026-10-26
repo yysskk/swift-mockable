@@ -49,7 +49,7 @@ extension MockGenerator {
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         let errorType = getterEffects?.throwsErrorType?.trimmedDescription
         // Subscripts are never type members, so their state is instance state.
-        let access = trackingAccess(isTypeMember: false)
+        let access = trackingAccess(for: .instance)
         let names = WitnessNames(
             parameters: parameters,
             memberNames: access.referencedMembers([
@@ -129,7 +129,7 @@ extension MockGenerator {
         }
 
         return SubscriptDeclSyntax(
-            modifiers: buildModifiers(),
+            modifiers: modifiers(for: .member),
             genericParameterClause: subscriptDecl.genericParameterClause,
             parameterClause: subscriptDecl.parameterClause,
             returnClause: subscriptDecl.returnClause,

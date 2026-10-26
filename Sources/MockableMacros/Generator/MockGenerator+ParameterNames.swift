@@ -142,7 +142,7 @@ extension MockGenerator {
         /// Picks names that no parameter of the requirement declares. The defaults are
         /// kept whenever they are free, so an ordinary requirement's witness is
         /// generated exactly as before.
-        init(parameters: FunctionParameterListSyntax, memberNames: [String] = [], isTypeMember: Bool = false) {
+        init(parameters: FunctionParameterListSyntax, memberNames: [String] = [], scope: MemberScope = .instance) {
             let parameterNames = Set(parameters.map(MockGenerator.declaredParameterName))
             var taken = parameterNames
 
@@ -152,7 +152,7 @@ extension MockGenerator {
             self.storage = MockGenerator.uniqueName(startingAt: "storage", avoiding: &taken)
 
             let shadowsMember = memberNames.contains { parameterNames.contains($0) }
-            self.memberPrefix = shadowsMember ? (isTypeMember ? "Self." : "self.") : ""
+            self.memberPrefix = shadowsMember ? (scope == .type ? "Self." : "self.") : ""
         }
 
         /// The mock member `name` as the body should refer to it.

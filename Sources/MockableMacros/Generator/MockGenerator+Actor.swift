@@ -9,12 +9,12 @@ extension MockGenerator {
     /// mock only the members of a requirement whose witness leaves the mock's isolation
     /// do — a `nonisolated` one, or one with an `isolated` parameter — because that
     /// witness has to reach them.
-    func storageBackedMemberModifiers(leavesMockIsolation: Bool = false, isTypeMember: Bool = false) -> [DeclModifierSyntax] {
+    func storageBackedMemberModifiers(leavesMockIsolation: Bool, scope: MemberScope) -> [DeclModifierSyntax] {
         // An actor's static members are already reachable from outside it, so only its
         // instance members need the modifier. On a global-actor-isolated class every
         // member is isolated, static ones included.
         if shape.isActor {
-            return isTypeMember ? [] : [DeclModifierSyntax(name: .keyword(.nonisolated))]
+            return scope == .type ? [] : [DeclModifierSyntax(name: .keyword(.nonisolated))]
         }
         return leavesMockIsolation ? [DeclModifierSyntax(name: .keyword(.nonisolated))] : []
     }

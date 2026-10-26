@@ -79,7 +79,7 @@ enum ProtocolValidator {
     /// rather than silently dropped from the mock.
     static func unsupportedKind(_ requirement: Requirement) -> [Finding] {
         switch requirement {
-        case .subscript(let subscriptDecl) where requirement.isTypeMember:
+        case .subscript(let subscriptDecl) where requirement.scope == .type:
             return [Finding(.unsupportedMember(member: subscriptDecl.trimmedDescription), at: subscriptDecl)]
         case .unsupported(let decl):
             return [Finding(.unsupportedMember(member: decl.trimmedDescription), at: decl)]
