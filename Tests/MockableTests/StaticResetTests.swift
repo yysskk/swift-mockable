@@ -4,7 +4,7 @@ import Mockable
 
 // Static tracking state is shared by every instance, so it lives behind a lock even in a
 // mock whose instance state does not, and it is cleared through the type rather than an
-// instance. The type-level `resetMock()` has to clear it in one acquisition: a caller
+// instance. The type-level `resetStaticMock()` has to clear it in one acquisition: a caller
 // recording a call concurrently must never see a half-reset mock.
 
 @Mockable
@@ -19,7 +19,7 @@ protocol StaticResetService {
 struct StaticResetTests {
     @Test("Static tracking state is cleared as a whole by the type's resetMock")
     func staticStateIsCleared() {
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
 
         StaticResetServiceMock.recordHandler = { _ in }
         StaticResetServiceMock.record(1)
@@ -28,7 +28,7 @@ struct StaticResetTests {
         #expect(StaticResetServiceMock.recordCallCount == 2)
         #expect(StaticResetServiceMock.recordCallArguments == [1, 2])
 
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
 
         #expect(StaticResetServiceMock.recordCallCount == 0)
         #expect(StaticResetServiceMock.recordCallArguments.isEmpty)
@@ -37,7 +37,7 @@ struct StaticResetTests {
 
     @Test("An instance's resetMock leaves the static state alone")
     func instanceResetLeavesStaticState() {
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
         let mock = StaticResetServiceMock()
 
         StaticResetServiceMock.recordHandler = { _ in }
@@ -50,24 +50,24 @@ struct StaticResetTests {
         #expect(StaticResetServiceMock.recordCallCount == 1)
         #expect(StaticResetServiceMock.recordHandler != nil)
 
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
         #expect(StaticResetServiceMock.recordCallCount == 0)
     }
 
     @Test("The type's resetMock leaves an instance's state alone")
     func typeResetLeavesInstanceState() {
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
         let mock = StaticResetServiceMock()
 
         mock.ping()
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
 
         #expect(mock.pingCallCount == 1)
     }
 
     @Test("Resetting while calls are recorded leaves the mock consistent")
     func resetUnderConcurrency() async {
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
         StaticResetServiceMock.recordHandler = { _ in }
 
         // Recording and resetting the same static slots from two tasks. Each reset
@@ -81,12 +81,12 @@ struct StaticResetTests {
             }
             group.addTask {
                 for _ in 0..<200 {
-                    StaticResetServiceMock.resetMock()
+                    StaticResetServiceMock.resetStaticMock()
                 }
             }
         }
 
-        StaticResetServiceMock.resetMock()
+        StaticResetServiceMock.resetStaticMock()
         #expect(StaticResetServiceMock.recordCallCount == 0)
         #expect(StaticResetServiceMock.recordCallArguments.isEmpty)
         #expect(StaticResetServiceMock.recordHandler == nil)

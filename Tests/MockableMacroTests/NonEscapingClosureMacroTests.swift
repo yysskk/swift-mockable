@@ -42,7 +42,7 @@ struct NonEscapingClosureMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -83,7 +83,7 @@ struct NonEscapingClosureMacroTests {
                     runCallArguments = []
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -123,7 +123,7 @@ struct NonEscapingClosureMacroTests {
                     subscribeCallArguments = []
                     subscribeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

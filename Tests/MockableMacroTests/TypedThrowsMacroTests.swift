@@ -46,7 +46,7 @@ struct TypedThrowsMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -92,7 +92,7 @@ struct TypedThrowsMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -137,7 +137,7 @@ struct TypedThrowsMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -177,7 +177,7 @@ struct TypedThrowsMacroTests {
                     runCallArguments = []
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -223,7 +223,7 @@ struct TypedThrowsMacroTests {
                     computeCallArguments = []
                     computeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -299,7 +299,7 @@ struct TypedThrowsMacroTests {
                         storage.computeHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -339,7 +339,7 @@ struct TypedThrowsMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -386,7 +386,7 @@ struct TypedThrowsMacroTests {
                     subscriptIntCallArguments = []
                     subscriptIntHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -421,7 +421,7 @@ struct TypedThrowsMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -468,7 +468,7 @@ struct TypedThrowsMacroTests {
                     parseCallArguments = []
                     parseHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -539,7 +539,7 @@ struct TypedThrowsMacroTests {
                         storage.valueHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -580,7 +580,7 @@ struct TypedThrowsMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -622,7 +622,7 @@ struct TypedThrowsMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -663,7 +663,7 @@ struct TypedThrowsMacroTests {
                     pingCallCount = 0
                     pingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -704,7 +704,7 @@ struct TypedThrowsMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -745,7 +745,7 @@ struct TypedThrowsMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -785,7 +785,7 @@ struct TypedThrowsMacroTests {
                     settingCallCount = 0
                     settingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -829,7 +829,7 @@ struct TypedThrowsMacroTests {
                     settingCallCount = 0
                     settingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

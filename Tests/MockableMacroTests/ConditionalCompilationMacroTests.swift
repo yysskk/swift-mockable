@@ -101,7 +101,7 @@ struct ConditionalCompilationMacroTests {
                     getAllObjectsHandler = nil
                     #endif
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -160,7 +160,7 @@ struct ConditionalCompilationMacroTests {
                     _debugInfo = nil
                     #endif
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -249,7 +249,7 @@ struct ConditionalCompilationMacroTests {
                     logToFallbackHandler = nil
                     #endif
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -407,7 +407,7 @@ struct ConditionalCompilationMacroTests {
                         #endif
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

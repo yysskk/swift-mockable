@@ -88,7 +88,7 @@ struct OverloadedMethodMacroTests {
                     getValueCallCount = 0
                     getValueHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -144,7 +144,7 @@ struct OverloadedMethodMacroTests {
                     saveDataCallArguments = []
                     saveDataHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -201,7 +201,7 @@ struct OverloadedMethodMacroTests {
                     getStringDataThrowingCallArguments = []
                     getStringDataThrowingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -274,7 +274,7 @@ struct OverloadedMethodMacroTests {
                     fetchIntStringAsyncThrowingCallArguments = []
                     fetchIntStringAsyncThrowingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -347,7 +347,7 @@ struct OverloadedMethodMacroTests {
                     processStringCallArguments = []
                     processStringHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -405,7 +405,7 @@ struct OverloadedMethodMacroTests {
                     handlePairAB2CallArguments = []
                     handlePairAB2Handler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -492,7 +492,7 @@ struct OverloadedMethodMacroTests {
                     saveStringArrayCallArguments = []
                     saveStringArrayHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

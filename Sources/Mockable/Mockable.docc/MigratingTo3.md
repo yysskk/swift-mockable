@@ -55,15 +55,15 @@ that needs to know whether a property was set should track that itself.
 
 An instance's `resetMock()` now clears only that instance's state. The state of
 `static` requirements, which every instance shares, is cleared by the type-level
-`resetMock()`:
+`resetStaticMock()`:
 
 ```swift
 // 2.x — cleared instance and static state together
 mock.resetMock()
 
 // 3.0
-mock.resetMock()          // instance state
-ServiceMock.resetMock()   // static state
+mock.resetMock()                // instance state
+ServiceMock.resetStaticMock()   // static state
 ```
 
 Add the type-level call wherever a test relied on an instance reset to clear static
@@ -72,10 +72,14 @@ uses the mock type, and Swift Testing runs tests in parallel by default, a stati
 requirement is best exercised by a mock type that only one test uses, or by a
 `.serialized` suite.
 
-Every mock declares the type-level `resetMock()`, with an empty body when the protocol
-has no `static` requirement. On a class mock it is a `class` method: a child mock's
-overrides its parent's and calls `super.resetMock()` first, as the instance method
-does.
+Every class mock declares the type-level `resetStaticMock()`, with an empty body when
+the protocol has no `static` requirement: it is a `class` method, and a child mock's
+overrides its parent's and calls `super.resetStaticMock()` first, as the instance method
+does. An actor mock declares it only when the protocol has `static` requirements.
+
+`resetStaticMock()` was spelled `resetMock()` in 3.0.0 itself, sharing the instance
+method's name; it was renamed so that the two resets cannot be mistaken for each other.
+
 
 ## Import `Synchronization` Yourself
 

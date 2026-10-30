@@ -48,7 +48,7 @@ struct WitnessAttributeMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -92,7 +92,7 @@ struct WitnessAttributeMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

@@ -195,7 +195,7 @@ struct SendableMacroTests {
                         storage.existsHandler = nil
                     }
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             #endif
@@ -267,7 +267,7 @@ struct SendableMacroTests {
                         storage.logHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -337,7 +337,7 @@ struct SendableMacroTests {
                         storage.registerHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -399,7 +399,7 @@ struct SendableMacroTests {
                         storage._timeout = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

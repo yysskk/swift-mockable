@@ -61,7 +61,7 @@ struct AssociatedTypeMacroTests {
                     saveCallArguments = []
                     saveHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -106,7 +106,7 @@ struct AssociatedTypeMacroTests {
                     getCallCount = 0
                     getHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -169,7 +169,7 @@ struct AssociatedTypeMacroTests {
                     saveCallArguments = []
                     saveHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -239,7 +239,7 @@ struct AssociatedTypeMacroTests {
                         storage.fetchHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -353,8 +353,6 @@ struct AssociatedTypeMacroTests {
                         storage.setHandler = nil
                     }
                 }
-                static func resetMock() {
-                }
             }
             #endif
             """,
@@ -430,7 +428,7 @@ struct AssociatedTypeMacroTests {
                     decodeCallArguments = []
                     decodeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -475,7 +473,7 @@ struct AssociatedTypeMacroTests {
                     makeCallCount = 0
                     makeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -519,7 +517,7 @@ struct AssociatedTypeMacroTests {
                     _currentState = nil
                     previousState = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -564,7 +562,7 @@ struct AssociatedTypeMacroTests {
                     getAllCallCount = 0
                     getAllHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -608,7 +606,7 @@ struct AssociatedTypeMacroTests {
                     fetchCallArguments = []
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -652,7 +650,7 @@ struct AssociatedTypeMacroTests {
                     processCallArguments = []
                     processHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -711,7 +709,7 @@ struct AssociatedTypeMacroTests {
                     saveCallArguments = []
                     saveHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -788,7 +786,7 @@ struct AssociatedTypeMacroTests {
                         storage.getHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -831,7 +829,7 @@ struct AssociatedTypeMacroTests {
                     subscribeCallArguments = []
                     subscribeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

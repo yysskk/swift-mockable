@@ -42,7 +42,7 @@ struct SubscriptMacroTests {
                     subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -83,7 +83,7 @@ struct SubscriptMacroTests {
                     subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -124,7 +124,7 @@ struct SubscriptMacroTests {
                     subscriptStringCallArguments = []
                     subscriptStringHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -174,7 +174,7 @@ struct SubscriptMacroTests {
                     subscriptIntHandler = nil
                     subscriptIntSetHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -224,7 +224,7 @@ struct SubscriptMacroTests {
                     subscriptIntIntHandler = nil
                     subscriptIntIntSetHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -290,7 +290,7 @@ struct SubscriptMacroTests {
                     subscriptStringHandler = nil
                     subscriptStringSetHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -361,7 +361,7 @@ struct SubscriptMacroTests {
                         storage.subscriptStringHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -454,7 +454,7 @@ struct SubscriptMacroTests {
                         storage.subscriptIntSetHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -524,8 +524,6 @@ struct SubscriptMacroTests {
                         storage.subscriptStringCallArguments = []
                         storage.subscriptStringHandler = nil
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif
@@ -617,8 +615,6 @@ struct SubscriptMacroTests {
                         storage.subscriptIntHandler = nil
                         storage.subscriptIntSetHandler = nil
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif

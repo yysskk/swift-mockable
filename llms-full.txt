@@ -90,7 +90,7 @@ A non-optional property traps when read before it is set; an optional one reads 
 ### Utility
 
 - `resetMock()` -- clears the instance's handlers, call counts, call arguments, and stored properties
-- `<Protocol>Mock.resetMock()` -- clears the `static` tracking state the mock type shares
+- `<Protocol>Mock.resetStaticMock()` -- clears the `static` tracking state the mock type shares
 
 ## Naming Conventions
 
@@ -469,7 +469,7 @@ protocol Configuration {
 }
 ```
 
-Static tracking state belongs to the mock type, so the type's own `resetMock()` clears it (`ConfigurationMock.resetMock()`); an instance's `resetMock()` does not. Every mock declares the type-level method, with an empty body when the protocol has no `static` requirement.
+Static tracking state belongs to the mock type, so the type's `resetStaticMock()` clears it (`ConfigurationMock.resetStaticMock()`); an instance's `resetMock()` does not. Every class mock declares the type-level method, with an empty body when the protocol has no `static` requirement, so a child mock can override it; an actor mock declares it only when the protocol has `static` requirements.
 
 ### Initializer Requirements
 
@@ -601,8 +601,8 @@ Protocols annotated with `@MainActor` or a custom global actor (`@DataActor`, `@
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-ops when handler is `nil`.
-- `resetMock()` clears an instance's handlers, call counts, call arguments, and stored properties; `<Protocol>Mock.resetMock()` clears the `static` state.
-- For inherited protocols, both `resetMock()` methods call `super.resetMock()` before resetting child members.
+- `resetMock()` clears an instance's handlers, call counts, call arguments, and stored properties; `<Protocol>Mock.resetStaticMock()` clears the `static` state.
+- For inherited protocols, `resetMock()` calls `super.resetMock()` and `resetStaticMock()` calls `super.resetStaticMock()` before resetting child members.
 
 ## Diagnostics and Limitations
 

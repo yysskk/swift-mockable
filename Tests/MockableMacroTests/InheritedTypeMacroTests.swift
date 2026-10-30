@@ -72,7 +72,7 @@ struct InheritedTypeMacroTests {
                         storage.runHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -113,7 +113,7 @@ struct InheritedTypeMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -245,7 +245,7 @@ struct InheritedTypeMacroTests {
                     runCallCount = 0
                     runHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -300,8 +300,6 @@ struct InheritedTypeMacroTests {
                         storage.initCallCount = 0
                         storage.initCallArguments = []
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif
