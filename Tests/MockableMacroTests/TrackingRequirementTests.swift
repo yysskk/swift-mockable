@@ -14,7 +14,7 @@ struct TrackingRequirementTests {
         }
         let generator = MockGenerator(shape: ProtocolShape(protocolDecl), members: protocolDecl.memberBlock.members)
         return generator.requirements.flatMap {
-            generator.trackingRequirements(for: $0, overloads: generator.overloads)
+            generator.trackingRequirements(for: $0)
         }
     }
 

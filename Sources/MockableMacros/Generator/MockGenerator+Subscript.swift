@@ -278,3 +278,29 @@ if let \(pattern) {
         return "(\(paramList), \(returnTypeStr)) -> Void"
     }
 }
+
+/// Emits a subscript requirement: its tracking slots and the subscript witness that
+/// records each read and forwards reads and writes to the handlers.
+struct SubscriptEmitter: RequirementEmitter {
+    let generator: MockGenerator
+    let decl: SubscriptDeclSyntax
+    let trackingRequirement: TrackingRequirement
+
+    init(generator: MockGenerator, decl: SubscriptDeclSyntax, requirement: Requirement) {
+        self.generator = generator
+        self.decl = decl
+        self.trackingRequirement = generator.subscriptTrackingRequirement(
+            for: decl,
+            leavesMockIsolation: requirement.leavesMockIsolation,
+            overloads: generator.overloads
+        )
+    }
+
+    var trackingRequirements: [TrackingRequirement] {
+        [trackingRequirement]
+    }
+
+    func members() -> [MemberBlockItemSyntax] {
+        generator.generateSubscriptMock(decl, requirement: trackingRequirement)
+    }
+}

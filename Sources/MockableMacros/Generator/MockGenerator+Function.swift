@@ -535,3 +535,30 @@ if let \(handlerBinding) {
         }
     }
 }
+
+/// Emits a method requirement: its tracking slots and the witness that records the
+/// call and forwards to the handler.
+struct FunctionEmitter: RequirementEmitter {
+    let generator: MockGenerator
+    let decl: FunctionDeclSyntax
+    let trackingRequirement: TrackingRequirement
+
+    init(generator: MockGenerator, decl: FunctionDeclSyntax, requirement: Requirement) {
+        self.generator = generator
+        self.decl = decl
+        self.trackingRequirement = generator.functionTrackingRequirement(
+            for: decl,
+            scope: requirement.scope,
+            leavesMockIsolation: requirement.leavesMockIsolation,
+            overloads: generator.overloads
+        )
+    }
+
+    var trackingRequirements: [TrackingRequirement] {
+        [trackingRequirement]
+    }
+
+    func members() -> [MemberBlockItemSyntax] {
+        generator.generateFunctionMock(decl, requirement: trackingRequirement)
+    }
+}

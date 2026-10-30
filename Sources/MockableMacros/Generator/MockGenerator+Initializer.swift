@@ -115,3 +115,25 @@ extension MockGenerator {
         return [buildTypedThrowsCatch(statements: statements, errorType: errorType)]
     }
 }
+
+/// Emits an `init` requirement: its tracking slots and the `required init` witness that
+/// records the call.
+struct InitializerEmitter: RequirementEmitter {
+    let generator: MockGenerator
+    let decl: InitializerDeclSyntax
+    let trackingRequirement: TrackingRequirement
+
+    init(generator: MockGenerator, decl: InitializerDeclSyntax) {
+        self.generator = generator
+        self.decl = decl
+        self.trackingRequirement = generator.initializerTrackingRequirement(for: decl, overloads: generator.overloads)
+    }
+
+    var trackingRequirements: [TrackingRequirement] {
+        [trackingRequirement]
+    }
+
+    func members() -> [MemberBlockItemSyntax] {
+        generator.generateInitializerMock(decl, requirement: trackingRequirement)
+    }
+}
