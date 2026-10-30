@@ -187,7 +187,6 @@ struct AccessLevelIntegrationTests {
         mock.resetMock()
 
         #expect(mock.loadDataCallCount == 0)
-        #expect(mock.loadDataCallArguments.isEmpty)
         #expect(mock.loadDataHandler == nil)
     }
 

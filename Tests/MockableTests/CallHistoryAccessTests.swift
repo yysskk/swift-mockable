@@ -7,6 +7,13 @@ import Mockable
 // lock-backed one), so only the witness and `resetMock()` write it. These tests check
 // that both still can, for each storage model.
 
+// Used by one test only: its static state is shared by every instance.
+@Mockable
+protocol HeartbeatService {
+    static func ping()
+    func beat(at time: Int)
+}
+
 @Suite("Call History Access Integration Tests")
 struct CallHistoryAccessTests {
     @Test("A plain mock records into and resets its read-only call history")
@@ -18,12 +25,10 @@ struct CallHistoryAccessTests {
         _ = mock.getValue()
 
         #expect(mock.getValueCallCount == 2)
-        #expect(mock.getValueCallArguments.count == 2)
 
         mock.resetMock()
 
         #expect(mock.getValueCallCount == 0)
-        #expect(mock.getValueCallArguments.isEmpty)
     }
 
     @Test("A Sendable mock records into and resets its read-only call history")
@@ -54,5 +59,22 @@ struct CallHistoryAccessTests {
 
         #expect(mock.updateProfileCallCount == 0)
         #expect(mock.updateProfileCallArguments.isEmpty)
+    }
+
+    @Test("A requirement without arguments records its calls in the call count alone")
+    func requirementWithoutArguments() {
+        HeartbeatServiceMock.resetMock()
+        let mock = HeartbeatServiceMock()
+
+        HeartbeatServiceMock.ping()
+        HeartbeatServiceMock.ping()
+        mock.beat(at: 3)
+
+        #expect(HeartbeatServiceMock.pingCallCount == 2)
+        #expect(mock.beatCallArguments == [3])
+
+        HeartbeatServiceMock.resetMock()
+
+        #expect(HeartbeatServiceMock.pingCallCount == 0)
     }
 }

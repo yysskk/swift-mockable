@@ -31,31 +31,33 @@ struct VoidReturnMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var qualifiedCallCount: Int = 0
-                private(set) var qualifiedCallArguments: [()] = []
+                @available(*, deprecated, message: "qualified records no arguments; use qualifiedCallCount instead.")
+                var qualifiedCallArguments: [()] {
+                    Array(repeating: (), count: qualifiedCallCount)
+                }
                 var qualifiedHandler: (() -> Swift.Void)? = nil
                 func qualified() -> Swift.Void {
                     qualifiedCallCount += 1
-                    qualifiedCallArguments.append(())
                     if let _handler = qualifiedHandler {
                         _handler()
                     }
                 }
                 private(set) var parenthesizedCallCount: Int = 0
-                private(set) var parenthesizedCallArguments: [()] = []
+                @available(*, deprecated, message: "parenthesized records no arguments; use parenthesizedCallCount instead.")
+                var parenthesizedCallArguments: [()] {
+                    Array(repeating: (), count: parenthesizedCallCount)
+                }
                 var parenthesizedHandler: (() -> Void)? = nil
                 func parenthesized() -> (Void) {
                     parenthesizedCallCount += 1
-                    parenthesizedCallArguments.append(())
                     if let _handler = parenthesizedHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     qualifiedCallCount = 0
-                    qualifiedCallArguments = []
                     qualifiedHandler = nil
                     parenthesizedCallCount = 0
-                    parenthesizedCallArguments = []
                     parenthesizedHandler = nil
                 }
                 class func resetMock() {
@@ -86,21 +88,25 @@ struct VoidReturnMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: (() -> Swift.Void)? = nil
                 func run() -> Swift.Void {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler()
                     }
                 }
                 private(set) var runIntCallCount: Int = 0
-                private(set) var runIntCallArguments: [()] = []
+                @available(*, deprecated, message: "runInt records no arguments; use runIntCallCount instead.")
+                var runIntCallArguments: [()] {
+                    Array(repeating: (), count: runIntCallCount)
+                }
                 var runIntHandler: (() -> Int)? = nil
                 func run() -> Int {
                     runIntCallCount += 1
-                    runIntCallArguments.append(())
                     guard let _handler = runIntHandler else {
                         fatalError("\\(Self.self).runIntHandler is not set")
                     }
@@ -108,10 +114,8 @@ struct VoidReturnMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                     runIntCallCount = 0
-                    runIntCallArguments = []
                     runIntHandler = nil
                 }
                 class func resetMock() {

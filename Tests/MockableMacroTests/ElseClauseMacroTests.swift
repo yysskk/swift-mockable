@@ -41,18 +41,19 @@ struct ElseClauseMacroTests {
                     #if CUSTOM
                     #else
                     var betaCallCount: Int = 0
-                    var betaCallArguments: [()] = []
                     var betaHandler: (@Sendable () -> Int)? = nil
                     #endif
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 #if CUSTOM
                 private(set) var alphaCallCount: Int = 0
-                private(set) var alphaCallArguments: [()] = []
+                @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
+                var alphaCallArguments: [()] {
+                    Array(repeating: (), count: alphaCallCount)
+                }
                 var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
-                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
@@ -63,10 +64,9 @@ struct ElseClauseMacroTests {
                         $0.betaCallCount
                     }
                 }
+                @available(*, deprecated, message: "beta records no arguments; use betaCallCount instead.")
                 static var betaCallArguments: [()] {
-                    _staticStorage.withLock {
-                        $0.betaCallArguments
-                    }
+                    Array(repeating: (), count: betaCallCount)
                 }
                 static var betaHandler: (@Sendable () -> Int)? {
                     get {
@@ -83,7 +83,6 @@ struct ElseClauseMacroTests {
                 static func beta() -> Int {
                     let _handler = _staticStorage.withLock { storage -> (@Sendable () -> Int)? in
                         storage.betaCallCount += 1
-                        storage.betaCallArguments.append(())
                         return storage.betaHandler
                     }
                     guard let _handler else {
@@ -95,7 +94,6 @@ struct ElseClauseMacroTests {
                 func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     #endif
@@ -105,7 +103,6 @@ struct ElseClauseMacroTests {
                         #if CUSTOM
                         #else
                         storage.betaCallCount = 0
-                        storage.betaCallArguments = []
                         storage.betaHandler = nil
                         #endif
                     }
@@ -145,11 +142,13 @@ struct ElseClauseMacroTests {
             class ServiceMock: Service {
                 #if CUSTOM
                 private(set) var alphaCallCount: Int = 0
-                private(set) var alphaCallArguments: [()] = []
+                @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
+                var alphaCallArguments: [()] {
+                    Array(repeating: (), count: alphaCallCount)
+                }
                 var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
-                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
@@ -181,7 +180,6 @@ struct ElseClauseMacroTests {
                 func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     fetchIntCallCount = 0
@@ -227,11 +225,13 @@ struct ElseClauseMacroTests {
             open class ServiceMock: Service {
                 #if CUSTOM
                 public private(set) var alphaCallCount: Int = 0
-                public private(set) var alphaCallArguments: [()] = []
+                @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
+                public var alphaCallArguments: [()] {
+                    Array(repeating: (), count: alphaCallCount)
+                }
                 public var alphaHandler: (() -> Void)? = nil
                 public func alpha() {
                     alphaCallCount += 1
-                    alphaCallArguments.append(())
                     if let _handler = alphaHandler {
                         _handler()
                     }
@@ -247,7 +247,6 @@ struct ElseClauseMacroTests {
                 open func resetMock() {
                     #if CUSTOM
                     alphaCallCount = 0
-                    alphaCallArguments = []
                     alphaHandler = nil
                     #else
                     initCallCount = 0

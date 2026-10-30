@@ -63,11 +63,13 @@ struct OverloadedMethodMacroTests {
                     }
                 }
                 private(set) var getValueCallCount: Int = 0
-                private(set) var getValueCallArguments: [()] = []
+                @available(*, deprecated, message: "getValue records no arguments; use getValueCallCount instead.")
+                var getValueCallArguments: [()] {
+                    Array(repeating: (), count: getValueCallCount)
+                }
                 var getValueHandler: (() -> String)? = nil
                 func getValue() -> String {
                     getValueCallCount += 1
-                    getValueCallArguments.append(())
                     guard let _handler = getValueHandler else {
                         fatalError("\\(Self.self).getValueHandler is not set")
                     }
@@ -84,7 +86,6 @@ struct OverloadedMethodMacroTests {
                     setStringStringCallArguments = []
                     setStringStringHandler = nil
                     getValueCallCount = 0
-                    getValueCallArguments = []
                     getValueHandler = nil
                 }
                 class func resetMock() {

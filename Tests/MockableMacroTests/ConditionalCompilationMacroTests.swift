@@ -39,11 +39,13 @@ struct ConditionalCompilationMacroTests {
             #if DEBUG
             class KeychainManagerMock: KeychainManager {
                 private(set) var getDeviceIdCallCount: Int = 0
-                private(set) var getDeviceIdCallArguments: [()] = []
+                @available(*, deprecated, message: "getDeviceId records no arguments; use getDeviceIdCallCount instead.")
+                var getDeviceIdCallArguments: [()] {
+                    Array(repeating: (), count: getDeviceIdCallCount)
+                }
                 var getDeviceIdHandler: (() -> String?)? = nil
                 func getDeviceId() -> String? {
                     getDeviceIdCallCount += 1
-                    getDeviceIdCallArguments.append(())
                     guard let _handler = getDeviceIdHandler else {
                         return nil
                     }
@@ -61,21 +63,25 @@ struct ConditionalCompilationMacroTests {
                 }
                 #if DEBUG
                 private(set) var deleteDeviceIdCallCount: Int = 0
-                private(set) var deleteDeviceIdCallArguments: [()] = []
+                @available(*, deprecated, message: "deleteDeviceId records no arguments; use deleteDeviceIdCallCount instead.")
+                var deleteDeviceIdCallArguments: [()] {
+                    Array(repeating: (), count: deleteDeviceIdCallCount)
+                }
                 var deleteDeviceIdHandler: (() -> Void)? = nil
                 func deleteDeviceId() {
                     deleteDeviceIdCallCount += 1
-                    deleteDeviceIdCallArguments.append(())
                     if let _handler = deleteDeviceIdHandler {
                         _handler()
                     }
                 }
                 private(set) var getAllObjectsCallCount: Int = 0
-                private(set) var getAllObjectsCallArguments: [()] = []
+                @available(*, deprecated, message: "getAllObjects records no arguments; use getAllObjectsCallCount instead.")
+                var getAllObjectsCallArguments: [()] {
+                    Array(repeating: (), count: getAllObjectsCallCount)
+                }
                 var getAllObjectsHandler: (() -> [AnyObject])? = nil
                 func getAllObjects() -> [AnyObject] {
                     getAllObjectsCallCount += 1
-                    getAllObjectsCallArguments.append(())
                     guard let _handler = getAllObjectsHandler else {
                         return []
                     }
@@ -84,17 +90,14 @@ struct ConditionalCompilationMacroTests {
                 #endif
                 func resetMock() {
                     getDeviceIdCallCount = 0
-                    getDeviceIdCallArguments = []
                     getDeviceIdHandler = nil
                     saveAccessIdCallCount = 0
                     saveAccessIdCallArguments = []
                     saveAccessIdHandler = nil
                     #if DEBUG
                     deleteDeviceIdCallCount = 0
-                    deleteDeviceIdCallArguments = []
                     deleteDeviceIdHandler = nil
                     getAllObjectsCallCount = 0
-                    getAllObjectsCallArguments = []
                     getAllObjectsHandler = nil
                     #endif
                 }
@@ -196,33 +199,39 @@ struct ConditionalCompilationMacroTests {
             class PlatformLoggerMock: PlatformLogger {
                 #if os(iOS)
                 private(set) var logToConsoleCallCount: Int = 0
-                private(set) var logToConsoleCallArguments: [()] = []
+                @available(*, deprecated, message: "logToConsole records no arguments; use logToConsoleCallCount instead.")
+                var logToConsoleCallArguments: [()] {
+                    Array(repeating: (), count: logToConsoleCallCount)
+                }
                 var logToConsoleHandler: (() -> Void)? = nil
                 func logToConsole() {
                     logToConsoleCallCount += 1
-                    logToConsoleCallArguments.append(())
                     if let _handler = logToConsoleHandler {
                         _handler()
                     }
                 }
                 #elseif os(macOS)
                 private(set) var logToFileCallCount: Int = 0
-                private(set) var logToFileCallArguments: [()] = []
+                @available(*, deprecated, message: "logToFile records no arguments; use logToFileCallCount instead.")
+                var logToFileCallArguments: [()] {
+                    Array(repeating: (), count: logToFileCallCount)
+                }
                 var logToFileHandler: (() -> Void)? = nil
                 func logToFile() {
                     logToFileCallCount += 1
-                    logToFileCallArguments.append(())
                     if let _handler = logToFileHandler {
                         _handler()
                     }
                 }
                 #else
                 private(set) var logToFallbackCallCount: Int = 0
-                private(set) var logToFallbackCallArguments: [()] = []
+                @available(*, deprecated, message: "logToFallback records no arguments; use logToFallbackCallCount instead.")
+                var logToFallbackCallArguments: [()] {
+                    Array(repeating: (), count: logToFallbackCallCount)
+                }
                 var logToFallbackHandler: (() -> Void)? = nil
                 func logToFallback() {
                     logToFallbackCallCount += 1
-                    logToFallbackCallArguments.append(())
                     if let _handler = logToFallbackHandler {
                         _handler()
                     }
@@ -231,15 +240,12 @@ struct ConditionalCompilationMacroTests {
                 func resetMock() {
                     #if os(iOS)
                     logToConsoleCallCount = 0
-                    logToConsoleCallArguments = []
                     logToConsoleHandler = nil
                     #elseif os(macOS)
                     logToFileCallCount = 0
-                    logToFileCallArguments = []
                     logToFileHandler = nil
                     #else
                     logToFallbackCallCount = 0
-                    logToFallbackCallArguments = []
                     logToFallbackHandler = nil
                     #endif
                 }
@@ -283,15 +289,12 @@ struct ConditionalCompilationMacroTests {
                 private struct Storage {
                     #if os(iOS)
                     var logToConsoleCallCount: Int = 0
-                    var logToConsoleCallArguments: [()] = []
                     var logToConsoleHandler: (@Sendable () -> Void)? = nil
                     #elseif os(macOS)
                     var logToFileCallCount: Int = 0
-                    var logToFileCallArguments: [()] = []
                     var logToFileHandler: (@Sendable () -> Void)? = nil
                     #else
                     var logToFallbackCallCount: Int = 0
-                    var logToFallbackCallArguments: [()] = []
                     var logToFallbackHandler: (@Sendable () -> Void)? = nil
                     #endif
                 }
@@ -302,10 +305,9 @@ struct ConditionalCompilationMacroTests {
                         $0.logToConsoleCallCount
                     }
                 }
+                @available(*, deprecated, message: "logToConsole records no arguments; use logToConsoleCallCount instead.")
                 var logToConsoleCallArguments: [()] {
-                    _storage.withLock {
-                        $0.logToConsoleCallArguments
-                    }
+                    Array(repeating: (), count: logToConsoleCallCount)
                 }
                 var logToConsoleHandler: (@Sendable () -> Void)? {
                     get {
@@ -322,7 +324,6 @@ struct ConditionalCompilationMacroTests {
                 func logToConsole() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToConsoleCallCount += 1
-                        storage.logToConsoleCallArguments.append(())
                         return storage.logToConsoleHandler
                     }
                     if let _handler {
@@ -335,10 +336,9 @@ struct ConditionalCompilationMacroTests {
                         $0.logToFileCallCount
                     }
                 }
+                @available(*, deprecated, message: "logToFile records no arguments; use logToFileCallCount instead.")
                 var logToFileCallArguments: [()] {
-                    _storage.withLock {
-                        $0.logToFileCallArguments
-                    }
+                    Array(repeating: (), count: logToFileCallCount)
                 }
                 var logToFileHandler: (@Sendable () -> Void)? {
                     get {
@@ -355,7 +355,6 @@ struct ConditionalCompilationMacroTests {
                 func logToFile() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToFileCallCount += 1
-                        storage.logToFileCallArguments.append(())
                         return storage.logToFileHandler
                     }
                     if let _handler {
@@ -368,10 +367,9 @@ struct ConditionalCompilationMacroTests {
                         $0.logToFallbackCallCount
                     }
                 }
+                @available(*, deprecated, message: "logToFallback records no arguments; use logToFallbackCallCount instead.")
                 var logToFallbackCallArguments: [()] {
-                    _storage.withLock {
-                        $0.logToFallbackCallArguments
-                    }
+                    Array(repeating: (), count: logToFallbackCallCount)
                 }
                 var logToFallbackHandler: (@Sendable () -> Void)? {
                     get {
@@ -388,7 +386,6 @@ struct ConditionalCompilationMacroTests {
                 func logToFallback() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.logToFallbackCallCount += 1
-                        storage.logToFallbackCallArguments.append(())
                         return storage.logToFallbackHandler
                     }
                     if let _handler {
@@ -400,15 +397,12 @@ struct ConditionalCompilationMacroTests {
                     _storage.withLock { storage in
                         #if os(iOS)
                         storage.logToConsoleCallCount = 0
-                        storage.logToConsoleCallArguments = []
                         storage.logToConsoleHandler = nil
                         #elseif os(macOS)
                         storage.logToFileCallCount = 0
-                        storage.logToFileCallArguments = []
                         storage.logToFileHandler = nil
                         #else
                         storage.logToFallbackCallCount = 0
-                        storage.logToFallbackCallArguments = []
                         storage.logToFallbackHandler = nil
                         #endif
                     }

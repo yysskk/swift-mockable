@@ -33,7 +33,6 @@ struct InheritedTypeMacroTests {
             class ServiceMock: Service, @unchecked Sendable {
                 private struct Storage {
                     var runCallCount: Int = 0
-                    var runCallArguments: [()] = []
                     var runHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -42,10 +41,9 @@ struct InheritedTypeMacroTests {
                         $0.runCallCount
                     }
                 }
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
                 var runCallArguments: [()] {
-                    _storage.withLock {
-                        $0.runCallArguments
-                    }
+                    Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (@Sendable () -> Void)? {
                     get {
@@ -62,7 +60,6 @@ struct InheritedTypeMacroTests {
                 func run() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.runCallCount += 1
-                        storage.runCallArguments.append(())
                         return storage.runHandler
                     }
                     if let _handler {
@@ -72,7 +69,6 @@ struct InheritedTypeMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.runCallCount = 0
-                        storage.runCallArguments = []
                         storage.runHandler = nil
                     }
                 }
@@ -102,18 +98,19 @@ struct InheritedTypeMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -233,18 +230,19 @@ struct InheritedTypeMacroTests {
             #if DEBUG
             class TypeMock: `Type` {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {

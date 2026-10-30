@@ -83,7 +83,8 @@ struct TrackingRequirement {
     /// members that witness reaches have to be nonisolated.
     var leavesMockIsolation: Bool = false
     let kind: Kind
-    /// The tuple element type of the `CallArguments` array; `nil` for properties.
+    /// The tuple element type of the `CallArguments` array; `nil` for properties, and
+    /// for a requirement without arguments to record, which has no `CallArguments`.
     let callArgumentsTupleType: TypeSyntax?
     /// The type of the `<name>Handler` slot, an optional closure such as
     /// `((Int) async throws -> String)?` — `@Sendable` when the mock's state requires
@@ -112,13 +113,13 @@ struct TrackingRequirement {
     func trackingFields(model: StorageModel) -> [TrackingField] {
         switch kind {
         case .function:
-            return [callCountField, callArgumentsField, handlerField]
+            return [callCountField] + callArgumentsFields + [handlerField]
         case .initializer:
-            return [callCountField, callArgumentsField]
+            return [callCountField] + callArgumentsFields
         case .effectfulVariable:
             return [callCountField, handlerField]
         case .subscriptRequirement(let isGetOnly):
-            var fields = [callCountField, callArgumentsField, handlerField]
+            var fields = [callCountField] + callArgumentsFields + [handlerField]
             if !isGetOnly {
                 fields.append(setHandlerField)
             }
@@ -138,14 +139,31 @@ struct TrackingRequirement {
         )
     }
 
-    /// The `<name>CallArguments` slot, an array of the requirement's argument tuple.
-    private var callArgumentsField: TrackingField {
-        TrackingField(
+    /// The `<name>CallArguments` slot, an array of the requirement's argument tuple, or
+    /// no slot for a requirement without arguments to record.
+    private var callArgumentsFields: [TrackingField] {
+        guard let callArgumentsTupleType else {
+            return []
+        }
+        return [TrackingField(
             role: .callArguments,
             name: MockNaming.callArguments(identifier),
-            type: TypeSyntax(ArrayTypeSyntax(element: callArgumentsTupleType ?? TypeSyntax(stringLiteral: "Void"))),
+            type: TypeSyntax(ArrayTypeSyntax(element: callArgumentsTupleType)),
             initialValue: ExprSyntax(ArrayExprSyntax(elements: ArrayElementListSyntax([])))
-        )
+        )]
+    }
+
+    /// Whether the requirement used to record an array of empty tuples as its
+    /// `CallArguments`: a method, initializer, or subscript without arguments to record.
+    /// Such a requirement keeps a deprecated, computed `CallArguments` for one major
+    /// release, so code reading it keeps compiling while it migrates to `CallCount`.
+    var hasDeprecatedCallArguments: Bool {
+        switch kind {
+        case .function, .initializer, .subscriptRequirement:
+            return callArgumentsTupleType == nil
+        case .storedVariable, .effectfulVariable:
+            return false
+        }
     }
 
     /// The `<name>Handler` slot, an optional closure.

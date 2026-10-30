@@ -117,18 +117,19 @@ struct GlobalActorMacroTests {
             #if DEBUG
             @Persistence.DataActor class StoreMock: Store {
                 private(set) var saveCallCount: Int = 0
-                private(set) var saveCallArguments: [()] = []
+                @available(*, deprecated, message: "save records no arguments; use saveCallCount instead.")
+                var saveCallArguments: [()] {
+                    Array(repeating: (), count: saveCallCount)
+                }
                 var saveHandler: (@Sendable () -> Void)? = nil
                 func save() {
                     saveCallCount += 1
-                    saveCallArguments.append(())
                     if let _handler = saveHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     saveCallCount = 0
-                    saveCallArguments = []
                     saveHandler = nil
                 }
                 class func resetMock() {
@@ -158,7 +159,6 @@ struct GlobalActorMacroTests {
             class ChildMock: IsolatedBaseMock, Child {
                 private struct Storage {
                     var trackCallCount: Int = 0
-                    var trackCallArguments: [()] = []
                     var trackHandler: (@Sendable () -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
@@ -167,10 +167,9 @@ struct GlobalActorMacroTests {
                         $0.trackCallCount
                     }
                 }
+                @available(*, deprecated, message: "track records no arguments; use trackCallCount instead.")
                 nonisolated var trackCallArguments: [()] {
-                    _storage.withLock {
-                        $0.trackCallArguments
-                    }
+                    Array(repeating: (), count: trackCallCount)
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {
                     get {
@@ -187,7 +186,6 @@ struct GlobalActorMacroTests {
                 func track() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.trackCallCount += 1
-                        storage.trackCallArguments.append(())
                         return storage.trackHandler
                     }
                     if let _handler {
@@ -198,7 +196,6 @@ struct GlobalActorMacroTests {
                     super.resetMock()
                     _storage.withLock { storage in
                         storage.trackCallCount = 0
-                        storage.trackCallArguments = []
                         storage.trackHandler = nil
                     }
                 }

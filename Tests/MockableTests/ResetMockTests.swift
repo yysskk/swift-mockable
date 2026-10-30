@@ -23,10 +23,8 @@ struct ResetMockIntegrationTests {
 
         // Verify all counts and args are reset
         #expect(mock.doSomethingCallCount == 0)
-        #expect(mock.doSomethingCallArguments.isEmpty)
         #expect(mock.doSomethingHandler == nil)
         #expect(mock.getValueCallCount == 0)
-        #expect(mock.getValueCallArguments.isEmpty)
         #expect(mock.getValueHandler == nil)
     }
 

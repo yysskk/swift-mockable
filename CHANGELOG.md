@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** The call history a mock records — `<name>CallCount` and `<name>CallArguments` — is read-only outside the mock: `private(set)` on a plain mock, and get-only on a `Sendable`, `actor`, or global-actor-isolated mock, whose witnesses record into the locked storage directly. A test could previously assign either one, which put the call count and the captured arguments out of step; only the mock's witnesses and `resetMock()` write them now. A test that assigned them to start over calls `resetMock()` instead. Handlers and properties are what a test sets up, and stay writable.
 - A plain mock's handlers are ordinary closures instead of `@Sendable` ones, so a test can install a handler that captures and mutates its local state — `mock.logHandler = { messages.append($0) }` — without a `nonisolated(unsafe)` variable. Making every handler `@Sendable` added no safety to a mock that is not shared across isolation domains, and it rejected the most common way to observe calls. Handlers stay `@Sendable` where the mock does share them: on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements. Existing tests keep compiling, since a `@Sendable` closure converts to an ordinary one.
 
+### Deprecated
+
+- `<name>CallArguments` of a requirement without arguments to record — `func refresh()`, an argument-less `init()`, or a requirement whose only parameter is a non-escaping closure. It held one empty tuple per call (`[()]`), which says nothing the call count does not, and added a member to every such requirement. The mock no longer stores it: the member is now computed from `<name>CallCount` and deprecated, and it will be removed in the next major release. Read `<name>CallCount` instead.
+
 ## [3.0.0] - 2026-10-25
 
 This release renames and reshapes generated members to follow the Swift API Design Guidelines. See [Migrating to 3.0](docs/migrating-to-3.0.md) for before-and-after code for each breaking change.

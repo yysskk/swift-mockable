@@ -17,6 +17,18 @@ read-only from outside it (`private(set)`, or get-only on `Sendable` and `actor`
 so a test cannot put the two out of step; `resetMock()` clears it. Handlers and properties
 are the test's to set up and stay writable.
 
+A requirement without arguments to record — `func refresh()`, or one whose only parameter
+is a non-escaping closure — has no `CallArguments`: its `CallCount` is the whole call
+history. Until the next major release it keeps a deprecated `CallArguments` computed from
+the call count, so code reading it still compiles with a warning:
+
+```swift
+@available(*, deprecated, message: "refresh records no arguments; use refreshCallCount instead.")
+var refreshCallArguments: [()] {
+    Array(repeating: (), count: refreshCallCount)
+}
+```
+
 For overloaded methods, a suffix is appended:
 
 1. Start with sanitized parameter type names.

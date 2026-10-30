@@ -31,11 +31,13 @@ struct MainActorMacroTests {
             #if DEBUG
             @MainActor class PresenterMock: Presenter {
                 private(set) var loadDataCallCount: Int = 0
-                private(set) var loadDataCallArguments: [()] = []
+                @available(*, deprecated, message: "loadData records no arguments; use loadDataCallCount instead.")
+                var loadDataCallArguments: [()] {
+                    Array(repeating: (), count: loadDataCallCount)
+                }
                 var loadDataHandler: (@Sendable () -> Void)? = nil
                 func loadData() {
                     loadDataCallCount += 1
-                    loadDataCallArguments.append(())
                     if let _handler = loadDataHandler {
                         _handler()
                     }
@@ -51,7 +53,6 @@ struct MainActorMacroTests {
                 }
                 func resetMock() {
                     loadDataCallCount = 0
-                    loadDataCallArguments = []
                     loadDataHandler = nil
                     _title = nil
                 }
@@ -83,11 +84,13 @@ struct MainActorMacroTests {
             #if DEBUG
             @MainActor class AsyncPresenterMock: AsyncPresenter {
                 private(set) var fetchItemsCallCount: Int = 0
-                private(set) var fetchItemsCallArguments: [()] = []
+                @available(*, deprecated, message: "fetchItems records no arguments; use fetchItemsCallCount instead.")
+                var fetchItemsCallArguments: [()] {
+                    Array(repeating: (), count: fetchItemsCallCount)
+                }
                 var fetchItemsHandler: (@Sendable () async -> [String])? = nil
                 func fetchItems() async -> [String] {
                     fetchItemsCallCount += 1
-                    fetchItemsCallArguments.append(())
                     guard let _handler = fetchItemsHandler else {
                         return []
                     }
@@ -95,7 +98,6 @@ struct MainActorMacroTests {
                 }
                 func resetMock() {
                     fetchItemsCallCount = 0
-                    fetchItemsCallArguments = []
                     fetchItemsHandler = nil
                 }
                 class func resetMock() {
@@ -217,13 +219,11 @@ struct MainActorMacroTests {
             @MainActor class ChildMock: BaseMock, Child {
                 private struct Storage {
                     var loadCallCount: Int = 0
-                    var loadCallArguments: [()] = []
                     var loadHandler: (@Sendable () -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
                 private struct StaticStorage {
                     var makeCallCount: Int = 0
-                    var makeCallArguments: [()] = []
                     var makeHandler: (@Sendable () -> Int)? = nil
                 }
                 private static nonisolated let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
@@ -232,10 +232,9 @@ struct MainActorMacroTests {
                         $0.loadCallCount
                     }
                 }
+                @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
                 var loadCallArguments: [()] {
-                    _storage.withLock {
-                        $0.loadCallArguments
-                    }
+                    Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (@Sendable () -> Void)? {
                     get {
@@ -252,7 +251,6 @@ struct MainActorMacroTests {
                 func load() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.loadCallCount += 1
-                        storage.loadCallArguments.append(())
                         return storage.loadHandler
                     }
                     if let _handler {
@@ -264,10 +262,9 @@ struct MainActorMacroTests {
                         $0.makeCallCount
                     }
                 }
+                @available(*, deprecated, message: "make records no arguments; use makeCallCount instead.")
                 static var makeCallArguments: [()] {
-                    _staticStorage.withLock {
-                        $0.makeCallArguments
-                    }
+                    Array(repeating: (), count: makeCallCount)
                 }
                 static var makeHandler: (@Sendable () -> Int)? {
                     get {
@@ -284,7 +281,6 @@ struct MainActorMacroTests {
                 static func make() -> Int {
                     let _handler = _staticStorage.withLock { storage -> (@Sendable () -> Int)? in
                         storage.makeCallCount += 1
-                        storage.makeCallArguments.append(())
                         return storage.makeHandler
                     }
                     guard let _handler else {
@@ -296,7 +292,6 @@ struct MainActorMacroTests {
                     super.resetMock()
                     _storage.withLock { storage in
                         storage.loadCallCount = 0
-                        storage.loadCallArguments = []
                         storage.loadHandler = nil
                     }
                 }
@@ -304,7 +299,6 @@ struct MainActorMacroTests {
                     super.resetMock()
                     Self._staticStorage.withLock { storage in
                         storage.makeCallCount = 0
-                        storage.makeCallArguments = []
                         storage.makeHandler = nil
                     }
                 }
@@ -335,7 +329,6 @@ struct MainActorMacroTests {
             @MainActor class ChildMock: BaseMock, Child {
                 private struct Storage {
                     var trackCallCount: Int = 0
-                    var trackCallArguments: [()] = []
                     var trackHandler: (@Sendable () -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
@@ -344,10 +337,9 @@ struct MainActorMacroTests {
                         $0.trackCallCount
                     }
                 }
+                @available(*, deprecated, message: "track records no arguments; use trackCallCount instead.")
                 nonisolated var trackCallArguments: [()] {
-                    _storage.withLock {
-                        $0.trackCallArguments
-                    }
+                    Array(repeating: (), count: trackCallCount)
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {
                     get {
@@ -364,7 +356,6 @@ struct MainActorMacroTests {
                 func track() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.trackCallCount += 1
-                        storage.trackCallArguments.append(())
                         return storage.trackHandler
                     }
                     if let _handler {
@@ -375,7 +366,6 @@ struct MainActorMacroTests {
                     super.resetMock()
                     _storage.withLock { storage in
                         storage.trackCallCount = 0
-                        storage.trackCallArguments = []
                         storage.trackHandler = nil
                     }
                 }
@@ -414,7 +404,6 @@ struct MainActorMacroTests {
                     var runCallArguments: [any Actor] = []
                     var runHandler: (@Sendable (any Actor) async -> Void)? = nil
                     var loadCallCount: Int = 0
-                    var loadCallArguments: [()] = []
                     var loadHandler: (@Sendable () -> Void)? = nil
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
@@ -455,10 +444,9 @@ struct MainActorMacroTests {
                         $0.loadCallCount
                     }
                 }
+                @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
                 var loadCallArguments: [()] {
-                    _storage.withLock {
-                        $0.loadCallArguments
-                    }
+                    Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (@Sendable () -> Void)? {
                     get {
@@ -475,7 +463,6 @@ struct MainActorMacroTests {
                 func load() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.loadCallCount += 1
-                        storage.loadCallArguments.append(())
                         return storage.loadHandler
                     }
                     if let _handler {
@@ -488,7 +475,6 @@ struct MainActorMacroTests {
                         storage.runCallArguments = []
                         storage.runHandler = nil
                         storage.loadCallCount = 0
-                        storage.loadCallArguments = []
                         storage.loadHandler = nil
                     }
                 }

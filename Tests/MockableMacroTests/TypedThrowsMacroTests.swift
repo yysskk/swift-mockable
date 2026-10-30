@@ -72,11 +72,13 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class FetcherMock: Fetcher {
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() async throws -> Data)? = nil
                 func fetch() async throws(NetworkError) -> Data {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -88,7 +90,6 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -117,11 +118,13 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: ((() throws -> Void) throws -> Void)? = nil
                 func run<E: Error>(_ body: () throws(E) -> Void) throws(E) {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         do {
                             try _handler(body)
@@ -132,7 +135,6 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -493,7 +495,6 @@ struct TypedThrowsMacroTests {
             class StoreMock: Store, @unchecked Sendable {
                 private struct Storage {
                     var valueCallCount: Int = 0
-                    var valueCallArguments: [()] = []
                     var valueHandler: (@Sendable () throws -> Int)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -502,10 +503,9 @@ struct TypedThrowsMacroTests {
                         $0.valueCallCount
                     }
                 }
+                @available(*, deprecated, message: "value records no arguments; use valueCallCount instead.")
                 var valueCallArguments: [()] {
-                    _storage.withLock {
-                        $0.valueCallArguments
-                    }
+                    Array(repeating: (), count: valueCallCount)
                 }
                 var valueHandler: (@Sendable () throws -> Int)? {
                     get {
@@ -522,7 +522,6 @@ struct TypedThrowsMacroTests {
                 func value() throws(StoreError) -> Int {
                     let _handler = _storage.withLock { storage -> (@Sendable () throws -> Int)? in
                         storage.valueCallCount += 1
-                        storage.valueCallArguments.append(())
                         return storage.valueHandler
                     }
                     guard let _handler else {
@@ -537,7 +536,6 @@ struct TypedThrowsMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.valueCallCount = 0
-                        storage.valueCallArguments = []
                         storage.valueHandler = nil
                     }
                 }
@@ -608,11 +606,13 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class FetcherMock: Fetcher {
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() async -> Data)? = nil
                 func fetch() async throws(Never) -> Data {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -620,7 +620,6 @@ struct TypedThrowsMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -649,18 +648,19 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class PingerMock: Pinger {
                 private(set) var pingCallCount: Int = 0
-                private(set) var pingCallArguments: [()] = []
+                @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
+                var pingCallArguments: [()] {
+                    Array(repeating: (), count: pingCallCount)
+                }
                 var pingHandler: (() -> Void)? = nil
                 func ping() throws(Never) {
                     pingCallCount += 1
-                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {

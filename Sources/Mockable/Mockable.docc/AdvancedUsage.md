@@ -12,6 +12,8 @@ For a non-overloaded method `fetch`, generated members are:
 - `fetchCallArguments`
 - `fetchHandler`
 
+A requirement without arguments to record — `func refresh()`, or one whose only parameter is a non-escaping closure — has no `CallArguments`: its `CallCount` is the whole call history. Until the next major release it keeps a deprecated `CallArguments` computed from the call count, so code reading it still compiles with a warning.
+
 For overloaded methods, a suffix is appended:
 
 1. Start with sanitized parameter type names.

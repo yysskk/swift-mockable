@@ -229,7 +229,6 @@ struct AssociatedTypeIntegrationTests {
         #expect(mock.saveCallArguments.isEmpty)
         #expect(mock.saveHandler == nil)
         #expect(mock.fetchAllCallCount == 0)
-        #expect(mock.fetchAllCallArguments.isEmpty)
         #expect(mock.fetchAllHandler == nil)
     }
 

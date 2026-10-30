@@ -27,18 +27,19 @@ struct RethrowsMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: ((() throws -> Void) -> Void)? = nil
                 func run(_ body: () throws -> Void) rethrows {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler(body)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -67,11 +68,13 @@ struct RethrowsMacroTests {
             #if DEBUG
             class TransformerMock: Transformer {
                 private(set) var transformCallCount: Int = 0
-                private(set) var transformCallArguments: [()] = []
+                @available(*, deprecated, message: "transform records no arguments; use transformCallCount instead.")
+                var transformCallArguments: [()] {
+                    Array(repeating: (), count: transformCallCount)
+                }
                 var transformHandler: (((Int) throws -> Int) -> Int)? = nil
                 func transform(_ body: (Int) throws -> Int) rethrows -> Int {
                     transformCallCount += 1
-                    transformCallArguments.append(())
                     guard let _handler = transformHandler else {
                         fatalError("\\(Self.self).transformHandler is not set")
                     }
@@ -79,7 +82,6 @@ struct RethrowsMacroTests {
                 }
                 func resetMock() {
                     transformCallCount = 0
-                    transformCallArguments = []
                     transformHandler = nil
                 }
                 class func resetMock() {
@@ -109,7 +111,6 @@ struct RethrowsMacroTests {
             class RunnerMock: Runner, @unchecked Sendable {
                 private struct Storage {
                     var runCallCount: Int = 0
-                    var runCallArguments: [()] = []
                     var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -118,10 +119,9 @@ struct RethrowsMacroTests {
                         $0.runCallCount
                     }
                 }
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
                 var runCallArguments: [()] {
-                    _storage.withLock {
-                        $0.runCallArguments
-                    }
+                    Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? {
                     get {
@@ -138,7 +138,6 @@ struct RethrowsMacroTests {
                 func run(_ body: @Sendable () throws -> Void) rethrows {
                     let _handler = _storage.withLock { storage -> (@Sendable (@Sendable () throws -> Void) -> Void)? in
                         storage.runCallCount += 1
-                        storage.runCallArguments.append(())
                         return storage.runHandler
                     }
                     if let _handler {
@@ -148,7 +147,6 @@ struct RethrowsMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.runCallCount = 0
-                        storage.runCallArguments = []
                         storage.runHandler = nil
                     }
                 }

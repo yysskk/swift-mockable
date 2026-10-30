@@ -35,11 +35,13 @@ struct InitializerMacroTests {
                     initCallArguments.append(id)
                 }
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() -> Int)? = nil
                 func fetch() -> Int {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -49,7 +51,6 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -78,14 +79,15 @@ struct InitializerMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var initCallCount: Int = 0
-                private(set) var initCallArguments: [()] = []
+                @available(*, deprecated, message: "init records no arguments; use initCallCount instead.")
+                var initCallArguments: [()] {
+                    Array(repeating: (), count: initCallCount)
+                }
                 required init() {
                     initCallCount += 1
-                    initCallArguments.append(())
                 }
                 func resetMock() {
                     initCallCount = 0
-                    initCallArguments = []
                 }
                 class func resetMock() {
                 }
@@ -513,11 +515,13 @@ struct InitializerMacroTests {
             #if DEBUG
             open class ChildOfInitBaseMock: InitBaseMock, ChildOfInitBase {
                 public private(set) var childMethodCallCount: Int = 0
-                public private(set) var childMethodCallArguments: [()] = []
+                @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
+                public var childMethodCallArguments: [()] {
+                    Array(repeating: (), count: childMethodCallCount)
+                }
                 public var childMethodHandler: (() -> Void)? = nil
                 public func childMethod() {
                     childMethodCallCount += 1
-                    childMethodCallArguments.append(())
                     if let _handler = childMethodHandler {
                         _handler()
                     }
@@ -525,7 +529,6 @@ struct InitializerMacroTests {
                 open override func resetMock() {
                     super.resetMock()
                     childMethodCallCount = 0
-                    childMethodCallArguments = []
                     childMethodHandler = nil
                 }
                 open override class func resetMock() {

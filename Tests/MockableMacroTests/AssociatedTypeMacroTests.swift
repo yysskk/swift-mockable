@@ -32,11 +32,13 @@ struct AssociatedTypeMacroTests {
             class DataStoreMock: DataStore {
                 typealias Model = Any
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() -> Model)? = nil
                 func fetch() -> Model {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -54,7 +56,6 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                     saveCallCount = 0
                     saveCallArguments = []
@@ -89,11 +90,13 @@ struct AssociatedTypeMacroTests {
             class StringStoreMock: StringStore {
                 typealias Element = String
                 private(set) var getCallCount: Int = 0
-                private(set) var getCallArguments: [()] = []
+                @available(*, deprecated, message: "get records no arguments; use getCallCount instead.")
+                var getCallArguments: [()] {
+                    Array(repeating: (), count: getCallCount)
+                }
                 var getHandler: (() -> Element)? = nil
                 func get() -> Element {
                     getCallCount += 1
-                    getCallArguments.append(())
                     guard let _handler = getHandler else {
                         fatalError("\\(Self.self).getHandler is not set")
                     }
@@ -101,7 +104,6 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     getCallCount = 0
-                    getCallArguments = []
                     getHandler = nil
                 }
                 class func resetMock() {
@@ -197,7 +199,6 @@ struct AssociatedTypeMacroTests {
                 typealias Item = String
                 private struct Storage {
                     var fetchCallCount: Int = 0
-                    var fetchCallArguments: [()] = []
                     var fetchHandler: (@Sendable () async -> Item)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -206,10 +207,9 @@ struct AssociatedTypeMacroTests {
                         $0.fetchCallCount
                     }
                 }
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
                 var fetchCallArguments: [()] {
-                    _storage.withLock {
-                        $0.fetchCallArguments
-                    }
+                    Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (@Sendable () async -> Item)? {
                     get {
@@ -226,7 +226,6 @@ struct AssociatedTypeMacroTests {
                 func fetch() async -> Item {
                     let _handler = _storage.withLock { storage -> (@Sendable () async -> Item)? in
                         storage.fetchCallCount += 1
-                        storage.fetchCallArguments.append(())
                         return storage.fetchHandler
                     }
                     guard let _handler else {
@@ -237,7 +236,6 @@ struct AssociatedTypeMacroTests {
                 func resetMock() {
                     _storage.withLock { storage in
                         storage.fetchCallCount = 0
-                        storage.fetchCallArguments = []
                         storage.fetchHandler = nil
                     }
                 }
@@ -461,11 +459,13 @@ struct AssociatedTypeMacroTests {
             class AliasHostMock: AliasHost {
                 typealias Pair<T> = (T, T)
                 private(set) var makeCallCount: Int = 0
-                private(set) var makeCallArguments: [()] = []
+                @available(*, deprecated, message: "make records no arguments; use makeCallCount instead.")
+                var makeCallArguments: [()] {
+                    Array(repeating: (), count: makeCallCount)
+                }
                 var makeHandler: (() -> Int)? = nil
                 func make() -> Int {
                     makeCallCount += 1
-                    makeCallArguments.append(())
                     guard let _handler = makeHandler else {
                         fatalError("\\(Self.self).makeHandler is not set")
                     }
@@ -473,7 +473,6 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     makeCallCount = 0
-                    makeCallArguments = []
                     makeHandler = nil
                 }
                 class func resetMock() {
@@ -549,11 +548,13 @@ struct AssociatedTypeMacroTests {
             class ArrayStoreMock: ArrayStore {
                 typealias Element = [String: Int]
                 private(set) var getAllCallCount: Int = 0
-                private(set) var getAllCallArguments: [()] = []
+                @available(*, deprecated, message: "getAll records no arguments; use getAllCallCount instead.")
+                var getAllCallArguments: [()] {
+                    Array(repeating: (), count: getAllCallCount)
+                }
                 var getAllHandler: (() -> Element)? = nil
                 func getAll() -> Element {
                     getAllCallCount += 1
-                    getAllCallArguments.append(())
                     guard let _handler = getAllHandler else {
                         fatalError("\\(Self.self).getAllHandler is not set")
                     }
@@ -561,7 +562,6 @@ struct AssociatedTypeMacroTests {
                 }
                 func resetMock() {
                     getAllCallCount = 0
-                    getAllCallArguments = []
                     getAllHandler = nil
                 }
                 class func resetMock() {

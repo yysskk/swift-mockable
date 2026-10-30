@@ -189,18 +189,19 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG || UITESTS
             class UserServiceMock: UserService {
                 private(set) var pingCallCount: Int = 0
-                private(set) var pingCallArguments: [()] = []
+                @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
+                var pingCallArguments: [()] {
+                    Array(repeating: (), count: pingCallCount)
+                }
                 var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
-                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {
@@ -279,18 +280,19 @@ struct CompilationConditionArgumentMacroTests {
             #if _ENABLE_MOCKS_2
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
-                private(set) var clearCallArguments: [()] = []
+                @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
+                var clearCallArguments: [()] {
+                    Array(repeating: (), count: clearCallCount)
+                }
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -331,18 +333,19 @@ struct CompilationConditionArgumentMacroTests {
             #if \(expression)
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
-                private(set) var clearCallArguments: [()] = []
+                @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
+                var clearCallArguments: [()] {
+                    Array(repeating: (), count: clearCallCount)
+                }
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -371,18 +374,19 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
-                private(set) var clearCallArguments: [()] = []
+                @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
+                var clearCallArguments: [()] {
+                    Array(repeating: (), count: clearCallCount)
+                }
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
-                    clearCallArguments.append(())
                     if let _handler = clearHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     clearCallCount = 0
-                    clearCallArguments = []
                     clearHandler = nil
                 }
                 class func resetMock() {
@@ -410,11 +414,13 @@ struct CompilationConditionArgumentMacroTests {
 
             class PingServiceMock: PingService {
                 private(set) var pingCallCount: Int = 0
-                private(set) var pingCallArguments: [()] = []
+                @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
+                var pingCallArguments: [()] {
+                    Array(repeating: (), count: pingCallCount)
+                }
                 var pingHandler: (() -> Bool)? = nil
                 func ping() -> Bool {
                     pingCallCount += 1
-                    pingCallArguments.append(())
                     guard let _handler = pingHandler else {
                         fatalError("\\(Self.self).pingHandler is not set")
                     }
@@ -422,7 +428,6 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {
@@ -451,11 +456,13 @@ struct CompilationConditionArgumentMacroTests {
                 public init() {
                 }
                 public private(set) var fetchCallCount: Int = 0
-                public private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                public var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 public var fetchHandler: (() -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         fatalError("\\(Self.self).fetchHandler is not set")
                     }
@@ -463,7 +470,6 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 open func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 open class func resetMock() {
@@ -491,18 +497,19 @@ struct CompilationConditionArgumentMacroTests {
             #if DEBUG
             class PingServiceMock: PingService {
                 private(set) var pingCallCount: Int = 0
-                private(set) var pingCallArguments: [()] = []
+                @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
+                var pingCallArguments: [()] {
+                    Array(repeating: (), count: pingCallCount)
+                }
                 var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
-                    pingCallArguments.append(())
                     if let _handler = pingHandler {
                         _handler()
                     }
                 }
                 func resetMock() {
                     pingCallCount = 0
-                    pingCallArguments = []
                     pingHandler = nil
                 }
                 class func resetMock() {

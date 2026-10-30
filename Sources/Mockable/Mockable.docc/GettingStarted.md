@@ -75,7 +75,7 @@ For each protocol requirement, `@Mockable` generates:
 
 - **Functions**:
   - `<method>CallCount` -- number of calls
-  - `<method>CallArguments` -- array of captured arguments
+  - `<method>CallArguments` -- array of captured arguments (when the method has arguments to record)
   - `<method>Handler` -- configurable closure
 - **Properties**:
   - `<property>` -- the property itself, settable on the mock even for a `{ get }` requirement
