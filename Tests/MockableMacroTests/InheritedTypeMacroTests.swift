@@ -35,7 +35,7 @@ struct InheritedTypeMacroTests {
                     var runCallCount: Int = 0
                     var runHandler: (@Sendable () -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var runCallCount: Int {
                     _storage.withLock {
                         $0.runCallCount
@@ -278,7 +278,7 @@ struct InheritedTypeMacroTests {
                     var initCallCount: Int = 0
                     var initCallArguments: [String] = []
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var initCallCount: Int {
                     _storage.withLock {
                         $0.initCallCount

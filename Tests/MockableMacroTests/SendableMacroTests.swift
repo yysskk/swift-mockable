@@ -10,7 +10,7 @@ struct SendableMacroTests {
         "Mockable": MockableMacro.self
     ]
 
-    @Test("Sendable protocol generates thread-safe mock with MockableLock")
+    @Test("Sendable protocol generates thread-safe mock with _MockableLock")
     func sendableProtocol() {
         assertMacroExpansionForTesting(
             """
@@ -46,7 +46,7 @@ struct SendableMacroTests {
                     var existsCallArguments: [String] = []
                     var existsHandler: (@Sendable (String) -> Bool)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 public init() {
                 }
                 public var saveCallCount: Int {
@@ -227,7 +227,7 @@ struct SendableMacroTests {
                     var logCallArguments: [String] = []
                     var logHandler: (@Sendable (String) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var logCallCount: Int {
                     _storage.withLock {
                         $0.logCallCount
@@ -297,7 +297,7 @@ struct SendableMacroTests {
                     var registerCallArguments: [@Sendable (String) -> Void] = []
                     var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var registerCallCount: Int {
                     _storage.withLock {
                         $0.registerCallCount
@@ -368,7 +368,7 @@ struct SendableMacroTests {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var apiKey: String {
                     get {
                         _storage.withLock {

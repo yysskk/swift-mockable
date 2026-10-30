@@ -320,7 +320,7 @@ struct SubscriptMacroTests {
                     var subscriptStringCallArguments: [String] = []
                     var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var subscriptStringCallCount: Int {
                     _storage.withLock {
                         $0.subscriptStringCallCount
@@ -392,7 +392,7 @@ struct SubscriptMacroTests {
                     var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
                     var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var subscriptIntCallCount: Int {
                     _storage.withLock {
                         $0.subscriptIntCallCount
@@ -484,7 +484,7 @@ struct SubscriptMacroTests {
                     var subscriptStringCallArguments: [String] = []
                     var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var subscriptStringCallCount: Int {
                     _storage.withLock {
                         $0.subscriptStringCallCount
@@ -554,7 +554,7 @@ struct SubscriptMacroTests {
                     var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
                     var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var subscriptIntCallCount: Int {
                     _storage.withLock {
                         $0.subscriptIntCallCount

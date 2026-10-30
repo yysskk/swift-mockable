@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+- `MockableLock`, renamed `_MockableLock`. The type is public only so that generated code in a client module can reference it, and Swift marks such symbols with a leading underscore; under its plain name it appeared in code completion and took a common name in every module that imports Mockable. Generated mocks use the new name, and `MockableLock` remains as a deprecated type alias until the next major release.
 - `<name>CallArguments` of a requirement without arguments to record — `func refresh()`, an argument-less `init()`, or a requirement whose only parameter is a non-escaping closure. It held one empty tuple per call (`[()]`), which says nothing the call count does not, and added a member to every such requirement. The mock no longer stores it: the member is now computed from `<name>CallCount` and deprecated, and it will be removed in the next major release. Read `<name>CallCount` instead.
 
 ## [3.0.0] - 2026-10-25

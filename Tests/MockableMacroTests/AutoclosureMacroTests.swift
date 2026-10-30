@@ -196,7 +196,7 @@ struct AutoclosureMacroTests {
                     var recordCallArguments: [Int] = []
                     var recordHandler: (@Sendable (Int) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var recordCallCount: Int {
                     _storage.withLock {
                         $0.recordCallCount

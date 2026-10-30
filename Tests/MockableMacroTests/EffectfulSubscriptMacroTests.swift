@@ -117,7 +117,7 @@ struct EffectfulSubscriptMacroTests {
                     var subscriptStringCallArguments: [String] = []
                     var subscriptStringHandler: (@Sendable (String) async throws -> Int )? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var subscriptStringCallCount: Int {
                     _storage.withLock {
                         $0.subscriptStringCallCount

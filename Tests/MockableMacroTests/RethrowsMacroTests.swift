@@ -113,7 +113,7 @@ struct RethrowsMacroTests {
                     var runCallCount: Int = 0
                     var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var runCallCount: Int {
                     _storage.withLock {
                         $0.runCallCount

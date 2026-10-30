@@ -28,7 +28,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - Overloaded methods (suffixed with their argument labels, e.g. `fetchIDCallCount` for `fetch(id:)`; parameter types when labels coincide)
 - Initializer requirements (`init(...)`) as recording `required init` (including `Sendable`/`actor` mocks)
 - Static methods and properties
-- `Sendable` protocol support (`@unchecked Sendable` + `MockableLock`)
+- `Sendable` protocol support (`@unchecked Sendable` + `_MockableLock`)
 - `Actor` protocol support (actor mock with `nonisolated` helpers)
 - `@MainActor` and custom global actor protocol support
 - Protocol inheritance (child mock inherits parent mock)

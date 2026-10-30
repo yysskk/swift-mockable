@@ -488,7 +488,7 @@ Notes:
   (normally generated for `public` / `package` mocks) is omitted — the `required init`
   witnesses already provide accessible initializers.
 - `resetMock()` clears `initCallCount` and `initCallArguments` alongside the other tracking state.
-- For `Sendable` and `actor` mocks the recording goes through `MockableLock` like every other
+- For `Sendable` and `actor` mocks the recording goes through `_MockableLock` like every other
   member, so `initCallCount` / `initCallArguments` are lock-backed (and `nonisolated` on actors).
   An `actor` witness omits `required`, since actors are `final`.
 
@@ -505,7 +505,7 @@ see — and emits a diagnostic (see [Diagnostics](#diagnostics)).
 If a protocol inherits from `Sendable` (or uses `@Sendable` at protocol level), generated mocks:
 
 - conform to `@unchecked Sendable`
-- store mutable state behind `MockableLock`
+- store mutable state behind `_MockableLock`
 - declare their handlers as `@Sendable` closures
 
 Handlers are `@Sendable` wherever the mock shares them across isolation domains: on

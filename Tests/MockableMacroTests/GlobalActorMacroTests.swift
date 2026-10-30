@@ -36,7 +36,7 @@ struct GlobalActorMacroTests {
                     var saveCallArguments: [String] = []
                     var saveHandler: (@Sendable (String) -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var id: String {
                     get {
                         _storage.withLock {
@@ -161,7 +161,7 @@ struct GlobalActorMacroTests {
                     var trackCallCount: Int = 0
                     var trackHandler: (@Sendable () -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var trackCallCount: Int {
                     _storage.withLock {
                         $0.trackCallCount

@@ -8,7 +8,7 @@ import SwiftSyntaxBuilder
 /// The same requirement produces differently named and typed slots depending on
 /// where they live: `.direct` describes plain stored properties on the mock
 /// itself, `.lockBacked` the fields inside the `Storage`/`StaticStorage` structs
-/// guarded by `MockableLock`.
+/// guarded by `_MockableLock`.
 enum StorageModel {
     case direct
     case lockBacked

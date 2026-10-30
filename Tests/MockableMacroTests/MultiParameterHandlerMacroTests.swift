@@ -153,7 +153,7 @@ struct MultiParameterHandlerTests {
                     var addCallArguments: [(a: Int, b: Int)] = []
                     var addHandler: (@Sendable (Int, Int) -> Int)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var addCallCount: Int {
                     _storage.withLock {
                         $0.addCallCount

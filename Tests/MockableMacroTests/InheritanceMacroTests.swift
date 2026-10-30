@@ -223,7 +223,7 @@ struct InheritanceMacroTests {
         )
     }
 
-    @Test("Sendable protocol inheriting from parent uses MockableLock with override and super")
+    @Test("Sendable protocol inheriting from parent uses _MockableLock with override and super")
     func parentAndSendableMockableLock() {
         assertMacroExpansionForTesting(
             """
@@ -243,7 +243,7 @@ struct InheritanceMacroTests {
                     var childMethodCallCount: Int = 0
                     var childMethodHandler: (@Sendable () -> String)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var childMethodCallCount: Int {
                     _storage.withLock {
                         $0.childMethodCallCount

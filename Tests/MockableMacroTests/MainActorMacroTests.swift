@@ -135,7 +135,7 @@ struct MainActorMacroTests {
                     var trackCallArguments: [String] = []
                     var trackHandler: (@Sendable (String) -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var id: String {
                     get {
                         _storage.withLock {
@@ -221,12 +221,12 @@ struct MainActorMacroTests {
                     var loadCallCount: Int = 0
                     var loadHandler: (@Sendable () -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 private struct StaticStorage {
                     var makeCallCount: Int = 0
                     var makeHandler: (@Sendable () -> Int)? = nil
                 }
-                private static nonisolated let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static nonisolated let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 var loadCallCount: Int {
                     _storage.withLock {
                         $0.loadCallCount
@@ -331,7 +331,7 @@ struct MainActorMacroTests {
                     var trackCallCount: Int = 0
                     var trackHandler: (@Sendable () -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var trackCallCount: Int {
                     _storage.withLock {
                         $0.trackCallCount
@@ -406,7 +406,7 @@ struct MainActorMacroTests {
                     var loadCallCount: Int = 0
                     var loadHandler: (@Sendable () -> Void)? = nil
                 }
-                private nonisolated let _storage = MockableLock<Storage>(Storage())
+                private nonisolated let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var runCallCount: Int {
                     _storage.withLock {
                         $0.runCallCount

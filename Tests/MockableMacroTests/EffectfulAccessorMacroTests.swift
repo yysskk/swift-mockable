@@ -150,7 +150,7 @@ struct EffectfulAccessorMacroTests {
                     var flagCallCount: Int = 0
                     var flagHandler: (@Sendable () async throws -> Bool)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var flagCallCount: Int {
                     _storage.withLock {
                         $0.flagCallCount
@@ -215,7 +215,7 @@ struct EffectfulAccessorMacroTests {
                     var tokenCallCount: Int = 0
                     var tokenHandler: (@Sendable () async throws -> String)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var tokenCallCount: Int {
                     _storage.withLock {
                         $0.tokenCallCount
@@ -278,7 +278,7 @@ struct EffectfulAccessorMacroTests {
                     var apiKeyCallCount: Int = 0
                     var apiKeyHandler: (@Sendable () throws -> String)? = nil
                 }
-                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 static var apiKeyCallCount: Int {
                     _staticStorage.withLock {
                         $0.apiKeyCallCount

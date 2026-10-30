@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 // MARK: - Sendable Support
 
 extension MockGenerator {
-    /// Generates the private `MockableLock`-wrapped storage property (`_storage` or
+    /// Generates the private `_MockableLock`-wrapped storage property (`_storage` or
     /// `_staticStorage`) that guards a `Sendable`/actor mock's tracking state. The lock
     /// wraps a `Storage`/`StaticStorage` value holding every requirement's counters,
     /// captured arguments, and handlers.
@@ -33,7 +33,7 @@ extension MockGenerator {
                     initializer: InitializerClauseSyntax(
                         value: FunctionCallExprSyntax(
                             calledExpression: GenericSpecializationExprSyntax(
-                                expression: DeclReferenceExprSyntax(baseName: .identifier("MockableLock")),
+                                expression: DeclReferenceExprSyntax(baseName: .identifier("_MockableLock")),
                                 genericArgumentClause: GenericArgumentClauseSyntax(
                                     arguments: GenericArgumentListSyntax([
                                         makeGenericArgument(type: TypeSyntax(stringLiteral: storageTypeName))
