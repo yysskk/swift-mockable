@@ -118,7 +118,11 @@ struct CompilationConditionArgumentTests {
     @Test("A string literal is the custom condition it spells")
     func stringLiteralIsCustomCondition() {
         let condition: MockCompilationCondition = "DEBUG || UITESTS"
-        #expect(condition == .custom("DEBUG || UITESTS"))
+        guard case .custom(let expression) = condition else {
+            Issue.record("Expected a custom condition, got \(condition)")
+            return
+        }
+        #expect(expression == "DEBUG || UITESTS")
     }
 
     @Test(".custom mock with a compound condition works")
