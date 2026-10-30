@@ -31,8 +31,14 @@ var refreshCallArguments: [()] {
 
 For overloaded methods, a suffix is appended:
 
-1. Start with sanitized parameter type names.
-2. If that still collides, append:
+1. Start with the argument labels, as call sites tell overloads apart:
+   `fetch(id:)` and `fetch(name:)` generate `fetchIDHandler` and `fetchNameHandler`.
+   Each label is capitalized, and a label that starts with a common acronym (`id`, `url`,
+   `http`, `json`, ...) uppercases it, as the Swift API Design Guidelines case acronyms.
+2. Overloads whose labels coincide — including unlabeled ones such as `save(_ user:)` and
+   `save(_ users:)` — use their sanitized parameter type names instead (`saveStringHandler`,
+   `saveStringArrayHandler`).
+3. If that still collides, append:
    - return type (if non-`Void`)
    - `Async` (for `async`)
    - `Throwing` (for `throws`)
@@ -44,7 +50,7 @@ func get(url: URL) async -> String
 func get(url: URL) async throws -> Data
 ```
 
-Generates distinct handlers like:
+The labels and parameter types coincide, so these generate distinct handlers like:
 
 - `getURLStringAsyncHandler`
 - `getURLDataAsyncThrowingHandler`
@@ -65,7 +71,8 @@ This holds whichever requirement is declared first, and applies to subscripts an
 ### Subscripts
 
 Subscript-generated names use `subscript<suffix>...`.
-The suffix is based on subscript parameter types.
+The suffix is based on subscript parameter types: a subscript's parameters have no argument
+labels unless the declaration spells one out, so the index types tell subscripts apart.
 
 Example:
 
@@ -88,7 +95,8 @@ A sole `init` requirement generates members based on the identifier `init`:
 - `initCallCount`
 - `initCallArguments`
 
-Overloaded initializers append a parameter-type suffix, matching the method scheme:
+Overloaded initializers append a suffix by the same rules as methods — argument labels
+first, parameter types for initializers whose labels coincide:
 
 ```swift
 init(host: String)
@@ -97,8 +105,8 @@ init(host: String, port: Int)
 
 Generates:
 
-- `initStringCallCount` / `initStringCallArguments`
-- `initStringIntCallCount` / `initStringIntCallArguments`
+- `initHostCallCount` / `initHostCallArguments`
+- `initHostPortCallCount` / `initHostPortCallArguments`
 
 ### Properties
 
@@ -589,9 +597,9 @@ The mock declares the members of every branch, each under the branch's own condi
 @Mockable
 protocol Service {
     #if CUSTOM
-    func fetch(id: Int) -> Int      // fetchIntCallCount, fetchIntHandler, ...
+    func fetch(id: Int) -> Int      // fetchIDCallCount, fetchIDHandler, ...
     #else
-    func fetch(name: String) -> Int // fetchStringCallCount, fetchStringHandler, ...
+    func fetch(name: String) -> Int // fetchNameCallCount, fetchNameHandler, ...
     #endif
 }
 ```

@@ -44,10 +44,71 @@ struct OverloadSuffixTests {
         #expect(OverloadSuffix.functionIdentifierSuffix(from: funcDecl, in: [funcDecl]) == "")
     }
 
-    @Test("The base suffix joins the sanitized parameter types")
+    @Test("Overloads with the same labels are told apart by their parameter types")
     func baseSuffixJoinsParameterTypes() {
-        let funcDecl = functions(["func set(_ value: Bool, forKey: Key) -> Int"])[0]
-        #expect(OverloadSuffix.functionIdentifierSuffix(from: funcDecl, in: [funcDecl]) == "BoolKey")
+        let group = functions([
+            "func set(_ value: Bool, forKey: Key) -> Int",
+            "func set(_ value: Int, forKey: Key) -> Int",
+        ])
+        #expect(OverloadSuffix.functionIdentifierSuffix(from: group[0], in: group) == "BoolKey")
+        #expect(OverloadSuffix.functionIdentifierSuffix(from: group[1], in: group) == "IntKey")
+    }
+
+    // MARK: - Argument labels
+
+    @Test("Overloads with distinct labels are told apart by their labels")
+    func distinctLabels() {
+        let group = functions([
+            "func fetch(id: Int) -> Int",
+            "func fetch(name: String) -> Int",
+            "func fetch(index: Int) -> Int",
+        ])
+        #expect(group.map { OverloadSuffix.functionIdentifierSuffix(from: $0, in: group) } == ["ID", "Name", "Index"])
+    }
+
+    @Test("An unlabeled or parameterless overload contributes no label")
+    func unlabeledOverloads() {
+        let group = functions([
+            "func load()",
+            "func load(from url: URL)",
+        ])
+        #expect(group.map { OverloadSuffix.functionIdentifierSuffix(from: $0, in: group) } == ["", "From"])
+    }
+
+    @Test("Overloads whose labels coincide fall back to types among themselves only")
+    func labelCollisionFallsBackToTypes() {
+        let group = functions([
+            "func fetch(id: Int) -> Int",
+            "func fetch(id: String) -> Int",
+            "func fetch(name: String) -> Int",
+        ])
+        #expect(group.map { OverloadSuffix.functionIdentifierSuffix(from: $0, in: group) } == ["Int", "String", "Name"])
+    }
+
+    @Test("Every label of a signature joins the suffix")
+    func multipleLabels() {
+        let group = functions([
+            "func move(from source: Int, to destination: Int)",
+            "func move(by offset: Int)",
+        ])
+        #expect(group.map { OverloadSuffix.functionIdentifierSuffix(from: $0, in: group) } == ["FromTo", "By"])
+    }
+
+    @Test(
+        "A label is capitalized, and a leading acronym uppercased",
+        arguments: [
+            ("id", "ID"),
+            ("url", "URL"),
+            ("urlString", "URLString"),
+            ("httpHeader", "HTTPHeader"),
+            ("forKey", "ForKey"),
+            ("identifier", "Identifier"),
+            ("uiImage", "UIImage"),
+            ("x", "X"),
+        ]
+    )
+    func capitalizedLabel(label: String, expected: String) {
+        #expect(OverloadSuffix.capitalizedLabel(label) == expected)
     }
 
     @Test("A subscript suffix is built from its parameter types, even for a sole subscript")
@@ -66,8 +127,8 @@ struct OverloadSuffixTests {
     @Test("Distinct base suffixes need no further disambiguation")
     func distinctBaseSuffixes() {
         let group = functions([
-            "func fetch(id: Int) -> Int",
-            "func fetch(name: String) -> Int",
+            "func fetch(_ id: Int) -> Int",
+            "func fetch(_ name: String) -> Int",
         ])
         #expect(OverloadSuffix.functionIdentifierSuffix(from: group[0], in: group) == "Int")
         #expect(OverloadSuffix.functionIdentifierSuffix(from: group[1], in: group) == "String")
@@ -129,7 +190,7 @@ struct OverloadSuffixTests {
         let group = functions([
             "func fetch(id: Int) -> Int",
             "func fetch(id: Int) -> Bool",
-            "func fetch(name: String) -> Int",
+            "func fetch(id: String) -> Int",
         ])
         #expect(OverloadSuffix.functionIdentifierSuffix(from: group[2], in: group) == "String")
     }
@@ -138,12 +199,19 @@ struct OverloadSuffixTests {
 
     @Test("Initializer suffixes mirror the function algorithm without a return type")
     func initializerSuffixes() {
-        let group = initializers([
+        let labeled = initializers([
             "init(host: String)",
-            "init(port: Int)",
+            "init(host: String, port: Int)",
         ])
-        #expect(OverloadSuffix.initializerIdentifierSuffix(from: group[0], in: group) == "String")
-        #expect(OverloadSuffix.initializerIdentifierSuffix(from: group[1], in: group) == "Int")
+        #expect(OverloadSuffix.initializerIdentifierSuffix(from: labeled[0], in: labeled) == "Host")
+        #expect(OverloadSuffix.initializerIdentifierSuffix(from: labeled[1], in: labeled) == "HostPort")
+
+        let unlabeled = initializers([
+            "init(_ host: String)",
+            "init(_ port: Int)",
+        ])
+        #expect(OverloadSuffix.initializerIdentifierSuffix(from: unlabeled[0], in: unlabeled) == "String")
+        #expect(OverloadSuffix.initializerIdentifierSuffix(from: unlabeled[1], in: unlabeled) == "Int")
     }
 
     @Test("Colliding initializers are disambiguated by effects, then ordinal")
@@ -178,6 +246,6 @@ struct OverloadSuffixTests {
             "init(host: String)",
         ])
         #expect(OverloadSuffix.initializerIdentifier(for: group[0], in: group) == "init")
-        #expect(OverloadSuffix.initializerIdentifier(for: group[1], in: group) == "initString")
+        #expect(OverloadSuffix.initializerIdentifier(for: group[1], in: group) == "initHost")
     }
 }

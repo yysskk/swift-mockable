@@ -25,7 +25,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - `inout` parameters with write-back support
 - Generic methods (type-erased to `Any`)
 - Associated types (uses default type or `Any`)
-- Overloaded methods (unique suffixes auto-generated)
+- Overloaded methods (suffixed with their argument labels, e.g. `fetchIDCallCount` for `fetch(id:)`; parameter types when labels coincide)
 - Initializer requirements (`init(...)`) as recording `required init` (including `Sendable`/`actor` mocks)
 - Static methods and properties
 - `Sendable` protocol support (`@unchecked Sendable` + `MockableLock`)

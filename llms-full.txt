@@ -85,7 +85,7 @@ A non-optional property traps when read before it is set; an optional one reads 
 
 - `initCallCount` -- number of times the `init` requirement was invoked
 - `initCallArguments` -- array of captured initializer arguments
-- Overloaded `init`s append a parameter-type suffix (e.g. `initStringCallCount`)
+- Overloaded `init`s append an argument-label suffix (e.g. `initHostCallCount` for `init(host:)`)
 
 ### Utility
 
@@ -106,8 +106,9 @@ For a method named `fetch`, generated members are simply:
 
 When methods share the same base name, suffixes are appended to disambiguate:
 
-1. Start with sanitized parameter type names.
-2. If still ambiguous, append return type (if non-Void), `Async` (for async), and `Throwing` (for throws).
+1. Start with the argument labels, as call sites tell overloads apart: `fetch(id:)` and `fetch(name:)` generate `fetchIDHandler` and `fetchNameHandler`. Each label is capitalized, and a leading common acronym (`id`, `url`, `http`, `json`, ...) is uppercased, as the Swift API Design Guidelines case acronyms.
+2. Overloads whose labels coincide — including unlabeled ones such as `save(_ user:)` and `save(_ users:)` — use their sanitized parameter type names instead (`saveStringHandler`, `saveStringArrayHandler`).
+3. If that still collides, append return type (if non-`Void`), `Async` (for `async`), and `Throwing` (for `throws`).
 
 Example:
 
@@ -116,11 +117,11 @@ func get(url: URL) async -> String
 func get(url: URL) async throws -> Data
 ```
 
-Generates: `getURLStringAsyncHandler` and `getURLDataAsyncThrowingHandler`.
+The labels and parameter types coincide, so these generate: `getURLStringAsyncHandler` and `getURLDataAsyncThrowingHandler`.
 
 ### Subscripts
 
-Subscript-generated names use `subscript<suffix>...`, where the suffix is based on parameter types.
+Subscript-generated names use `subscript<suffix>...`, where the suffix is based on parameter types. A subscript's parameters have no argument labels unless the declaration spells one out, so the index types tell subscripts apart.
 
 ```swift
 subscript(index: Int) -> String { get }
@@ -132,14 +133,14 @@ Get-set subscripts also generate `subscript<suffix>SetHandler`.
 
 ### Initializers
 
-A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a parameter-type suffix, matching the method scheme:
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a suffix by the same rules as methods — argument labels first, parameter types for initializers whose labels coincide:
 
 ```swift
 init(host: String)
 init(host: String, port: Int)
 ```
 
-Generates: `initStringCallCount` / `initStringCallArguments` and `initStringIntCallCount` / `initStringIntCallArguments`.
+Generates: `initHostCallCount` / `initHostCallArguments` and `initHostPortCallCount` / `initHostPortCallArguments`.
 
 ## Supported Features
 

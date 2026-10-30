@@ -79,7 +79,7 @@ struct SameParameterTypesDifferentReturnTypesTests {
         // get(url:httpHeader:) uses parameter-based suffix URLStringStringArray
         // because [String: String] is sanitized to StringStringArray (treated as array-like syntax)
         mock.getURLStringAsyncHandler = { @Sendable _ in "simple" }
-        mock.getURLStringStringArrayHandler = { @Sendable _, _ in "with header" }
+        mock.getURLHTTPHeaderHandler = { @Sendable _, _ in "with header" }
 
         let simpleResult: String = await mock.get(url: URL(string: "https://example.com")!)
         let headerResult = await mock.get(url: URL(string: "https://example.com")!, httpHeader: ["Auth": "token"])
@@ -108,7 +108,7 @@ struct SameParameterTypesDifferentReturnTypesTests {
 
         mock.getURLStringAsyncHandler = { @Sendable _ in "result" }
         mock.getURLDataAsyncThrowingHandler = { @Sendable _ in Data() }
-        mock.getURLStringStringArrayHandler = { @Sendable _, _ in "with header" }
+        mock.getURLHTTPHeaderHandler = { @Sendable _, _ in "with header" }
 
         let _: String = await mock.get(url: URL(string: "https://example.com")!)
         let _: Data = try await mock.get(url: URL(string: "https://example.com")!)
@@ -116,15 +116,15 @@ struct SameParameterTypesDifferentReturnTypesTests {
 
         #expect(mock.getURLStringAsyncCallCount == 1)
         #expect(mock.getURLDataAsyncThrowingCallCount == 1)
-        #expect(mock.getURLStringStringArrayCallCount == 1)
+        #expect(mock.getURLHTTPHeaderCallCount == 1)
 
         mock.resetMock()
 
         #expect(mock.getURLStringAsyncCallCount == 0)
         #expect(mock.getURLDataAsyncThrowingCallCount == 0)
-        #expect(mock.getURLStringStringArrayCallCount == 0)
+        #expect(mock.getURLHTTPHeaderCallCount == 0)
         #expect(mock.getURLStringAsyncCallArguments.isEmpty)
         #expect(mock.getURLDataAsyncThrowingCallArguments.isEmpty)
-        #expect(mock.getURLStringStringArrayCallArguments.isEmpty)
+        #expect(mock.getURLHTTPHeaderCallArguments.isEmpty)
     }
 }

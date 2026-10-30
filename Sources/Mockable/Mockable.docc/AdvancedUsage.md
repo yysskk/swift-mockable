@@ -16,8 +16,9 @@ A requirement without arguments to record — `func refresh()`, or one whose onl
 
 For overloaded methods, a suffix is appended:
 
-1. Start with sanitized parameter type names.
-2. If that still collides, append return type (if non-`Void`), `Async` (for `async`), and `Throwing` (for `throws`).
+1. Start with the argument labels, as call sites tell overloads apart: `fetch(id:)` and `fetch(name:)` generate `fetchIDHandler` and `fetchNameHandler`. Each label is capitalized, and a leading common acronym (`id`, `url`, `http`, `json`, ...) is uppercased, as the Swift API Design Guidelines case acronyms.
+2. Overloads whose labels coincide — including unlabeled ones such as `save(_ user:)` and `save(_ users:)` — use their sanitized parameter type names instead (`saveStringHandler`, `saveStringArrayHandler`).
+3. If that still collides, append return type (if non-`Void`), `Async` (for `async`), and `Throwing` (for `throws`).
 
 Example:
 
@@ -26,11 +27,11 @@ func get(url: URL) async -> String
 func get(url: URL) async throws -> Data
 ```
 
-Generates distinct handlers like `getURLStringAsyncHandler` and `getURLDataAsyncThrowingHandler`.
+The labels and parameter types coincide, so these generate distinct handlers like `getURLStringAsyncHandler` and `getURLDataAsyncThrowingHandler`.
 
 ### Subscripts
 
-Subscript-generated names use `subscript<suffix>...`, where the suffix is based on parameter types.
+Subscript-generated names use `subscript<suffix>...`, where the suffix is based on parameter types. A subscript's parameters have no argument labels unless the declaration spells one out, so the index types tell subscripts apart.
 
 ```swift
 subscript(index: Int) -> String { get }
@@ -40,7 +41,7 @@ Generates `subscriptIntCallCount`, `subscriptIntCallArguments`, and `subscriptIn
 
 ### Initializers
 
-A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a parameter-type suffix, matching the method scheme (`initStringCallCount`, `initStringIntCallCount`).
+A sole `init` requirement uses the identifier `init` (`initCallCount`, `initCallArguments`). Overloaded initializers append a suffix by the same rules as methods — argument labels first (`init(host:)` and `init(host:port:)` generate `initHostCallCount` and `initHostPortCallCount`), parameter types for initializers whose labels coincide.
 
 ## Generic and Associated Types
 

@@ -55,19 +55,19 @@ struct ElseClauseTests {
     func overloadsTrackIndependently() {
         let mock = ElseClauseOverloadServiceMock()
 
-        mock.fetchIntHandler = { $0 * 2 }
-        mock.fetchStringHandler = { $0.count }
+        mock.fetchIDHandler = { $0 * 2 }
+        mock.fetchNameHandler = { $0.count }
 
         #expect(mock.fetch(id: 21) == 42)
         #expect(mock.fetch(name: "abc") == 3)
-        #expect(mock.fetchIntCallCount == 1)
-        #expect(mock.fetchStringCallCount == 1)
-        #expect(mock.fetchIntCallArguments == [21])
-        #expect(mock.fetchStringCallArguments == ["abc"])
+        #expect(mock.fetchIDCallCount == 1)
+        #expect(mock.fetchNameCallCount == 1)
+        #expect(mock.fetchIDCallArguments == [21])
+        #expect(mock.fetchNameCallArguments == ["abc"])
 
         mock.resetMock()
-        #expect(mock.fetchIntCallCount == 0)
-        #expect(mock.fetchStringCallCount == 0)
+        #expect(mock.fetchIDCallCount == 0)
+        #expect(mock.fetchNameCallCount == 0)
     }
 
     @Test("An init requirement declared in an #else clause records its arguments")

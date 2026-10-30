@@ -85,7 +85,7 @@ enum MockNaming {
     }
 }
 
-private extension String {
+extension String {
     /// The identifier without the backticks that escape it, e.g. `` `Type` `` -> `Type`.
     var trimmingBackticks: String {
         guard count > 2, hasPrefix("`"), hasSuffix("`") else {

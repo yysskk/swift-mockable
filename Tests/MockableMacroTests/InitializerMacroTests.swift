@@ -151,23 +151,23 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class ConnectionMock: Connection {
-                private(set) var initStringCallCount: Int = 0
-                private(set) var initStringCallArguments: [String] = []
+                private(set) var initHostCallCount: Int = 0
+                private(set) var initHostCallArguments: [String] = []
                 required init(host: String) {
-                    initStringCallCount += 1
-                    initStringCallArguments.append(host)
+                    initHostCallCount += 1
+                    initHostCallArguments.append(host)
                 }
-                private(set) var initStringIntCallCount: Int = 0
-                private(set) var initStringIntCallArguments: [(host: String, port: Int)] = []
+                private(set) var initHostPortCallCount: Int = 0
+                private(set) var initHostPortCallArguments: [(host: String, port: Int)] = []
                 required init(host: String, port: Int) {
-                    initStringIntCallCount += 1
-                    initStringIntCallArguments.append((host: host, port: port))
+                    initHostPortCallCount += 1
+                    initHostPortCallArguments.append((host: host, port: port))
                 }
                 func resetMock() {
-                    initStringCallCount = 0
-                    initStringCallArguments = []
-                    initStringIntCallCount = 0
-                    initStringIntCallArguments = []
+                    initHostCallCount = 0
+                    initHostCallArguments = []
+                    initHostPortCallCount = 0
+                    initHostPortCallArguments = []
                 }
                 class func resetMock() {
                 }

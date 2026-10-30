@@ -87,7 +87,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 - Initializers:
   - `initCallCount`
   - `initCallArguments`
-  - (overloaded `init`s add a parameter-type suffix, e.g. `initStringCallCount`)
+  - (overloaded `init`s add an argument-label suffix, e.g. `initHostCallCount` for `init(host:)`)
 - Utility:
   - `resetMock()` on the instance, and `resetMock()` on the mock type for `static` requirements
 
@@ -165,7 +165,7 @@ the macro expands at compile time and cannot read runtime values.
 - `inout` parameters with write-back support
 - Parameter specifiers (`consuming`, `borrowing`, `sending`, `isolated`), dropped from the stored and handler types where they are not valid
 - Generic methods (generic parameters are type-erased to `Any` in storage/handlers)
-- Overloaded methods (unique suffixes are added to generated names when needed)
+- Overloaded methods (named after their argument labels, e.g. `fetchIDCallCount` for `fetch(id:)`, or their parameter types when the labels coincide)
 - Initializer requirements (`init(...)`) generated as recording `required init` witnesses (`Sendable`/`actor` mocks record behind the lock)
 - Associated types (generated as `typealias`, using the requirement's default when it has one, otherwise `Any`; a constrained associated type needs a default, since `Any` cannot satisfy the constraint)
 - Static methods and static properties

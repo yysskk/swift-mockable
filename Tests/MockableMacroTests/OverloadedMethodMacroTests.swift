@@ -413,4 +413,91 @@ struct OverloadedMethodMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Overloads are named after their argument labels, with types for those that share labels")
+    func overloadsNamedAfterArgumentLabels() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol UserStore {
+                func fetch(id: Int) -> String
+                func fetch(name: String) -> String
+                func save(_ user: String)
+                func save(_ users: [String])
+            }
+            """,
+            expandedSource: """
+            protocol UserStore {
+                func fetch(id: Int) -> String
+                func fetch(name: String) -> String
+                func save(_ user: String)
+                func save(_ users: [String])
+            }
+
+            #if DEBUG
+            class UserStoreMock: UserStore {
+                private(set) var fetchIDCallCount: Int = 0
+                private(set) var fetchIDCallArguments: [Int] = []
+                var fetchIDHandler: ((Int) -> String)? = nil
+                func fetch(id: Int) -> String {
+                    fetchIDCallCount += 1
+                    fetchIDCallArguments.append(id)
+                    guard let _handler = fetchIDHandler else {
+                        fatalError("\\(Self.self).fetchIDHandler is not set")
+                    }
+                    return _handler(id)
+                }
+                private(set) var fetchNameCallCount: Int = 0
+                private(set) var fetchNameCallArguments: [String] = []
+                var fetchNameHandler: ((String) -> String)? = nil
+                func fetch(name: String) -> String {
+                    fetchNameCallCount += 1
+                    fetchNameCallArguments.append(name)
+                    guard let _handler = fetchNameHandler else {
+                        fatalError("\\(Self.self).fetchNameHandler is not set")
+                    }
+                    return _handler(name)
+                }
+                private(set) var saveStringCallCount: Int = 0
+                private(set) var saveStringCallArguments: [String] = []
+                var saveStringHandler: ((String) -> Void)? = nil
+                func save(_ user: String) {
+                    saveStringCallCount += 1
+                    saveStringCallArguments.append(user)
+                    if let _handler = saveStringHandler {
+                        _handler(user)
+                    }
+                }
+                private(set) var saveStringArrayCallCount: Int = 0
+                private(set) var saveStringArrayCallArguments: [[String]] = []
+                var saveStringArrayHandler: (([String]) -> Void)? = nil
+                func save(_ users: [String]) {
+                    saveStringArrayCallCount += 1
+                    saveStringArrayCallArguments.append(users)
+                    if let _handler = saveStringArrayHandler {
+                        _handler(users)
+                    }
+                }
+                func resetMock() {
+                    fetchIDCallCount = 0
+                    fetchIDCallArguments = []
+                    fetchIDHandler = nil
+                    fetchNameCallCount = 0
+                    fetchNameCallArguments = []
+                    fetchNameHandler = nil
+                    saveStringCallCount = 0
+                    saveStringCallArguments = []
+                    saveStringHandler = nil
+                    saveStringArrayCallCount = 0
+                    saveStringArrayCallArguments = []
+                    saveStringArrayHandler = nil
+                }
+                class func resetMock() {
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }
