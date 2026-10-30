@@ -105,7 +105,7 @@ extension MockGenerator {
     ) -> FunctionDeclSyntax {
         let identifier = requirement.identifier
         let scope = requirement.scope
-        let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
+        let genericParamNames = TypeErasure.extractGenericParameterNames(from: funcDecl)
         let parameters = funcDecl.signature.parameterClause.parameters
         let returnType = funcDecl.signature.returnClause?.type
         let isAsync = funcDecl.signature.effectSpecifiers?.asyncSpecifier != nil
@@ -114,7 +114,7 @@ extension MockGenerator {
         let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
         let throwsErrorType = funcDecl.signature.effectSpecifiers?.throwsErrorType
-        let hasGenericReturn = returnType.map { Self.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
+        let hasGenericReturn = returnType.map { TypeErasure.typeContainsGeneric($0, genericParamNames: genericParamNames) } ?? false
         let access = trackingAccess(for: scope)
 
         let body = buildFunctionBody(
@@ -173,17 +173,17 @@ extension MockGenerator {
         // body, so a typed-throws requirement has to convert that error too: wrap the whole
         // body in one catch rather than only the handler call.
         let wrapsBodyInTypedThrowsCatch = errorType != nil
-            && Self.hasThrowingAutoclosureParameter(parameters)
+            && ParameterModel.hasThrowingAutoclosureParameter(parameters)
         let handlerCallErrorType = wrapsBodyInTypedThrowsCatch ? nil : errorType
 
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before the call is recorded, so a lock-backed
         // mock never runs a user-supplied expression while the storage lock is held.
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
+        statements.append(contentsOf: ParameterModel.buildParameterBindingStatements(parameters: parameters))
 
         let binding = access.handlerBinding(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
+            recordedArguments: ParameterModel.buildCallArgumentsExpression(parameters: parameters),
             handlerType: handlerType,
             names: names
         )
@@ -193,7 +193,7 @@ extension MockGenerator {
         let inOutParams = Self.extractInOutParameters(parameters: parameters, genericParamNames: genericParamNames)
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
         if Self.hasReturnValue(returnType) {
-            let returnTypeStr = returnType.map { Self.castTargetType(for: $0) } ?? "Void"
+            let returnTypeStr = returnType.map { TypeErasure.castTargetType(for: $0) } ?? "Void"
             statements.append(Self.makeUnsetHandlerGuard(
                 binding: binding.pattern,
                 elseBody: Self.unsetHandlerElseBody(returnType: returnType, handlerName: MockNaming.handler(identifier))
@@ -239,11 +239,11 @@ extension MockGenerator {
         isThrows: Bool,
         genericParamNames: Set<String>
     ) -> String {
-        let paramTupleType = Self.buildParameterTupleType(
+        let paramTupleType = ParameterModel.buildParameterTupleType(
             parameters: parameters,
             genericParamNames: genericParamNames
         )
-        let erasedReturnType = returnType.map { Self.eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
+        let erasedReturnType = returnType.map { TypeErasure.eraseGenericTypes(in: $0, genericParamNames: genericParamNames) }
         let hasReturnValue = Self.hasReturnValue(returnType)
         let baseReturnTypeStr = erasedReturnType?.description ?? "Void"
         let returnTypeStr: String
@@ -264,7 +264,7 @@ extension MockGenerator {
         if parameters.isEmpty {
             parameterClause = "()"
         } else if parameters.count >= 2 {
-            parameterClause = Self.buildSeparateParameterClause(
+            parameterClause = ParameterModel.buildSeparateParameterClause(
                 parameters: parameters,
                 genericParamNames: genericParamNames
             )
@@ -275,7 +275,7 @@ extension MockGenerator {
         // requirements: a typed-throws function value would need the Swift 6 runtime
         // (macOS 15+) and cannot name a method's generic error type at storage scope.
         // The generated body re-throws the typed error via a `catch` (see buildTypedThrowsCatch).
-        return parameterClause + Self.effectsSuffix(isAsync: isAsync, isThrows: isThrows) + " -> \(returnTypeStr)"
+        return parameterClause + AccessorInspection.effectsSuffix(isAsync: isAsync, isThrows: isThrows) + " -> \(returnTypeStr)"
     }
 
     /// Builds the argument string passed to `_handler(...)` in the generated method body.
@@ -293,7 +293,7 @@ extension MockGenerator {
                 .map { ($0.secondName ?? $0.firstName).text }
                 .joined(separator: ", ")
         }
-        return Self.buildArgsExpression(parameters: parameters).description
+        return ParameterModel.buildArgsExpression(parameters: parameters).description
     }
 
     /// Builds statements for invoking a handler and handling inout write-back (return value path).
@@ -410,17 +410,7 @@ if let \(handlerBinding) {
     /// return (however spelled) takes the no-return-value path, where an unset handler
     /// is simply a no-op rather than a `fatalError`.
     private static func hasReturnValue(_ returnType: TypeSyntax?) -> Bool {
-        returnType.map { returnsAValue($0) } ?? false
-    }
-
-    /// Whether a return type is something other than `Void`, however it is spelled:
-    /// `Void`, `()`, `Swift.Void`, and any of them parenthesized all mean the same
-    /// thing, and a requirement returning nothing has to be mocked the same way for
-    /// each — otherwise `-> Swift.Void` traps on an unset handler where the identical
-    /// `-> Void` no-ops.
-    static func returnsAValue(_ returnType: TypeSyntax) -> Bool {
-        let trimmed = unwrapForDefaultDetection(returnType).trimmedDescription
-        return trimmed != "Void" && trimmed != "Swift.Void" && trimmed != "()"
+        returnType.map(DefaultReturnValue.returnsAValue) ?? false
     }
 
     /// An `inout` parameter of a requirement, as the handler and the witness see it.
@@ -444,18 +434,18 @@ if let \(handlerBinding) {
         genericParamNames: Set<String>
     ) -> [InOutParameter] {
         parameters.compactMap { param in
-            guard specifiers(of: param.type).contains("inout") else {
+            guard TypeErasure.specifiers(of: param.type).contains("inout") else {
                 return nil
             }
             let name = (param.secondName ?? param.firstName).text
             // Both spellings come from the same specifier-free type, so the storage the
             // handler works in and the cast that writes its result back cannot drift.
-            let declaredType = unspecifiedType(param.type)
-            let erased = eraseGenericTypes(in: declaredType, genericParamNames: genericParamNames)
+            let declaredType = TypeErasure.unspecifiedType(param.type)
+            let erased = TypeErasure.eraseGenericTypes(in: declaredType, genericParamNames: genericParamNames)
             return InOutParameter(
                 name: name,
                 erasedType: erased.trimmedDescription,
-                castTarget: castTargetType(for: declaredType.trimmed)
+                castTarget: TypeErasure.castTargetType(for: declaredType.trimmed)
             )
         }
     }

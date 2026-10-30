@@ -162,7 +162,7 @@ extension FunctionParameterListSyntax {
     /// `func run(on actor: isolated any Actor)`.
     var hasIsolatedParameter: Bool {
         contains { parameter in
-            MockGenerator.specifiers(of: parameter.type).contains("isolated")
+            TypeErasure.specifiers(of: parameter.type).contains("isolated")
         }
     }
 }

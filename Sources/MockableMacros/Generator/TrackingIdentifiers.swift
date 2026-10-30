@@ -2,7 +2,11 @@ import SwiftSyntax
 
 // MARK: - Tracking Identifiers
 
-extension MockGenerator {
+/// Assigns each requirement the identifier its tracking members are named after,
+/// across the whole protocol, so that no two requirements share one.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum TrackingIdentifiers {
     /// The identifier every requirement's tracking members are named after, keyed by
     /// the declaration they belong to.
     ///
@@ -93,19 +97,19 @@ extension MockGenerator {
     /// The identifier a method suggests: its name, plus a suffix disambiguating it from
     /// the protocol's other methods of that name.
     static func suggestedIdentifier(for funcDecl: FunctionDeclSyntax, in group: [FunctionDeclSyntax]) -> String {
-        let suffix = group.count > 1 ? functionIdentifierSuffix(from: funcDecl, in: group) : ""
+        let suffix = group.count > 1 ? OverloadSuffix.functionIdentifierSuffix(from: funcDecl, in: group) : ""
         return suffix.isEmpty ? funcDecl.name.text : "\(funcDecl.name.text)\(suffix)"
     }
 
     /// The identifier an initializer suggests: `init`, plus a suffix when the protocol
     /// declares more than one.
     static func suggestedIdentifier(for initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
-        initializerIdentifier(for: initDecl, in: group)
+        OverloadSuffix.initializerIdentifier(for: initDecl, in: group)
     }
 
     /// The identifier a subscript suggests. Generated members cannot be named after a
     /// subscript's (absent) base name, so the suffix is always present.
     static func suggestedIdentifier(for subscriptDecl: SubscriptDeclSyntax, in group: [SubscriptDeclSyntax]) -> String {
-        MockNaming.subscriptIdentifier(suffix: subscriptIdentifierSuffix(from: subscriptDecl, in: group))
+        MockNaming.subscriptIdentifier(suffix: OverloadSuffix.subscriptIdentifierSuffix(from: subscriptDecl, in: group))
     }
 }

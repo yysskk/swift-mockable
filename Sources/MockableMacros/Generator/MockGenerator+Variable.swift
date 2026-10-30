@@ -34,7 +34,7 @@ extension MockGenerator {
             // a handler and a call counter instead of backing storage: a stored value
             // cannot model a thrown error, and the handler mirrors the function model.
             case .effectfulVariable:
-                if let effectfulGetter = Self.effectfulGetter(of: binding) {
+                if let effectfulGetter = AccessorInspection.effectfulGetter(of: binding) {
                     members.append(contentsOf: generateEffectfulGetterMock(
                         requirement: requirement,
                         getter: effectfulGetter
@@ -78,27 +78,6 @@ extension MockGenerator {
         }
 
         return members
-    }
-
-    /// A property binding with no accessor block is not treated as get-only,
-    /// hence the `false` default.
-    static func isGetOnlyProperty(binding: PatternBindingSyntax) -> Bool {
-        isGetOnly(binding.accessorBlock, defaultWhenAbsent: false)
-    }
-
-    /// Returns the `get` accessor of a binding when it carries `async`/`throws`
-    /// effects (e.g. `var token: String { get async throws }`), or `nil` otherwise.
-    static func effectfulGetter(of binding: PatternBindingSyntax) -> AccessorDeclSyntax? {
-        effectfulGetAccessor(in: binding.accessorBlock)
-    }
-
-    /// The handler closure type for an effectful read-only property, e.g.
-    /// `() async throws -> String`.
-    static func effectfulGetterClosureType(
-        varType: TypeSyntax,
-        effects: AccessorEffectSpecifiersSyntax?
-    ) -> String {
-        "()\(effectsSuffix(for: effects)) -> \(varType.trimmedDescription)"
     }
 
     /// Generates the members that mock an effectful read-only property: the tracking

@@ -109,7 +109,7 @@ extension MockGenerator {
     /// The `else` body of the unset-handler guard: the return type's natural empty
     /// default when it has one, otherwise a `fatalError` naming the unset handler.
     static func unsetHandlerElseBody(returnType: TypeSyntax?, handlerName: String) -> String {
-        defaultReturnStatement(for: returnType)
+        DefaultReturnValue.defaultReturnStatement(for: returnType)
             ?? "fatalError(\"\\(Self.self).\(handlerName) is not set\")"
     }
 

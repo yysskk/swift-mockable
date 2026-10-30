@@ -16,10 +16,12 @@ import SwiftSyntaxBuilder
 /// - `TrackingAccess` expresses, once, how a witness records a call and reads a handler
 ///   or backing slot on each storage model, so every witness generator has one body.
 /// - `+Emit` holds the shared property and statement builders those generators use.
-/// - `+TypeErasure`, `+ParameterModel`, `+DefaultReturnValue`, `+OverloadSuffix`,
-///   `+AccessorInspection`, and `+StorageModel` hold the shared analyses: erasing
-///   generic parameters, shaping recorded arguments, choosing unset-handler defaults,
-///   disambiguating overloads, reading accessor blocks, and deciding storage flavor.
+/// - `+StorageModel` decides the storage flavor from the generator's state.
+/// - The analyses that read syntax alone are stateless namespaces of their own:
+///   `TypeErasure` erases generic parameters, `ParameterModel` shapes recorded
+///   arguments, `ParameterNaming` names a witness's parameters, `DefaultReturnValue`
+///   chooses unset-handler defaults, `OverloadSuffix` and `TrackingIdentifiers`
+///   disambiguate requirements, and `AccessorInspection` reads accessor blocks.
 /// - `+IfConfigTraversal` keeps every generator's output aligned with the protocol's
 ///   conditional-compilation structure.
 struct MockGenerator {

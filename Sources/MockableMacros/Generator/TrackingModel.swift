@@ -242,7 +242,7 @@ extension OverloadContext {
             methodGroups: methodGroups,
             initializers: initializers,
             subscripts: subscripts,
-            trackingIdentifiers: MockGenerator.assignTrackingIdentifiers(
+            trackingIdentifiers: TrackingIdentifiers.assignTrackingIdentifiers(
                 in: requirements,
                 methodGroups: methodGroups,
                 initializers: initializers,
@@ -301,15 +301,15 @@ extension MockGenerator {
         for initDecl: InitializerDeclSyntax,
         overloads: OverloadContext
     ) -> TrackingRequirement {
-        let genericParamNames = Self.extractGenericParameterNames(from: initDecl)
+        let genericParamNames = TypeErasure.extractGenericParameterNames(from: initDecl)
         return TrackingRequirement(
             identifier: overloads.trackingIdentifier(
                 for: initDecl.id,
-                suggestion: Self.suggestedIdentifier(for: initDecl, in: overloads.initializers)
+                suggestion: TrackingIdentifiers.suggestedIdentifier(for: initDecl, in: overloads.initializers)
             ),
             scope: .instance,
             kind: .initializer,
-            callArgumentsTupleType: Self.buildCallArgumentsTupleType(
+            callArgumentsTupleType: ParameterModel.buildCallArgumentsTupleType(
                 parameters: initDecl.signature.parameterClause.parameters,
                 genericParamNames: genericParamNames
             ),
@@ -334,16 +334,16 @@ extension MockGenerator {
         // `rethrows` requirements get a non-throwing handler (see MockGenerator+Function).
         let handlerThrows = (funcDecl.signature.effectSpecifiers?.hasThrowsEffect ?? false)
             && (funcDecl.signature.effectSpecifiers?.isRethrows != true)
-        let genericParamNames = Self.extractGenericParameterNames(from: funcDecl)
+        let genericParamNames = TypeErasure.extractGenericParameterNames(from: funcDecl)
         return TrackingRequirement(
             identifier: overloads.trackingIdentifier(
                 for: funcDecl.id,
-                suggestion: Self.suggestedIdentifier(for: funcDecl, in: methodGroup)
+                suggestion: TrackingIdentifiers.suggestedIdentifier(for: funcDecl, in: methodGroup)
             ),
             scope: scope,
             leavesMockIsolation: leavesMockIsolation,
             kind: .function,
-            callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            callArgumentsTupleType: ParameterModel.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerType: TrackingRequirement.handlerType(
                 forClosure: buildFunctionClosureType(
                     parameters: parameters,
@@ -373,7 +373,7 @@ extension MockGenerator {
         let varName = identifier.identifier.text
         let varType = typeAnnotation.type
 
-        if let effectfulGetter = Self.effectfulGetter(of: binding) {
+        if let effectfulGetter = AccessorInspection.effectfulGetter(of: binding) {
             return TrackingRequirement(
                 identifier: varName,
                 scope: scope,
@@ -381,7 +381,7 @@ extension MockGenerator {
                 kind: .effectfulVariable(varType: varType),
                 callArgumentsTupleType: nil,
                 handlerType: TrackingRequirement.handlerType(
-                    forClosure: Self.effectfulGetterClosureType(
+                    forClosure: AccessorInspection.effectfulGetterClosureType(
                         varType: varType,
                         effects: effectfulGetter.effectSpecifiers
                     ),
@@ -399,7 +399,7 @@ extension MockGenerator {
             kind: .storedVariable(
                 varType: varType,
                 isOptional: isOptional,
-                isGetOnly: Self.isGetOnlyProperty(binding: binding)
+                isGetOnly: AccessorInspection.isGetOnlyProperty(binding: binding)
             ),
             callArgumentsTupleType: nil,
             handlerType: nil,
@@ -418,23 +418,23 @@ extension MockGenerator {
     ) -> TrackingRequirement {
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
-        let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
-        let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
+        let genericParamNames = TypeErasure.extractGenericParameterNames(from: subscriptDecl)
+        let isGetOnly = AccessorInspection.isGetOnlySubscript(subscriptDecl)
         return TrackingRequirement(
             identifier: overloads.trackingIdentifier(
                 for: subscriptDecl.id,
-                suggestion: Self.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
+                suggestion: TrackingIdentifiers.suggestedIdentifier(for: subscriptDecl, in: overloads.subscripts)
             ),
             scope: .instance,
             leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
-            callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
+            callArgumentsTupleType: ParameterModel.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
             handlerType: TrackingRequirement.handlerType(
                 forClosure: buildSubscriptGetterClosureType(
                     parameters: parameters,
                     returnType: returnType,
                     genericParamNames: genericParamNames,
-                    effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+                    effects: AccessorInspection.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
                 ),
                 isSendable: handlersAreSendable(in: .instance)
             ),

@@ -11,6 +11,10 @@ project layout, how to build and test, and the conventions we follow.
 - `Sources/MockableMacros/` — the macro implementation (built on
   [swift-syntax](https://github.com/swiftlang/swift-syntax)). `MockableMacro`
   is the entry point; the `MockGenerator+*` files generate each kind of member.
+  Analysis that reads syntax alone — overload suffixes, type erasure, default
+  return values, accessor and parameter inspection, tracking identifiers — lives
+  in stateless `enum` namespaces (`OverloadSuffix`, `TypeErasure`, ...) beside
+  them, so it can be tested without building a generator.
 - `Tests/MockableMacroTests/` — macro-expansion tests that pin the exact
   generated source.
 - `Tests/MockableTests/` — runtime tests that exercise the behavior of
