@@ -50,27 +50,13 @@ struct SendableMacroTests {
                 public init() {
                 }
                 public var saveCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallCount
                     }
                 }
                 public var saveCallArguments: [(data: Data, key: String)] {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallArguments
                     }
                 }
                 public var saveHandler: (@Sendable (Data, String) throws -> Void)? {
@@ -96,27 +82,13 @@ struct SendableMacroTests {
                     }
                 }
                 public var loadCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallCount
                     }
                 }
                 public var loadCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallArguments
                     }
                 }
                 public var loadHandler: (@Sendable (String) throws -> Data?)? {
@@ -143,27 +115,13 @@ struct SendableMacroTests {
                     return try _handler(key)
                 }
                 public var deleteCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.deleteCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.deleteCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.deleteCallCount
                     }
                 }
                 public var deleteCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.deleteCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.deleteCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.deleteCallArguments
                     }
                 }
                 public var deleteHandler: (@Sendable (String) throws -> Void)? {
@@ -189,27 +147,13 @@ struct SendableMacroTests {
                     }
                 }
                 public var existsCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.existsCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.existsCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.existsCallCount
                     }
                 }
                 public var existsCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.existsCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.existsCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.existsCallArguments
                     }
                 }
                 public var existsHandler: (@Sendable (String) -> Bool)? {
@@ -285,27 +229,13 @@ struct SendableMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var logCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.logCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.logCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.logCallCount
                     }
                 }
                 var logCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.logCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.logCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.logCallArguments
                     }
                 }
                 var logHandler: (@Sendable (String) -> Void)? {
@@ -369,27 +299,13 @@ struct SendableMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var registerCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.registerCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.registerCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.registerCallCount
                     }
                 }
                 var registerCallArguments: [@Sendable (String) -> Void] {
-                    get {
-                        _storage.withLock {
-                            $0.registerCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.registerCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.registerCallArguments
                     }
                 }
                 var registerHandler: (@Sendable (@Sendable (String) -> Void) async -> Void)? {

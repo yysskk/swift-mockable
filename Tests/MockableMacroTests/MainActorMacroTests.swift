@@ -30,8 +30,8 @@ struct MainActorMacroTests {
 
             #if DEBUG
             @MainActor class PresenterMock: Presenter {
-                var loadDataCallCount: Int = 0
-                var loadDataCallArguments: [()] = []
+                private(set) var loadDataCallCount: Int = 0
+                private(set) var loadDataCallArguments: [()] = []
                 var loadDataHandler: (@Sendable () -> Void)? = nil
                 func loadData() {
                     loadDataCallCount += 1
@@ -82,8 +82,8 @@ struct MainActorMacroTests {
 
             #if DEBUG
             @MainActor class AsyncPresenterMock: AsyncPresenter {
-                var fetchItemsCallCount: Int = 0
-                var fetchItemsCallArguments: [()] = []
+                private(set) var fetchItemsCallCount: Int = 0
+                private(set) var fetchItemsCallArguments: [()] = []
                 var fetchItemsHandler: (@Sendable () async -> [String])? = nil
                 func fetchItems() async -> [String] {
                     fetchItemsCallCount += 1
@@ -147,27 +147,13 @@ struct MainActorMacroTests {
                     }
                 }
                 nonisolated var trackCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallCount
                     }
                 }
                 nonisolated var trackCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallArguments
                     }
                 }
                 nonisolated var trackHandler: (@Sendable (String) -> Void)? {
@@ -242,27 +228,13 @@ struct MainActorMacroTests {
                 }
                 private static nonisolated let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 var loadCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallCount
                     }
                 }
                 var loadCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallArguments
                     }
                 }
                 var loadHandler: (@Sendable () -> Void)? {
@@ -288,27 +260,13 @@ struct MainActorMacroTests {
                     }
                 }
                 static var makeCallCount: Int {
-                    get {
-                        _staticStorage.withLock {
-                            $0.makeCallCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.makeCallCount = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.makeCallCount
                     }
                 }
                 static var makeCallArguments: [()] {
-                    get {
-                        _staticStorage.withLock {
-                            $0.makeCallArguments
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.makeCallArguments = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.makeCallArguments
                     }
                 }
                 static var makeHandler: (@Sendable () -> Int)? {
@@ -382,27 +340,13 @@ struct MainActorMacroTests {
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
                 nonisolated var trackCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallCount
                     }
                 }
                 nonisolated var trackCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallArguments
                     }
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {
@@ -475,27 +419,13 @@ struct MainActorMacroTests {
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
                 nonisolated var runCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.runCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallCount
                     }
                 }
                 nonisolated var runCallArguments: [any Actor] {
-                    get {
-                        _storage.withLock {
-                            $0.runCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallArguments
                     }
                 }
                 nonisolated var runHandler: (@Sendable (any Actor) async -> Void)? {
@@ -521,27 +451,13 @@ struct MainActorMacroTests {
                     }
                 }
                 var loadCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallCount
                     }
                 }
                 var loadCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallArguments
                     }
                 }
                 var loadHandler: (@Sendable () -> Void)? {

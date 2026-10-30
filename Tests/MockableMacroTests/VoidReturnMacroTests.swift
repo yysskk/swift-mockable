@@ -30,8 +30,8 @@ struct VoidReturnMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var qualifiedCallCount: Int = 0
-                var qualifiedCallArguments: [()] = []
+                private(set) var qualifiedCallCount: Int = 0
+                private(set) var qualifiedCallArguments: [()] = []
                 var qualifiedHandler: (() -> Swift.Void)? = nil
                 func qualified() -> Swift.Void {
                     qualifiedCallCount += 1
@@ -40,8 +40,8 @@ struct VoidReturnMacroTests {
                         _handler()
                     }
                 }
-                var parenthesizedCallCount: Int = 0
-                var parenthesizedCallArguments: [()] = []
+                private(set) var parenthesizedCallCount: Int = 0
+                private(set) var parenthesizedCallArguments: [()] = []
                 var parenthesizedHandler: (() -> Void)? = nil
                 func parenthesized() -> (Void) {
                     parenthesizedCallCount += 1
@@ -85,8 +85,8 @@ struct VoidReturnMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: (() -> Swift.Void)? = nil
                 func run() -> Swift.Void {
                     runCallCount += 1
@@ -95,8 +95,8 @@ struct VoidReturnMacroTests {
                         _handler()
                     }
                 }
-                var runIntCallCount: Int = 0
-                var runIntCallArguments: [()] = []
+                private(set) var runIntCallCount: Int = 0
+                private(set) var runIntCallArguments: [()] = []
                 var runIntHandler: (() -> Int)? = nil
                 func run() -> Int {
                     runIntCallCount += 1

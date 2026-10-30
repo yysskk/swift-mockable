@@ -8,6 +8,7 @@ A Swift macro that generates protocol mocks for tests.
 
 - Generated mocks are emitted inside `#if DEBUG` by default; pass a ``MockCompilationCondition`` to guard them with a custom flag, or to emit them unconditionally.
 - Generated names follow a predictable convention (`<name>CallCount`, `<name>CallArguments`, `<name>Handler`).
+- The call history (`<name>CallCount`, `<name>CallArguments`) is read-only outside the mock; handlers and properties are writable for setup.
 - `resetMock()` is generated to clear all tracking state.
 
 ```swift

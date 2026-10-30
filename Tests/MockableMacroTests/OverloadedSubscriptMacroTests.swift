@@ -28,8 +28,8 @@ struct OverloadedSubscriptMacroTests {
 
             #if DEBUG
             class RegistryMock: Registry {
-                var subscriptStringIntCallCount: Int = 0
-                var subscriptStringIntCallArguments: [String] = []
+                private(set) var subscriptStringIntCallCount: Int = 0
+                private(set) var subscriptStringIntCallArguments: [String] = []
                 var subscriptStringIntHandler: ((String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptStringIntCallCount += 1
@@ -39,8 +39,8 @@ struct OverloadedSubscriptMacroTests {
                     }
                     return _handler(key)
                 }
-                var subscriptStringBoolCallCount: Int = 0
-                var subscriptStringBoolCallArguments: [String] = []
+                private(set) var subscriptStringBoolCallCount: Int = 0
+                private(set) var subscriptStringBoolCallArguments: [String] = []
                 var subscriptStringBoolHandler: ((String) -> Bool )? = nil
                 subscript(key: String) -> Bool {
                     subscriptStringBoolCallCount += 1
@@ -85,8 +85,8 @@ struct OverloadedSubscriptMacroTests {
 
             #if DEBUG
             class ContainerMock: Container {
-                var subscriptFooBarBazIntCallCount: Int = 0
-                var subscriptFooBarBazIntCallArguments: [Foo<Bar, Baz>] = []
+                private(set) var subscriptFooBarBazIntCallCount: Int = 0
+                private(set) var subscriptFooBarBazIntCallArguments: [Foo<Bar, Baz>] = []
                 var subscriptFooBarBazIntHandler: ((Foo<Bar, Baz>) -> Int )? = nil
                 subscript(value: Foo<Bar, Baz>) -> Int {
                     subscriptFooBarBazIntCallCount += 1
@@ -96,8 +96,8 @@ struct OverloadedSubscriptMacroTests {
                     }
                     return _handler(value)
                 }
-                var subscriptFooBarBazInt2CallCount: Int = 0
-                var subscriptFooBarBazInt2CallArguments: [Foo<BarBaz>] = []
+                private(set) var subscriptFooBarBazInt2CallCount: Int = 0
+                private(set) var subscriptFooBarBazInt2CallArguments: [Foo<BarBaz>] = []
                 var subscriptFooBarBazInt2Handler: ((Foo<BarBaz>) -> Int )? = nil
                 subscript(value: Foo<BarBaz>) -> Int {
                     subscriptFooBarBazInt2CallCount += 1
@@ -142,8 +142,8 @@ struct OverloadedSubscriptMacroTests {
 
             #if DEBUG
             class StoreMock: Store {
-                var subscriptStringIntCallCount: Int = 0
-                var subscriptStringIntCallArguments: [String] = []
+                private(set) var subscriptStringIntCallCount: Int = 0
+                private(set) var subscriptStringIntCallArguments: [String] = []
                 var subscriptStringIntHandler: ((String) -> Int )? = nil
                 var subscriptStringIntSetHandler: ((String, Int ) -> Void)? = nil
                 subscript(key: String) -> Int {
@@ -161,8 +161,8 @@ struct OverloadedSubscriptMacroTests {
                         }
                     }
                 }
-                var subscriptStringBoolCallCount: Int = 0
-                var subscriptStringBoolCallArguments: [String] = []
+                private(set) var subscriptStringBoolCallCount: Int = 0
+                private(set) var subscriptStringBoolCallArguments: [String] = []
                 var subscriptStringBoolHandler: ((String) -> Bool )? = nil
                 var subscriptStringBoolSetHandler: ((String, Bool ) -> Void)? = nil
                 subscript(key: String) -> Bool {

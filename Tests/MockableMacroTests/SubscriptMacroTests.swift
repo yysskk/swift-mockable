@@ -26,8 +26,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class CacheMock: Cache {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptStringCallCount += 1
@@ -67,8 +67,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class CacheMock: Cache {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) -> Int? )? = nil
                 subscript(key: String) -> Int? {
                     subscriptStringCallCount += 1
@@ -108,8 +108,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class CacheMock: Cache {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) -> [Int] )? = nil
                 subscript(key: String) -> [Int] {
                     subscriptStringCallCount += 1
@@ -149,8 +149,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class StorageMock: Storage {
-                var subscriptIntCallCount: Int = 0
-                var subscriptIntCallArguments: [Int] = []
+                private(set) var subscriptIntCallCount: Int = 0
+                private(set) var subscriptIntCallArguments: [Int] = []
                 var subscriptIntHandler: ((Int) -> String )? = nil
                 var subscriptIntSetHandler: ((Int, String ) -> Void)? = nil
                 subscript(index: Int) -> String {
@@ -199,8 +199,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class MatrixMock: Matrix {
-                var subscriptIntIntCallCount: Int = 0
-                var subscriptIntIntCallArguments: [(row: Int, column: Int)] = []
+                private(set) var subscriptIntIntCallCount: Int = 0
+                private(set) var subscriptIntIntCallArguments: [(row: Int, column: Int)] = []
                 var subscriptIntIntHandler: ((Int, Int) -> Double )? = nil
                 var subscriptIntIntSetHandler: ((Int, Int, Double ) -> Void)? = nil
                 subscript(row: Int, column: Int) -> Double {
@@ -251,8 +251,8 @@ struct SubscriptMacroTests {
 
             #if DEBUG
             class CollectionMock: Collection {
-                var subscriptIntCallCount: Int = 0
-                var subscriptIntCallArguments: [Int] = []
+                private(set) var subscriptIntCallCount: Int = 0
+                private(set) var subscriptIntCallArguments: [Int] = []
                 var subscriptIntHandler: ((Int) -> String )? = nil
                 subscript(index: Int) -> String {
                     subscriptIntCallCount += 1
@@ -262,8 +262,8 @@ struct SubscriptMacroTests {
                     }
                     return _handler(index)
                 }
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) -> Int )? = nil
                 var subscriptStringSetHandler: ((String, Int ) -> Void)? = nil
                 subscript(key: String) -> Int {
@@ -322,27 +322,13 @@ struct SubscriptMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var subscriptStringCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallCount
                     }
                 }
                 var subscriptStringCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallArguments
                     }
                 }
                 var subscriptStringHandler: (@Sendable (String) -> Int )? {
@@ -408,27 +394,13 @@ struct SubscriptMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var subscriptIntCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptIntCallCount
                     }
                 }
                 var subscriptIntCallArguments: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptIntCallArguments
                     }
                 }
                 var subscriptIntHandler: (@Sendable (Int) -> String )? {
@@ -514,27 +486,13 @@ struct SubscriptMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var subscriptStringCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallCount
                     }
                 }
                 nonisolated var subscriptStringCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallArguments
                     }
                 }
                 nonisolated var subscriptStringHandler: (@Sendable (String) -> Int )? {
@@ -600,27 +558,13 @@ struct SubscriptMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var subscriptIntCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptIntCallCount
                     }
                 }
                 nonisolated var subscriptIntCallArguments: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptIntCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptIntCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptIntCallArguments
                     }
                 }
                 nonisolated var subscriptIntHandler: (@Sendable (Int) -> String )? {

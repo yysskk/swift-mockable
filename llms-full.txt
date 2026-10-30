@@ -435,7 +435,7 @@ A generic parameter nested in a collection is erased in place, so the erased typ
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArguments: [[String: Any]] = []
+// private(set) var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -480,8 +480,8 @@ protocol Repository {
     init(configuration: Configuration)
 }
 // generates:
-// var initCallCount: Int = 0
-// var initCallArguments: [Configuration] = []
+// private(set) var initCallCount: Int = 0
+// private(set) var initCallArguments: [Configuration] = []
 // required init(configuration: Configuration) {
 //     initCallCount += 1
 //     initCallArguments.append(configuration)

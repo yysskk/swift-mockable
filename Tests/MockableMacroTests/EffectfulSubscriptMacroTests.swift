@@ -26,8 +26,8 @@ struct EffectfulSubscriptMacroTests {
 
             #if DEBUG
             class StoreMock: Store {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) async throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get async throws {
@@ -69,8 +69,8 @@ struct EffectfulSubscriptMacroTests {
 
             #if DEBUG
             class StoreMock: Store {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [String] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [String] = []
                 var subscriptStringHandler: ((String) throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get throws {
@@ -119,27 +119,13 @@ struct EffectfulSubscriptMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var subscriptStringCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallCount
                     }
                 }
                 var subscriptStringCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.subscriptStringCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.subscriptStringCallArguments
                     }
                 }
                 var subscriptStringHandler: (@Sendable (String) async throws -> Int )? {

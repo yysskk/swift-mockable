@@ -51,7 +51,7 @@ A generic parameter nested in a collection is erased in place, so the erased typ
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArguments: [[String: Any]] = []
+// private(set) var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -79,7 +79,7 @@ associatedtype Value         // -> typealias Value = Any
 ```swift
 func log(_ message: @autoclosure () -> String)
 // generates:
-// var logCallArguments: [String] = []
+// private(set) var logCallArguments: [String] = []
 // var logHandler: ((String) -> Void)? = nil
 ```
 
@@ -92,7 +92,7 @@ A non-escaping closure parameter cannot be stored, so it is excluded from `CallA
 ```swift
 func run(label: String, _ body: () -> Void)
 // generates:
-// var runCallArguments: [String] = []                         // only the storable `label`
+// private(set) var runCallArguments: [String] = []                         // only the storable `label`
 // var runHandler: ((String, () -> Void) -> Void)? = nil
 ```
 
@@ -167,7 +167,7 @@ Read-only properties with `get async`, `get throws`, or `get async throws` are m
 ```swift
 var token: String { get async throws }
 // generates:
-// var tokenCallCount: Int = 0
+// private(set) var tokenCallCount: Int = 0
 // var tokenHandler: (() async throws -> String)? = nil
 ```
 
@@ -203,8 +203,8 @@ A protocol `init` requirement is satisfied by a generated `required init` witnes
 ```swift
 init(configuration: Configuration)
 // generates:
-// var initCallCount: Int = 0
-// var initCallArguments: [Configuration] = []
+// private(set) var initCallCount: Int = 0
+// private(set) var initCallArguments: [Configuration] = []
 // required init(configuration: Configuration) {
 //     initCallCount += 1
 //     initCallArguments.append(configuration)

@@ -28,14 +28,14 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var initCallCount: Int = 0
-                var initCallArguments: [String] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [String] = []
                 required init(id: String) {
                     initCallCount += 1
                     initCallArguments.append(id)
                 }
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [()] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [()] = []
                 var fetchHandler: (() -> Int)? = nil
                 func fetch() -> Int {
                     fetchCallCount += 1
@@ -77,8 +77,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var initCallCount: Int = 0
-                var initCallArguments: [()] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [()] = []
                 required init() {
                     initCallCount += 1
                     initCallArguments.append(())
@@ -112,8 +112,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class EndpointMock: Endpoint {
-                var initCallCount: Int = 0
-                var initCallArguments: [(host: String, port: Int)] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [(host: String, port: Int)] = []
                 required init(host: String, port: Int) {
                     initCallCount += 1
                     initCallArguments.append((host: host, port: port))
@@ -149,14 +149,14 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class ConnectionMock: Connection {
-                var initStringCallCount: Int = 0
-                var initStringCallArguments: [String] = []
+                private(set) var initStringCallCount: Int = 0
+                private(set) var initStringCallArguments: [String] = []
                 required init(host: String) {
                     initStringCallCount += 1
                     initStringCallArguments.append(host)
                 }
-                var initStringIntCallCount: Int = 0
-                var initStringIntCallArguments: [(host: String, port: Int)] = []
+                private(set) var initStringIntCallCount: Int = 0
+                private(set) var initStringIntCallArguments: [(host: String, port: Int)] = []
                 required init(host: String, port: Int) {
                     initStringIntCallCount += 1
                     initStringIntCallArguments.append((host: host, port: port))
@@ -192,8 +192,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class LoaderMock: Loader {
-                var initCallCount: Int = 0
-                var initCallArguments: [String] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [String] = []
                 required init(path: String) throws {
                     initCallCount += 1
                     initCallArguments.append(path)
@@ -227,8 +227,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             class ParserMock: Parser {
-                var initCallCount: Int = 0
-                var initCallArguments: [String] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [String] = []
                 required init?(raw: String) {
                     initCallCount += 1
                     initCallArguments.append(raw)
@@ -262,8 +262,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             open class ClientMock: Client {
-                public var initCallCount: Int = 0
-                public var initCallArguments: [String] = []
+                public private(set) var initCallCount: Int = 0
+                public private(set) var initCallArguments: [String] = []
                 public required init(token: String) {
                     initCallCount += 1
                     initCallArguments.append(token)
@@ -308,8 +308,8 @@ struct InitializerMacroTests {
                         _name = newValue
                     }
                 }
-                var initCallCount: Int = 0
-                var initCallArguments: [String] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [String] = []
                 required init(name: String) {
                     initCallCount += 1
                     initCallArguments.append(name)
@@ -346,8 +346,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             @MainActor class PresenterMock: Presenter {
-                var initCallCount: Int = 0
-                var initCallArguments: [String] = []
+                private(set) var initCallCount: Int = 0
+                private(set) var initCallArguments: [String] = []
                 required init(title: String) {
                     initCallCount += 1
                     initCallArguments.append(title)
@@ -387,27 +387,13 @@ struct InitializerMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var initCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.initCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallCount
                     }
                 }
                 var initCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.initCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallArguments
                     }
                 }
                 required init(id: String) {
@@ -453,27 +439,13 @@ struct InitializerMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var initCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.initCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallCount
                     }
                 }
                 nonisolated var initCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.initCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallArguments
                     }
                 }
                 init(id: String) {
@@ -540,8 +512,8 @@ struct InitializerMacroTests {
 
             #if DEBUG
             open class ChildOfInitBaseMock: InitBaseMock, ChildOfInitBase {
-                public var childMethodCallCount: Int = 0
-                public var childMethodCallArguments: [()] = []
+                public private(set) var childMethodCallCount: Int = 0
+                public private(set) var childMethodCallArguments: [()] = []
                 public var childMethodHandler: (() -> Void)? = nil
                 public func childMethod() {
                     childMethodCallCount += 1

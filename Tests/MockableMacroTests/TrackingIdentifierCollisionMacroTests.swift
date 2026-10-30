@@ -32,8 +32,8 @@ struct TrackingIdentifierCollisionMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var loadCallCount: Int = 0
-                var loadCallArguments: [()] = []
+                private(set) var loadCallCount: Int = 0
+                private(set) var loadCallArguments: [()] = []
                 var loadHandler: (() -> Void)? = nil
                 func load() {
                     loadCallCount += 1
@@ -42,8 +42,8 @@ struct TrackingIdentifierCollisionMacroTests {
                         _handler()
                     }
                 }
-                var loadItem2CallCount: Int = 0
-                var loadItem2CallArguments: [Item] = []
+                private(set) var loadItem2CallCount: Int = 0
+                private(set) var loadItem2CallArguments: [Item] = []
                 var loadItem2Handler: ((Item) -> Void)? = nil
                 func load(_ item: Item) {
                     loadItem2CallCount += 1
@@ -52,8 +52,8 @@ struct TrackingIdentifierCollisionMacroTests {
                         _handler(item)
                     }
                 }
-                var loadItemCallCount: Int = 0
-                var loadItemCallArguments: [()] = []
+                private(set) var loadItemCallCount: Int = 0
+                private(set) var loadItemCallArguments: [()] = []
                 var loadItemHandler: (() -> Void)? = nil
                 func loadItem() {
                     loadItemCallCount += 1
@@ -115,27 +115,13 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var loadItem2CallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadItem2CallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadItem2CallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadItem2CallCount
                     }
                 }
                 var loadItem2CallArguments: [Item] {
-                    get {
-                        _storage.withLock {
-                            $0.loadItem2CallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadItem2CallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadItem2CallArguments
                     }
                 }
                 var loadItem2Handler: (@Sendable (Item) -> Void)? {
@@ -161,27 +147,13 @@ struct TrackingIdentifierCollisionMacroTests {
                     }
                 }
                 var loadCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallCount
                     }
                 }
                 var loadCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallArguments
                     }
                 }
                 var loadHandler: (@Sendable () -> Void)? {
@@ -207,27 +179,13 @@ struct TrackingIdentifierCollisionMacroTests {
                     }
                 }
                 var loadItemCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadItemCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadItemCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadItemCallCount
                     }
                 }
                 var loadItemCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.loadItemCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadItemCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadItemCallArguments
                     }
                 }
                 var loadItemHandler: (@Sendable () -> Void)? {
@@ -292,8 +250,8 @@ struct TrackingIdentifierCollisionMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var subscriptStringCallCount: Int = 0
-                var subscriptStringCallArguments: [()] = []
+                private(set) var subscriptStringCallCount: Int = 0
+                private(set) var subscriptStringCallArguments: [()] = []
                 var subscriptStringHandler: (() -> Void)? = nil
                 func subscriptString() {
                     subscriptStringCallCount += 1
@@ -302,8 +260,8 @@ struct TrackingIdentifierCollisionMacroTests {
                         _handler()
                     }
                 }
-                var subscriptString2CallCount: Int = 0
-                var subscriptString2CallArguments: [String] = []
+                private(set) var subscriptString2CallCount: Int = 0
+                private(set) var subscriptString2CallArguments: [String] = []
                 var subscriptString2Handler: ((String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptString2CallCount += 1

@@ -26,8 +26,8 @@ struct RethrowsMacroTests {
 
             #if DEBUG
             class RunnerMock: Runner {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: ((() throws -> Void) -> Void)? = nil
                 func run(_ body: () throws -> Void) rethrows {
                     runCallCount += 1
@@ -66,8 +66,8 @@ struct RethrowsMacroTests {
 
             #if DEBUG
             class TransformerMock: Transformer {
-                var transformCallCount: Int = 0
-                var transformCallArguments: [()] = []
+                private(set) var transformCallCount: Int = 0
+                private(set) var transformCallArguments: [()] = []
                 var transformHandler: (((Int) throws -> Int) -> Int)? = nil
                 func transform(_ body: (Int) throws -> Int) rethrows -> Int {
                     transformCallCount += 1
@@ -114,27 +114,13 @@ struct RethrowsMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var runCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.runCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallCount
                     }
                 }
                 var runCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.runCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallArguments
                     }
                 }
                 var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? {
@@ -191,8 +177,8 @@ struct RethrowsMacroTests {
 
             #if DEBUG
             class ExecutorMock: Executor {
-                var executeCallCount: Int = 0
-                var executeCallArguments: [() throws -> Void] = []
+                private(set) var executeCallCount: Int = 0
+                private(set) var executeCallArguments: [() throws -> Void] = []
                 var executeHandler: ((() throws -> Void) throws -> Void)? = nil
                 func execute(_ body: @escaping () throws -> Void) throws {
                     executeCallCount += 1

@@ -8,6 +8,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - Settable properties, even for `{ get }` requirements (`mock.currentUser = user`)
 - `subscript<suffix>CallCount` / `CallArguments` / `Handler` / `SetHandler` for subscripts
 - `initCallCount` / `initCallArguments` for `init` requirements (recording `required init`; lock-backed on `Sendable`/`actor` mocks)
+- `CallCount` / `CallArguments` are read-only outside the mock; handlers and properties are writable
 - `resetMock()` to clear an instance's tracking state, and `<Protocol>Mock.resetMock()` to clear `static` state
 
 ## Key Features

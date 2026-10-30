@@ -50,27 +50,13 @@ struct GlobalActorMacroTests {
                     }
                 }
                 var saveCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallCount
                     }
                 }
                 var saveCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallArguments
                     }
                 }
                 var saveHandler: (@Sendable (String) -> Void)? {
@@ -130,8 +116,8 @@ struct GlobalActorMacroTests {
 
             #if DEBUG
             @Persistence.DataActor class StoreMock: Store {
-                var saveCallCount: Int = 0
-                var saveCallArguments: [()] = []
+                private(set) var saveCallCount: Int = 0
+                private(set) var saveCallArguments: [()] = []
                 var saveHandler: (@Sendable () -> Void)? = nil
                 func save() {
                     saveCallCount += 1
@@ -177,27 +163,13 @@ struct GlobalActorMacroTests {
                 }
                 private nonisolated let _storage = MockableLock<Storage>(Storage())
                 nonisolated var trackCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallCount
                     }
                 }
                 nonisolated var trackCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.trackCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.trackCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.trackCallArguments
                     }
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {

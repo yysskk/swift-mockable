@@ -31,8 +31,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class DataStoreMock: DataStore {
                 typealias Model = Any
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [()] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [()] = []
                 var fetchHandler: (() -> Model)? = nil
                 func fetch() -> Model {
                     fetchCallCount += 1
@@ -42,8 +42,8 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler()
                 }
-                var saveCallCount: Int = 0
-                var saveCallArguments: [Model] = []
+                private(set) var saveCallCount: Int = 0
+                private(set) var saveCallArguments: [Model] = []
                 var saveHandler: ((Model) -> Void)? = nil
                 func save(_ model: Model) {
                     saveCallCount += 1
@@ -88,8 +88,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class StringStoreMock: StringStore {
                 typealias Element = String
-                var getCallCount: Int = 0
-                var getCallArguments: [()] = []
+                private(set) var getCallCount: Int = 0
+                private(set) var getCallArguments: [()] = []
                 var getHandler: (() -> Element)? = nil
                 func get() -> Element {
                     getCallCount += 1
@@ -137,8 +137,8 @@ struct AssociatedTypeMacroTests {
             class RepositoryMock: Repository {
                 typealias Entity = Any
                 typealias ID = String
-                var findCallCount: Int = 0
-                var findCallArguments: [ID] = []
+                private(set) var findCallCount: Int = 0
+                private(set) var findCallArguments: [ID] = []
                 var findHandler: ((ID) -> Entity?)? = nil
                 func find(by id: ID) -> Entity? {
                     findCallCount += 1
@@ -148,8 +148,8 @@ struct AssociatedTypeMacroTests {
                     }
                     return _handler(id)
                 }
-                var saveCallCount: Int = 0
-                var saveCallArguments: [Entity] = []
+                private(set) var saveCallCount: Int = 0
+                private(set) var saveCallArguments: [Entity] = []
                 var saveHandler: ((Entity) -> ID)? = nil
                 func save(_ entity: Entity) -> ID {
                     saveCallCount += 1
@@ -202,27 +202,13 @@ struct AssociatedTypeMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var fetchCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.fetchCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.fetchCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.fetchCallCount
                     }
                 }
                 var fetchCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.fetchCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.fetchCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.fetchCallArguments
                     }
                 }
                 var fetchHandler: (@Sendable () async -> Item)? {
@@ -295,27 +281,13 @@ struct AssociatedTypeMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var getCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.getCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.getCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.getCallCount
                     }
                 }
                 nonisolated var getCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.getCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.getCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.getCallArguments
                     }
                 }
                 nonisolated var getHandler: (@Sendable (String) -> Value?)? {
@@ -342,27 +314,13 @@ struct AssociatedTypeMacroTests {
                     return _handler(key)
                 }
                 nonisolated var setCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.setCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.setCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.setCallCount
                     }
                 }
                 nonisolated var setCallArguments: [(key: String, value: Value)] {
-                    get {
-                        _storage.withLock {
-                            $0.setCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.setCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.setCallArguments
                     }
                 }
                 nonisolated var setHandler: (@Sendable (String, Value) -> Void)? {
@@ -458,8 +416,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class DecodableStoreMock: DecodableStore {
                 typealias Item = Data
-                var decodeCallCount: Int = 0
-                var decodeCallArguments: [Data] = []
+                private(set) var decodeCallCount: Int = 0
+                private(set) var decodeCallArguments: [Data] = []
                 var decodeHandler: ((Data) -> Item)? = nil
                 func decode(from data: Data) -> Item {
                     decodeCallCount += 1
@@ -502,8 +460,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class AliasHostMock: AliasHost {
                 typealias Pair<T> = (T, T)
-                var makeCallCount: Int = 0
-                var makeCallArguments: [()] = []
+                private(set) var makeCallCount: Int = 0
+                private(set) var makeCallArguments: [()] = []
                 var makeHandler: (() -> Int)? = nil
                 func make() -> Int {
                     makeCallCount += 1
@@ -590,8 +548,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class ArrayStoreMock: ArrayStore {
                 typealias Element = [String: Int]
-                var getAllCallCount: Int = 0
-                var getAllCallArguments: [()] = []
+                private(set) var getAllCallCount: Int = 0
+                private(set) var getAllCallArguments: [()] = []
                 var getAllHandler: (() -> Element)? = nil
                 func getAll() -> Element {
                     getAllCallCount += 1
@@ -634,8 +592,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class OptionalFetcherMock: OptionalFetcher {
                 typealias Result = Any
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [String] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [String] = []
                 var fetchHandler: ((String) -> Result?)? = nil
                 func fetch(id: String) -> Result? {
                     fetchCallCount += 1
@@ -678,8 +636,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class BatchProcessorMock: BatchProcessor {
                 typealias Item = Int
-                var processCallCount: Int = 0
-                var processCallArguments: [[Item]] = []
+                private(set) var processCallCount: Int = 0
+                private(set) var processCallArguments: [[Item]] = []
                 var processHandler: (([Item]) -> Int)? = nil
                 func process(items: [Item]) -> Int {
                     processCallCount += 1
@@ -724,8 +682,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class AsyncRepositoryMock: AsyncRepository {
                 typealias Entity = Any
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [String] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [String] = []
                 var fetchHandler: ((String) async throws -> Entity)? = nil
                 func fetch(id: String) async throws -> Entity {
                     fetchCallCount += 1
@@ -735,8 +693,8 @@ struct AssociatedTypeMacroTests {
                     }
                     return try await _handler(id)
                 }
-                var saveCallCount: Int = 0
-                var saveCallArguments: [Entity] = []
+                private(set) var saveCallCount: Int = 0
+                private(set) var saveCallArguments: [Entity] = []
                 var saveHandler: ((Entity) async throws -> Void)? = nil
                 func save(_ entity: Entity) async throws {
                     saveCallCount += 1
@@ -791,27 +749,13 @@ struct AssociatedTypeMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var getCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.getCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.getCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.getCallCount
                     }
                 }
                 var getCallArguments: [Key] {
-                    get {
-                        _storage.withLock {
-                            $0.getCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.getCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.getCallArguments
                     }
                 }
                 var getHandler: (@Sendable (Key) -> Value?)? {
@@ -872,8 +816,8 @@ struct AssociatedTypeMacroTests {
             #if DEBUG
             class EventEmitterMock: EventEmitter {
                 typealias Event = String
-                var subscribeCallCount: Int = 0
-                var subscribeCallArguments: [(Event) -> Void] = []
+                private(set) var subscribeCallCount: Int = 0
+                private(set) var subscribeCallArguments: [(Event) -> Void] = []
                 var subscribeHandler: (((Event) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping (Event) -> Void) {
                     subscribeCallCount += 1

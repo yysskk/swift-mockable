@@ -26,8 +26,8 @@ struct MultiParameterHandlerTests {
 
             #if DEBUG
             class CalculatorMock: Calculator {
-                var addCallCount: Int = 0
-                var addCallArguments: [(a: Int, b: Int)] = []
+                private(set) var addCallCount: Int = 0
+                private(set) var addCallArguments: [(a: Int, b: Int)] = []
                 var addHandler: ((Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
@@ -67,8 +67,8 @@ struct MultiParameterHandlerTests {
 
             #if DEBUG
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -108,8 +108,8 @@ struct MultiParameterHandlerTests {
 
             #if DEBUG
             class LoggerMock: Logger {
-                var logCallCount: Int = 0
-                var logCallArguments: [(tag: String, messages: [String])] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [(tag: String, messages: [String])] = []
                 var logHandler: ((String, [String]) -> Void)? = nil
                 func log(_ tag: String, _ messages: String...) {
                     logCallCount += 1
@@ -155,27 +155,13 @@ struct MultiParameterHandlerTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var addCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.addCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.addCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.addCallCount
                     }
                 }
                 var addCallArguments: [(a: Int, b: Int)] {
-                    get {
-                        _storage.withLock {
-                            $0.addCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.addCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.addCallArguments
                     }
                 }
                 var addHandler: (@Sendable (Int, Int) -> Int)? {
@@ -233,8 +219,8 @@ struct MultiParameterHandlerTests {
 
             #if DEBUG
             class GridMock: Grid {
-                var subscriptIntIntCallCount: Int = 0
-                var subscriptIntIntCallArguments: [(row: Int, col: Int)] = []
+                private(set) var subscriptIntIntCallCount: Int = 0
+                private(set) var subscriptIntIntCallArguments: [(row: Int, col: Int)] = []
                 var subscriptIntIntHandler: ((Int, Int) -> Int )? = nil
                 var subscriptIntIntSetHandler: ((Int, Int, Int ) -> Void)? = nil
                 subscript(row: Int, col: Int) -> Int {

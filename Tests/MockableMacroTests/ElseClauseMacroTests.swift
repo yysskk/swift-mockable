@@ -47,8 +47,8 @@ struct ElseClauseMacroTests {
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 #if CUSTOM
-                var alphaCallCount: Int = 0
-                var alphaCallArguments: [()] = []
+                private(set) var alphaCallCount: Int = 0
+                private(set) var alphaCallArguments: [()] = []
                 var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
@@ -59,27 +59,13 @@ struct ElseClauseMacroTests {
                 }
                 #else
                 static var betaCallCount: Int {
-                    get {
-                        _staticStorage.withLock {
-                            $0.betaCallCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.betaCallCount = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.betaCallCount
                     }
                 }
                 static var betaCallArguments: [()] {
-                    get {
-                        _staticStorage.withLock {
-                            $0.betaCallArguments
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.betaCallArguments = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.betaCallArguments
                     }
                 }
                 static var betaHandler: (@Sendable () -> Int)? {
@@ -158,8 +144,8 @@ struct ElseClauseMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 #if CUSTOM
-                var alphaCallCount: Int = 0
-                var alphaCallArguments: [()] = []
+                private(set) var alphaCallCount: Int = 0
+                private(set) var alphaCallArguments: [()] = []
                 var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
@@ -169,8 +155,8 @@ struct ElseClauseMacroTests {
                     }
                 }
                 #else
-                var fetchIntCallCount: Int = 0
-                var fetchIntCallArguments: [Int] = []
+                private(set) var fetchIntCallCount: Int = 0
+                private(set) var fetchIntCallArguments: [Int] = []
                 var fetchIntHandler: ((Int) -> Int)? = nil
                 func fetch(id: Int) -> Int {
                     fetchIntCallCount += 1
@@ -180,8 +166,8 @@ struct ElseClauseMacroTests {
                     }
                     return _handler(id)
                 }
-                var fetchStringCallCount: Int = 0
-                var fetchStringCallArguments: [String] = []
+                private(set) var fetchStringCallCount: Int = 0
+                private(set) var fetchStringCallArguments: [String] = []
                 var fetchStringHandler: ((String) -> Int)? = nil
                 func fetch(name: String) -> Int {
                     fetchStringCallCount += 1
@@ -240,8 +226,8 @@ struct ElseClauseMacroTests {
             #if DEBUG
             open class ServiceMock: Service {
                 #if CUSTOM
-                public var alphaCallCount: Int = 0
-                public var alphaCallArguments: [()] = []
+                public private(set) var alphaCallCount: Int = 0
+                public private(set) var alphaCallArguments: [()] = []
                 public var alphaHandler: (() -> Void)? = nil
                 public func alpha() {
                     alphaCallCount += 1
@@ -251,8 +237,8 @@ struct ElseClauseMacroTests {
                     }
                 }
                 #else
-                public var initCallCount: Int = 0
-                public var initCallArguments: [String] = []
+                public private(set) var initCallCount: Int = 0
+                public private(set) var initCallArguments: [String] = []
                 public required init(name: String) {
                     initCallCount += 1
                     initCallArguments.append(name)

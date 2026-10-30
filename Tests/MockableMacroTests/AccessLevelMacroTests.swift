@@ -26,8 +26,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             class InternalServiceMock: InternalService {
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [()] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [()] = []
                 var fetchHandler: (() -> String)? = nil
                 func fetch() -> String {
                     fetchCallCount += 1
@@ -69,8 +69,8 @@ struct AccessLevelMacroTests {
             open class PublicServiceMock: PublicService {
                 public init() {
                 }
-                public var fetchCallCount: Int = 0
-                public var fetchCallArguments: [()] = []
+                public private(set) var fetchCallCount: Int = 0
+                public private(set) var fetchCallArguments: [()] = []
                 public var fetchHandler: (() -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
@@ -112,8 +112,8 @@ struct AccessLevelMacroTests {
             package class PackageServiceMock: PackageService {
                 package init() {
                 }
-                package var fetchCallCount: Int = 0
-                package var fetchCallArguments: [()] = []
+                package private(set) var fetchCallCount: Int = 0
+                package private(set) var fetchCallArguments: [()] = []
                 package var fetchHandler: (() -> String)? = nil
                 package func fetch() -> String {
                     fetchCallCount += 1
@@ -233,8 +233,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             fileprivate class FileprivateServiceMock: FileprivateService {
-                fileprivate var fetchCallCount: Int = 0
-                fileprivate var fetchCallArguments: [()] = []
+                fileprivate private(set) var fetchCallCount: Int = 0
+                fileprivate private(set) var fetchCallArguments: [()] = []
                 fileprivate var fetchHandler: (() -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1
@@ -278,8 +278,8 @@ struct AccessLevelMacroTests {
 
             #if DEBUG
             private class PrivateServiceMock: PrivateService {
-                fileprivate var fetchCallCount: Int = 0
-                fileprivate var fetchCallArguments: [()] = []
+                fileprivate private(set) var fetchCallCount: Int = 0
+                fileprivate private(set) var fetchCallArguments: [()] = []
                 fileprivate var fetchHandler: (() -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1

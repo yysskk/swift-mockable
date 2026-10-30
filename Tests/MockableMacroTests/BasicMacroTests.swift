@@ -26,8 +26,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -67,8 +67,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class DataServiceMock: DataService {
-                var loadDataCallCount: Int = 0
-                var loadDataCallArguments: [String] = []
+                private(set) var loadDataCallCount: Int = 0
+                private(set) var loadDataCallArguments: [String] = []
                 var loadDataHandler: ((String) async throws -> Data)? = nil
                 func loadData(from url: String) async throws -> Data {
                     loadDataCallCount += 1
@@ -108,8 +108,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class CalculatorMock: Calculator {
-                var addCallCount: Int = 0
-                var addCallArguments: [(a: Int, b: Int)] = []
+                private(set) var addCallCount: Int = 0
+                private(set) var addCallArguments: [(a: Int, b: Int)] = []
                 var addHandler: ((Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
@@ -149,8 +149,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class LoggerMock: Logger {
-                var logCallCount: Int = 0
-                var logCallArguments: [String] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [String] = []
                 var logHandler: ((String) -> Void)? = nil
                 func log(message: String) {
                     logCallCount += 1
@@ -189,8 +189,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class LoggerMock: Logger {
-                var logCallCount: Int = 0
-                var logCallArguments: [[String]] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [[String]] = []
                 var logHandler: (([String]) -> Void)? = nil
                 func log(_ messages: String...) {
                     logCallCount += 1
@@ -345,27 +345,13 @@ struct BasicMacroTests {
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 static var makeValueCallCount: Int {
-                    get {
-                        _staticStorage.withLock {
-                            $0.makeValueCallCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.makeValueCallCount = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.makeValueCallCount
                     }
                 }
                 static var makeValueCallArguments: [String] {
-                    get {
-                        _staticStorage.withLock {
-                            $0.makeValueCallArguments
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.makeValueCallArguments = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.makeValueCallArguments
                     }
                 }
                 static var makeValueHandler: (@Sendable (String) -> String)? {
@@ -670,8 +656,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class EventHandlerMock: EventHandler {
-                var subscribeCallCount: Int = 0
-                var subscribeCallArguments: [(String) -> Void] = []
+                private(set) var subscribeCallCount: Int = 0
+                private(set) var subscribeCallArguments: [(String) -> Void] = []
                 var subscribeHandler: (((String) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping (String) -> Void) {
                     subscribeCallCount += 1
@@ -710,8 +696,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class EventHandlerMock: EventHandler {
-                var subscribeCallCount: Int = 0
-                var subscribeCallArguments: [@Sendable (String) -> Void] = []
+                private(set) var subscribeCallCount: Int = 0
+                private(set) var subscribeCallArguments: [@Sendable (String) -> Void] = []
                 var subscribeHandler: ((@Sendable (String) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping @Sendable (String) -> Void) {
                     subscribeCallCount += 1
@@ -750,8 +736,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class CompletionHandlerMock: CompletionHandler {
-                var doSomethingCallCount: Int = 0
-                var doSomethingCallArguments: [(Error?) -> Void] = []
+                private(set) var doSomethingCallCount: Int = 0
+                private(set) var doSomethingCallArguments: [(Error?) -> Void] = []
                 var doSomethingHandler: (((Error?) -> Void) -> Void)? = nil
                 func doSomething(completion: (@escaping (Error?) -> Void)) {
                     doSomethingCallCount += 1
@@ -790,8 +776,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class CompletionHandlerMock: CompletionHandler {
-                var doSomethingCallCount: Int = 0
-                var doSomethingCallArguments: [@Sendable (Error?) -> Void] = []
+                private(set) var doSomethingCallCount: Int = 0
+                private(set) var doSomethingCallArguments: [@Sendable (Error?) -> Void] = []
                 var doSomethingHandler: ((@Sendable (Error?) -> Void) -> Void)? = nil
                 func doSomething(completion: (@escaping @Sendable (Error?) -> Void)) {
                     doSomethingCallCount += 1
@@ -830,8 +816,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [()] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [()] = []
                 var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String? {
                     fetchCallCount += 1
@@ -871,8 +857,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var itemsCallCount: Int = 0
-                var itemsCallArguments: [()] = []
+                private(set) var itemsCallCount: Int = 0
+                private(set) var itemsCallArguments: [()] = []
                 var itemsHandler: (() -> [String])? = nil
                 func items() -> [String] {
                     itemsCallCount += 1
@@ -912,8 +898,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var tagsCallCount: Int = 0
-                var tagsCallArguments: [()] = []
+                private(set) var tagsCallCount: Int = 0
+                private(set) var tagsCallArguments: [()] = []
                 var tagsHandler: (() -> Set<String>)? = nil
                 func tags() -> Set<String> {
                     tagsCallCount += 1
@@ -953,8 +939,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var mappingCallCount: Int = 0
-                var mappingCallArguments: [()] = []
+                private(set) var mappingCallCount: Int = 0
+                private(set) var mappingCallArguments: [()] = []
                 var mappingHandler: (() -> [String: Int])? = nil
                 func mapping() -> [String: Int] {
                     mappingCallCount += 1
@@ -998,8 +984,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var optionalValueCallCount: Int = 0
-                var optionalValueCallArguments: [()] = []
+                private(set) var optionalValueCallCount: Int = 0
+                private(set) var optionalValueCallArguments: [()] = []
                 var optionalValueHandler: (() -> Optional<String>)? = nil
                 func optionalValue() -> Optional<String> {
                     optionalValueCallCount += 1
@@ -1009,8 +995,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var arrayValueCallCount: Int = 0
-                var arrayValueCallArguments: [()] = []
+                private(set) var arrayValueCallCount: Int = 0
+                private(set) var arrayValueCallArguments: [()] = []
                 var arrayValueHandler: (() -> Array<String>)? = nil
                 func arrayValue() -> Array<String> {
                     arrayValueCallCount += 1
@@ -1020,8 +1006,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var dictionaryValueCallCount: Int = 0
-                var dictionaryValueCallArguments: [()] = []
+                private(set) var dictionaryValueCallCount: Int = 0
+                private(set) var dictionaryValueCallArguments: [()] = []
                 var dictionaryValueHandler: (() -> Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
@@ -1073,8 +1059,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var optionalValueCallCount: Int = 0
-                var optionalValueCallArguments: [()] = []
+                private(set) var optionalValueCallCount: Int = 0
+                private(set) var optionalValueCallArguments: [()] = []
                 var optionalValueHandler: (() -> Swift.Optional<String>)? = nil
                 func optionalValue() -> Swift.Optional<String> {
                     optionalValueCallCount += 1
@@ -1084,8 +1070,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var arrayValueCallCount: Int = 0
-                var arrayValueCallArguments: [()] = []
+                private(set) var arrayValueCallCount: Int = 0
+                private(set) var arrayValueCallArguments: [()] = []
                 var arrayValueHandler: (() -> Swift.Array<String>)? = nil
                 func arrayValue() -> Swift.Array<String> {
                     arrayValueCallCount += 1
@@ -1095,8 +1081,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var setValueCallCount: Int = 0
-                var setValueCallArguments: [()] = []
+                private(set) var setValueCallCount: Int = 0
+                private(set) var setValueCallArguments: [()] = []
                 var setValueHandler: (() -> Swift.Set<String>)? = nil
                 func setValue() -> Swift.Set<String> {
                     setValueCallCount += 1
@@ -1106,8 +1092,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var dictionaryValueCallCount: Int = 0
-                var dictionaryValueCallArguments: [()] = []
+                private(set) var dictionaryValueCallCount: Int = 0
+                private(set) var dictionaryValueCallArguments: [()] = []
                 var dictionaryValueHandler: (() -> Swift.Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Swift.Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
@@ -1156,8 +1142,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [()] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [()] = []
                 var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String! {
                     fetchCallCount += 1
@@ -1199,8 +1185,8 @@ struct BasicMacroTests {
 
             #if DEBUG
             class RepositoryMock: Repository {
-                var optionalArrayCallCount: Int = 0
-                var optionalArrayCallArguments: [()] = []
+                private(set) var optionalArrayCallCount: Int = 0
+                private(set) var optionalArrayCallArguments: [()] = []
                 var optionalArrayHandler: (() -> [String]?)? = nil
                 func optionalArray() -> [String]? {
                     optionalArrayCallCount += 1
@@ -1210,8 +1196,8 @@ struct BasicMacroTests {
                     }
                     return _handler()
                 }
-                var arrayOfOptionalCallCount: Int = 0
-                var arrayOfOptionalCallArguments: [()] = []
+                private(set) var arrayOfOptionalCallCount: Int = 0
+                private(set) var arrayOfOptionalCallArguments: [()] = []
                 var arrayOfOptionalHandler: (() -> [String?])? = nil
                 func arrayOfOptional() -> [String?] {
                     arrayOfOptionalCallCount += 1

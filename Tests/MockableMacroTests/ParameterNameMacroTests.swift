@@ -32,8 +32,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var handleCallCount: Int = 0
-                var handleCallArguments: [Int] = []
+                private(set) var handleCallCount: Int = 0
+                private(set) var handleCallArguments: [Int] = []
                 var handleHandler: ((Int) -> Int)? = nil
                 func handle(_ param0: Int) -> Int {
                     handleCallCount += 1
@@ -73,8 +73,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var pairCallCount: Int = 0
-                var pairCallArguments: [(param0: Int, param1: String)] = []
+                private(set) var pairCallCount: Int = 0
+                private(set) var pairCallArguments: [(param0: Int, param1: String)] = []
                 var pairHandler: ((Int, String) -> Void)? = nil
                 func pair(_ param0: Int, _ param1: String) {
                     pairCallCount += 1
@@ -113,8 +113,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var takeCallCount: Int = 0
-                var takeCallArguments: [(param0_: Int, param0: String)] = []
+                private(set) var takeCallCount: Int = 0
+                private(set) var takeCallArguments: [(param0_: Int, param0: String)] = []
                 var takeHandler: ((Int, String) -> Void)? = nil
                 func take(_ param0_: Int, param0: String) {
                     takeCallCount += 1
@@ -153,8 +153,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var valueCallCount: Int = 0
-                var valueCallArguments: [Int] = []
+                private(set) var valueCallCount: Int = 0
+                private(set) var valueCallArguments: [Int] = []
                 var valueHandler: ((Int) -> Int)? = nil
                 func value(`for`: Int) -> Int {
                     valueCallCount += 1
@@ -194,8 +194,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var logCallCount: Int = 0
-                var logCallArguments: [(for: Int, in: String)] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [(for: Int, in: String)] = []
                 var logHandler: ((Int, String) -> Void)? = nil
                 func log(`for`: Int, `in`: String) {
                     logCallCount += 1
@@ -243,27 +243,13 @@ struct ParameterNameMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var saveCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallCount
                     }
                 }
                 var saveCallArguments: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallArguments
                     }
                 }
                 var saveHandler: (@Sendable (Int) -> Void)? {
@@ -320,8 +306,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var runCallCount: Int = 0
-                var runCallArguments: [Int] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [Int] = []
                 var runHandler: ((Int) -> Void)? = nil
                 func run(_handler: Int) {
                     runCallCount += 1
@@ -360,8 +346,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var fetchCallCount: Int = 0
-                var fetchCallArguments: [Int] = []
+                private(set) var fetchCallCount: Int = 0
+                private(set) var fetchCallArguments: [Int] = []
                 var fetchHandler: ((Int) -> Void)? = nil
                 func fetch(fetchCallCount: Int) {
                     self.fetchCallCount += 1
@@ -407,27 +393,13 @@ struct ParameterNameMacroTests {
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 static var storeCallCount: Int {
-                    get {
-                        _staticStorage.withLock {
-                            $0.storeCallCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.storeCallCount = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.storeCallCount
                     }
                 }
                 static var storeCallArguments: [Int] {
-                    get {
-                        _staticStorage.withLock {
-                            $0.storeCallArguments
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.storeCallArguments = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.storeCallArguments
                     }
                 }
                 static var storeHandler: (@Sendable (Int) -> Void)? {
@@ -484,8 +456,8 @@ struct ParameterNameMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var subscriptIntCallCount: Int = 0
-                var subscriptIntCallArguments: [Int] = []
+                private(set) var subscriptIntCallCount: Int = 0
+                private(set) var subscriptIntCallArguments: [Int] = []
                 var subscriptIntHandler: ((Int) -> String )? = nil
                 var subscriptIntSetHandler: ((Int, String ) -> Void)? = nil
                 subscript(newValue: Int) -> String {
