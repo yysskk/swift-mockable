@@ -20,17 +20,29 @@ enum ParameterModel {
         return FunctionParameterListSyntax(storable)
     }
 
-    /// The element type of the `CallArguments` array, built from the storable parameters only.
+    /// The element type of the `CallArguments` array, built from the storable parameters
+    /// only, or `nil` when there are none: a requirement without arguments to record
+    /// has no `CallArguments`, since its call count says everything an array of empty
+    /// tuples would.
     static func buildCallArgumentsTupleType(
         parameters: FunctionParameterListSyntax,
         genericParamNames: Set<String> = []
-    ) -> TypeSyntax {
-        buildParameterTupleType(parameters: storableParameters(parameters), genericParamNames: genericParamNames)
+    ) -> TypeSyntax? {
+        let storable = storableParameters(parameters)
+        guard !storable.isEmpty else {
+            return nil
+        }
+        return buildParameterTupleType(parameters: storable, genericParamNames: genericParamNames)
     }
 
-    /// The value appended to `CallArguments`, built from the storable parameters only.
-    static func buildCallArgumentsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax {
-        buildArgsExpression(parameters: storableParameters(parameters))
+    /// The value appended to `CallArguments`, built from the storable parameters only,
+    /// or `nil` when there are none to record (see `buildCallArgumentsTupleType`).
+    static func buildCallArgumentsExpression(parameters: FunctionParameterListSyntax) -> ExprSyntax? {
+        let storable = storableParameters(parameters)
+        guard !storable.isEmpty else {
+            return nil
+        }
+        return buildArgsExpression(parameters: storable)
     }
 
     /// Whether a parameter is a non-escaping closure that cannot be stored in `CallArguments`.

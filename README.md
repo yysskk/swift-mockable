@@ -75,7 +75,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 
 - Functions:
   - `<method>CallCount`
-  - `<method>CallArguments`
+  - `<method>CallArguments` (when the method has arguments to record)
   - `<method>Handler`
 - Properties:
   - The property itself, settable on the mock even for a `{ get }` requirement (`mock.currentUser = user`)
@@ -92,6 +92,8 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
   - `resetMock()` on the instance, and `resetMock()` on the mock type for `static` requirements
 
 `CallCount` and `CallArguments` are read-only outside the mock: the mock records them, and `resetMock()` clears them. Handlers and properties are writable for setup.
+
+A requirement without arguments to record — `func refresh()`, or one whose only parameter is a non-escaping closure — has no `CallArguments`: its `CallCount` is the whole call history. Until the next major release it keeps a deprecated `CallArguments` computed from the call count, so code reading it still compiles with a warning.
 
 ## Handlers
 

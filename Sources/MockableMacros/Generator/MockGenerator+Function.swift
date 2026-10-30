@@ -23,7 +23,7 @@ extension MockGenerator {
     /// property per `TrackingField`.
     func trackingMemberItems(for requirement: TrackingRequirement) -> [MemberBlockItemSyntax] {
         let access = trackingAccess(for: requirement.scope)
-        return requirement.trackingFields(model: access.model).map { field in
+        var members = requirement.trackingFields(model: access.model).map { field in
             MemberBlockItemSyntax(decl: generateTrackingStorageProperty(
                 name: field.name,
                 type: field.type,
@@ -33,6 +33,36 @@ extension MockGenerator {
                 leavesMockIsolation: requirement.leavesMockIsolation
             ))
         }
+        if requirement.hasDeprecatedCallArguments {
+            // Placed where the stored slot used to be, right after the call count.
+            members.insert(MemberBlockItemSyntax(decl: generateDeprecatedCallArguments(for: requirement)), at: 1)
+        }
+        return members
+    }
+
+    /// The deprecated `<name>CallArguments` of a requirement without arguments to record:
+    /// a computed array of one empty tuple per call, derived from the call count, so it
+    /// reads exactly as the stored array it replaces did while warning that the call
+    /// count says the same thing.
+    private func generateDeprecatedCallArguments(for requirement: TrackingRequirement) -> VariableDeclSyntax {
+        let callCount = MockNaming.callCount(requirement.identifier)
+        var additionalModifiers = requirement.scope.modifiers
+        if usesLockBasedStorage(for: requirement.scope) {
+            additionalModifiers += storageBackedMemberModifiers(
+                leavesMockIsolation: requirement.leavesMockIsolation,
+                scope: requirement.scope
+            )
+        }
+        let property = Self.makeGetOnlyProperty(
+            modifiers: modifiers(for: .member, additional: additionalModifiers),
+            name: MockNaming.callArguments(requirement.identifier),
+            type: TypeSyntax(stringLiteral: "[()]"),
+            getterBody: "Array(repeating: (), count: \(callCount))"
+        )
+        let message = "\(requirement.identifier) records no arguments; use \(callCount) instead."
+        return property.with(\.attributes, AttributeListSyntax([
+            .attribute(AttributeSyntax(stringLiteral: "@available(*, deprecated, message: \"\(message)\")"))
+        ]).with(\.trailingTrivia, .newline))
     }
 
     /// Builds one tracking member (`CallCount`, `CallArguments`, `Handler`, an optional

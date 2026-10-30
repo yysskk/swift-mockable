@@ -64,10 +64,8 @@ struct InheritanceTests {
         mock.resetMock()
 
         #expect(mock.baseMethodCallCount == 0)
-        #expect(mock.baseMethodCallArguments.isEmpty)
         #expect(mock.baseMethodHandler == nil)
         #expect(mock.childMethodCallCount == 0)
-        #expect(mock.childMethodCallArguments.isEmpty)
         #expect(mock.childMethodHandler == nil)
     }
 

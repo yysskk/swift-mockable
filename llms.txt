@@ -9,6 +9,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - `subscript<suffix>CallCount` / `CallArguments` / `Handler` / `SetHandler` for subscripts
 - `initCallCount` / `initCallArguments` for `init` requirements (recording `required init`; lock-backed on `Sendable`/`actor` mocks)
 - `CallCount` / `CallArguments` are read-only outside the mock; handlers and properties are writable
+- No `CallArguments` for a requirement without arguments to record (a deprecated one derived from `CallCount` remains until the next major release)
 - `resetMock()` to clear an instance's tracking state, and `<Protocol>Mock.resetMock()` to clear `static` state
 
 ## Key Features

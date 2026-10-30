@@ -73,7 +73,6 @@ struct TypeAliasIntegrationTests {
         mock.resetMock()
 
         #expect(mock.currentUpdateTypeCallCount == 0)
-        #expect(mock.currentUpdateTypeCallArguments.isEmpty)
         #expect(mock.currentUpdateTypeHandler == nil)
         #expect(mock.didUpdateCallCount == 0)
         #expect(mock.didUpdateCallArguments.isEmpty)

@@ -41,7 +41,6 @@ struct ActorMacroTests {
                     var profileCallArguments: [String] = []
                     var profileHandler: (@Sendable (String) -> String?)? = nil
                     var resetCallCount: Int = 0
-                    var resetCallArguments: [()] = []
                     var resetHandler: (@Sendable () -> Void)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -127,10 +126,9 @@ struct ActorMacroTests {
                         $0.resetCallCount
                     }
                 }
+                @available(*, deprecated, message: "reset records no arguments; use resetCallCount instead.")
                 nonisolated var resetCallArguments: [()] {
-                    _storage.withLock {
-                        $0.resetCallArguments
-                    }
+                    Array(repeating: (), count: resetCallCount)
                 }
                 nonisolated var resetHandler: (@Sendable () -> Void)? {
                     get {
@@ -147,7 +145,6 @@ struct ActorMacroTests {
                 func reset() {
                     let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
                         storage.resetCallCount += 1
-                        storage.resetCallArguments.append(())
                         return storage.resetHandler
                     }
                     if let _handler {
@@ -164,7 +161,6 @@ struct ActorMacroTests {
                         storage.profileCallArguments = []
                         storage.profileHandler = nil
                         storage.resetCallCount = 0
-                        storage.resetCallArguments = []
                         storage.resetHandler = nil
                     }
                 }
@@ -262,7 +258,6 @@ struct ActorMacroTests {
                     var saveCallArguments: [String] = []
                     var saveHandler: (@Sendable (String) async throws -> Void)? = nil
                     var loadCallCount: Int = 0
-                    var loadCallArguments: [()] = []
                     var loadHandler: (@Sendable () async throws -> String)? = nil
                 }
                 private let _storage = MockableLock<Storage>(Storage())
@@ -303,10 +298,9 @@ struct ActorMacroTests {
                         $0.loadCallCount
                     }
                 }
+                @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
                 nonisolated var loadCallArguments: [()] {
-                    _storage.withLock {
-                        $0.loadCallArguments
-                    }
+                    Array(repeating: (), count: loadCallCount)
                 }
                 nonisolated var loadHandler: (@Sendable () async throws -> String)? {
                     get {
@@ -323,7 +317,6 @@ struct ActorMacroTests {
                 func load() async throws -> String {
                     let _handler = _storage.withLock { storage -> (@Sendable () async throws -> String)? in
                         storage.loadCallCount += 1
-                        storage.loadCallArguments.append(())
                         return storage.loadHandler
                     }
                     guard let _handler else {
@@ -337,7 +330,6 @@ struct ActorMacroTests {
                         storage.saveCallArguments = []
                         storage.saveHandler = nil
                         storage.loadCallCount = 0
-                        storage.loadCallArguments = []
                         storage.loadHandler = nil
                     }
                 }

@@ -65,7 +65,7 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 ### Functions
 
 - `<method>CallCount` -- number of times the method was called
-- `<method>CallArguments` -- array of captured arguments from each call
+- `<method>CallArguments` -- array of captured arguments from each call; absent when the method has no arguments to record (a deprecated `[()]` derived from `CallCount` remains until the next major release)
 - `<method>Handler` -- configurable closure that implements the method
 
 ### Properties

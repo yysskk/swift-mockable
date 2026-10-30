@@ -31,12 +31,14 @@ struct WitnessAttributeMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: (() -> Int)? = nil
                 @discardableResult
                 func run() -> Int {
                     runCallCount += 1
-                    runCallArguments.append(())
                     guard let _handler = runHandler else {
                         fatalError("\\(Self.self).runHandler is not set")
                     }
@@ -44,7 +46,6 @@ struct WitnessAttributeMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {
@@ -75,11 +76,13 @@ struct WitnessAttributeMacroTests {
             #if DEBUG
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: (() -> Int)? = nil
                 func run() -> Int {
                     runCallCount += 1
-                    runCallArguments.append(())
                     guard let _handler = runHandler else {
                         fatalError("\\(Self.self).runHandler is not set")
                     }
@@ -87,7 +90,6 @@ struct WitnessAttributeMacroTests {
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {

@@ -16,9 +16,9 @@ struct NonEscapingClosureTests {
         mock.run { handlerRan = true }
 
         #expect(handlerRan)
+        // The non-escaping closure cannot be stored, so `run` records no arguments and
+        // its call count is the whole call history.
         #expect(mock.runCallCount == 1)
-        // CallArguments excludes the non-escaping closure, so it records the empty tuple.
-        #expect(mock.runCallArguments.count == 1)
     }
 
     @Test("Storable parameters are recorded while the non-escaping closure is forwarded")
@@ -58,7 +58,6 @@ struct NonEscapingClosureTests {
         mock.resetMock()
 
         #expect(mock.runCallCount == 0)
-        #expect(mock.runCallArguments.isEmpty)
         #expect(mock.runHandler == nil)
     }
 }

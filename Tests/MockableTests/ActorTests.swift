@@ -333,7 +333,6 @@ struct ActorIntegrationTests {
         #expect(mock.profileCallArguments.isEmpty)
         #expect(mock.profileHandler == nil)
         #expect(mock.resetCallCount == 0)
-        #expect(mock.resetCallArguments.isEmpty)
         #expect(mock.resetHandler == nil)
     }
 
@@ -393,7 +392,6 @@ struct ActorIntegrationTests {
         #expect(mock.saveCallArguments == [])
         #expect(mock.saveHandler == nil)
         #expect(mock.loadCallCount == 0)
-        #expect(mock.loadCallArguments.isEmpty)
         #expect(mock.loadHandler == nil)
         #expect(mock.deleteCallCount == 0)
         #expect(mock.deleteCallArguments.isEmpty)

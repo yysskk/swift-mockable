@@ -27,18 +27,19 @@ struct NonEscapingClosureMacroTests {
             #if DEBUG
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
-                private(set) var runCallArguments: [()] = []
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
                 var runHandler: ((() -> Void) -> Void)? = nil
                 func run(_ body: () -> Void) {
                     runCallCount += 1
-                    runCallArguments.append(())
                     if let _handler = runHandler {
                         _handler(body)
                     }
                 }
                 func resetMock() {
                     runCallCount = 0
-                    runCallArguments = []
                     runHandler = nil
                 }
                 class func resetMock() {

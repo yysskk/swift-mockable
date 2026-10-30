@@ -817,11 +817,13 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String? {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         return nil
                     }
@@ -829,7 +831,6 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -858,11 +859,13 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var itemsCallCount: Int = 0
-                private(set) var itemsCallArguments: [()] = []
+                @available(*, deprecated, message: "items records no arguments; use itemsCallCount instead.")
+                var itemsCallArguments: [()] {
+                    Array(repeating: (), count: itemsCallCount)
+                }
                 var itemsHandler: (() -> [String])? = nil
                 func items() -> [String] {
                     itemsCallCount += 1
-                    itemsCallArguments.append(())
                     guard let _handler = itemsHandler else {
                         return []
                     }
@@ -870,7 +873,6 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     itemsCallCount = 0
-                    itemsCallArguments = []
                     itemsHandler = nil
                 }
                 class func resetMock() {
@@ -899,11 +901,13 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var tagsCallCount: Int = 0
-                private(set) var tagsCallArguments: [()] = []
+                @available(*, deprecated, message: "tags records no arguments; use tagsCallCount instead.")
+                var tagsCallArguments: [()] {
+                    Array(repeating: (), count: tagsCallCount)
+                }
                 var tagsHandler: (() -> Set<String>)? = nil
                 func tags() -> Set<String> {
                     tagsCallCount += 1
-                    tagsCallArguments.append(())
                     guard let _handler = tagsHandler else {
                         return []
                     }
@@ -911,7 +915,6 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     tagsCallCount = 0
-                    tagsCallArguments = []
                     tagsHandler = nil
                 }
                 class func resetMock() {
@@ -940,11 +943,13 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var mappingCallCount: Int = 0
-                private(set) var mappingCallArguments: [()] = []
+                @available(*, deprecated, message: "mapping records no arguments; use mappingCallCount instead.")
+                var mappingCallArguments: [()] {
+                    Array(repeating: (), count: mappingCallCount)
+                }
                 var mappingHandler: (() -> [String: Int])? = nil
                 func mapping() -> [String: Int] {
                     mappingCallCount += 1
-                    mappingCallArguments.append(())
                     guard let _handler = mappingHandler else {
                         return [:]
                     }
@@ -952,7 +957,6 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     mappingCallCount = 0
-                    mappingCallArguments = []
                     mappingHandler = nil
                 }
                 class func resetMock() {
@@ -985,33 +989,39 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var optionalValueCallCount: Int = 0
-                private(set) var optionalValueCallArguments: [()] = []
+                @available(*, deprecated, message: "optionalValue records no arguments; use optionalValueCallCount instead.")
+                var optionalValueCallArguments: [()] {
+                    Array(repeating: (), count: optionalValueCallCount)
+                }
                 var optionalValueHandler: (() -> Optional<String>)? = nil
                 func optionalValue() -> Optional<String> {
                     optionalValueCallCount += 1
-                    optionalValueCallArguments.append(())
                     guard let _handler = optionalValueHandler else {
                         return nil
                     }
                     return _handler()
                 }
                 private(set) var arrayValueCallCount: Int = 0
-                private(set) var arrayValueCallArguments: [()] = []
+                @available(*, deprecated, message: "arrayValue records no arguments; use arrayValueCallCount instead.")
+                var arrayValueCallArguments: [()] {
+                    Array(repeating: (), count: arrayValueCallCount)
+                }
                 var arrayValueHandler: (() -> Array<String>)? = nil
                 func arrayValue() -> Array<String> {
                     arrayValueCallCount += 1
-                    arrayValueCallArguments.append(())
                     guard let _handler = arrayValueHandler else {
                         return []
                     }
                     return _handler()
                 }
                 private(set) var dictionaryValueCallCount: Int = 0
-                private(set) var dictionaryValueCallArguments: [()] = []
+                @available(*, deprecated, message: "dictionaryValue records no arguments; use dictionaryValueCallCount instead.")
+                var dictionaryValueCallArguments: [()] {
+                    Array(repeating: (), count: dictionaryValueCallCount)
+                }
                 var dictionaryValueHandler: (() -> Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
-                    dictionaryValueCallArguments.append(())
                     guard let _handler = dictionaryValueHandler else {
                         return [:]
                     }
@@ -1019,13 +1029,10 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     optionalValueCallCount = 0
-                    optionalValueCallArguments = []
                     optionalValueHandler = nil
                     arrayValueCallCount = 0
-                    arrayValueCallArguments = []
                     arrayValueHandler = nil
                     dictionaryValueCallCount = 0
-                    dictionaryValueCallArguments = []
                     dictionaryValueHandler = nil
                 }
                 class func resetMock() {
@@ -1060,44 +1067,52 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var optionalValueCallCount: Int = 0
-                private(set) var optionalValueCallArguments: [()] = []
+                @available(*, deprecated, message: "optionalValue records no arguments; use optionalValueCallCount instead.")
+                var optionalValueCallArguments: [()] {
+                    Array(repeating: (), count: optionalValueCallCount)
+                }
                 var optionalValueHandler: (() -> Swift.Optional<String>)? = nil
                 func optionalValue() -> Swift.Optional<String> {
                     optionalValueCallCount += 1
-                    optionalValueCallArguments.append(())
                     guard let _handler = optionalValueHandler else {
                         return nil
                     }
                     return _handler()
                 }
                 private(set) var arrayValueCallCount: Int = 0
-                private(set) var arrayValueCallArguments: [()] = []
+                @available(*, deprecated, message: "arrayValue records no arguments; use arrayValueCallCount instead.")
+                var arrayValueCallArguments: [()] {
+                    Array(repeating: (), count: arrayValueCallCount)
+                }
                 var arrayValueHandler: (() -> Swift.Array<String>)? = nil
                 func arrayValue() -> Swift.Array<String> {
                     arrayValueCallCount += 1
-                    arrayValueCallArguments.append(())
                     guard let _handler = arrayValueHandler else {
                         return []
                     }
                     return _handler()
                 }
                 private(set) var setValueCallCount: Int = 0
-                private(set) var setValueCallArguments: [()] = []
+                @available(*, deprecated, message: "setValue records no arguments; use setValueCallCount instead.")
+                var setValueCallArguments: [()] {
+                    Array(repeating: (), count: setValueCallCount)
+                }
                 var setValueHandler: (() -> Swift.Set<String>)? = nil
                 func setValue() -> Swift.Set<String> {
                     setValueCallCount += 1
-                    setValueCallArguments.append(())
                     guard let _handler = setValueHandler else {
                         return []
                     }
                     return _handler()
                 }
                 private(set) var dictionaryValueCallCount: Int = 0
-                private(set) var dictionaryValueCallArguments: [()] = []
+                @available(*, deprecated, message: "dictionaryValue records no arguments; use dictionaryValueCallCount instead.")
+                var dictionaryValueCallArguments: [()] {
+                    Array(repeating: (), count: dictionaryValueCallCount)
+                }
                 var dictionaryValueHandler: (() -> Swift.Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Swift.Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
-                    dictionaryValueCallArguments.append(())
                     guard let _handler = dictionaryValueHandler else {
                         return [:]
                     }
@@ -1105,16 +1120,12 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     optionalValueCallCount = 0
-                    optionalValueCallArguments = []
                     optionalValueHandler = nil
                     arrayValueCallCount = 0
-                    arrayValueCallArguments = []
                     arrayValueHandler = nil
                     setValueCallCount = 0
-                    setValueCallArguments = []
                     setValueHandler = nil
                     dictionaryValueCallCount = 0
-                    dictionaryValueCallArguments = []
                     dictionaryValueHandler = nil
                 }
                 class func resetMock() {
@@ -1143,11 +1154,13 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var fetchCallCount: Int = 0
-                private(set) var fetchCallArguments: [()] = []
+                @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
+                var fetchCallArguments: [()] {
+                    Array(repeating: (), count: fetchCallCount)
+                }
                 var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String! {
                     fetchCallCount += 1
-                    fetchCallArguments.append(())
                     guard let _handler = fetchHandler else {
                         return nil
                     }
@@ -1155,7 +1168,6 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     fetchCallCount = 0
-                    fetchCallArguments = []
                     fetchHandler = nil
                 }
                 class func resetMock() {
@@ -1186,22 +1198,26 @@ struct BasicMacroTests {
             #if DEBUG
             class RepositoryMock: Repository {
                 private(set) var optionalArrayCallCount: Int = 0
-                private(set) var optionalArrayCallArguments: [()] = []
+                @available(*, deprecated, message: "optionalArray records no arguments; use optionalArrayCallCount instead.")
+                var optionalArrayCallArguments: [()] {
+                    Array(repeating: (), count: optionalArrayCallCount)
+                }
                 var optionalArrayHandler: (() -> [String]?)? = nil
                 func optionalArray() -> [String]? {
                     optionalArrayCallCount += 1
-                    optionalArrayCallArguments.append(())
                     guard let _handler = optionalArrayHandler else {
                         return nil
                     }
                     return _handler()
                 }
                 private(set) var arrayOfOptionalCallCount: Int = 0
-                private(set) var arrayOfOptionalCallArguments: [()] = []
+                @available(*, deprecated, message: "arrayOfOptional records no arguments; use arrayOfOptionalCallCount instead.")
+                var arrayOfOptionalCallArguments: [()] {
+                    Array(repeating: (), count: arrayOfOptionalCallCount)
+                }
                 var arrayOfOptionalHandler: (() -> [String?])? = nil
                 func arrayOfOptional() -> [String?] {
                     arrayOfOptionalCallCount += 1
-                    arrayOfOptionalCallArguments.append(())
                     guard let _handler = arrayOfOptionalHandler else {
                         return []
                     }
@@ -1209,10 +1225,8 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                     optionalArrayCallCount = 0
-                    optionalArrayCallArguments = []
                     optionalArrayHandler = nil
                     arrayOfOptionalCallCount = 0
-                    arrayOfOptionalCallArguments = []
                     arrayOfOptionalHandler = nil
                 }
                 class func resetMock() {

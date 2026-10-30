@@ -265,6 +265,36 @@ struct TrackingRequirementTests {
         #expect(fields.count == 5)
     }
 
+    @Test("A requirement without arguments to record has no CallArguments slot")
+    func noCallArgumentsWithoutArguments() {
+        let all = requirements(ofProtocol: """
+        protocol Service {
+            init()
+            func ping()
+            func run(_ body: () -> Void)
+            func send(_ value: Int)
+        }
+        """)
+        #expect(all.map { fieldNames($0, model: .direct) } == [
+            ["initCallCount"],
+            ["pingCallCount", "pingHandler"],
+            ["runCallCount", "runHandler"],
+            ["sendCallCount", "sendCallArguments", "sendHandler"],
+        ])
+        #expect(all.map(\.hasDeprecatedCallArguments) == [true, true, true, false])
+    }
+
+    @Test("A property never has a deprecated CallArguments")
+    func propertiesHaveNoDeprecatedCallArguments() {
+        let all = requirements(ofProtocol: """
+        protocol Service {
+            var name: String { get }
+            var token: String { get async }
+        }
+        """)
+        #expect(all.map(\.hasDeprecatedCallArguments) == [false, false])
+    }
+
     // MARK: - Handler sendability
 
     /// The handler types of every requirement, in declaration order.
