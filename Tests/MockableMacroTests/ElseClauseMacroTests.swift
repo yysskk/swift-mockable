@@ -154,25 +154,25 @@ struct ElseClauseMacroTests {
                     }
                 }
                 #else
-                private(set) var fetchIntCallCount: Int = 0
-                private(set) var fetchIntCallArguments: [Int] = []
-                var fetchIntHandler: ((Int) -> Int)? = nil
+                private(set) var fetchIDCallCount: Int = 0
+                private(set) var fetchIDCallArguments: [Int] = []
+                var fetchIDHandler: ((Int) -> Int)? = nil
                 func fetch(id: Int) -> Int {
-                    fetchIntCallCount += 1
-                    fetchIntCallArguments.append(id)
-                    guard let _handler = fetchIntHandler else {
-                        fatalError("\\(Self.self).fetchIntHandler is not set")
+                    fetchIDCallCount += 1
+                    fetchIDCallArguments.append(id)
+                    guard let _handler = fetchIDHandler else {
+                        fatalError("\\(Self.self).fetchIDHandler is not set")
                     }
                     return _handler(id)
                 }
-                private(set) var fetchStringCallCount: Int = 0
-                private(set) var fetchStringCallArguments: [String] = []
-                var fetchStringHandler: ((String) -> Int)? = nil
+                private(set) var fetchNameCallCount: Int = 0
+                private(set) var fetchNameCallArguments: [String] = []
+                var fetchNameHandler: ((String) -> Int)? = nil
                 func fetch(name: String) -> Int {
-                    fetchStringCallCount += 1
-                    fetchStringCallArguments.append(name)
-                    guard let _handler = fetchStringHandler else {
-                        fatalError("\\(Self.self).fetchStringHandler is not set")
+                    fetchNameCallCount += 1
+                    fetchNameCallArguments.append(name)
+                    guard let _handler = fetchNameHandler else {
+                        fatalError("\\(Self.self).fetchNameHandler is not set")
                     }
                     return _handler(name)
                 }
@@ -182,12 +182,12 @@ struct ElseClauseMacroTests {
                     alphaCallCount = 0
                     alphaHandler = nil
                     #else
-                    fetchIntCallCount = 0
-                    fetchIntCallArguments = []
-                    fetchIntHandler = nil
-                    fetchStringCallCount = 0
-                    fetchStringCallArguments = []
-                    fetchStringHandler = nil
+                    fetchIDCallCount = 0
+                    fetchIDCallArguments = []
+                    fetchIDHandler = nil
+                    fetchNameCallCount = 0
+                    fetchNameCallArguments = []
+                    fetchNameHandler = nil
                     #endif
                 }
                 class func resetMock() {

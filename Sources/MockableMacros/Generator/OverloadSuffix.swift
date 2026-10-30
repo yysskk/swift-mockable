@@ -121,32 +121,79 @@ enum OverloadSuffix {
         return "\(extendedSuffix)\(index + 1)"
     }
 
+    /// The suffix built from the argument labels alone, e.g. "ForKey" for
+    /// `(_ value: Bool, forKey key: Key)`, or "" when no parameter has a label. Each
+    /// label is capitalized (see `capitalizedLabel(_:)`).
+    private static func argumentLabelSuffix(parameters: FunctionParameterListSyntax) -> String {
+        parameters
+            .map(\.firstName)
+            .filter { $0.tokenKind != .wildcard }
+            .map { capitalizedLabel($0.text.trimmingBackticks) }
+            .joined()
+    }
+
+    /// Acronyms that a label spells in lowercase when it starts with one, and that the
+    /// Swift API Design Guidelines write in uppercase elsewhere in a name.
+    private static let leadingAcronyms: Set<String> = [
+        "api", "html", "http", "https", "id", "json", "ui", "uri", "url", "uuid", "xml",
+    ]
+
+    /// A label as it reads in the middle of an identifier: its first word capitalized,
+    /// or uppercased when it is a common acronym, so that `fetch(id:)` gives "ID" and
+    /// `load(urlString:)` gives "URLString", as the API Design Guidelines case
+    /// acronyms; `forKey` gives "ForKey".
+    static func capitalizedLabel(_ label: String) -> String {
+        let firstWord = label.prefix { !$0.isUppercase && !$0.isNumber }
+        if leadingAcronyms.contains(String(firstWord)) {
+            return firstWord.uppercased() + label.dropFirst(firstWord.count)
+        }
+        return label.prefix(1).uppercased() + label.dropFirst()
+    }
+
+    /// Disambiguates one overload by its argument labels — the way Swift call sites
+    /// tell overloads apart, as in `fetch(id:)` and `fetch(name:)` — and falls back to
+    /// ``overloadSuffix(for:in:)`` among the overloads whose labels coincide, which
+    /// have to differ in their types or effects instead.
+    private static func labeledOverloadSuffix(for signature: OverloadSignature, in group: [OverloadSignature]) -> String {
+        let labelSuffix = argumentLabelSuffix(parameters: signature.parameters)
+        let labelCollisions = group.filter { argumentLabelSuffix(parameters: $0.parameters) == labelSuffix }
+        guard labelCollisions.count > 1 else {
+            return labelSuffix
+        }
+        return overloadSuffix(for: signature, in: labelCollisions)
+    }
+
     // MARK: - Function Identifier Suffix
 
     /// Generates a unique suffix for an overloaded function within a group of methods
-    /// with the same name, e.g. "BoolKey" for `func set(_ value: Bool, forKey: Key)`.
-    /// See `overloadSuffix(for:in:)` for the disambiguation stages.
+    /// with the same name: its argument labels, e.g. "ID" for `func fetch(id: Int)`, or
+    /// its parameter types when another overload has the same labels, e.g. "Bool" for
+    /// `func set(_ value: Bool)`. See `labeledOverloadSuffix(for:in:)`.
     static func functionIdentifierSuffix(from funcDecl: FunctionDeclSyntax, in methodGroup: [FunctionDeclSyntax]) -> String {
-        overloadSuffix(for: OverloadSignature(funcDecl), in: methodGroup.map(OverloadSignature.init))
+        labeledOverloadSuffix(for: OverloadSignature(funcDecl), in: methodGroup.map(OverloadSignature.init))
     }
 
     // MARK: - Initializer Identifier Suffix
 
     /// Generates a unique suffix for an overloaded initializer within a group of `init`
-    /// requirements, e.g. "StringInt" for `init(host: String, port: Int)`. See
-    /// `overloadSuffix(for:in:)` for the disambiguation stages; initializers have no
-    /// return type, so that disambiguator does not apply.
+    /// requirements, disambiguated like a method's: "HostPort" for
+    /// `init(host: String, port: Int)`, or the parameter types when another initializer
+    /// has the same labels. Initializers have no return type, so that disambiguator
+    /// does not apply. See `labeledOverloadSuffix(for:in:)`.
     static func initializerIdentifierSuffix(from initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
-        overloadSuffix(for: OverloadSignature(initDecl), in: group.map(OverloadSignature.init))
+        labeledOverloadSuffix(for: OverloadSignature(initDecl), in: group.map(OverloadSignature.init))
     }
 
     // MARK: - Subscript Identifier Suffix
 
     /// Generates a unique suffix for a subscript within the protocol's subscript group.
     /// Unlike a function's, the suffix is emitted even for a sole subscript, because
-    /// generated members cannot be named after a subscript's missing base name. See
-    /// `overloadSuffix(for:in:)` for the disambiguation stages; a sole subscript keeps
-    /// the plain parameter-type suffix.
+    /// generated members cannot be named after a subscript's missing base name. It is
+    /// built from the parameter types rather than argument labels: a subscript's
+    /// parameters have no argument labels unless the declaration spells one out, so
+    /// the index types are what tells subscripts apart. See `overloadSuffix(for:in:)`
+    /// for the disambiguation stages; a sole subscript keeps the plain parameter-type
+    /// suffix.
     static func subscriptIdentifierSuffix(from subscriptDecl: SubscriptDeclSyntax, in group: [SubscriptDeclSyntax]) -> String {
         overloadSuffix(for: OverloadSignature(subscriptDecl), in: group.map(OverloadSignature.init))
     }

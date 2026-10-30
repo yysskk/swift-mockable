@@ -51,7 +51,7 @@ struct TrackingRequirementTests {
             func fetch(name: String) -> Int
         }
         """)
-        #expect(all.map(\.identifier) == ["fetchInt", "fetchString"])
+        #expect(all.map(\.identifier) == ["fetchID", "fetchName"])
     }
 
     @Test("A rethrows function's handler drops the throws effect")
@@ -96,9 +96,9 @@ struct TrackingRequirementTests {
             init(host: String)
         }
         """)
-        #expect(all.map(\.identifier) == ["init", "initString"])
+        #expect(all.map(\.identifier) == ["init", "initHost"])
         let fields = all[1].trackingFields(model: .lockBacked)
-        #expect(fields.map(\.name) == ["initStringCallCount", "initStringCallArguments"])
+        #expect(fields.map(\.name) == ["initHostCallCount", "initHostCallArguments"])
         #expect(all[1].handlerType == nil)
         #expect(all[1].scope == .instance)
     }
@@ -446,6 +446,6 @@ struct TrackingRequirementTests {
             func fetch(name: String) async
             subscript(index: Int) -> String { get }
         }
-        """) == ["name", "init", "fetch", "fetchInt", "fetchString", "subscriptInt"])
+        """) == ["name", "init", "fetch", "fetchID", "fetchName", "subscriptInt"])
     }
 }

@@ -27,16 +27,16 @@ struct InitializerRequirementTests {
     @Test("Overloaded init requirements are tracked separately")
     func overloadedInitializersAreTrackedSeparately() {
         let byHost = MultiInitServiceMock(host: "example.com")
-        #expect(byHost.initStringCallCount == 1)
-        #expect(byHost.initStringIntCallCount == 0)
-        #expect(byHost.initStringCallArguments == ["example.com"])
+        #expect(byHost.initHostCallCount == 1)
+        #expect(byHost.initHostPortCallCount == 0)
+        #expect(byHost.initHostCallArguments == ["example.com"])
 
         let byHostAndPort = MultiInitServiceMock(host: "example.com", port: 8080)
-        #expect(byHostAndPort.initStringIntCallCount == 1)
-        #expect(byHostAndPort.initStringCallCount == 0)
-        #expect(byHostAndPort.initStringIntCallArguments.count == 1)
-        #expect(byHostAndPort.initStringIntCallArguments[0].host == "example.com")
-        #expect(byHostAndPort.initStringIntCallArguments[0].port == 8080)
+        #expect(byHostAndPort.initHostPortCallCount == 1)
+        #expect(byHostAndPort.initHostCallCount == 0)
+        #expect(byHostAndPort.initHostPortCallArguments.count == 1)
+        #expect(byHostAndPort.initHostPortCallArguments[0].host == "example.com")
+        #expect(byHostAndPort.initHostPortCallArguments[0].port == 8080)
     }
 
     @Test("Throwing init requirement can be constructed and records the call")
