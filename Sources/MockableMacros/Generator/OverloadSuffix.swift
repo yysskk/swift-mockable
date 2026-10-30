@@ -3,7 +3,11 @@ import SwiftSyntaxBuilder
 
 // MARK: - Overload Identifier Suffixes
 
-extension MockGenerator {
+/// Builds the suffixes that tell overloaded requirements apart in their tracking
+/// identifiers, e.g. `fetchInt` and `fetchString` for two `fetch` overloads.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum OverloadSuffix {
     /// The tracking identifier for an initializer within its overload group, e.g. `init`
     /// for a sole initializer or `initString` for an overload taking a `String`.
     static func initializerIdentifier(for initDecl: InitializerDeclSyntax, in group: [InitializerDeclSyntax]) -> String {
@@ -40,7 +44,7 @@ extension MockGenerator {
         }
 
         init(_ subscriptDecl: SubscriptDeclSyntax) {
-            let getterEffects = MockGenerator.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+            let getterEffects = AccessorInspection.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
             self.id = subscriptDecl.id
             self.parameters = subscriptDecl.parameterClause.parameters
             self.isAsync = getterEffects?.asyncSpecifier != nil
@@ -70,7 +74,7 @@ extension MockGenerator {
 
         // A requirement returning nothing contributes no return-type suffix, however it
         // spells `Void`.
-        if let returnType = signature.returnType, returnsAValue(returnType) {
+        if let returnType = signature.returnType, DefaultReturnValue.returnsAValue(returnType) {
             suffix += sanitizeTypeName(returnType.trimmedDescription)
         }
 

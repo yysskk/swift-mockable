@@ -10,7 +10,7 @@ struct TypeErasureTests {
     /// spelling that reaches generated mocks.
     private func erased(_ source: String, genericParamNames: Set<String> = []) -> String {
         let type = TypeSyntax(stringLiteral: source)
-        return MockGenerator.eraseGenericTypes(in: type, genericParamNames: genericParamNames)
+        return TypeErasure.eraseGenericTypes(in: type, genericParamNames: genericParamNames)
             .formatted()
             .description
     }
@@ -124,13 +124,13 @@ struct TypeErasureTests {
     @Test("typeContainsGeneric finds a parameter at any depth")
     func containsGenericAtDepth() {
         let type = TypeSyntax(stringLiteral: "Box<[(String, T.Element)]>")
-        #expect(MockGenerator.typeContainsGeneric(type, genericParamNames: ["T"]))
+        #expect(TypeErasure.typeContainsGeneric(type, genericParamNames: ["T"]))
     }
 
     @Test("typeContainsGeneric is false without matching parameters")
     func containsGenericWithoutMatch() {
         let type = TypeSyntax(stringLiteral: "Box<[(String, U.Element)]>")
-        #expect(!MockGenerator.typeContainsGeneric(type, genericParamNames: ["T"]))
-        #expect(!MockGenerator.typeContainsGeneric(type, genericParamNames: []))
+        #expect(!TypeErasure.typeContainsGeneric(type, genericParamNames: ["T"]))
+        #expect(!TypeErasure.typeContainsGeneric(type, genericParamNames: []))
     }
 }

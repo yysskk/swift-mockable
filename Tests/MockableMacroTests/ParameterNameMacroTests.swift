@@ -496,34 +496,34 @@ struct ParameterNameUnitTests {
     @Test("Plain identifiers can be referred to as they stand")
     func plainIdentifiersAreReferenceable() {
         for name in ["value", "param0", "storage", "_handler", "set", "get", "any", "async", "each"] {
-            #expect(MockGenerator.isBodyReferenceableName(name), "\(name) should be referenceable")
+            #expect(ParameterNaming.isBodyReferenceableName(name), "\(name) should be referenceable")
         }
     }
 
     @Test("Keywords, literals, and the wildcard need a different spelling")
     func keywordsAreNotReferenceable() {
         for name in ["for", "in", "repeat", "await", "nil", "true", "false", "_"] {
-            #expect(!MockGenerator.isBodyReferenceableName(name), "\(name) should not be referenceable")
+            #expect(!ParameterNaming.isBodyReferenceableName(name), "\(name) should not be referenceable")
         }
     }
 
     @Test("Names bound by the enclosing type need a different spelling")
     func contextuallyBoundNamesAreNotReferenceable() {
         for name in ["self", "Self", "super"] {
-            #expect(!MockGenerator.isBodyReferenceableName(name), "\(name) should not be referenceable")
+            #expect(!ParameterNaming.isBodyReferenceableName(name), "\(name) should not be referenceable")
         }
     }
 
     @Test("An already escaped name is referenceable as it stands")
     func escapedNameIsReferenceable() {
-        #expect(MockGenerator.isBodyReferenceableName("`repeat`"))
+        #expect(ParameterNaming.isBodyReferenceableName("`repeat`"))
     }
 
     @Test("Normalizing a clause of ordinary parameters changes nothing")
     func normalizationIsANoOpForOrdinaryParameters() {
         let decl: DeclSyntax = "func f(_ a: Int, b: String, c d: Double)"
         let parameters = decl.as(FunctionDeclSyntax.self)!.signature.parameterClause.parameters
-        let normalized = MockGenerator.parametersWithReferenceableNames(parameters)
+        let normalized = ParameterNaming.parametersWithReferenceableNames(parameters)
         #expect(normalized.description == parameters.description)
     }
 
@@ -531,8 +531,8 @@ struct ParameterNameUnitTests {
     func normalizationIsIdempotent() {
         let decl: DeclSyntax = "func f(_: Int, for: String)"
         let parameters = decl.as(FunctionDeclSyntax.self)!.signature.parameterClause.parameters
-        let once = MockGenerator.parametersWithReferenceableNames(parameters)
-        let twice = MockGenerator.parametersWithReferenceableNames(once)
+        let once = ParameterNaming.parametersWithReferenceableNames(parameters)
+        let twice = ParameterNaming.parametersWithReferenceableNames(once)
         #expect(once.description == twice.description)
     }
 }

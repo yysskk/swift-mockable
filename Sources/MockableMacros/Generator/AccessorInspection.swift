@@ -3,7 +3,12 @@ import SwiftSyntaxBuilder
 
 // MARK: - Accessor Inspection
 
-extension MockGenerator {
+/// Reads the accessor blocks of property and subscript requirements: whether a
+/// requirement is get-only, whether its getter is effectful, and the effects a
+/// handler closure carries as a result.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum AccessorInspection {
     /// Whether an accessor block declares a get-only requirement. `defaultWhenAbsent`
     /// decides the missing-block case, which properties and subscripts read differently:
     /// a subscript requirement with no block (`subscript(i: Int) -> Int`) is get-only,
@@ -57,5 +62,42 @@ extension MockGenerator {
             isAsync: effects?.asyncSpecifier != nil,
             isThrows: effects?.hasThrowsEffect == true
         )
+    }
+
+    // MARK: - Properties
+
+    /// A property binding with no accessor block is not treated as get-only,
+    /// hence the `false` default.
+    static func isGetOnlyProperty(binding: PatternBindingSyntax) -> Bool {
+        isGetOnly(binding.accessorBlock, defaultWhenAbsent: false)
+    }
+
+    /// Returns the `get` accessor of a binding when it carries `async`/`throws`
+    /// effects (e.g. `var token: String { get async throws }`), or `nil` otherwise.
+    static func effectfulGetter(of binding: PatternBindingSyntax) -> AccessorDeclSyntax? {
+        effectfulGetAccessor(in: binding.accessorBlock)
+    }
+
+    /// The handler closure type for an effectful read-only property, e.g.
+    /// `() async throws -> String`.
+    static func effectfulGetterClosureType(
+        varType: TypeSyntax,
+        effects: AccessorEffectSpecifiersSyntax?
+    ) -> String {
+        "()\(effectsSuffix(for: effects)) -> \(varType.trimmedDescription)"
+    }
+
+    // MARK: - Subscripts
+
+    /// A subscript requirement with no accessor block (`subscript(i: Int) -> Int`)
+    /// is get-only, hence the `true` default.
+    static func isGetOnlySubscript(_ subscriptDecl: SubscriptDeclSyntax) -> Bool {
+        isGetOnly(subscriptDecl.accessorBlock, defaultWhenAbsent: true)
+    }
+
+    /// The `get` accessor of a subscript when it carries `async`/`throws` effects
+    /// (e.g. `subscript(i: Int) -> T { get async throws }`), or `nil` otherwise.
+    static func effectfulSubscriptGetter(_ subscriptDecl: SubscriptDeclSyntax) -> AccessorDeclSyntax? {
+        effectfulGetAccessor(in: subscriptDecl.accessorBlock)
     }
 }

@@ -3,7 +3,11 @@ import SwiftSyntaxBuilder
 
 // MARK: - Default Return Values
 
-extension MockGenerator {
+/// Decides what a witness returns when its handler is unset: the return type's
+/// natural empty value where it has one, or nothing for a `Void` return.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum DefaultReturnValue {
     /// Returns the statement to place inside the `else` branch of the unset-handler guard
     /// when the return type has a natural empty default: optionals return `nil`, arrays and
     /// sets return `[]`, dictionaries return `[:]`. Returns `nil` for types without a natural
@@ -81,5 +85,15 @@ extension MockGenerator {
             return member.name.text == name && member.genericArgumentClause != nil
         }
         return false
+    }
+
+    /// Whether a return type is something other than `Void`, however it is spelled:
+    /// `Void`, `()`, `Swift.Void`, and any of them parenthesized all mean the same
+    /// thing, and a requirement returning nothing has to be mocked the same way for
+    /// each — otherwise `-> Swift.Void` traps on an unset handler where the identical
+    /// `-> Void` no-ops.
+    static func returnsAValue(_ returnType: TypeSyntax) -> Bool {
+        let trimmed = unwrapForDefaultDetection(returnType).trimmedDescription
+        return trimmed != "Void" && trimmed != "Swift.Void" && trimmed != "()"
     }
 }

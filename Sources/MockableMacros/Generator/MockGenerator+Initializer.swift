@@ -79,10 +79,10 @@ extension MockGenerator {
         names: WitnessNames
     ) -> CodeBlockSyntax {
         var statements: [CodeBlockItemSyntax] = []
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
+        statements.append(contentsOf: ParameterModel.buildParameterBindingStatements(parameters: parameters))
         statements.append(contentsOf: access.recordingStatements(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
+            recordedArguments: ParameterModel.buildCallArgumentsExpression(parameters: parameters),
             names: names
         ))
         statements = Self.typedThrowsCatchWrappingAutoclosureEvaluation(
@@ -108,7 +108,7 @@ extension MockGenerator {
     ) -> [CodeBlockItemSyntax] {
         guard
             let errorType = throwsErrorType?.trimmedDescription,
-            hasThrowingAutoclosureParameter(parameters)
+            ParameterModel.hasThrowingAutoclosureParameter(parameters)
         else {
             return statements
         }

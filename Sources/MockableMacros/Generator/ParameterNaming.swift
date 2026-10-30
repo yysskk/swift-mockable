@@ -3,7 +3,11 @@ import SwiftSyntax
 
 // MARK: - Parameter Name Normalization
 
-extension MockGenerator {
+/// Chooses the names a witness refers to its parameters by, so that a wildcard or a
+/// keyword-named parameter can still be recorded and forwarded.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum ParameterNaming {
     /// The prefix of the internal names synthesized for parameters that have none.
     private static let synthesizedParameterNamePrefix = "param"
 
@@ -110,7 +114,7 @@ extension MockGenerator {
     /// The first unused name at or after `candidate`, reserving it. Collisions are
     /// broken with a trailing underscore, which cannot collide with another
     /// synthesized name.
-    private static func uniqueName(startingAt candidate: String, avoiding taken: inout Set<String>) -> String {
+    fileprivate static func uniqueName(startingAt candidate: String, avoiding taken: inout Set<String>) -> String {
         var name = candidate
         while taken.contains(name) {
             name += "_"
@@ -119,55 +123,56 @@ extension MockGenerator {
         return name
     }
 
-    /// The names a witness body uses for its own locals and for the mock members it
-    /// reads, chosen so that a requirement's parameters cannot capture either.
-    ///
-    /// A parameter is in scope throughout the body, so one named `storage` or
-    /// `_handler` would shadow the locals the body binds, and one named after a
-    /// generated member — `fetchCallCount` for `func fetch(fetchCallCount: Int)` —
-    /// would shadow the member the body records into. Locals move out of the way;
-    /// members cannot, so they are read through `self`/`Self` instead.
-    struct WitnessNames {
-        /// The handler bound from the mock's handler property.
-        let handler: String
-        /// The handler's result, bound when `inout` arguments have to be written back.
-        let result: String
-        /// The write-back value of a requirement that returns nothing.
-        let writeBack: String
-        /// The `withLock` closure's parameter on the lock-backed paths.
-        let storage: String
-        /// `""`, `"self."`, or `"Self."`: how the body refers to the mock's members.
-        let memberPrefix: String
+}
 
-        /// Picks names that no parameter of the requirement declares. The defaults are
-        /// kept whenever they are free, so an ordinary requirement's witness is
-        /// generated exactly as before.
-        init(parameters: FunctionParameterListSyntax, memberNames: [String] = [], scope: MemberScope = .instance) {
-            let parameterNames = Set(parameters.map(MockGenerator.declaredParameterName))
-            var taken = parameterNames
+/// The names a witness body uses for its own locals and for the mock members it
+/// reads, chosen so that a requirement's parameters cannot capture either.
+///
+/// A parameter is in scope throughout the body, so one named `storage` or
+/// `_handler` would shadow the locals the body binds, and one named after a
+/// generated member — `fetchCallCount` for `func fetch(fetchCallCount: Int)` —
+/// would shadow the member the body records into. Locals move out of the way;
+/// members cannot, so they are read through `self`/`Self` instead.
+struct WitnessNames {
+    /// The handler bound from the mock's handler property.
+    let handler: String
+    /// The handler's result, bound when `inout` arguments have to be written back.
+    let result: String
+    /// The write-back value of a requirement that returns nothing.
+    let writeBack: String
+    /// The `withLock` closure's parameter on the lock-backed paths.
+    let storage: String
+    /// `""`, `"self."`, or `"Self."`: how the body refers to the mock's members.
+    let memberPrefix: String
 
-            self.handler = MockGenerator.uniqueName(startingAt: "_handler", avoiding: &taken)
-            self.result = MockGenerator.uniqueName(startingAt: "_result", avoiding: &taken)
-            self.writeBack = MockGenerator.uniqueName(startingAt: "_writeBack", avoiding: &taken)
-            self.storage = MockGenerator.uniqueName(startingAt: "storage", avoiding: &taken)
+    /// Picks names that no parameter of the requirement declares. The defaults are
+    /// kept whenever they are free, so an ordinary requirement's witness is
+    /// generated exactly as before.
+    init(parameters: FunctionParameterListSyntax, memberNames: [String] = [], scope: MemberScope = .instance) {
+        let parameterNames = Set(parameters.map(ParameterNaming.declaredParameterName))
+        var taken = parameterNames
 
-            let shadowsMember = memberNames.contains { parameterNames.contains($0) }
-            self.memberPrefix = shadowsMember ? (scope == .type ? "Self." : "self.") : ""
-        }
+        self.handler = ParameterNaming.uniqueName(startingAt: "_handler", avoiding: &taken)
+        self.result = ParameterNaming.uniqueName(startingAt: "_result", avoiding: &taken)
+        self.writeBack = ParameterNaming.uniqueName(startingAt: "_writeBack", avoiding: &taken)
+        self.storage = ParameterNaming.uniqueName(startingAt: "storage", avoiding: &taken)
 
-        /// The mock member `name` as the body should refer to it.
-        func member(_ name: String) -> String {
-            "\(memberPrefix)\(name)"
-        }
+        let shadowsMember = memberNames.contains { parameterNames.contains($0) }
+        self.memberPrefix = shadowsMember ? (scope == .type ? "Self." : "self.") : ""
+    }
 
-        /// A further local name, chosen like the ones above so that neither a parameter
-        /// nor an already-chosen local can capture it. Used for the accessor parameter
-        /// of a subscript setter, which is only needed on the setter path.
-        func uniqueLocalName(startingAt candidate: String, parameters: FunctionParameterListSyntax) -> String {
-            var taken = Set(parameters.map(MockGenerator.declaredParameterName))
-            taken.formUnion([handler, result, writeBack, storage])
-            return MockGenerator.uniqueName(startingAt: candidate, avoiding: &taken)
-        }
+    /// The mock member `name` as the body should refer to it.
+    func member(_ name: String) -> String {
+        "\(memberPrefix)\(name)"
+    }
+
+    /// A further local name, chosen like the ones above so that neither a parameter
+    /// nor an already-chosen local can capture it. Used for the accessor parameter
+    /// of a subscript setter, which is only needed on the setter path.
+    func uniqueLocalName(startingAt candidate: String, parameters: FunctionParameterListSyntax) -> String {
+        var taken = Set(parameters.map(ParameterNaming.declaredParameterName))
+        taken.formUnion([handler, result, writeBack, storage])
+        return ParameterNaming.uniqueName(startingAt: candidate, avoiding: &taken)
     }
 }
 
@@ -179,6 +184,6 @@ extension MockGenerator {
 /// identities that overload disambiguation compares stable across those passes.
 final class ParameterNameNormalizer: SyntaxRewriter {
     override func visit(_ node: FunctionParameterClauseSyntax) -> FunctionParameterClauseSyntax {
-        node.with(\.parameters, MockGenerator.parametersWithReferenceableNames(node.parameters))
+        node.with(\.parameters, ParameterNaming.parametersWithReferenceableNames(node.parameters))
     }
 }

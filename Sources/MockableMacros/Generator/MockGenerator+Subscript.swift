@@ -20,12 +20,6 @@ extension MockGenerator {
         return members
     }
 
-    /// A subscript requirement with no accessor block (`subscript(i: Int) -> Int`)
-    /// is get-only, hence the `true` default.
-    static func isGetOnlySubscript(_ subscriptDecl: SubscriptDeclSyntax) -> Bool {
-        isGetOnly(subscriptDecl.accessorBlock, defaultWhenAbsent: true)
-    }
-
     /// Builds the subscript witness, mirroring the requirement's parameter and return
     /// clauses. A get-only requirement uses the getter shorthand unless its getter is
     /// effectful, which needs an explicit `get async`/`get throws` accessor.
@@ -34,12 +28,12 @@ extension MockGenerator {
         requirement: TrackingRequirement
     ) -> SubscriptDeclSyntax {
         let identifier = requirement.identifier
-        let isGetOnly = Self.isGetOnlySubscript(subscriptDecl)
-        let genericParamNames = Self.extractGenericParameterNames(from: subscriptDecl)
+        let isGetOnly = AccessorInspection.isGetOnlySubscript(subscriptDecl)
+        let genericParamNames = TypeErasure.extractGenericParameterNames(from: subscriptDecl)
         let parameters = subscriptDecl.parameterClause.parameters
         let returnType = subscriptDecl.returnClause.type
-        let hasGenericReturn = Self.typeContainsGeneric(returnType, genericParamNames: genericParamNames)
-        let getterEffects = Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+        let hasGenericReturn = TypeErasure.typeContainsGeneric(returnType, genericParamNames: genericParamNames)
+        let getterEffects = AccessorInspection.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
         let isAsync = getterEffects?.asyncSpecifier != nil
         let isThrows = getterEffects?.hasThrowsEffect ?? false
         let invokePrefix = "\(isThrows ? "try " : "")\(isAsync ? "await " : "")"
@@ -91,7 +85,7 @@ extension MockGenerator {
                 )
             }
         } else {
-            var setterStatements = Self.buildParameterBindingStatements(parameters: parameters)
+            var setterStatements = ParameterModel.buildParameterBindingStatements(parameters: parameters)
             setterStatements.append(buildSubscriptSetHandlerCallStatement(
                 parameters: parameters,
                 identifier: identifier,
@@ -147,11 +141,11 @@ extension MockGenerator {
         var statements: [CodeBlockItemSyntax] = []
         // Evaluate @autoclosure arguments before the call is recorded, so a lock-backed
         // mock never runs a user-supplied expression while the storage lock is held.
-        statements.append(contentsOf: Self.buildParameterBindingStatements(parameters: parameters))
+        statements.append(contentsOf: ParameterModel.buildParameterBindingStatements(parameters: parameters))
 
         let binding = access.handlerBinding(
             identifier: identifier,
-            recordedArguments: Self.buildCallArgumentsExpression(parameters: parameters),
+            recordedArguments: ParameterModel.buildCallArgumentsExpression(parameters: parameters),
             handlerType: handlerType,
             names: names
         )
@@ -183,7 +177,7 @@ extension MockGenerator {
         errorType: String?,
         names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
-        let returnTypeStr = Self.castTargetType(for: returnType)
+        let returnTypeStr = TypeErasure.castTargetType(for: returnType)
         let guardStmt = Self.makeUnsetHandlerGuard(
             binding: guardBinding,
             elseBody: Self.unsetHandlerElseBody(
@@ -243,15 +237,9 @@ if let \(pattern) {
         genericParamNames: Set<String>
     ) -> String {
         if parameters.count >= 2 {
-            return Self.buildSeparateParameterTypeList(parameters: parameters, genericParamNames: genericParamNames)
+            return ParameterModel.buildSeparateParameterTypeList(parameters: parameters, genericParamNames: genericParamNames)
         }
-        return Self.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames).description
-    }
-
-    /// The `get` accessor of a subscript when it carries `async`/`throws` effects
-    /// (e.g. `subscript(i: Int) -> T { get async throws }`), or `nil` otherwise.
-    static func effectfulSubscriptGetter(_ subscriptDecl: SubscriptDeclSyntax) -> AccessorDeclSyntax? {
-        effectfulGetAccessor(in: subscriptDecl.accessorBlock)
+        return ParameterModel.buildParameterTupleType(parameters: parameters, genericParamNames: genericParamNames).description
     }
 
     /// The get handler's closure type, e.g. `(Int) async throws -> String`. Like a
@@ -262,9 +250,9 @@ if let \(pattern) {
         genericParamNames: Set<String>,
         effects: AccessorEffectSpecifiersSyntax? = nil
     ) -> String {
-        let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
+        let erasedReturnType = TypeErasure.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
-        let effectsText = Self.effectsSuffix(for: effects)
+        let effectsText = AccessorInspection.effectsSuffix(for: effects)
 
         if parameters.isEmpty {
             return "()\(effectsText) -> \(returnTypeStr)"
@@ -280,7 +268,7 @@ if let \(pattern) {
         returnType: TypeSyntax,
         genericParamNames: Set<String>
     ) -> String {
-        let erasedReturnType = Self.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
+        let erasedReturnType = TypeErasure.eraseGenericTypes(in: returnType, genericParamNames: genericParamNames)
         let returnTypeStr = erasedReturnType.description
 
         if parameters.isEmpty {

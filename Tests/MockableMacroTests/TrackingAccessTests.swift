@@ -10,8 +10,8 @@ struct TrackingAccessTests {
         return decl.as(FunctionDeclSyntax.self)!.signature.parameterClause.parameters
     }()
 
-    private func names(memberNames: [String] = []) -> MockGenerator.WitnessNames {
-        MockGenerator.WitnessNames(parameters: parameters, memberNames: memberNames)
+    private func names(memberNames: [String] = []) -> WitnessNames {
+        WitnessNames(parameters: parameters, memberNames: memberNames)
     }
 
     private func rendered(_ statements: [CodeBlockItemSyntax]) -> [String] {

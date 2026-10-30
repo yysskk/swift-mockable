@@ -3,7 +3,12 @@ import SwiftSyntaxBuilder
 
 // MARK: - Type Erasure
 
-extension MockGenerator {
+/// Rewrites types that mention a requirement's generic parameters into types a
+/// stored property can hold, and answers whether a value of the erased type can be
+/// cast or forwarded back to the original.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum TypeErasure {
     /// The names of a requirement's generic parameters, e.g. `{"T", "U"}` for
     /// `func convert<T, U>(_ value: T) -> U`. Types mentioning one of these cannot be
     /// referenced from the mock's class-scope storage and handlers, so they are erased.

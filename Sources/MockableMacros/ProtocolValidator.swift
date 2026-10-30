@@ -153,7 +153,7 @@ enum ProtocolValidator {
         let coversAsync = effects?.asyncSpecifier != nil
 
         return parameters.compactMap { parameter in
-            guard let functionType = MockGenerator.autoclosureFunctionType(of: parameter) else {
+            guard let functionType = ParameterModel.autoclosureFunctionType(of: parameter) else {
                 return nil
             }
             var uncoveredEffects: [String] = []
@@ -192,18 +192,18 @@ enum ProtocolValidator {
                 return []
             }
             returnType = type
-            genericParamNames = MockGenerator.extractGenericParameterNames(from: functionDecl)
+            genericParamNames = TypeErasure.extractGenericParameterNames(from: functionDecl)
             name = functionDecl.name.text
         case .subscript(let subscriptDecl):
             returnType = subscriptDecl.returnClause.type
-            genericParamNames = MockGenerator.extractGenericParameterNames(from: subscriptDecl)
+            genericParamNames = TypeErasure.extractGenericParameterNames(from: subscriptDecl)
             name = "subscript"
         case .initializer, .variable, .associatedType, .typeAlias, .unsupported:
             return []
         }
 
-        guard MockGenerator.typeContainsGeneric(returnType, genericParamNames: genericParamNames),
-              !MockGenerator.erasedResultCanBeCast(to: returnType, genericParamNames: genericParamNames) else {
+        guard TypeErasure.typeContainsGeneric(returnType, genericParamNames: genericParamNames),
+              !TypeErasure.erasedResultCanBeCast(to: returnType, genericParamNames: genericParamNames) else {
             return []
         }
         return [Finding(
@@ -224,22 +224,22 @@ enum ProtocolValidator {
         switch requirement {
         case .function(let functionDecl):
             parameters = functionDecl.signature.parameterClause.parameters
-            genericParamNames = MockGenerator.extractGenericParameterNames(from: functionDecl)
+            genericParamNames = TypeErasure.extractGenericParameterNames(from: functionDecl)
             name = functionDecl.name.text
         case .initializer(let initDecl):
             parameters = initDecl.signature.parameterClause.parameters
-            genericParamNames = MockGenerator.extractGenericParameterNames(from: initDecl)
+            genericParamNames = TypeErasure.extractGenericParameterNames(from: initDecl)
             name = "init"
         case .subscript(let subscriptDecl):
             parameters = subscriptDecl.parameterClause.parameters
-            genericParamNames = MockGenerator.extractGenericParameterNames(from: subscriptDecl)
+            genericParamNames = TypeErasure.extractGenericParameterNames(from: subscriptDecl)
             name = "subscript"
         case .variable, .associatedType, .typeAlias, .unsupported:
             return []
         }
 
         return parameters.compactMap { parameter in
-            guard !MockGenerator.erasedArgumentCanBeForwarded(for: parameter.type, genericParamNames: genericParamNames) else {
+            guard !TypeErasure.erasedArgumentCanBeForwarded(for: parameter.type, genericParamNames: genericParamNames) else {
                 return nil
             }
             return Finding(

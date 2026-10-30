@@ -6,7 +6,7 @@ import Testing
 @Suite("Default Return Value Tests")
 struct DefaultReturnValueTests {
     private func defaultStatement(for source: String?) -> String? {
-        MockGenerator.defaultReturnStatement(for: source.map { TypeSyntax(stringLiteral: $0) })
+        DefaultReturnValue.defaultReturnStatement(for: source.map { TypeSyntax(stringLiteral: $0) })
     }
 
     @Test("No return type has no default")

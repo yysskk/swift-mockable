@@ -57,7 +57,7 @@ enum TrackingAccess {
     func recordingStatements(
         identifier: String,
         recordedArguments: ExprSyntax?,
-        names: MockGenerator.WitnessNames
+        names: WitnessNames
     ) -> [CodeBlockItemSyntax] {
         switch self {
         case .direct:
@@ -82,7 +82,7 @@ enum TrackingAccess {
         identifier: String,
         recordedArguments: ExprSyntax?,
         handlerType: TypeSyntax,
-        names: MockGenerator.WitnessNames
+        names: WitnessNames
     ) -> HandlerBinding {
         switch self {
         case .direct:
@@ -107,7 +107,7 @@ enum TrackingAccess {
 
     /// The `if let` pattern that reads the handler `handlerName` without recording
     /// anything, for a witness that only forwards (a subscript setter).
-    func handlerReadPattern(handlerName: String, names: MockGenerator.WitnessNames) -> String {
+    func handlerReadPattern(handlerName: String, names: WitnessNames) -> String {
         switch self {
         case .direct:
             return "\(names.handler) = \(names.member(handlerName))"

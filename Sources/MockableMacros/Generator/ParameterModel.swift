@@ -3,7 +3,12 @@ import SwiftSyntaxBuilder
 
 // MARK: - Parameter Model
 
-extension MockGenerator {
+/// Describes how a requirement's parameters are recorded and handed to its handler:
+/// the captured-arguments tuple, the handler's parameter list, and the statements
+/// that bind, evaluate, or rebind arguments before use.
+///
+/// Stateless: it reads syntax only, never the generator's state.
+enum ParameterModel {
     /// The parameters that can be recorded in `CallArguments`. Non-escaping closure
     /// parameters are excluded because a non-escaping value cannot be stored; the
     /// call is still counted and the closure is still forwarded to the handler.
@@ -82,7 +87,7 @@ extension MockGenerator {
             let isLast = index == parameters.count - 1
             let erasedType = parameterStorageType(for: param, genericParamNames: genericParamNames)
             return TupleTypeElementSyntax(
-                firstName: MockGenerator.recordedArgumentLabel(of: param),
+                firstName: ParameterNaming.recordedArgumentLabel(of: param),
                 colon: .colonToken(trailingTrivia: .space),
                 type: erasedType,
                 trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
@@ -126,11 +131,11 @@ extension MockGenerator {
         // (The closure could not be stored anyway: it is non-escaping by default and
         // `@autoclosure` is invalid in stored-type positions.)
         if let resultType = autoclosureResultType(of: param) {
-            return eraseGenericTypes(in: resultType, genericParamNames: genericParamNames)
+            return TypeErasure.eraseGenericTypes(in: resultType, genericParamNames: genericParamNames)
         }
         // Erasure drops every parameter specifier (`inout`, `consuming`, `sending`, ...),
         // which a stored property or closure type cannot carry.
-        let erasedType = eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
+        let erasedType = TypeErasure.eraseGenericTypes(in: param.type, genericParamNames: genericParamNames)
         guard param.ellipsis != nil else {
             return erasedType
         }
@@ -206,7 +211,7 @@ extension MockGenerator {
         parameters: FunctionParameterListSyntax
     ) -> [CodeBlockItemSyntax] {
         parameters.compactMap { param in
-            let specifiers = Set(MockGenerator.specifiers(of: param.type))
+            let specifiers = Set(TypeErasure.specifiers(of: param.type))
             guard !specifiers.isDisjoint(with: ownershipSpecifiers) else {
                 return nil
             }
@@ -252,7 +257,7 @@ extension MockGenerator {
             let paramName = (param.secondName ?? param.firstName).text
             let isLast = index == parameters.count - 1
             return LabeledExprSyntax(
-                label: MockGenerator.recordedArgumentLabel(of: param),
+                label: ParameterNaming.recordedArgumentLabel(of: param),
                 colon: .colonToken(trailingTrivia: .space),
                 expression: DeclReferenceExprSyntax(baseName: .identifier(paramName)),
                 trailingComma: isLast ? nil : .commaToken(trailingTrivia: .space)
