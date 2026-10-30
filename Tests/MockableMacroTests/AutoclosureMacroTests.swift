@@ -26,8 +26,8 @@ struct AutoclosureMacroTests {
 
             #if DEBUG
             class LoggerMock: Logger {
-                var logCallCount: Int = 0
-                var logCallArguments: [String] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [String] = []
                 var logHandler: ((String) -> Void)? = nil
                 func log(_ message: @autoclosure () -> String) {
                     let message = message()
@@ -67,8 +67,8 @@ struct AutoclosureMacroTests {
 
             #if DEBUG
             class CalculatorMock: Calculator {
-                var computeCallCount: Int = 0
-                var computeCallArguments: [Int] = []
+                private(set) var computeCallCount: Int = 0
+                private(set) var computeCallArguments: [Int] = []
                 var computeHandler: ((Int) throws -> Int)? = nil
                 func compute(_ value: @autoclosure () throws -> Int) throws -> Int {
                     let value = try value()
@@ -109,8 +109,8 @@ struct AutoclosureMacroTests {
 
             #if DEBUG
             class SchedulerMock: Scheduler {
-                var scheduleCallCount: Int = 0
-                var scheduleCallArguments: [Int] = []
+                private(set) var scheduleCallCount: Int = 0
+                private(set) var scheduleCallArguments: [Int] = []
                 var scheduleHandler: ((Int) -> Void)? = nil
                 func schedule(_ work: @autoclosure @escaping () -> Int) {
                     let work = work()
@@ -150,8 +150,8 @@ struct AutoclosureMacroTests {
 
             #if DEBUG
             class RecorderMock: Recorder {
-                var recordCallCount: Int = 0
-                var recordCallArguments: [(name: String, value: Int)] = []
+                private(set) var recordCallCount: Int = 0
+                private(set) var recordCallArguments: [(name: String, value: Int)] = []
                 var recordHandler: ((String, Int) -> Void)? = nil
                 func record(name: String, value: @autoclosure () -> Int) {
                     let value = value()
@@ -198,27 +198,13 @@ struct AutoclosureMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var recordCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.recordCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.recordCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.recordCallCount
                     }
                 }
                 var recordCallArguments: [Int] {
-                    get {
-                        _storage.withLock {
-                            $0.recordCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.recordCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.recordCallArguments
                     }
                 }
                 var recordHandler: (@Sendable (Int) -> Void)? {
@@ -276,8 +262,8 @@ struct AutoclosureMacroTests {
 
             #if DEBUG
             class LoggerMock: Logger {
-                var logCallCount: Int = 0
-                var logCallArguments: [String] = []
+                private(set) var logCallCount: Int = 0
+                private(set) var logCallArguments: [String] = []
                 var logHandler: ((String) -> Void)? = nil
                 func log(_ message: @autoclosure () throws(Never) -> String) {
                     let message = message()

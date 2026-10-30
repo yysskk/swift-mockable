@@ -30,8 +30,8 @@ struct WitnessAttributeMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: (() -> Int)? = nil
                 @discardableResult
                 func run() -> Int {
@@ -74,8 +74,8 @@ struct WitnessAttributeMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: (() -> Int)? = nil
                 func run() -> Int {
                     runCallCount += 1

@@ -26,8 +26,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if DEBUG
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -66,8 +66,8 @@ struct CompilationConditionArgumentMacroTests {
             }
 
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -106,8 +106,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if MOCKING
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -147,8 +147,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if MOCKING
             class UserServiceMock: UserService {
-                var fetchUserCallCount: Int = 0
-                var fetchUserCallArguments: [Int] = []
+                private(set) var fetchUserCallCount: Int = 0
+                private(set) var fetchUserCallArguments: [Int] = []
                 var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
@@ -188,8 +188,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if DEBUG || UITESTS
             class UserServiceMock: UserService {
-                var pingCallCount: Int = 0
-                var pingCallArguments: [()] = []
+                private(set) var pingCallCount: Int = 0
+                private(set) var pingCallArguments: [()] = []
                 var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
@@ -278,8 +278,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if _ENABLE_MOCKS_2
             class CacheServiceMock: CacheService {
-                var clearCallCount: Int = 0
-                var clearCallArguments: [()] = []
+                private(set) var clearCallCount: Int = 0
+                private(set) var clearCallArguments: [()] = []
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
@@ -330,8 +330,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if \(expression)
             class CacheServiceMock: CacheService {
-                var clearCallCount: Int = 0
-                var clearCallArguments: [()] = []
+                private(set) var clearCallCount: Int = 0
+                private(set) var clearCallArguments: [()] = []
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
@@ -370,8 +370,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if DEBUG
             class CacheServiceMock: CacheService {
-                var clearCallCount: Int = 0
-                var clearCallArguments: [()] = []
+                private(set) var clearCallCount: Int = 0
+                private(set) var clearCallArguments: [()] = []
                 var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
@@ -409,8 +409,8 @@ struct CompilationConditionArgumentMacroTests {
             }
 
             class PingServiceMock: PingService {
-                var pingCallCount: Int = 0
-                var pingCallArguments: [()] = []
+                private(set) var pingCallCount: Int = 0
+                private(set) var pingCallArguments: [()] = []
                 var pingHandler: (() -> Bool)? = nil
                 func ping() -> Bool {
                     pingCallCount += 1
@@ -450,8 +450,8 @@ struct CompilationConditionArgumentMacroTests {
             open class PublicServiceMock: PublicService {
                 public init() {
                 }
-                public var fetchCallCount: Int = 0
-                public var fetchCallArguments: [()] = []
+                public private(set) var fetchCallCount: Int = 0
+                public private(set) var fetchCallArguments: [()] = []
                 public var fetchHandler: (() -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
@@ -490,8 +490,8 @@ struct CompilationConditionArgumentMacroTests {
 
             #if DEBUG
             class PingServiceMock: PingService {
-                var pingCallCount: Int = 0
-                var pingCallArguments: [()] = []
+                private(set) var pingCallCount: Int = 0
+                private(set) var pingCallArguments: [()] = []
                 var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1

@@ -26,8 +26,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             class ChildMock: BaseMock, Child {
-                var childMethodCallCount: Int = 0
-                var childMethodCallArguments: [()] = []
+                private(set) var childMethodCallCount: Int = 0
+                private(set) var childMethodCallArguments: [()] = []
                 var childMethodHandler: (() -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
@@ -68,8 +68,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             class MyProtocolMock: MyProtocol {
-                var doSomethingCallCount: Int = 0
-                var doSomethingCallArguments: [()] = []
+                private(set) var doSomethingCallCount: Int = 0
+                private(set) var doSomethingCallArguments: [()] = []
                 var doSomethingHandler: (() -> Void)? = nil
                 func doSomething() {
                     doSomethingCallCount += 1
@@ -108,8 +108,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             class ChildMock: ParentAMock, Child {
-                var childMethodCallCount: Int = 0
-                var childMethodCallArguments: [()] = []
+                private(set) var childMethodCallCount: Int = 0
+                private(set) var childMethodCallArguments: [()] = []
                 var childMethodHandler: (() -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
@@ -150,8 +150,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             class ChildServiceMock: BaseServiceMock, ChildService {
-                var fetchChildCallCount: Int = 0
-                var fetchChildCallArguments: [Int] = []
+                private(set) var fetchChildCallCount: Int = 0
+                private(set) var fetchChildCallArguments: [Int] = []
                 var fetchChildHandler: ((Int) -> String)? = nil
                 func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
@@ -193,8 +193,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             open class ChildServiceMock: BaseServiceMock, ChildService {
-                public var fetchChildCallCount: Int = 0
-                public var fetchChildCallArguments: [Int] = []
+                public private(set) var fetchChildCallCount: Int = 0
+                public private(set) var fetchChildCallArguments: [Int] = []
                 public var fetchChildHandler: ((Int) -> String)? = nil
                 public func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
@@ -243,27 +243,13 @@ struct InheritanceMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var childMethodCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.childMethodCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.childMethodCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.childMethodCallCount
                     }
                 }
                 var childMethodCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.childMethodCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.childMethodCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.childMethodCallArguments
                     }
                 }
                 var childMethodHandler: (@Sendable () -> String)? {
@@ -323,8 +309,8 @@ struct InheritanceMacroTests {
 
             #if DEBUG
             class ChildMock: SendableBaseMock, Child {
-                var childMethodCallCount: Int = 0
-                var childMethodCallArguments: [()] = []
+                private(set) var childMethodCallCount: Int = 0
+                private(set) var childMethodCallArguments: [()] = []
                 var childMethodHandler: (() -> Int)? = nil
                 func childMethod() -> Int {
                     childMethodCallCount += 1

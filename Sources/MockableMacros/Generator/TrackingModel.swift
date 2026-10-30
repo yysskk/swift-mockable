@@ -42,6 +42,20 @@ struct TrackingField {
     let initialValue: ExprSyntax
 }
 
+extension TrackingField {
+    /// Whether tests can only read the slot: the call count and captured arguments are
+    /// the call history the mock records itself, so only the mock writes them — keeping
+    /// the two in step — while handlers and backing slots are the test's to set up.
+    var isRecordedByMock: Bool {
+        switch role {
+        case .callCount, .callArguments:
+            return true
+        case .handler, .setHandler, .backing:
+            return false
+        }
+    }
+}
+
 /// The tracking identity and shape of one protocol requirement, computed once and
 /// shared by every consumer, so the storage struct, the public tracking members,
 /// and `resetMock()` can never disagree about a requirement's slots.

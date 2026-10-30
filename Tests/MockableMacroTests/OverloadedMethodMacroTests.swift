@@ -32,8 +32,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class UserDefaultsMock: UserDefaults {
-                var setBoolStringCallCount: Int = 0
-                var setBoolStringCallArguments: [(value: Bool, forKey: String)] = []
+                private(set) var setBoolStringCallCount: Int = 0
+                private(set) var setBoolStringCallArguments: [(value: Bool, forKey: String)] = []
                 var setBoolStringHandler: ((Bool, String) -> Void)? = nil
                 func set(_ value: Bool, forKey: String) {
                     setBoolStringCallCount += 1
@@ -42,8 +42,8 @@ struct OverloadedMethodMacroTests {
                         _handler(value, forKey)
                     }
                 }
-                var setIntStringCallCount: Int = 0
-                var setIntStringCallArguments: [(value: Int, forKey: String)] = []
+                private(set) var setIntStringCallCount: Int = 0
+                private(set) var setIntStringCallArguments: [(value: Int, forKey: String)] = []
                 var setIntStringHandler: ((Int, String) -> Void)? = nil
                 func set(_ value: Int, forKey: String) {
                     setIntStringCallCount += 1
@@ -52,8 +52,8 @@ struct OverloadedMethodMacroTests {
                         _handler(value, forKey)
                     }
                 }
-                var setStringStringCallCount: Int = 0
-                var setStringStringCallArguments: [(value: String, forKey: String)] = []
+                private(set) var setStringStringCallCount: Int = 0
+                private(set) var setStringStringCallArguments: [(value: String, forKey: String)] = []
                 var setStringStringHandler: ((String, String) -> Void)? = nil
                 func set(_ value: String, forKey: String) {
                     setStringStringCallCount += 1
@@ -62,8 +62,8 @@ struct OverloadedMethodMacroTests {
                         _handler(value, forKey)
                     }
                 }
-                var getValueCallCount: Int = 0
-                var getValueCallArguments: [()] = []
+                private(set) var getValueCallCount: Int = 0
+                private(set) var getValueCallArguments: [()] = []
                 var getValueHandler: (() -> String)? = nil
                 func getValue() -> String {
                     getValueCallCount += 1
@@ -114,8 +114,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class SimpleServiceMock: SimpleService {
-                var fetchDataCallCount: Int = 0
-                var fetchDataCallArguments: [Int] = []
+                private(set) var fetchDataCallCount: Int = 0
+                private(set) var fetchDataCallArguments: [Int] = []
                 var fetchDataHandler: ((Int) -> String)? = nil
                 func fetchData(id: Int) -> String {
                     fetchDataCallCount += 1
@@ -125,8 +125,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return _handler(id)
                 }
-                var saveDataCallCount: Int = 0
-                var saveDataCallArguments: [String] = []
+                private(set) var saveDataCallCount: Int = 0
+                private(set) var saveDataCallArguments: [String] = []
                 var saveDataHandler: ((String) -> Void)? = nil
                 func saveData(data: String) {
                     saveDataCallCount += 1
@@ -170,8 +170,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class HttpServiceMock: HttpService {
-                var getStringStringCallCount: Int = 0
-                var getStringStringCallArguments: [String] = []
+                private(set) var getStringStringCallCount: Int = 0
+                private(set) var getStringStringCallArguments: [String] = []
                 var getStringStringHandler: ((String) -> String)? = nil
                 func get(url: String) -> String {
                     getStringStringCallCount += 1
@@ -181,8 +181,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return _handler(url)
                 }
-                var getStringDataThrowingCallCount: Int = 0
-                var getStringDataThrowingCallArguments: [String] = []
+                private(set) var getStringDataThrowingCallCount: Int = 0
+                private(set) var getStringDataThrowingCallArguments: [String] = []
                 var getStringDataThrowingHandler: ((String) throws -> Data)? = nil
                 func get(url: String) throws -> Data {
                     getStringDataThrowingCallCount += 1
@@ -229,8 +229,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class DataServiceMock: DataService {
-                var fetchIntStringCallCount: Int = 0
-                var fetchIntStringCallArguments: [Int] = []
+                private(set) var fetchIntStringCallCount: Int = 0
+                private(set) var fetchIntStringCallArguments: [Int] = []
                 var fetchIntStringHandler: ((Int) -> String)? = nil
                 func fetch(id: Int) -> String {
                     fetchIntStringCallCount += 1
@@ -240,8 +240,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return _handler(id)
                 }
-                var fetchIntStringAsyncCallCount: Int = 0
-                var fetchIntStringAsyncCallArguments: [Int] = []
+                private(set) var fetchIntStringAsyncCallCount: Int = 0
+                private(set) var fetchIntStringAsyncCallArguments: [Int] = []
                 var fetchIntStringAsyncHandler: ((Int) async -> String)? = nil
                 func fetch(id: Int) async -> String {
                     fetchIntStringAsyncCallCount += 1
@@ -251,8 +251,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return await _handler(id)
                 }
-                var fetchIntStringAsyncThrowingCallCount: Int = 0
-                var fetchIntStringAsyncThrowingCallArguments: [Int] = []
+                private(set) var fetchIntStringAsyncThrowingCallCount: Int = 0
+                private(set) var fetchIntStringAsyncThrowingCallArguments: [Int] = []
                 var fetchIntStringAsyncThrowingHandler: ((Int) async throws -> String)? = nil
                 func fetch(id: Int) async throws -> String {
                     fetchIntStringAsyncThrowingCallCount += 1
@@ -302,8 +302,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class MixedServiceMock: MixedService {
-                var processIntStringCallCount: Int = 0
-                var processIntStringCallArguments: [Int] = []
+                private(set) var processIntStringCallCount: Int = 0
+                private(set) var processIntStringCallArguments: [Int] = []
                 var processIntStringHandler: ((Int) -> String)? = nil
                 func process(value: Int) -> String {
                     processIntStringCallCount += 1
@@ -313,8 +313,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return _handler(value)
                 }
-                var processIntDataThrowingCallCount: Int = 0
-                var processIntDataThrowingCallArguments: [Int] = []
+                private(set) var processIntDataThrowingCallCount: Int = 0
+                private(set) var processIntDataThrowingCallArguments: [Int] = []
                 var processIntDataThrowingHandler: ((Int) throws -> Data)? = nil
                 func process(value: Int) throws -> Data {
                     processIntDataThrowingCallCount += 1
@@ -324,8 +324,8 @@ struct OverloadedMethodMacroTests {
                     }
                     return try _handler(value)
                 }
-                var processStringCallCount: Int = 0
-                var processStringCallArguments: [String] = []
+                private(set) var processStringCallCount: Int = 0
+                private(set) var processStringCallArguments: [String] = []
                 var processStringHandler: ((String) -> String)? = nil
                 func process(value: String) -> String {
                     processStringCallCount += 1
@@ -376,8 +376,8 @@ struct OverloadedMethodMacroTests {
 
             #if DEBUG
             class HandlerMock: Handler {
-                var handlePairABCallCount: Int = 0
-                var handlePairABCallArguments: [Pair<A, B>] = []
+                private(set) var handlePairABCallCount: Int = 0
+                private(set) var handlePairABCallArguments: [Pair<A, B>] = []
                 var handlePairABHandler: ((Pair<A, B>) -> Void)? = nil
                 func handle(_ value: Pair<A, B>) {
                     handlePairABCallCount += 1
@@ -386,8 +386,8 @@ struct OverloadedMethodMacroTests {
                         _handler(value)
                     }
                 }
-                var handlePairAB2CallCount: Int = 0
-                var handlePairAB2CallArguments: [Pair<AB>] = []
+                private(set) var handlePairAB2CallCount: Int = 0
+                private(set) var handlePairAB2CallArguments: [Pair<AB>] = []
                 var handlePairAB2Handler: ((Pair<AB>) -> Void)? = nil
                 func handle(_ value: Pair<AB>) {
                     handlePairAB2CallCount += 1

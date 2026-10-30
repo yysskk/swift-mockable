@@ -12,6 +12,11 @@ For a non-overloaded method `fetch`, generated members are:
 - `fetchCallArguments`
 - `fetchHandler`
 
+The call history — `CallCount` and `CallArguments` — is recorded by the mock and is
+read-only from outside it (`private(set)`, or get-only on `Sendable` and `actor` mocks),
+so a test cannot put the two out of step; `resetMock()` clears it. Handlers and properties
+are the test's to set up and stay writable.
+
 For overloaded methods, a suffix is appended:
 
 1. Start with sanitized parameter type names.
@@ -126,7 +131,7 @@ its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
 ```swift
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
-// var transformCallArguments: [[String: Any]] = []
+// private(set) var transformCallArguments: [[String: Any]] = []
 // var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
@@ -212,7 +217,7 @@ func log(_ message: @autoclosure () -> String)
 Generates:
 
 ```swift
-var logCallArguments: [String] = []
+private(set) var logCallArguments: [String] = []
 var logHandler: ((String) -> Void)? = nil
 ```
 
@@ -239,7 +244,7 @@ func run(label: String, _ body: () -> Void)
 Generates:
 
 ```swift
-var runCallArguments: [String] = []                         // only the storable `label`
+private(set) var runCallArguments: [String] = []                         // only the storable `label`
 var runHandler: ((String, () -> Void) -> Void)? = nil
 ```
 
@@ -395,7 +400,7 @@ var token: String { get async throws }
 Generates:
 
 ```swift
-var tokenCallCount: Int = 0
+private(set) var tokenCallCount: Int = 0
 var tokenHandler: (() async throws -> String)? = nil
 var token: String {
     get async throws { ... }
@@ -437,8 +442,8 @@ protocol Repository {
 Generates:
 
 ```swift
-var initCallCount: Int = 0
-var initCallArguments: [Configuration] = []
+private(set) var initCallCount: Int = 0
+private(set) var initCallArguments: [Configuration] = []
 required init(configuration: Configuration) {
     initCallCount += 1
     initCallArguments.append(configuration)

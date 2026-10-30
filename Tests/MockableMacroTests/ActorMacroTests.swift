@@ -58,27 +58,13 @@ struct ActorMacroTests {
                     }
                 }
                 nonisolated var updateProfileCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.updateProfileCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.updateProfileCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.updateProfileCallCount
                     }
                 }
                 nonisolated var updateProfileCallArguments: [(profile: String, key: String)] {
-                    get {
-                        _storage.withLock {
-                            $0.updateProfileCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.updateProfileCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.updateProfileCallArguments
                     }
                 }
                 nonisolated var updateProfileHandler: (@Sendable (String, String) -> Void)? {
@@ -104,27 +90,13 @@ struct ActorMacroTests {
                     }
                 }
                 nonisolated var profileCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.profileCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.profileCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.profileCallCount
                     }
                 }
                 nonisolated var profileCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.profileCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.profileCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.profileCallArguments
                     }
                 }
                 nonisolated var profileHandler: (@Sendable (String) -> String?)? {
@@ -151,27 +123,13 @@ struct ActorMacroTests {
                     return _handler(key)
                 }
                 nonisolated var resetCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.resetCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.resetCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.resetCallCount
                     }
                 }
                 nonisolated var resetCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.resetCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.resetCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.resetCallArguments
                     }
                 }
                 nonisolated var resetHandler: (@Sendable () -> Void)? {
@@ -309,27 +267,13 @@ struct ActorMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var saveCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallCount
                     }
                 }
                 nonisolated var saveCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.saveCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.saveCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.saveCallArguments
                     }
                 }
                 nonisolated var saveHandler: (@Sendable (String) async throws -> Void)? {
@@ -355,27 +299,13 @@ struct ActorMacroTests {
                     }
                 }
                 nonisolated var loadCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallCount
                     }
                 }
                 nonisolated var loadCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.loadCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.loadCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.loadCallArguments
                     }
                 }
                 nonisolated var loadHandler: (@Sendable () async throws -> String)? {

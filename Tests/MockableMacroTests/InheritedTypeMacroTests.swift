@@ -38,27 +38,13 @@ struct InheritedTypeMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var runCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.runCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallCount
                     }
                 }
                 var runCallArguments: [()] {
-                    get {
-                        _storage.withLock {
-                            $0.runCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.runCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.runCallArguments
                     }
                 }
                 var runHandler: (@Sendable () -> Void)? {
@@ -115,8 +101,8 @@ struct InheritedTypeMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
@@ -246,8 +232,8 @@ struct InheritedTypeMacroTests {
 
             #if DEBUG
             class TypeMock: `Type` {
-                var runCallCount: Int = 0
-                var runCallArguments: [()] = []
+                private(set) var runCallCount: Int = 0
+                private(set) var runCallArguments: [()] = []
                 var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
@@ -296,27 +282,13 @@ struct InheritedTypeMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var initCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.initCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallCount
                     }
                 }
                 nonisolated var initCallArguments: [String] {
-                    get {
-                        _storage.withLock {
-                            $0.initCallArguments
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.initCallArguments = newValue
-                        }
+                    _storage.withLock {
+                        $0.initCallArguments
                     }
                 }
                 init(name: String) {

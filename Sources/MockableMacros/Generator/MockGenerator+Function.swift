@@ -28,40 +28,56 @@ extension MockGenerator {
                 name: field.name,
                 type: field.type,
                 initializer: field.initialValue,
+                isReadOnly: field.isRecordedByMock,
                 scope: requirement.scope,
                 leavesMockIsolation: requirement.leavesMockIsolation
             ))
         }
     }
 
-    /// Builds one tracking member (`CallCount`, `CallArguments`, `Handler`, a property's
-    /// `_name` backing slot, ...): a plain stored property, or a computed property
-    /// reading and writing the storage-struct field of the same name through the lock
-    /// when the storage model requires it. Shared by the function, variable, subscript,
-    /// and initializer generators.
+    /// Builds one tracking member (`CallCount`, `CallArguments`, `Handler`, an optional
+    /// property, ...): a plain stored property, or a computed property reading and
+    /// writing the storage-struct field of the same name through the lock when the
+    /// storage model requires it. Shared by the function, variable, subscript, and
+    /// initializer generators.
+    ///
+    /// A read-only member — the call history the mock records itself — cannot be
+    /// written from outside the mock: a stored property is `private(set)`, and a
+    /// lock-backed one has no setter, since the witness records into the storage struct
+    /// directly.
     func generateTrackingStorageProperty(
         name fullName: String,
         type: TypeSyntax,
         initializer: ExprSyntax,
+        isReadOnly: Bool,
         scope: MemberScope,
         leavesMockIsolation: Bool
     ) -> VariableDeclSyntax {
-        var additionalModifiers = scope.modifiers
-
         switch trackingAccess(for: scope) {
         case .direct:
+            // `private(set)` goes right after the access modifier, as in
+            // `public private(set) static var`.
+            let setterModifiers = isReadOnly ? [Self.privateSetModifier] : []
             return Self.makeStoredProperty(
-                modifiers: modifiers(for: .member, additional: additionalModifiers),
+                modifiers: modifiers(for: .member, additional: setterModifiers + scope.modifiers),
                 name: fullName,
                 type: type,
                 initializer: initializer
             )
 
         case .lockBacked(let storageName):
-            additionalModifiers.append(contentsOf: storageBackedMemberModifiers(
+            let additionalModifiers = scope.modifiers + storageBackedMemberModifiers(
                 leavesMockIsolation: leavesMockIsolation,
                 scope: scope
-            ))
+            )
+            if isReadOnly {
+                return Self.makeGetOnlyProperty(
+                    modifiers: modifiers(for: .member, additional: additionalModifiers),
+                    name: fullName,
+                    type: type,
+                    getterBody: "\(storageName).withLock { $0.\(fullName) }"
+                )
+            }
             return Self.makeLockBackedProperty(
                 modifiers: modifiers(for: .member, additional: additionalModifiers),
                 name: fullName,
@@ -70,6 +86,14 @@ extension MockGenerator {
                 storedName: fullName
             )
         }
+    }
+
+    /// The `private(set)` modifier.
+    static var privateSetModifier: DeclModifierSyntax {
+        DeclModifierSyntax(
+            name: .keyword(.private),
+            detail: DeclModifierDetailSyntax(detail: .identifier("set"))
+        )
     }
 
     /// Builds the method witness: the requirement's own signature (generics, effects,

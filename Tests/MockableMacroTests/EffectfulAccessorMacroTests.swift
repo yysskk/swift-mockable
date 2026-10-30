@@ -26,7 +26,7 @@ struct EffectfulAccessorMacroTests {
 
             #if DEBUG
             class TokenProviderMock: TokenProvider {
-                var tokenCallCount: Int = 0
+                private(set) var tokenCallCount: Int = 0
                 var tokenHandler: (() async throws -> String)? = nil
                 var token: String {
                     get async throws {
@@ -66,7 +66,7 @@ struct EffectfulAccessorMacroTests {
 
             #if DEBUG
             class ConfigProviderMock: ConfigProvider {
-                var maxRetryCountCallCount: Int = 0
+                private(set) var maxRetryCountCallCount: Int = 0
                 var maxRetryCountHandler: (() throws -> Int)? = nil
                 var maxRetryCount: Int {
                     get throws {
@@ -106,7 +106,7 @@ struct EffectfulAccessorMacroTests {
 
             #if DEBUG
             class CacheProviderMock: CacheProvider {
-                var cachedValueCallCount: Int = 0
+                private(set) var cachedValueCallCount: Int = 0
                 var cachedValueHandler: (() async -> String?)? = nil
                 var cachedValue: String? {
                     get async {
@@ -152,15 +152,8 @@ struct EffectfulAccessorMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 var flagCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.flagCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.flagCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.flagCallCount
                     }
                 }
                 var flagHandler: (@Sendable () async throws -> Bool)? {
@@ -224,15 +217,8 @@ struct EffectfulAccessorMacroTests {
                 }
                 private let _storage = MockableLock<Storage>(Storage())
                 nonisolated var tokenCallCount: Int {
-                    get {
-                        _storage.withLock {
-                            $0.tokenCallCount
-                        }
-                    }
-                    set {
-                        _storage.withLock {
-                            $0.tokenCallCount = newValue
-                        }
+                    _storage.withLock {
+                        $0.tokenCallCount
                     }
                 }
                 nonisolated var tokenHandler: (@Sendable () async throws -> String)? {
@@ -296,15 +282,8 @@ struct EffectfulAccessorMacroTests {
                 }
                 private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
                 static var apiKeyCallCount: Int {
-                    get {
-                        _staticStorage.withLock {
-                            $0.apiKeyCallCount
-                        }
-                    }
-                    set {
-                        _staticStorage.withLock {
-                            $0.apiKeyCallCount = newValue
-                        }
+                    _staticStorage.withLock {
+                        $0.apiKeyCallCount
                     }
                 }
                 static var apiKeyHandler: (@Sendable () throws -> String)? {

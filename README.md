@@ -91,6 +91,8 @@ For each protocol requirement, `@Mockable` generates test-friendly members:
 - Utility:
   - `resetMock()` on the instance, and `resetMock()` on the mock type for `static` requirements
 
+`CallCount` and `CallArguments` are read-only outside the mock: the mock records them, and `resetMock()` clears them. Handlers and properties are writable for setup.
+
 ## Handlers
 
 A handler for a member with two or more parameters takes individual parameters, so it

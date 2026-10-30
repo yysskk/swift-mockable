@@ -250,6 +250,21 @@ struct TrackingRequirementTests {
         #expect(all.isEmpty)
     }
 
+    // MARK: - Call history
+
+    @Test("Only the call history is recorded by the mock")
+    func recordedByMockFields() throws {
+        let all = requirements(ofProtocol: """
+        protocol Service {
+            subscript(index: Int) -> String { get set }
+            var name: String { get }
+        }
+        """)
+        let fields = all.flatMap { $0.trackingFields(model: .direct) }
+        #expect(fields.filter(\.isRecordedByMock).map(\.role) == [.callCount, .callArguments])
+        #expect(fields.count == 5)
+    }
+
     // MARK: - Handler sendability
 
     /// The handler types of every requirement, in declaration order.

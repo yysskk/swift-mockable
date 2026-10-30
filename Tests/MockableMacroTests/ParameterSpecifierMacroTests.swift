@@ -29,8 +29,8 @@ struct ParameterSpecifierMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var consumeCallCount: Int = 0
-                var consumeCallArguments: [Payload] = []
+                private(set) var consumeCallCount: Int = 0
+                private(set) var consumeCallArguments: [Payload] = []
                 var consumeHandler: ((Payload) -> Void)? = nil
                 func consume(_ item: consuming Payload) {
                     let item = item
@@ -70,8 +70,8 @@ struct ParameterSpecifierMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var inspectCallCount: Int = 0
-                var inspectCallArguments: [Payload] = []
+                private(set) var inspectCallCount: Int = 0
+                private(set) var inspectCallArguments: [Payload] = []
                 var inspectHandler: ((Payload) -> Void)? = nil
                 func inspect(_ item: borrowing Payload) {
                     let item = copy item
@@ -111,8 +111,8 @@ struct ParameterSpecifierMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var sendCallCount: Int = 0
-                var sendCallArguments: [Payload] = []
+                private(set) var sendCallCount: Int = 0
+                private(set) var sendCallArguments: [Payload] = []
                 var sendHandler: ((Payload) -> Void)? = nil
                 func send(_ item: sending Payload) {
                     sendCallCount += 1
@@ -151,8 +151,8 @@ struct ParameterSpecifierMacroTests {
 
             #if DEBUG
             class ServiceMock: Service {
-                var fillCallCount: Int = 0
-                var fillCallArguments: [Int?] = []
+                private(set) var fillCallCount: Int = 0
+                private(set) var fillCallArguments: [Int?] = []
                 var fillHandler: ((Int?) -> Int?)? = nil
                 func fill(_ value: inout Int!) {
                     fillCallCount += 1

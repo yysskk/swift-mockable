@@ -29,8 +29,8 @@ struct TypeAliasMacroTests {
             #if DEBUG
             class PresenterMock: Presenter {
                 typealias UpdateType = String
-                var updateCallCount: Int = 0
-                var updateCallArguments: [UpdateType] = []
+                private(set) var updateCallCount: Int = 0
+                private(set) var updateCallArguments: [UpdateType] = []
                 var updateHandler: ((UpdateType) -> Void)? = nil
                 func update(type: UpdateType) {
                     updateCallCount += 1
@@ -75,8 +75,8 @@ struct TypeAliasMacroTests {
             class DelegateMock: Delegate {
                 typealias Callback = (String) -> Void
                 typealias ID = Int
-                var registerCallCount: Int = 0
-                var registerCallArguments: [(id: ID, callback: Callback)] = []
+                private(set) var registerCallCount: Int = 0
+                private(set) var registerCallArguments: [(id: ID, callback: Callback)] = []
                 var registerHandler: ((ID, Callback) -> Void)? = nil
                 func register(id: ID, callback: @escaping Callback) {
                     registerCallCount += 1
@@ -148,8 +148,8 @@ struct TypeAliasMacroTests {
                 public typealias TableViewUpdateType = String
                 public init() {
                 }
-                public var didUpdateCallCount: Int = 0
-                public var didUpdateCallArguments: [TableViewUpdateType] = []
+                public private(set) var didUpdateCallCount: Int = 0
+                public private(set) var didUpdateCallArguments: [TableViewUpdateType] = []
                 public var didUpdateHandler: ((TableViewUpdateType) -> Void)? = nil
                 public func didUpdate(type: TableViewUpdateType) {
                     didUpdateCallCount += 1
