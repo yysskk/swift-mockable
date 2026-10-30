@@ -18,8 +18,8 @@ protocol DataStore {
     func save(_ value: String)
 }
 
-// Static state is shared by every instance of a mock, and `resetMock()` clears it, so
-// the static requirement gets a mock of its own that a single test touches.
+// Static state is shared by every instance of a mock, and `resetStaticMock()` clears it,
+// so the static requirement gets a mock of its own that a single test touches.
 @DataActor
 @Mockable
 protocol DataStoreFactory {

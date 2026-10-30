@@ -77,6 +77,11 @@ has no `static` requirement. On a class mock it is a `class` method: a child moc
 overrides its parent's and calls `super.resetMock()` first, as the instance method
 does.
 
+> Note: The release after 3.0 renames the type-level method `resetStaticMock()`, so
+> that it no longer shares a name with the instance's `resetMock()`. With that version,
+> write `ServiceMock.resetStaticMock()` and `super.resetStaticMock()` wherever this
+> section says `ServiceMock.resetMock()` and `super.resetMock()`.
+
 ## Import `Synchronization` Yourself
 
 `import Mockable` no longer re-exports the `Synchronization` module. Generated code
