@@ -197,3 +197,33 @@ extension MockGenerator {
         )
     }
 }
+
+/// Emits a property declaration, which may bind several names: per binding, a settable
+/// stored property, or the tracking slots and witness of an effectful getter.
+struct VariableEmitter: RequirementEmitter {
+    let generator: MockGenerator
+    let decl: VariableDeclSyntax
+    let scope: MemberScope
+    let leavesMockIsolation: Bool
+
+    init(generator: MockGenerator, decl: VariableDeclSyntax, requirement: Requirement) {
+        self.generator = generator
+        self.decl = decl
+        self.scope = requirement.scope
+        self.leavesMockIsolation = requirement.leavesMockIsolation
+    }
+
+    var trackingRequirements: [TrackingRequirement] {
+        decl.bindings.compactMap { binding in
+            generator.variableTrackingRequirement(
+                for: binding,
+                scope: scope,
+                leavesMockIsolation: leavesMockIsolation
+            )
+        }
+    }
+
+    func members() -> [MemberBlockItemSyntax] {
+        generator.generateVariableMock(decl, scope: scope, leavesMockIsolation: leavesMockIsolation)
+    }
+}

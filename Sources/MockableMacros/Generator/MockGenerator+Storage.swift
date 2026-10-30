@@ -71,7 +71,7 @@ extension MockGenerator {
                 return []
             }
 
-            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+            return trackingRequirements(for: requirement).flatMap { tracking in
                 tracking.trackingFields(model: .lockBacked).map { field in
                     MemberBlockItemSyntax(decl: Self.makeStoredProperty(
                         name: field.name,

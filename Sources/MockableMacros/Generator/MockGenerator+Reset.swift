@@ -6,12 +6,12 @@ import SwiftSyntaxBuilder
 extension MockGenerator {
     /// The assignments that clear one storage struct's fields, addressed through the
     /// `withLock` closure's `storage` binding and keeping the protocol's `#if` structure.
-    private func resetLines(for scope: MemberScope, overloads: OverloadContext) -> [String] {
+    private func resetLines(for scope: MemberScope) -> [String] {
         mapLinesPreservingIfConfig { requirement in
             guard requirement.scope == scope else {
                 return []
             }
-            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+            return trackingRequirements(for: requirement).flatMap { tracking in
                 tracking.trackingFields(model: .lockBacked).map { field in
                     "storage.\(field.name) = \(field.initialValue.trimmedDescription)"
                 }
@@ -70,7 +70,7 @@ extension MockGenerator {
             guard requirement.scope == .instance else {
                 return []
             }
-            return trackingRequirements(for: requirement, overloads: overloads).flatMap { tracking in
+            return trackingRequirements(for: requirement).flatMap { tracking in
                 tracking.trackingFields(model: .direct).map { field in
                     CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "\(field.name) = \(field.initialValue.trimmedDescription)")))
                 }
@@ -103,7 +103,7 @@ extension MockGenerator {
         statements.append(
             CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(
                 storageName: MockNaming.instanceStorageName,
-                resetLines: resetLines(for: .instance, overloads: overloads)
+                resetLines: resetLines(for: .instance)
             ))))
         )
 
@@ -144,7 +144,7 @@ extension MockGenerator {
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
             )
         }
-        let staticResetLines = resetLines(for: .type, overloads: overloads)
+        let staticResetLines = resetLines(for: .type)
         if !staticResetLines.isEmpty {
             statements.append(
                 CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: buildWithLockBody(

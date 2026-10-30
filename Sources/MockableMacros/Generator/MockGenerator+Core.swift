@@ -7,12 +7,16 @@ import SwiftSyntaxBuilder
 /// ``generate()``. The generator's responsibilities are split across
 /// `MockGenerator+*.swift` extensions by concern:
 ///
-/// - `Requirement` classifies each protocol member once; every pass switches over it.
+/// - `Requirement` classifies each protocol member once.
+/// - `RequirementEmitter` is the one place generation dispatches on that
+///   classification: each kind of requirement has an emitter — `FunctionEmitter`,
+///   `InitializerEmitter`, `VariableEmitter`, `SubscriptEmitter`, declared beside
+///   `+Function`, `+Initializer`, `+Variable`, and `+Subscript` — that emits its
+///   witness and tracking members.
 /// - `TrackingModel` derives, once per requirement, which tracking slots it needs and
-///   how they are named and typed. `+Function`, `+Variable`, `+Subscript`, and
-///   `+Initializer` emit the witnesses and their tracking members from that model;
+///   how they are named and typed. The emitters build their members from that model;
 ///   `+Storage` builds the lock-backed storage structs from it; `+Reset` emits
-///   `resetMock()` from it.
+///   `resetMock()` from it, without knowing the kinds of requirement.
 /// - `TrackingAccess` expresses, once, how a witness records a call and reads a handler
 ///   or backing slot on each storage model, so every witness generator has one body.
 /// - `+Emit` holds the shared property and statement builders those generators use.
@@ -191,51 +195,10 @@ struct MockGenerator {
     }
 
     /// The per-requirement mock members, in protocol declaration order and with any
-    /// `#if` structure preserved. Each requirement's tracking model is computed once
-    /// here and handed to the per-kind generator.
+    /// `#if` structure preserved, each emitted by its requirement's emitter.
     private func generateMockMembers() -> [MemberBlockItemSyntax] {
-        return mapMemberBlockItemsPreservingIfConfig { requirement in
-            switch requirement {
-            case .initializer(let initDecl):
-                return generateInitializerMock(
-                    initDecl,
-                    requirement: initializerTrackingRequirement(for: initDecl, overloads: overloads)
-                )
-
-            case .function(let funcDecl):
-                return generateFunctionMock(
-                    funcDecl,
-                    requirement: functionTrackingRequirement(
-                        for: funcDecl,
-                        scope: requirement.scope,
-                        leavesMockIsolation: requirement.leavesMockIsolation,
-                        overloads: overloads
-                    )
-                )
-
-            case .variable(let varDecl):
-                return generateVariableMock(
-                    varDecl,
-                    scope: requirement.scope,
-                    leavesMockIsolation: requirement.leavesMockIsolation
-                )
-
-            case .subscript(let subscriptDecl):
-                return generateSubscriptMock(
-                    subscriptDecl,
-                    requirement: subscriptTrackingRequirement(
-                        for: subscriptDecl,
-                        leavesMockIsolation: requirement.leavesMockIsolation,
-                        overloads: overloads
-                    )
-                )
-
-            // Associated types and type aliases are emitted ahead of the other members
-            // (see `generateAssociatedTypeMembers`); an unsupported member never reaches
-            // generation, since diagnostics reject the protocol first.
-            case .associatedType, .typeAlias, .unsupported:
-                return []
-            }
+        mapMemberBlockItemsPreservingIfConfig { requirement in
+            emitter(for: requirement)?.members() ?? []
         }
     }
 

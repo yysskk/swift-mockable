@@ -253,48 +253,6 @@ extension OverloadContext {
 }
 
 extension MockGenerator {
-
-    /// The tracking requirements declared by one protocol requirement: one per
-    /// function, initializer, or subscript, one per property binding, and none for a
-    /// type declaration.
-    ///
-    /// Must be handed a requirement built from the original declaration nodes in
-    /// `members` — overload ordinals compare node identity, so a re-parsed copy would
-    /// break the `...2` suffixes.
-    func trackingRequirements(for requirement: Requirement, overloads: OverloadContext) -> [TrackingRequirement] {
-        switch requirement {
-        case .initializer(let initDecl):
-            return [initializerTrackingRequirement(for: initDecl, overloads: overloads)]
-
-        case .function(let funcDecl):
-            return [functionTrackingRequirement(
-                for: funcDecl,
-                scope: requirement.scope,
-                leavesMockIsolation: requirement.leavesMockIsolation,
-                overloads: overloads
-            )]
-
-        case .variable(let varDecl):
-            return varDecl.bindings.compactMap { binding in
-                variableTrackingRequirement(
-                    for: binding,
-                    scope: requirement.scope,
-                    leavesMockIsolation: requirement.leavesMockIsolation
-                )
-            }
-
-        case .subscript(let subscriptDecl):
-            return [subscriptTrackingRequirement(
-                for: subscriptDecl,
-                leavesMockIsolation: requirement.leavesMockIsolation,
-                overloads: overloads
-            )]
-
-        case .associatedType, .typeAlias, .unsupported:
-            return []
-        }
-    }
-
     /// The tracking requirement of an `init` requirement. Initializers record calls but
     /// have no handler, and are never type members.
     func initializerTrackingRequirement(
