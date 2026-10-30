@@ -3,27 +3,27 @@ import Testing
 
 import Mockable
 
-@Suite("MockableLock Tests")
+@Suite("_MockableLock Tests")
 struct MockableLockTests {
-    @Test("MockableLock can be instantiated with initial value")
+    @Test("_MockableLock can be instantiated with initial value")
     func mockableLockCanBeInstantiated() {
-        let lock = MockableLock(42)
+        let lock = _MockableLock(42)
         let result = lock.withLock { $0 }
         #expect(result == 42)
     }
 
-    @Test("MockableLock withLock returns result")
+    @Test("_MockableLock withLock returns result")
     func mockableLockWithLockReturnsResult() {
-        let lock = MockableLock("initial")
+        let lock = _MockableLock("initial")
         let result = lock.withLock { value -> String in
             value + " modified"
         }
         #expect(result == "initial modified")
     }
 
-    @Test("MockableLock withLock can mutate value")
+    @Test("_MockableLock withLock can mutate value")
     func mockableLockWithLockCanMutateValue() {
-        let lock = MockableLock(0)
+        let lock = _MockableLock(0)
 
         lock.withLock { value in
             value = 100
@@ -33,11 +33,11 @@ struct MockableLockTests {
         #expect(result == 100)
     }
 
-    @Test("MockableLock withLock can throw")
+    @Test("_MockableLock withLock can throw")
     func mockableLockWithLockCanThrow() {
         struct TestError: Error {}
 
-        let lock = MockableLock("value")
+        let lock = _MockableLock("value")
 
         #expect(throws: TestError.self) {
             try lock.withLock { _ in
@@ -46,9 +46,9 @@ struct MockableLockTests {
         }
     }
 
-    @Test("MockableLock is thread-safe")
+    @Test("_MockableLock is thread-safe")
     func mockableLockIsThreadSafe() async {
-        let lock = MockableLock(0)
+        let lock = _MockableLock(0)
 
         await withTaskGroup(of: Void.self) { group in
             for _ in 0..<1000 {
@@ -64,9 +64,9 @@ struct MockableLockTests {
         #expect(result == 1000)
     }
 
-    @Test("MockableLock is Sendable")
+    @Test("_MockableLock is Sendable")
     func mockableLockIsSendable() {
-        let lock = MockableLock("test")
+        let lock = _MockableLock("test")
 
         func useSendable<T: Sendable>(_ value: T) -> T { value }
         let result = useSendable(lock)
@@ -75,14 +75,14 @@ struct MockableLockTests {
         #expect(value == "test")
     }
 
-    @Test("MockableLock with struct value")
+    @Test("_MockableLock with struct value")
     func mockableLockWithStructValue() {
         struct Counter {
             var count: Int = 0
             var name: String = ""
         }
 
-        let lock = MockableLock(Counter())
+        let lock = _MockableLock(Counter())
 
         lock.withLock { counter in
             counter.count = 10
@@ -94,13 +94,13 @@ struct MockableLockTests {
         #expect(result.name == "test")
     }
 
-    @Test("MockableLock concurrent reads and writes")
+    @Test("_MockableLock concurrent reads and writes")
     func mockableLockConcurrentReadsAndWrites() async {
         struct Storage {
             var items: [Int] = []
         }
 
-        let lock = MockableLock(Storage())
+        let lock = _MockableLock(Storage())
 
         await withTaskGroup(of: Void.self) { group in
             for i in 0..<100 {
@@ -124,9 +124,9 @@ struct MockableLockTests {
         #expect(count == 100)
     }
 
-    @Test("MockableLock discardable result")
+    @Test("_MockableLock discardable result")
     func mockableLockDiscardableResult() {
-        let lock = MockableLock(0)
+        let lock = _MockableLock(0)
 
         lock.withLock { value in
             value = 42

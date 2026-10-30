@@ -241,7 +241,7 @@ struct ParameterNameMacroTests {
                     var saveCallArguments: [Int] = []
                     var saveHandler: (@Sendable (Int) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var saveCallCount: Int {
                     _storage.withLock {
                         $0.saveCallCount
@@ -391,7 +391,7 @@ struct ParameterNameMacroTests {
                     var storeCallArguments: [Int] = []
                     var storeHandler: (@Sendable (Int) -> Void)? = nil
                 }
-                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 static var storeCallCount: Int {
                     _staticStorage.withLock {
                         $0.storeCallCount

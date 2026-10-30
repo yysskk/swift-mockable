@@ -298,7 +298,7 @@ struct ConditionalCompilationMacroTests {
                     var logToFallbackHandler: (@Sendable () -> Void)? = nil
                     #endif
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 #if os(iOS)
                 var logToConsoleCallCount: Int {
                     _storage.withLock {

@@ -567,7 +567,7 @@ The condition must be written literally at the attachment site; runtime values a
 
 ### `Sendable` Protocol Support
 
-If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock` for thread safety:
+If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `_MockableLock` for thread safety:
 
 ```swift
 @Mockable
@@ -579,7 +579,7 @@ protocol ThreadSafeService: Sendable {
 
 Handlers are `@Sendable` closures on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements, where the mock shares them across isolation domains. A plain mock's handlers are ordinary closures, so a handler can capture and mutate a test's local state (`mock.logHandler = { messages.append($0) }`).
 
-`MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to an `NSLock`-based lock on older OS versions.
+`_MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to an `NSLock`-based lock on older OS versions.
 
 ### `Actor` Protocol Support
 
@@ -647,9 +647,9 @@ custom condition, so `condition: "MOCKING"` is `condition: .custom("MOCKING")`.
 The value must be written literally at the attachment site (`.debug`, `.always`,
 a string literal, or `.custom("CONDITION")` with a string literal).
 
-### `MockableLock`
+### `_MockableLock`
 
-A thread-safe lock wrapper used internally by `Sendable` mock types. Uses `Mutex` when the `Synchronization` module is available (newer OS), otherwise falls back to `NSLock`-based locking.
+A thread-safe lock wrapper used internally by `Sendable` mock types; public only so generated code can reference it, hence the underscore. The former name `MockableLock` remains as a deprecated alias for one major release. Uses `Mutex` when the `Synchronization` module is available (newer OS), otherwise falls back to `NSLock`-based locking.
 
 ## Links
 

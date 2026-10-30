@@ -43,7 +43,7 @@ struct ActorMacroTests {
                     var resetCallCount: Int = 0
                     var resetHandler: (@Sendable () -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var profiles: [String: String] {
                     get {
                         _storage.withLock {
@@ -193,7 +193,7 @@ struct ActorMacroTests {
                     var _apiKey: String? = nil
                     var _timeout: Int? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var apiKey: String {
                     get {
                         _storage.withLock {
@@ -256,7 +256,7 @@ struct ActorMacroTests {
                     var loadCallCount: Int = 0
                     var loadHandler: (@Sendable () async throws -> String)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var saveCallCount: Int {
                     _storage.withLock {
                         $0.saveCallCount

@@ -3,9 +3,9 @@ import Foundation
 import Synchronization
 #endif
 
-/// A lock that guards a value, as `MockableLock` delegates to it.
+/// A lock that guards a value, as `_MockableLock` delegates to it.
 ///
-/// The two implementations differ only in the primitive they wrap, so `MockableLock`
+/// The two implementations differ only in the primitive they wrap, so `_MockableLock`
 /// holds whichever one the running OS supports behind this protocol.
 private protocol LockBox<Value>: Sendable {
     associatedtype Value
@@ -57,16 +57,18 @@ private final class MutexLockBox<Value>: LockBox, @unchecked Sendable {
 /// A best-available lock wrapper that prefers `Mutex` on supported OS versions
 /// and falls back to `NSLockBox` on older deployment targets.
 ///
-/// `MockableLock` is used in generated mocks for `Sendable` protocols to provide
+/// `_MockableLock` is used in generated mocks for `Sendable` protocols to provide
 /// thread-safe access to mutable state.
 ///
 /// This type is `public` only so that macro-generated code can reference it from
-/// the client module; it is not intended to be used directly.
+/// the client module; it is not intended to be used directly. The leading underscore
+/// marks it as such, as Swift does for symbols that are public for technical reasons
+/// alone, and keeps it out of the way of a client's own names.
 ///
 /// - On iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+ / visionOS 2.0+, uses `Mutex` from the `Synchronization` module.
 /// - On older deployment targets, falls back to an `NSLock`-based implementation.
 @_documentation(visibility: internal)
-public final class MockableLock<Value>: @unchecked Sendable {
+public final class _MockableLock<Value>: @unchecked Sendable {
     private let _box: any LockBox<Value>
 
     /// Creates a new lock wrapping the given initial value.
@@ -93,3 +95,9 @@ public final class MockableLock<Value>: @unchecked Sendable {
         try _box.withLock(body)
     }
 }
+
+/// The former name of ``_MockableLock``, kept so that code which referred to it keeps
+/// compiling for one major release.
+@available(*, deprecated, renamed: "_MockableLock", message: "MockableLock is an implementation detail of generated mocks and will be removed.")
+@_documentation(visibility: internal)
+public typealias MockableLock<Value> = _MockableLock<Value>

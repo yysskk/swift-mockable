@@ -44,7 +44,7 @@ struct ElseClauseMacroTests {
                     var betaHandler: (@Sendable () -> Int)? = nil
                     #endif
                 }
-                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 #if CUSTOM
                 private(set) var alphaCallCount: Int = 0
                 @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")

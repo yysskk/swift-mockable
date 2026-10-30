@@ -201,7 +201,7 @@ struct AssociatedTypeMacroTests {
                     var fetchCallCount: Int = 0
                     var fetchHandler: (@Sendable () async -> Item)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var fetchCallCount: Int {
                     _storage.withLock {
                         $0.fetchCallCount
@@ -277,7 +277,7 @@ struct AssociatedTypeMacroTests {
                     var setCallArguments: [(key: String, value: Value)] = []
                     var setHandler: (@Sendable (String, Value) -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var getCallCount: Int {
                     _storage.withLock {
                         $0.getCallCount
@@ -745,7 +745,7 @@ struct AssociatedTypeMacroTests {
                     var getCallArguments: [Key] = []
                     var getHandler: (@Sendable (Key) -> Value?)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var getCallCount: Int {
                     _storage.withLock {
                         $0.getCallCount

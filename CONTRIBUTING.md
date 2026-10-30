@@ -6,7 +6,7 @@ project layout, how to build and test, and the conventions we follow.
 ## Project layout
 
 - `Sources/Mockable/` — the runtime module clients depend on. It declares the
-  `@Mockable` macro and the `MockableLock` used by generated `Sendable`/actor
+  `@Mockable` macro and the `_MockableLock` used by generated `Sendable`/actor
   mocks.
 - `Sources/MockableMacros/` — the macro implementation (built on
   [swift-syntax](https://github.com/swiftlang/swift-syntax)). `MockableMacro`

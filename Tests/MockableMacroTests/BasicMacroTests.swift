@@ -343,7 +343,7 @@ struct BasicMacroTests {
                     var _cachedToken: String? = nil
                     var _cachedCount: Int? = nil
                 }
-                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 static var makeValueCallCount: Int {
                     _staticStorage.withLock {
                         $0.makeValueCallCount

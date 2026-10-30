@@ -30,4 +30,4 @@ builds. (The `condition:` argument can opt a mock out of that guard; doing so is
 an explicit, per-protocol decision by the adopting project.)
 Reports that are most relevant include issues in the macro implementation that
 could lead to unexpected code generation, or problems in the runtime `Mockable`
-module (for example `MockableLock`).
+module (for example `_MockableLock`).

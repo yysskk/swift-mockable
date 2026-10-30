@@ -36,7 +36,7 @@ struct ArgumentlessCallHistoryMacroTests {
                     var pingCallCount: Int = 0
                     var pingHandler: (@Sendable () -> Void)? = nil
                 }
-                private static let _staticStorage = MockableLock<StaticStorage>(StaticStorage())
+                private static let _staticStorage = _MockableLock<StaticStorage>(StaticStorage())
                 static var pingCallCount: Int {
                     _staticStorage.withLock {
                         $0.pingCallCount

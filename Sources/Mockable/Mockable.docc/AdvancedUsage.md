@@ -182,7 +182,7 @@ Read-only subscripts with the same effects (`subscript(key: K) -> V { get async 
 
 ### `Sendable`
 
-If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock`.
+If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `_MockableLock`.
 
 Handlers are `@Sendable` closures wherever the mock shares them across isolation domains: on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements. A plain mock owns its handlers like any other stored property, so they are ordinary closures there, and a handler can capture and mutate a test's local state:
 

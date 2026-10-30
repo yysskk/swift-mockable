@@ -253,7 +253,7 @@ struct TypedThrowsMacroTests {
                     var computeCallArguments: [Int] = []
                     var computeHandler: (@Sendable (Int) throws -> Int)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var computeCallCount: Int {
                     _storage.withLock {
                         $0.computeCallCount
@@ -497,7 +497,7 @@ struct TypedThrowsMacroTests {
                     var valueCallCount: Int = 0
                     var valueHandler: (@Sendable () throws -> Int)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var valueCallCount: Int {
                     _storage.withLock {
                         $0.valueCallCount

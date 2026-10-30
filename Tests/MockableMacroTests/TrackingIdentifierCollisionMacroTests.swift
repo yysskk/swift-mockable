@@ -113,7 +113,7 @@ struct TrackingIdentifierCollisionMacroTests {
                     var loadItemCallCount: Int = 0
                     var loadItemHandler: (@Sendable () -> Void)? = nil
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var loadItem2CallCount: Int {
                     _storage.withLock {
                         $0.loadItem2CallCount

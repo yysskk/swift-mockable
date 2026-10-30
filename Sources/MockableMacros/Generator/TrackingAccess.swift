@@ -3,7 +3,7 @@ import SwiftSyntax
 /// How a witness reaches the tracking state of one requirement.
 ///
 /// A requirement's tracking slots live either as plain stored properties on the mock
-/// or as fields of a storage struct behind `MockableLock` (see `StorageModel`). The
+/// or as fields of a storage struct behind `_MockableLock` (see `StorageModel`). The
 /// two differ only in how a witness records a call, reads a handler, and reads or
 /// writes a backing slot, so those operations are expressed here once, and every
 /// witness generator — methods, subscripts, initializers, and properties — builds a

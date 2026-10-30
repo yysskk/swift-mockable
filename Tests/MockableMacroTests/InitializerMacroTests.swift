@@ -387,7 +387,7 @@ struct InitializerMacroTests {
                     var initCallCount: Int = 0
                     var initCallArguments: [String] = []
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 var initCallCount: Int {
                     _storage.withLock {
                         $0.initCallCount
@@ -439,7 +439,7 @@ struct InitializerMacroTests {
                     var initCallCount: Int = 0
                     var initCallArguments: [String] = []
                 }
-                private let _storage = MockableLock<Storage>(Storage())
+                private let _storage = _MockableLock<Storage>(Storage())
                 nonisolated var initCallCount: Int {
                     _storage.withLock {
                         $0.initCallCount
