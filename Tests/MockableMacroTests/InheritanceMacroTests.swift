@@ -43,8 +43,8 @@ struct InheritanceMacroTests {
                     childMethodCallCount = 0
                     childMethodHandler = nil
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -85,7 +85,7 @@ struct InheritanceMacroTests {
                     doSomethingCallCount = 0
                     doSomethingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -127,8 +127,8 @@ struct InheritanceMacroTests {
                     childMethodCallCount = 0
                     childMethodHandler = nil
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -170,8 +170,8 @@ struct InheritanceMacroTests {
                     fetchChildCallArguments = []
                     fetchChildHandler = nil
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -213,8 +213,8 @@ struct InheritanceMacroTests {
                     fetchChildCallArguments = []
                     fetchChildHandler = nil
                 }
-                open override class func resetMock() {
-                    super.resetMock()
+                open override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -282,8 +282,8 @@ struct InheritanceMacroTests {
                         storage.childMethodHandler = nil
                     }
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -326,8 +326,8 @@ struct InheritanceMacroTests {
                     childMethodCallCount = 0
                     childMethodHandler = nil
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif

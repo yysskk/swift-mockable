@@ -30,7 +30,7 @@ struct MainActorInheritanceTests {
         // Static state belongs to the type, so an instance reset leaves it alone.
         #expect(MainActorChildServiceMock.makeCallCount == 1)
 
-        MainActorChildServiceMock.resetMock()
+        MainActorChildServiceMock.resetStaticMock()
 
         #expect(MainActorChildServiceMock.makeCallCount == 0)
         #expect(MainActorChildServiceMock.makeHandler == nil)

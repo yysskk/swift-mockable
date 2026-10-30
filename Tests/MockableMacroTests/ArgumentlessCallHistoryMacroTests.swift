@@ -82,7 +82,7 @@ struct ArgumentlessCallHistoryMacroTests {
                     beatCallArguments = []
                     beatHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                     Self._staticStorage.withLock { storage in
                         storage.pingCallCount = 0
                         storage.pingHandler = nil

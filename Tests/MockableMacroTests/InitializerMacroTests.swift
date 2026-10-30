@@ -53,7 +53,7 @@ struct InitializerMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -89,7 +89,7 @@ struct InitializerMacroTests {
                 func resetMock() {
                     initCallCount = 0
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -124,7 +124,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -169,7 +169,7 @@ struct InitializerMacroTests {
                     initHostPortCallCount = 0
                     initHostPortCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -204,7 +204,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -239,7 +239,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -274,7 +274,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             #endif
@@ -321,7 +321,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -358,7 +358,7 @@ struct InitializerMacroTests {
                     initCallCount = 0
                     initCallArguments = []
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -410,7 +410,7 @@ struct InitializerMacroTests {
                         storage.initCallArguments = []
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -461,8 +461,6 @@ struct InitializerMacroTests {
                         storage.initCallCount = 0
                         storage.initCallArguments = []
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif
@@ -531,8 +529,8 @@ struct InitializerMacroTests {
                     childMethodCallCount = 0
                     childMethodHandler = nil
                 }
-                open override class func resetMock() {
-                    super.resetMock()
+                open override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif

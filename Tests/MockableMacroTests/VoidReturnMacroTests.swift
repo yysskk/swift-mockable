@@ -60,7 +60,7 @@ struct VoidReturnMacroTests {
                     parenthesizedCallCount = 0
                     parenthesizedHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -118,7 +118,7 @@ struct VoidReturnMacroTests {
                     runIntCallCount = 0
                     runIntHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

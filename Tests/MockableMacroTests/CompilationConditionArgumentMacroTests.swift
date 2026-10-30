@@ -42,7 +42,7 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -82,7 +82,7 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             """,
@@ -122,7 +122,7 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -163,7 +163,7 @@ struct CompilationConditionArgumentMacroTests {
                     fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -204,7 +204,7 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -295,7 +295,7 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallCount = 0
                     clearHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -348,7 +348,7 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallCount = 0
                     clearHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -389,7 +389,7 @@ struct CompilationConditionArgumentMacroTests {
                     clearCallCount = 0
                     clearHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -430,7 +430,7 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             """,
@@ -472,7 +472,7 @@ struct CompilationConditionArgumentMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             """,
@@ -512,7 +512,7 @@ struct CompilationConditionArgumentMacroTests {
                     pingCallCount = 0
                     pingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

@@ -59,7 +59,7 @@ struct GlobalActorTests {
         #expect(DataStoreFactoryMock.make() == 7)
         #expect(DataStoreFactoryMock.makeCallCount == 1)
 
-        DataStoreFactoryMock.resetMock()
+        DataStoreFactoryMock.resetStaticMock()
 
         #expect(DataStoreFactoryMock.makeCallCount == 0)
         #expect(DataStoreFactoryMock.makeHandler == nil)

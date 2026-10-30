@@ -42,7 +42,7 @@ struct BasicMacroTests {
                     fetchUserCallArguments = []
                     fetchUserHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -83,7 +83,7 @@ struct BasicMacroTests {
                     loadDataCallArguments = []
                     loadDataHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -124,7 +124,7 @@ struct BasicMacroTests {
                     addCallArguments = []
                     addHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -164,7 +164,7 @@ struct BasicMacroTests {
                     logCallArguments = []
                     logHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -204,7 +204,7 @@ struct BasicMacroTests {
                     logCallArguments = []
                     logHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -241,7 +241,7 @@ struct BasicMacroTests {
                 func resetMock() {
                     _currentUser = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -278,7 +278,7 @@ struct BasicMacroTests {
                 func resetMock() {
                     _theme = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -307,7 +307,7 @@ struct BasicMacroTests {
                 func resetMock() {
                     lastValue = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -403,7 +403,7 @@ struct BasicMacroTests {
                 }
                 func resetMock() {
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                     Self._staticStorage.withLock { storage in
                         storage.makeValueCallCount = 0
                         storage.makeValueCallArguments = []
@@ -671,7 +671,7 @@ struct BasicMacroTests {
                     subscribeCallArguments = []
                     subscribeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -711,7 +711,7 @@ struct BasicMacroTests {
                     subscribeCallArguments = []
                     subscribeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -751,7 +751,7 @@ struct BasicMacroTests {
                     doSomethingCallArguments = []
                     doSomethingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -791,7 +791,7 @@ struct BasicMacroTests {
                     doSomethingCallArguments = []
                     doSomethingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -833,7 +833,7 @@ struct BasicMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -875,7 +875,7 @@ struct BasicMacroTests {
                     itemsCallCount = 0
                     itemsHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -917,7 +917,7 @@ struct BasicMacroTests {
                     tagsCallCount = 0
                     tagsHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -959,7 +959,7 @@ struct BasicMacroTests {
                     mappingCallCount = 0
                     mappingHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -1035,7 +1035,7 @@ struct BasicMacroTests {
                     dictionaryValueCallCount = 0
                     dictionaryValueHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -1128,7 +1128,7 @@ struct BasicMacroTests {
                     dictionaryValueCallCount = 0
                     dictionaryValueHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -1170,7 +1170,7 @@ struct BasicMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -1229,7 +1229,7 @@ struct BasicMacroTests {
                     arrayOfOptionalCallCount = 0
                     arrayOfOptionalHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

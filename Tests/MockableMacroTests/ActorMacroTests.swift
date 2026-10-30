@@ -164,8 +164,6 @@ struct ActorMacroTests {
                         storage.resetHandler = nil
                     }
                 }
-                static func resetMock() {
-                }
             }
             #endif
             """,
@@ -225,8 +223,6 @@ struct ActorMacroTests {
                         storage._apiKey = nil
                         storage._timeout = nil
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif
@@ -332,8 +328,6 @@ struct ActorMacroTests {
                         storage.loadCallCount = 0
                         storage.loadHandler = nil
                     }
-                }
-                static func resetMock() {
                 }
             }
             #endif

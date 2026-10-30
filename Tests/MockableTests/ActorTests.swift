@@ -124,7 +124,7 @@ struct ActorIntegrationTests {
     @Test("Actor static members are tracked and reset")
     func actorStaticMembers() {
         guard #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *) else { return }
-        ActorStaticServiceMock.resetMock()
+        ActorStaticServiceMock.resetStaticMock()
 
         ActorStaticServiceMock.lookupHandler = { key in
             "value-\(key)"
@@ -138,7 +138,7 @@ struct ActorIntegrationTests {
         #expect(ActorStaticServiceMock.lookupCallArguments == ["abc"])
         #expect(ActorStaticServiceMock.cachedToken == "token")
 
-        ActorStaticServiceMock.resetMock()
+        ActorStaticServiceMock.resetStaticMock()
         #expect(ActorStaticServiceMock.lookupCallCount == 0)
         #expect(ActorStaticServiceMock.lookupCallArguments == [])
         #expect(ActorStaticServiceMock.lookupHandler == nil)

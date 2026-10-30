@@ -44,7 +44,7 @@ struct TypeAliasMacroTests {
                     updateCallArguments = []
                     updateHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -90,7 +90,7 @@ struct TypeAliasMacroTests {
                     registerCallArguments = []
                     registerHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -118,7 +118,7 @@ struct TypeAliasMacroTests {
                 typealias Value = [String: Any]
                 func resetMock() {
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -163,7 +163,7 @@ struct TypeAliasMacroTests {
                     didUpdateCallArguments = []
                     didUpdateHandler = nil
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             #endif

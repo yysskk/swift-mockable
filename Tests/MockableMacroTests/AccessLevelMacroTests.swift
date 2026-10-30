@@ -43,7 +43,7 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -87,7 +87,7 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             #endif
@@ -131,7 +131,7 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                package class func resetMock() {
+                package class func resetStaticMock() {
                 }
             }
             #endif
@@ -168,7 +168,7 @@ struct AccessLevelMacroTests {
                 func resetMock() {
                     _apiKey = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -207,7 +207,7 @@ struct AccessLevelMacroTests {
                 open func resetMock() {
                     _apiKey = nil
                 }
-                open class func resetMock() {
+                open class func resetStaticMock() {
                 }
             }
             #endif
@@ -253,7 +253,7 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                fileprivate class func resetMock() {
+                fileprivate class func resetStaticMock() {
                 }
             }
             #endif
@@ -299,7 +299,7 @@ struct AccessLevelMacroTests {
                     fetchCallCount = 0
                     fetchHandler = nil
                 }
-                fileprivate class func resetMock() {
+                fileprivate class func resetStaticMock() {
                 }
             }
             #endif

@@ -4,8 +4,14 @@
 /// naming scheme easy to audit or change in one place. The values are pinned by
 /// the macro-expansion tests, so any change here is reflected across every mock.
 enum MockNaming {
-    /// The generated reset method name (`resetMock`).
+    /// The generated reset method name (`resetMock`), which clears an instance's state.
     static let resetMethodName = "resetMock"
+
+    /// The generated type-level reset method name (`resetStaticMock`), which clears the
+    /// state of `static` requirements that every instance shares. Named apart from
+    /// ``resetMethodName`` because it resets something else: an instance's
+    /// `resetMock()` leaves shared state alone.
+    static let staticResetMethodName = "resetStaticMock"
 
     /// The instance-level lock-backed storage property name (`_storage`).
     static let instanceStorageName = "_storage"

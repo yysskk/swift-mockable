@@ -89,7 +89,7 @@ struct GlobalActorMacroTests {
                         storage.saveHandler = nil
                     }
                 }
-                nonisolated class func resetMock() {
+                nonisolated class func resetStaticMock() {
                 }
             }
             #endif
@@ -132,7 +132,7 @@ struct GlobalActorMacroTests {
                     saveCallCount = 0
                     saveHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -199,8 +199,8 @@ struct GlobalActorMacroTests {
                         storage.trackHandler = nil
                     }
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif

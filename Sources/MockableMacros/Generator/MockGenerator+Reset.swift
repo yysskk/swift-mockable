@@ -43,7 +43,7 @@ extension MockGenerator {
     /// Generates the instance `resetMock()`, which clears every instance requirement's
     /// call count, captured arguments, handler, and stored property back to its initial
     /// state. Type state is shared by every instance and is cleared by the type-level
-    /// ``generateTypeResetMethod()`` instead. The lock-backed variant (for
+    /// ``generateTypeResetMethod()`` (`resetStaticMock()`) instead. The lock-backed variant (for
     /// `Sendable`/actor mocks) resets inside `withLock`; both variants call
     /// `super.resetMock()` first when the mock inherits from a parent mock.
     func generateResetMethod() -> FunctionDeclSyntax {
@@ -123,25 +123,29 @@ extension MockGenerator {
         return makeResetMethod(additionalModifiers: additionalModifiers, statements: statements)
     }
 
-    /// Generates the type-level `resetMock()`, which clears every `static` requirement's
-    /// tracking state. Type state is shared by every instance, so clearing it from an
-    /// instance would be a side effect on every other instance and on every test that
-    /// shares the mock type; it is cleared through the type instead:
-    /// `ServiceMock.resetMock()`.
+    /// Generates the type-level `resetStaticMock()`, which clears the tracking state of
+    /// `static` requirements — shared by every instance, so no instance's `resetMock()`
+    /// touches it: `ServiceMock.resetStaticMock()`. Returns `nil` where the method would
+    /// have nothing to do.
     ///
-    /// Every mock declares it, with an empty body when the protocol has no `static`
-    /// requirement, so that a child mock can override its parent's and chain to it
-    /// without the macro knowing whether the parent protocol declares any: a class
-    /// mock's is a `class` method, and a child mock's overrides it and calls
-    /// `super.resetMock()` first. An actor mock, which cannot be subclassed, declares a
-    /// `static` method. The static slots are lock-backed even in a mock whose instance
-    /// state is not, and are cleared in one acquisition rather than one per slot: a
-    /// caller recording a call concurrently would otherwise see a half-reset mock.
-    func generateTypeResetMethod() -> FunctionDeclSyntax {
+    /// A class mock always declares it, with an empty body when the protocol has no
+    /// `static` requirement: a child mock overrides its parent's and calls
+    /// `super.resetStaticMock()` first, and the macro, which sees one protocol at a time,
+    /// cannot tell whether a parent or child protocol declares `static` requirements of
+    /// its own. An actor mock cannot take part in inheritance, so it declares a `static`
+    /// method only when the protocol has `static` requirements. The static slots are
+    /// lock-backed even in a mock whose instance state is not, and are cleared in one
+    /// acquisition rather than one per slot: a caller recording a call concurrently
+    /// would otherwise see a half-reset mock.
+    func generateTypeResetMethod() -> FunctionDeclSyntax? {
+        if shape.isActor && !hasTypeMembers {
+            return nil
+        }
+
         var statements: [CodeBlockItemSyntax] = []
         if shape.subclassesParentMock {
             statements.append(
-                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.resetMethodName)()")))
+                CodeBlockItemSyntax(item: .expr(ExprSyntax(stringLiteral: "super.\(MockNaming.staticResetMethodName)()")))
             )
         }
         let staticResetLines = resetLines(for: .type)
@@ -166,13 +170,18 @@ extension MockGenerator {
         }
         additionalModifiers.append(DeclModifierSyntax(name: .keyword(shape.isActor ? .static : .class)))
 
-        return makeResetMethod(additionalModifiers: additionalModifiers, statements: statements)
+        return makeResetMethod(
+            named: MockNaming.staticResetMethodName,
+            additionalModifiers: additionalModifiers,
+            statements: statements
+        )
     }
 
-    /// Builds a `resetMock()` declaration with the given modifiers and body. The
+    /// Builds a reset method declaration with the given name, modifiers, and body. The
     /// method is overridable from other modules wherever the mock type can be
     /// subclassed there.
     private func makeResetMethod(
+        named name: String = MockNaming.resetMethodName,
         additionalModifiers: [DeclModifierSyntax],
         statements: [CodeBlockItemSyntax]
     ) -> FunctionDeclSyntax {
@@ -181,7 +190,7 @@ extension MockGenerator {
                 for: shape.canBeSubclassedOutsideModule ? .overridableMember : .member,
                 additional: additionalModifiers
             ),
-            name: .identifier(MockNaming.resetMethodName),
+            name: .identifier(name),
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     leftParen: .leftParenToken(),

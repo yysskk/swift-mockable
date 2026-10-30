@@ -42,7 +42,7 @@ struct GenericMacroTests {
                     getCallArguments = []
                     getHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -82,7 +82,7 @@ struct GenericMacroTests {
                     saveCallArguments = []
                     saveHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -138,7 +138,7 @@ struct GenericMacroTests {
                     setCallArguments = []
                     setHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -194,7 +194,7 @@ struct GenericMacroTests {
                     setIntegerCallArguments = []
                     setIntegerHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -235,7 +235,7 @@ struct GenericMacroTests {
                     getCallArguments = []
                     getHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -276,7 +276,7 @@ struct GenericMacroTests {
                     rewrapCallArguments = []
                     rewrapHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -316,7 +316,7 @@ struct GenericMacroTests {
                     storeCallArguments = []
                     storeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -357,7 +357,7 @@ struct GenericMacroTests {
                     firstElementCallArguments = []
                     firstElementHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -398,7 +398,7 @@ struct GenericMacroTests {
                     decodeCallArguments = []
                     decodeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -439,7 +439,7 @@ struct GenericMacroTests {
                     pairCallArguments = []
                     pairHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -480,7 +480,7 @@ struct GenericMacroTests {
                     getCallArguments = []
                     getHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -550,7 +550,7 @@ struct GenericMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -590,7 +590,7 @@ struct GenericMacroTests {
                     loadCallArguments = []
                     loadHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -661,7 +661,7 @@ struct GenericMacroTests {
                     transformCallArguments = []
                     transformHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -702,7 +702,7 @@ struct GenericMacroTests {
                     indexCallArguments = []
                     indexHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -743,7 +743,7 @@ struct GenericMacroTests {
                     lookupCallArguments = []
                     lookupHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -783,7 +783,7 @@ struct GenericMacroTests {
                     storeCallArguments = []
                     storeHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -824,7 +824,7 @@ struct GenericMacroTests {
                     getCallArguments = []
                     getHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

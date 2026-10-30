@@ -56,7 +56,7 @@ struct MainActorMacroTests {
                     loadDataHandler = nil
                     _title = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -100,7 +100,7 @@ struct MainActorMacroTests {
                     fetchItemsCallCount = 0
                     fetchItemsHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -188,7 +188,7 @@ struct MainActorMacroTests {
                         storage.trackHandler = nil
                     }
                 }
-                nonisolated class func resetMock() {
+                nonisolated class func resetStaticMock() {
                 }
             }
             #endif
@@ -295,8 +295,8 @@ struct MainActorMacroTests {
                         storage.loadHandler = nil
                     }
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                     Self._staticStorage.withLock { storage in
                         storage.makeCallCount = 0
                         storage.makeHandler = nil
@@ -369,8 +369,8 @@ struct MainActorMacroTests {
                         storage.trackHandler = nil
                     }
                 }
-                override class func resetMock() {
-                    super.resetMock()
+                override class func resetStaticMock() {
+                    super.resetStaticMock()
                 }
             }
             #endif
@@ -478,7 +478,7 @@ struct MainActorMacroTests {
                         storage.loadHandler = nil
                     }
                 }
-                nonisolated class func resetMock() {
+                nonisolated class func resetStaticMock() {
                 }
             }
             #endif

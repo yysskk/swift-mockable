@@ -75,7 +75,7 @@ struct TrackingIdentifierCollisionMacroTests {
                     loadItemCallCount = 0
                     loadItemHandler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -217,7 +217,7 @@ struct TrackingIdentifierCollisionMacroTests {
                         storage.loadItemHandler = nil
                     }
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif
@@ -274,7 +274,7 @@ struct TrackingIdentifierCollisionMacroTests {
                     subscriptString2CallArguments = []
                     subscriptString2Handler = nil
                 }
-                class func resetMock() {
+                class func resetStaticMock() {
                 }
             }
             #endif

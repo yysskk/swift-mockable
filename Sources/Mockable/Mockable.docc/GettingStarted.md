@@ -91,5 +91,5 @@ For each protocol requirement, `@Mockable` generates:
 
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-ops when handler is `nil`.
-- `resetMock()` clears an instance's handlers, call counts, call arguments, and stored properties; `<Protocol>Mock.resetMock()` clears `static` state.
+- `resetMock()` clears an instance's handlers, call counts, call arguments, and stored properties; `<Protocol>Mock.resetStaticMock()` clears `static` state.
 - For inherited protocols, `resetMock()` calls `super.resetMock()` before resetting child members.

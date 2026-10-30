@@ -63,7 +63,7 @@ struct CallHistoryAccessTests {
 
     @Test("A requirement without arguments records its calls in the call count alone")
     func requirementWithoutArguments() {
-        HeartbeatServiceMock.resetMock()
+        HeartbeatServiceMock.resetStaticMock()
         let mock = HeartbeatServiceMock()
 
         HeartbeatServiceMock.ping()
@@ -73,7 +73,7 @@ struct CallHistoryAccessTests {
         #expect(HeartbeatServiceMock.pingCallCount == 2)
         #expect(mock.beatCallArguments == [3])
 
-        HeartbeatServiceMock.resetMock()
+        HeartbeatServiceMock.resetStaticMock()
 
         #expect(HeartbeatServiceMock.pingCallCount == 0)
     }

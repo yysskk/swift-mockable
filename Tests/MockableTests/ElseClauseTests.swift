@@ -39,14 +39,14 @@ public protocol ElseClauseInitService {
 struct ElseClauseTests {
     @Test("A static requirement declared in an #else clause records calls")
     func staticRequirementRecordsCalls() {
-        ElseClauseStaticServiceMock.resetMock()
+        ElseClauseStaticServiceMock.resetStaticMock()
 
         ElseClauseStaticServiceMock.makeValueHandler = { 42 }
 
         #expect(ElseClauseStaticServiceMock.makeValue() == 42)
         #expect(ElseClauseStaticServiceMock.makeValueCallCount == 1)
 
-        ElseClauseStaticServiceMock.resetMock()
+        ElseClauseStaticServiceMock.resetStaticMock()
         #expect(ElseClauseStaticServiceMock.makeValueCallCount == 0)
         #expect(ElseClauseStaticServiceMock.makeValueHandler == nil)
     }
