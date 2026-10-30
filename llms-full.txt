@@ -602,7 +602,7 @@ Protocols annotated with `@MainActor` or a custom global actor (`@DataActor`, `@
 - Return-value methods and get-only subscripts return a default when their handler is not set if the return type has one: Optionals return `nil`, arrays and sets return an empty collection, and dictionaries return an empty dictionary. Any other return type calls `fatalError`.
 - Void-return methods and subscript setters are no-ops when handler is `nil`.
 - `resetMock()` clears an instance's handlers, call counts, call arguments, and stored properties; `<Protocol>Mock.resetStaticMock()` clears the `static` state.
-- For inherited protocols, both `resetMock()` methods call `super.resetMock()` before resetting child members.
+- For inherited protocols, `resetMock()` calls `super.resetMock()` and `resetStaticMock()` calls `super.resetStaticMock()` before resetting child members.
 
 ## Diagnostics and Limitations
 
