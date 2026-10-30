@@ -13,11 +13,11 @@ private protocol LockBox<Value>: Sendable {
     func withLock<Result>(_ body: (inout sending Value) throws -> sending Result) rethrows -> sending Result
 }
 
-/// A thread-safe lock wrapper for platforms without the Synchronization module.
-/// Provides the same `withLock` API as `Mutex` for API compatibility.
+/// `NSLock` behind the `LockBox` protocol, for deployment targets where `Mutex` is
+/// unavailable: iOS 17 and earlier, and the matching versions of the other platforms.
 ///
-/// This type is used on iOS 17 and earlier, while `Mutex` is used on iOS 18+.
-final class LegacyLock<Value>: @unchecked Sendable {
+/// Named, like `MutexLockBox`, after the primitive it wraps.
+final class NSLockBox<Value>: @unchecked Sendable {
     private var _value: Value
     private let _lock = NSLock()
 
@@ -33,7 +33,7 @@ final class LegacyLock<Value>: @unchecked Sendable {
     }
 }
 
-extension LegacyLock: LockBox {}
+extension NSLockBox: LockBox {}
 
 #if canImport(Synchronization)
 /// `Mutex` behind the `LockBox` protocol. A wrapper rather than a conformance of
@@ -55,7 +55,7 @@ private final class MutexLockBox<Value>: LockBox, @unchecked Sendable {
 #endif
 
 /// A best-available lock wrapper that prefers `Mutex` on supported OS versions
-/// and falls back to `LegacyLock` on older deployment targets.
+/// and falls back to `NSLockBox` on older deployment targets.
 ///
 /// `MockableLock` is used in generated mocks for `Sendable` protocols to provide
 /// thread-safe access to mutable state.
@@ -77,10 +77,10 @@ public final class MockableLock<Value>: @unchecked Sendable {
         if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             self._box = MutexLockBox(initialValue)
         } else {
-            self._box = LegacyLock(initialValue)
+            self._box = NSLockBox(initialValue)
         }
         #else
-        self._box = LegacyLock(initialValue)
+        self._box = NSLockBox(initialValue)
         #endif
     }
 

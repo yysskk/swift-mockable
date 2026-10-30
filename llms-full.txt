@@ -578,7 +578,7 @@ protocol ThreadSafeService: Sendable {
 
 Handlers are `@Sendable` closures on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements, where the mock shares them across isolation domains. A plain mock's handlers are ordinary closures, so a handler can capture and mutate a test's local state (`mock.logHandler = { messages.append($0) }`).
 
-`MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to `NSLock`-based `LegacyLock` on older OS versions.
+`MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to an `NSLock`-based lock on older OS versions.
 
 ### `Actor` Protocol Support
 
@@ -634,7 +634,7 @@ argument controls the `#if` guard around the generated mock.
 ### `MockCompilationCondition`
 
 ```swift
-public enum MockCompilationCondition: Equatable, Sendable, ExpressibleByStringLiteral {
+public enum MockCompilationCondition: Sendable, ExpressibleByStringLiteral {
     case debug            // #if DEBUG (default)
     case always           // no #if guard
     case custom(String)   // #if <expression>; a string literal is this case

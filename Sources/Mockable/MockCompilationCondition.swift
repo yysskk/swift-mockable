@@ -20,7 +20,7 @@
 /// condition. The condition must be written literally at the attachment site
 /// (`.debug`, `.always`, or a string literal, also spelled `.custom("FLAG")`) — the
 /// macro expands at compile time and cannot read runtime values.
-public enum MockCompilationCondition: Equatable, Sendable {
+public enum MockCompilationCondition: Sendable {
     /// Wraps the generated mock in `#if DEBUG`. This is the default.
     case debug
 
