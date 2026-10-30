@@ -28,7 +28,7 @@ struct NonEscapingClosureMacroTests {
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable (() -> Void) -> Void)? = nil
+                var runHandler: ((() -> Void) -> Void)? = nil
                 func run(_ body: () -> Void) {
                     runCallCount += 1
                     runCallArguments.append(())
@@ -68,7 +68,7 @@ struct NonEscapingClosureMacroTests {
             class ExecutorMock: Executor {
                 var runCallCount: Int = 0
                 var runCallArguments: [String] = []
-                var runHandler: (@Sendable (String, () -> Void) -> Int)? = nil
+                var runHandler: ((String, () -> Void) -> Int)? = nil
                 func run(label: String, _ body: () -> Void) -> Int {
                     runCallCount += 1
                     runCallArguments.append(label)
@@ -109,7 +109,7 @@ struct NonEscapingClosureMacroTests {
             class SubscriberMock: Subscriber {
                 var subscribeCallCount: Int = 0
                 var subscribeCallArguments: [(Int) -> Void] = []
-                var subscribeHandler: (@Sendable ((Int) -> Void) -> Void)? = nil
+                var subscribeHandler: (((Int) -> Void) -> Void)? = nil
                 func subscribe(_ handler: @escaping (Int) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArguments.append(handler)

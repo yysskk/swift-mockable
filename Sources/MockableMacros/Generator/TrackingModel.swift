@@ -71,18 +71,26 @@ struct TrackingRequirement {
     let kind: Kind
     /// The tuple element type of the `CallArguments` array; `nil` for properties.
     let callArgumentsTupleType: TypeSyntax?
-    /// The type of the `<name>Handler` slot, an optional `@Sendable` closure such as
-    /// `(@Sendable (Int) async throws -> String)?`; `nil` for initializers and
+    /// The type of the `<name>Handler` slot, an optional closure such as
+    /// `((Int) async throws -> String)?` — `@Sendable` when the mock's state requires
+    /// it (see `MockGenerator.handlersAreSendable(in:)`); `nil` for initializers and
     /// stored properties, which have no handler.
     let handlerType: TypeSyntax?
     /// The type of the `<name>SetHandler` slot of a get-set subscript.
     let setHandlerType: TypeSyntax?
 
-    /// The handler slot's type for a closure type: the closure made `@Sendable`, so a
-    /// test can install it on a mock shared across tasks, and optional, since it is
-    /// unset until the test installs one.
-    static func handlerType(forClosure closureType: String) -> TypeSyntax {
-        TypeSyntax(stringLiteral: "(@Sendable \(closureType))?")
+    /// The handler slot's type for a closure type: optional, since it is unset until
+    /// the test installs one, and `@Sendable` when `isSendable` is set, so the closure
+    /// can be stored in state that is shared across isolation domains.
+    static func handlerType(forClosure closureType: String, isSendable: Bool) -> TypeSyntax {
+        TypeSyntax(stringLiteral: isSendable ? "(@Sendable \(closureType))?" : "(\(closureType))?")
+    }
+
+    /// The handler type assumed for a requirement that unexpectedly has none. Every
+    /// kind that declares a handler slot also computes its type, so this is never
+    /// emitted in practice.
+    static var fallbackHandlerType: TypeSyntax {
+        handlerType(forClosure: "() -> Void", isSendable: true)
     }
 
     /// The requirement's stored tracking slots, in emission order. This order is
@@ -126,12 +134,12 @@ struct TrackingRequirement {
         )
     }
 
-    /// The `<name>Handler` slot, an optional `@Sendable` closure.
+    /// The `<name>Handler` slot, an optional closure.
     private var handlerField: TrackingField {
         TrackingField(
             role: .handler,
             name: MockNaming.handler(identifier),
-            type: handlerType ?? Self.handlerType(forClosure: "() -> Void"),
+            type: handlerType ?? Self.fallbackHandlerType,
             initialValue: ExprSyntax(NilLiteralExprSyntax())
         )
     }
@@ -141,7 +149,7 @@ struct TrackingRequirement {
         TrackingField(
             role: .setHandler,
             name: MockNaming.setHandler(identifier),
-            type: setHandlerType ?? Self.handlerType(forClosure: "() -> Void"),
+            type: setHandlerType ?? Self.fallbackHandlerType,
             initialValue: ExprSyntax(NilLiteralExprSyntax())
         )
     }
@@ -322,13 +330,16 @@ extension MockGenerator {
             leavesMockIsolation: leavesMockIsolation,
             kind: .function,
             callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-            handlerType: TrackingRequirement.handlerType(forClosure: buildFunctionClosureType(
-                parameters: parameters,
-                returnType: funcDecl.signature.returnClause?.type,
-                isAsync: isAsync,
-                isThrows: handlerThrows,
-                genericParamNames: genericParamNames
-            )),
+            handlerType: TrackingRequirement.handlerType(
+                forClosure: buildFunctionClosureType(
+                    parameters: parameters,
+                    returnType: funcDecl.signature.returnClause?.type,
+                    isAsync: isAsync,
+                    isThrows: handlerThrows,
+                    genericParamNames: genericParamNames
+                ),
+                isSendable: handlersAreSendable(in: scope)
+            ),
             setHandlerType: nil
         )
     }
@@ -355,10 +366,13 @@ extension MockGenerator {
                 leavesMockIsolation: leavesMockIsolation,
                 kind: .effectfulVariable(varType: varType),
                 callArgumentsTupleType: nil,
-                handlerType: TrackingRequirement.handlerType(forClosure: Self.effectfulGetterClosureType(
-                    varType: varType,
-                    effects: effectfulGetter.effectSpecifiers
-                )),
+                handlerType: TrackingRequirement.handlerType(
+                    forClosure: Self.effectfulGetterClosureType(
+                        varType: varType,
+                        effects: effectfulGetter.effectSpecifiers
+                    ),
+                    isSendable: handlersAreSendable(in: scope)
+                ),
                 setHandlerType: nil
             )
         }
@@ -401,17 +415,23 @@ extension MockGenerator {
             leavesMockIsolation: leavesMockIsolation,
             kind: .subscriptRequirement(isGetOnly: isGetOnly),
             callArgumentsTupleType: Self.buildCallArgumentsTupleType(parameters: parameters, genericParamNames: genericParamNames),
-            handlerType: TrackingRequirement.handlerType(forClosure: buildSubscriptGetterClosureType(
-                parameters: parameters,
-                returnType: returnType,
-                genericParamNames: genericParamNames,
-                effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
-            )),
-            setHandlerType: isGetOnly ? nil : TrackingRequirement.handlerType(forClosure: buildSubscriptSetterClosureType(
-                parameters: parameters,
-                returnType: returnType,
-                genericParamNames: genericParamNames
-            ))
+            handlerType: TrackingRequirement.handlerType(
+                forClosure: buildSubscriptGetterClosureType(
+                    parameters: parameters,
+                    returnType: returnType,
+                    genericParamNames: genericParamNames,
+                    effects: Self.effectfulSubscriptGetter(subscriptDecl)?.effectSpecifiers
+                ),
+                isSendable: handlersAreSendable(in: .instance)
+            ),
+            setHandlerType: isGetOnly ? nil : TrackingRequirement.handlerType(
+                forClosure: buildSubscriptSetterClosureType(
+                    parameters: parameters,
+                    returnType: returnType,
+                    genericParamNames: genericParamNames
+                ),
+                isSendable: handlersAreSendable(in: .instance)
+            )
         )
     }
 }

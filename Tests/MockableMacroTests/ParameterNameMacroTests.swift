@@ -34,7 +34,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var handleCallCount: Int = 0
                 var handleCallArguments: [Int] = []
-                var handleHandler: (@Sendable (Int) -> Int)? = nil
+                var handleHandler: ((Int) -> Int)? = nil
                 func handle(_ param0: Int) -> Int {
                     handleCallCount += 1
                     handleCallArguments.append(param0)
@@ -75,7 +75,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var pairCallCount: Int = 0
                 var pairCallArguments: [(param0: Int, param1: String)] = []
-                var pairHandler: (@Sendable (Int, String) -> Void)? = nil
+                var pairHandler: ((Int, String) -> Void)? = nil
                 func pair(_ param0: Int, _ param1: String) {
                     pairCallCount += 1
                     pairCallArguments.append((param0: param0, param1: param1))
@@ -115,7 +115,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var takeCallCount: Int = 0
                 var takeCallArguments: [(param0_: Int, param0: String)] = []
-                var takeHandler: (@Sendable (Int, String) -> Void)? = nil
+                var takeHandler: ((Int, String) -> Void)? = nil
                 func take(_ param0_: Int, param0: String) {
                     takeCallCount += 1
                     takeCallArguments.append((param0_: param0_, param0: param0))
@@ -155,7 +155,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var valueCallCount: Int = 0
                 var valueCallArguments: [Int] = []
-                var valueHandler: (@Sendable (Int) -> Int)? = nil
+                var valueHandler: ((Int) -> Int)? = nil
                 func value(`for`: Int) -> Int {
                     valueCallCount += 1
                     valueCallArguments.append(`for`)
@@ -196,7 +196,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var logCallCount: Int = 0
                 var logCallArguments: [(for: Int, in: String)] = []
-                var logHandler: (@Sendable (Int, String) -> Void)? = nil
+                var logHandler: ((Int, String) -> Void)? = nil
                 func log(`for`: Int, `in`: String) {
                     logCallCount += 1
                     logCallArguments.append((for: `for`, in: `in`))
@@ -322,7 +322,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var runCallCount: Int = 0
                 var runCallArguments: [Int] = []
-                var runHandler: (@Sendable (Int) -> Void)? = nil
+                var runHandler: ((Int) -> Void)? = nil
                 func run(_handler: Int) {
                     runCallCount += 1
                     runCallArguments.append(_handler)
@@ -362,7 +362,7 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [Int] = []
-                var fetchHandler: (@Sendable (Int) -> Void)? = nil
+                var fetchHandler: ((Int) -> Void)? = nil
                 func fetch(fetchCallCount: Int) {
                     self.fetchCallCount += 1
                     self.fetchCallArguments.append(fetchCallCount)
@@ -486,8 +486,8 @@ struct ParameterNameMacroTests {
             class ServiceMock: Service {
                 var subscriptIntCallCount: Int = 0
                 var subscriptIntCallArguments: [Int] = []
-                var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
-                var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
+                var subscriptIntHandler: ((Int) -> String )? = nil
+                var subscriptIntSetHandler: ((Int, String ) -> Void)? = nil
                 subscript(newValue: Int) -> String {
                     get {
                         subscriptIntCallCount += 1

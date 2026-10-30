@@ -255,7 +255,7 @@ error as the declared type:
 protocol Loader {
     func load(id: Int) throws(LoadError) -> String
 }
-// generates: var loadHandler: (@Sendable (Int) throws -> String)? = nil
+// generates: var loadHandler: ((Int) throws -> String)? = nil
 //            do { return try _handler(id) } catch { throw error as! LoadError }
 
 let mock = LoaderMock()
@@ -278,7 +278,7 @@ non-throwing — a non-throwing handler, called without `try`:
 protocol Loader {
     func load(id: Int) throws(Never) -> String
 }
-// generates: var loadHandler: (@Sendable (Int) -> String)? = nil
+// generates: var loadHandler: ((Int) -> String)? = nil
 //            return _handler(id)
 
 let value = LoaderMock().load(id: 1)   // no `try` needed
@@ -436,7 +436,7 @@ A generic parameter nested in a collection is erased in place, so the erased typ
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
 // var transformCallArguments: [[String: Any]] = []
-// var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+// var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
 A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]` becomes `Any`), because `Any` is not `Hashable`.
@@ -575,6 +575,8 @@ protocol ThreadSafeService: Sendable {
 }
 // ThreadSafeServiceMock is @unchecked Sendable with lock-protected state
 ```
+
+Handlers are `@Sendable` closures on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements, where the mock shares them across isolation domains. A plain mock's handlers are ordinary closures, so a handler can capture and mutate a test's local state (`mock.logHandler = { messages.append($0) }`).
 
 `MockableLock` uses `Mutex` (from `Synchronization`) on iOS 18.0+ / macOS 15.0+ / tvOS 18.0+ / watchOS 11.0+, and falls back to `NSLock`-based `LegacyLock` on older OS versions.
 

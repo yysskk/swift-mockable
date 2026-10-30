@@ -28,7 +28,7 @@ struct InheritanceMacroTests {
             class ChildMock: BaseMock, Child {
                 var childMethodCallCount: Int = 0
                 var childMethodCallArguments: [()] = []
-                var childMethodHandler: (@Sendable () -> Void)? = nil
+                var childMethodHandler: (() -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
                     childMethodCallArguments.append(())
@@ -70,7 +70,7 @@ struct InheritanceMacroTests {
             class MyProtocolMock: MyProtocol {
                 var doSomethingCallCount: Int = 0
                 var doSomethingCallArguments: [()] = []
-                var doSomethingHandler: (@Sendable () -> Void)? = nil
+                var doSomethingHandler: (() -> Void)? = nil
                 func doSomething() {
                     doSomethingCallCount += 1
                     doSomethingCallArguments.append(())
@@ -110,7 +110,7 @@ struct InheritanceMacroTests {
             class ChildMock: ParentAMock, Child {
                 var childMethodCallCount: Int = 0
                 var childMethodCallArguments: [()] = []
-                var childMethodHandler: (@Sendable () -> Void)? = nil
+                var childMethodHandler: (() -> Void)? = nil
                 func childMethod() {
                     childMethodCallCount += 1
                     childMethodCallArguments.append(())
@@ -152,7 +152,7 @@ struct InheritanceMacroTests {
             class ChildServiceMock: BaseServiceMock, ChildService {
                 var fetchChildCallCount: Int = 0
                 var fetchChildCallArguments: [Int] = []
-                var fetchChildHandler: (@Sendable (Int) -> String)? = nil
+                var fetchChildHandler: ((Int) -> String)? = nil
                 func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
                     fetchChildCallArguments.append(id)
@@ -195,7 +195,7 @@ struct InheritanceMacroTests {
             open class ChildServiceMock: BaseServiceMock, ChildService {
                 public var fetchChildCallCount: Int = 0
                 public var fetchChildCallArguments: [Int] = []
-                public var fetchChildHandler: (@Sendable (Int) -> String)? = nil
+                public var fetchChildHandler: ((Int) -> String)? = nil
                 public func fetchChild(id: Int) -> String {
                     fetchChildCallCount += 1
                     fetchChildCallArguments.append(id)
@@ -325,7 +325,7 @@ struct InheritanceMacroTests {
             class ChildMock: SendableBaseMock, Child {
                 var childMethodCallCount: Int = 0
                 var childMethodCallArguments: [()] = []
-                var childMethodHandler: (@Sendable () -> Int)? = nil
+                var childMethodHandler: (() -> Int)? = nil
                 func childMethod() -> Int {
                     childMethodCallCount += 1
                     childMethodCallArguments.append(())

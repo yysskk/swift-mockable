@@ -27,7 +27,7 @@ struct EffectfulAccessorMacroTests {
             #if DEBUG
             class TokenProviderMock: TokenProvider {
                 var tokenCallCount: Int = 0
-                var tokenHandler: (@Sendable () async throws -> String)? = nil
+                var tokenHandler: (() async throws -> String)? = nil
                 var token: String {
                     get async throws {
                         tokenCallCount += 1
@@ -67,7 +67,7 @@ struct EffectfulAccessorMacroTests {
             #if DEBUG
             class ConfigProviderMock: ConfigProvider {
                 var maxRetryCountCallCount: Int = 0
-                var maxRetryCountHandler: (@Sendable () throws -> Int)? = nil
+                var maxRetryCountHandler: (() throws -> Int)? = nil
                 var maxRetryCount: Int {
                     get throws {
                         maxRetryCountCallCount += 1
@@ -107,7 +107,7 @@ struct EffectfulAccessorMacroTests {
             #if DEBUG
             class CacheProviderMock: CacheProvider {
                 var cachedValueCallCount: Int = 0
-                var cachedValueHandler: (@Sendable () async -> String?)? = nil
+                var cachedValueHandler: (() async -> String?)? = nil
                 var cachedValue: String? {
                     get async {
                         cachedValueCallCount += 1

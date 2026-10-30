@@ -102,7 +102,7 @@ protocol Calculator {
     func add(a: Int, b: Int) -> Int
 }
 
-// var addHandler: (@Sendable (Int, Int) -> Int)? = nil
+// var addHandler: ((Int, Int) -> Int)? = nil
 mock.addHandler = { a, b in a + b }
 ```
 
@@ -110,6 +110,7 @@ Notes:
 
 - This applies to methods and subscripts alike (subscript getter `(Int, Int) -> V`, setter `(Int, Int, V) -> Void`).
 - Zero- and single-parameter members pass their argument directly.
+- Handlers are ordinary closures on a plain mock, so they can capture and mutate a test's local state. They are `@Sendable` on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements, where the mock shares them across isolation domains.
 - `<name>CallArguments` is a labeled tuple array (e.g. `[(a: Int, b: Int)]`) — the call history keeps parameter labels even though the handler takes individual parameters.
 - A parameter the mock cannot name after — a wildcard (`func handle(_: Event)`) — is recorded under a positional label (`param0`, `param1`), and a parameter named with a keyword keeps its own name (`mock.logCallArguments[0].for`). Argument labels, and therefore call sites, are unchanged.
 

@@ -127,7 +127,7 @@ its shape (`[T]` becomes `[Any]`, `[String: T]` becomes `[String: Any]`):
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
 // var transformCallArguments: [[String: Any]] = []
-// var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+// var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
 A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]`
@@ -213,7 +213,7 @@ Generates:
 
 ```swift
 var logCallArguments: [String] = []
-var logHandler: (@Sendable (String) -> Void)? = nil
+var logHandler: ((String) -> Void)? = nil
 ```
 
 Notes:
@@ -240,7 +240,7 @@ Generates:
 
 ```swift
 var runCallArguments: [String] = []                         // only the storable `label`
-var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
+var runHandler: ((String, () -> Void) -> Void)? = nil
 ```
 
 Escaping (`@escaping`), optional, and variadic closures are storable and remain
@@ -256,7 +256,7 @@ that receives those closures:
 ```swift
 func run(_ body: () throws -> Void) rethrows
 // generates:
-// var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
+// var runHandler: ((() throws -> Void) -> Void)? = nil
 // func run(_ body: () throws -> Void) rethrows { ... _handler(body) ... }
 ```
 
@@ -274,7 +274,7 @@ error as the requirement's type:
 ```swift
 func load(id: Int) throws(LoadError) -> String
 // generates:
-// var loadHandler: (@Sendable (Int) throws -> String)? = nil
+// var loadHandler: ((Int) throws -> String)? = nil
 // func load(id: Int) throws(LoadError) -> String {
 //     ...
 //     do { return try _handler(id) } catch { throw error as! LoadError }
@@ -328,7 +328,7 @@ without `try`:
 ```swift
 func load(id: Int) throws(Never) -> String
 // generates:
-// var loadHandler: (@Sendable (Int) -> String)? = nil
+// var loadHandler: ((Int) -> String)? = nil
 // func load(id: Int) throws(Never) -> String { ... return _handler(id) }
 
 let value = mock.load(id: 1)  // no `try` needed
@@ -396,7 +396,7 @@ Generates:
 
 ```swift
 var tokenCallCount: Int = 0
-var tokenHandler: (@Sendable () async throws -> String)? = nil
+var tokenHandler: (() async throws -> String)? = nil
 var token: String {
     get async throws { ... }
 }
@@ -418,7 +418,7 @@ Read-only subscripts with the same effects work identically:
 ```swift
 subscript(key: String) -> Int { get async throws }
 // generates:
-// var subscriptStringHandler: (@Sendable (String) async throws -> Int)? = nil
+// var subscriptStringHandler: ((String) async throws -> Int)? = nil
 // subscript(key: String) -> Int { get async throws { ... } }
 ```
 
@@ -481,6 +481,18 @@ If a protocol inherits from `Sendable` (or uses `@Sendable` at protocol level), 
 
 - conform to `@unchecked Sendable`
 - store mutable state behind `MockableLock`
+- declare their handlers as `@Sendable` closures
+
+Handlers are `@Sendable` wherever the mock shares them across isolation domains: on
+`Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements,
+whose state every instance shares. A plain mock owns its handlers like any other stored
+property, so they are ordinary closures there, and a handler can capture and mutate a
+test's local state:
+
+```swift
+var messages: [String] = []
+mock.logHandler = { messages.append($0) }
+```
 
 ### `Actor`
 

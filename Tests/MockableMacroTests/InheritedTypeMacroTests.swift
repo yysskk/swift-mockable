@@ -117,7 +117,7 @@ struct InheritedTypeMacroTests {
             class ServiceMock: Service {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable () -> Void)? = nil
+                var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
                     runCallArguments.append(())
@@ -248,7 +248,7 @@ struct InheritedTypeMacroTests {
             class TypeMock: `Type` {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable () -> Void)? = nil
+                var runHandler: (() -> Void)? = nil
                 func run() {
                     runCallCount += 1
                     runCallArguments.append(())

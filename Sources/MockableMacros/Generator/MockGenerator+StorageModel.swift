@@ -42,4 +42,21 @@ extension MockGenerator {
     func usesLockBasedStorage(for scope: MemberScope) -> Bool {
         usesInstanceStorageLock || scope == .type
     }
+
+    /// Whether the handlers of a member in `scope` are `@Sendable` closures.
+    ///
+    /// A handler has to be `@Sendable` only where the mock shares it across isolation
+    /// domains: lock-backed state, which any thread may read, and the state of a
+    /// global-actor-isolated mock, whose witnesses may call it from the actor while a
+    /// test installs it from elsewhere. A plain class mock owns its handlers like any
+    /// other stored property, so they stay ordinary closures there, and a test can
+    /// install one that captures local mutable state:
+    ///
+    /// ```swift
+    /// var messages: [String] = []
+    /// mock.logHandler = { messages.append($0) }
+    /// ```
+    func handlersAreSendable(in scope: MemberScope) -> Bool {
+        usesLockBasedStorage(for: scope) || shape.isGlobalActorIsolated
+    }
 }

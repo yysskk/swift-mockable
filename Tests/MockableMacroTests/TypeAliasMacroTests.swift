@@ -31,7 +31,7 @@ struct TypeAliasMacroTests {
                 typealias UpdateType = String
                 var updateCallCount: Int = 0
                 var updateCallArguments: [UpdateType] = []
-                var updateHandler: (@Sendable (UpdateType) -> Void)? = nil
+                var updateHandler: ((UpdateType) -> Void)? = nil
                 func update(type: UpdateType) {
                     updateCallCount += 1
                     updateCallArguments.append(type)
@@ -77,7 +77,7 @@ struct TypeAliasMacroTests {
                 typealias ID = Int
                 var registerCallCount: Int = 0
                 var registerCallArguments: [(id: ID, callback: Callback)] = []
-                var registerHandler: (@Sendable (ID, Callback) -> Void)? = nil
+                var registerHandler: ((ID, Callback) -> Void)? = nil
                 func register(id: ID, callback: @escaping Callback) {
                     registerCallCount += 1
                     registerCallArguments.append((id: id, callback: callback))
@@ -150,7 +150,7 @@ struct TypeAliasMacroTests {
                 }
                 public var didUpdateCallCount: Int = 0
                 public var didUpdateCallArguments: [TableViewUpdateType] = []
-                public var didUpdateHandler: (@Sendable (TableViewUpdateType) -> Void)? = nil
+                public var didUpdateHandler: ((TableViewUpdateType) -> Void)? = nil
                 public func didUpdate(type: TableViewUpdateType) {
                     didUpdateCallCount += 1
                     didUpdateCallArguments.append(type)

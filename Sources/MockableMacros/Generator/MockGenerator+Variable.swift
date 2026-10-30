@@ -130,7 +130,7 @@ extension MockGenerator {
         let binding = trackingAccess(for: scope).handlerBinding(
             identifier: varName,
             recordedArguments: nil,
-            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
+            handlerType: requirement.handlerType ?? TrackingRequirement.fallbackHandlerType,
             names: names
         )
 
