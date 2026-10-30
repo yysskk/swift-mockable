@@ -3,29 +3,29 @@ import Testing
 
 @testable import Mockable
 
-// MARK: - LegacyLock Unit Tests
+// MARK: - NSLockBox Unit Tests
 
-@Suite("LegacyLock Tests")
-struct LegacyLockTests {
-    @Test("LegacyLock can be instantiated with initial value")
+@Suite("NSLockBox Tests")
+struct NSLockBoxTests {
+    @Test("NSLockBox can be instantiated with initial value")
     func legacyLockCanBeInstantiated() {
-        let lock = LegacyLock(42)
+        let lock = NSLockBox(42)
         let result = lock.withLock { $0 }
         #expect(result == 42)
     }
 
-    @Test("LegacyLock withLock returns result")
+    @Test("NSLockBox withLock returns result")
     func legacyLockWithLockReturnsResult() {
-        let lock = LegacyLock("initial")
+        let lock = NSLockBox("initial")
         let result = lock.withLock { value -> String in
             value + " modified"
         }
         #expect(result == "initial modified")
     }
 
-    @Test("LegacyLock withLock can mutate value")
+    @Test("NSLockBox withLock can mutate value")
     func legacyLockWithLockCanMutateValue() {
-        let lock = LegacyLock(0)
+        let lock = NSLockBox(0)
 
         lock.withLock { value in
             value = 100
@@ -35,11 +35,11 @@ struct LegacyLockTests {
         #expect(result == 100)
     }
 
-    @Test("LegacyLock withLock can throw")
+    @Test("NSLockBox withLock can throw")
     func legacyLockWithLockCanThrow() {
         struct TestError: Error {}
 
-        let lock = LegacyLock("value")
+        let lock = NSLockBox("value")
 
         #expect(throws: TestError.self) {
             try lock.withLock { _ in
@@ -48,9 +48,9 @@ struct LegacyLockTests {
         }
     }
 
-    @Test("LegacyLock is thread-safe")
+    @Test("NSLockBox is thread-safe")
     func legacyLockIsThreadSafe() async {
-        let lock = LegacyLock(0)
+        let lock = NSLockBox(0)
 
         await withTaskGroup(of: Void.self) { group in
             for _ in 0..<1000 {
@@ -66,9 +66,9 @@ struct LegacyLockTests {
         #expect(result == 1000)
     }
 
-    @Test("LegacyLock is Sendable")
+    @Test("NSLockBox is Sendable")
     func legacyLockIsSendable() {
-        let lock = LegacyLock("test")
+        let lock = NSLockBox("test")
 
         func useSendable<T: Sendable>(_ value: T) -> T { value }
         let result = useSendable(lock)
@@ -77,14 +77,14 @@ struct LegacyLockTests {
         #expect(value == "test")
     }
 
-    @Test("LegacyLock with struct value")
+    @Test("NSLockBox with struct value")
     func legacyLockWithStructValue() {
         struct Counter {
             var count: Int = 0
             var name: String = ""
         }
 
-        let lock = LegacyLock(Counter())
+        let lock = NSLockBox(Counter())
 
         lock.withLock { counter in
             counter.count = 10
@@ -96,13 +96,13 @@ struct LegacyLockTests {
         #expect(result.name == "test")
     }
 
-    @Test("LegacyLock concurrent reads and writes")
+    @Test("NSLockBox concurrent reads and writes")
     func legacyLockConcurrentReadsAndWrites() async {
         struct Storage {
             var items: [Int] = []
         }
 
-        let lock = LegacyLock(Storage())
+        let lock = NSLockBox(Storage())
 
         await withTaskGroup(of: Void.self) { group in
             // Writers
@@ -127,9 +127,9 @@ struct LegacyLockTests {
         #expect(count == 100)
     }
 
-    @Test("LegacyLock discardable result")
+    @Test("NSLockBox discardable result")
     func legacyLockDiscardableResult() {
-        let lock = LegacyLock(0)
+        let lock = NSLockBox(0)
 
         // Should compile without warning due to @discardableResult
         lock.withLock { value in
