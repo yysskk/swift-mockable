@@ -28,7 +28,7 @@ struct RethrowsMacroTests {
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
+                var runHandler: ((() throws -> Void) -> Void)? = nil
                 func run(_ body: () throws -> Void) rethrows {
                     runCallCount += 1
                     runCallArguments.append(())
@@ -68,7 +68,7 @@ struct RethrowsMacroTests {
             class TransformerMock: Transformer {
                 var transformCallCount: Int = 0
                 var transformCallArguments: [()] = []
-                var transformHandler: (@Sendable ((Int) throws -> Int) -> Int)? = nil
+                var transformHandler: (((Int) throws -> Int) -> Int)? = nil
                 func transform(_ body: (Int) throws -> Int) rethrows -> Int {
                     transformCallCount += 1
                     transformCallArguments.append(())
@@ -193,7 +193,7 @@ struct RethrowsMacroTests {
             class ExecutorMock: Executor {
                 var executeCallCount: Int = 0
                 var executeCallArguments: [() throws -> Void] = []
-                var executeHandler: (@Sendable (() throws -> Void) throws -> Void)? = nil
+                var executeHandler: ((() throws -> Void) throws -> Void)? = nil
                 func execute(_ body: @escaping () throws -> Void) throws {
                     executeCallCount += 1
                     executeCallArguments.append(body)

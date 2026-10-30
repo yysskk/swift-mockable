@@ -34,7 +34,7 @@ struct OverloadedMethodMacroTests {
             class UserDefaultsMock: UserDefaults {
                 var setBoolStringCallCount: Int = 0
                 var setBoolStringCallArguments: [(value: Bool, forKey: String)] = []
-                var setBoolStringHandler: (@Sendable (Bool, String) -> Void)? = nil
+                var setBoolStringHandler: ((Bool, String) -> Void)? = nil
                 func set(_ value: Bool, forKey: String) {
                     setBoolStringCallCount += 1
                     setBoolStringCallArguments.append((value: value, forKey: forKey))
@@ -44,7 +44,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var setIntStringCallCount: Int = 0
                 var setIntStringCallArguments: [(value: Int, forKey: String)] = []
-                var setIntStringHandler: (@Sendable (Int, String) -> Void)? = nil
+                var setIntStringHandler: ((Int, String) -> Void)? = nil
                 func set(_ value: Int, forKey: String) {
                     setIntStringCallCount += 1
                     setIntStringCallArguments.append((value: value, forKey: forKey))
@@ -54,7 +54,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var setStringStringCallCount: Int = 0
                 var setStringStringCallArguments: [(value: String, forKey: String)] = []
-                var setStringStringHandler: (@Sendable (String, String) -> Void)? = nil
+                var setStringStringHandler: ((String, String) -> Void)? = nil
                 func set(_ value: String, forKey: String) {
                     setStringStringCallCount += 1
                     setStringStringCallArguments.append((value: value, forKey: forKey))
@@ -64,7 +64,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var getValueCallCount: Int = 0
                 var getValueCallArguments: [()] = []
-                var getValueHandler: (@Sendable () -> String)? = nil
+                var getValueHandler: (() -> String)? = nil
                 func getValue() -> String {
                     getValueCallCount += 1
                     getValueCallArguments.append(())
@@ -116,7 +116,7 @@ struct OverloadedMethodMacroTests {
             class SimpleServiceMock: SimpleService {
                 var fetchDataCallCount: Int = 0
                 var fetchDataCallArguments: [Int] = []
-                var fetchDataHandler: (@Sendable (Int) -> String)? = nil
+                var fetchDataHandler: ((Int) -> String)? = nil
                 func fetchData(id: Int) -> String {
                     fetchDataCallCount += 1
                     fetchDataCallArguments.append(id)
@@ -127,7 +127,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var saveDataCallCount: Int = 0
                 var saveDataCallArguments: [String] = []
-                var saveDataHandler: (@Sendable (String) -> Void)? = nil
+                var saveDataHandler: ((String) -> Void)? = nil
                 func saveData(data: String) {
                     saveDataCallCount += 1
                     saveDataCallArguments.append(data)
@@ -172,7 +172,7 @@ struct OverloadedMethodMacroTests {
             class HttpServiceMock: HttpService {
                 var getStringStringCallCount: Int = 0
                 var getStringStringCallArguments: [String] = []
-                var getStringStringHandler: (@Sendable (String) -> String)? = nil
+                var getStringStringHandler: ((String) -> String)? = nil
                 func get(url: String) -> String {
                     getStringStringCallCount += 1
                     getStringStringCallArguments.append(url)
@@ -183,7 +183,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var getStringDataThrowingCallCount: Int = 0
                 var getStringDataThrowingCallArguments: [String] = []
-                var getStringDataThrowingHandler: (@Sendable (String) throws -> Data)? = nil
+                var getStringDataThrowingHandler: ((String) throws -> Data)? = nil
                 func get(url: String) throws -> Data {
                     getStringDataThrowingCallCount += 1
                     getStringDataThrowingCallArguments.append(url)
@@ -231,7 +231,7 @@ struct OverloadedMethodMacroTests {
             class DataServiceMock: DataService {
                 var fetchIntStringCallCount: Int = 0
                 var fetchIntStringCallArguments: [Int] = []
-                var fetchIntStringHandler: (@Sendable (Int) -> String)? = nil
+                var fetchIntStringHandler: ((Int) -> String)? = nil
                 func fetch(id: Int) -> String {
                     fetchIntStringCallCount += 1
                     fetchIntStringCallArguments.append(id)
@@ -242,7 +242,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var fetchIntStringAsyncCallCount: Int = 0
                 var fetchIntStringAsyncCallArguments: [Int] = []
-                var fetchIntStringAsyncHandler: (@Sendable (Int) async -> String)? = nil
+                var fetchIntStringAsyncHandler: ((Int) async -> String)? = nil
                 func fetch(id: Int) async -> String {
                     fetchIntStringAsyncCallCount += 1
                     fetchIntStringAsyncCallArguments.append(id)
@@ -253,7 +253,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var fetchIntStringAsyncThrowingCallCount: Int = 0
                 var fetchIntStringAsyncThrowingCallArguments: [Int] = []
-                var fetchIntStringAsyncThrowingHandler: (@Sendable (Int) async throws -> String)? = nil
+                var fetchIntStringAsyncThrowingHandler: ((Int) async throws -> String)? = nil
                 func fetch(id: Int) async throws -> String {
                     fetchIntStringAsyncThrowingCallCount += 1
                     fetchIntStringAsyncThrowingCallArguments.append(id)
@@ -304,7 +304,7 @@ struct OverloadedMethodMacroTests {
             class MixedServiceMock: MixedService {
                 var processIntStringCallCount: Int = 0
                 var processIntStringCallArguments: [Int] = []
-                var processIntStringHandler: (@Sendable (Int) -> String)? = nil
+                var processIntStringHandler: ((Int) -> String)? = nil
                 func process(value: Int) -> String {
                     processIntStringCallCount += 1
                     processIntStringCallArguments.append(value)
@@ -315,7 +315,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var processIntDataThrowingCallCount: Int = 0
                 var processIntDataThrowingCallArguments: [Int] = []
-                var processIntDataThrowingHandler: (@Sendable (Int) throws -> Data)? = nil
+                var processIntDataThrowingHandler: ((Int) throws -> Data)? = nil
                 func process(value: Int) throws -> Data {
                     processIntDataThrowingCallCount += 1
                     processIntDataThrowingCallArguments.append(value)
@@ -326,7 +326,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var processStringCallCount: Int = 0
                 var processStringCallArguments: [String] = []
-                var processStringHandler: (@Sendable (String) -> String)? = nil
+                var processStringHandler: ((String) -> String)? = nil
                 func process(value: String) -> String {
                     processStringCallCount += 1
                     processStringCallArguments.append(value)
@@ -378,7 +378,7 @@ struct OverloadedMethodMacroTests {
             class HandlerMock: Handler {
                 var handlePairABCallCount: Int = 0
                 var handlePairABCallArguments: [Pair<A, B>] = []
-                var handlePairABHandler: (@Sendable (Pair<A, B>) -> Void)? = nil
+                var handlePairABHandler: ((Pair<A, B>) -> Void)? = nil
                 func handle(_ value: Pair<A, B>) {
                     handlePairABCallCount += 1
                     handlePairABCallArguments.append(value)
@@ -388,7 +388,7 @@ struct OverloadedMethodMacroTests {
                 }
                 var handlePairAB2CallCount: Int = 0
                 var handlePairAB2CallArguments: [Pair<AB>] = []
-                var handlePairAB2Handler: (@Sendable (Pair<AB>) -> Void)? = nil
+                var handlePairAB2Handler: ((Pair<AB>) -> Void)? = nil
                 func handle(_ value: Pair<AB>) {
                     handlePairAB2CallCount += 1
                     handlePairAB2CallArguments.append(value)

@@ -39,7 +39,7 @@ struct TrackingRequirementTests {
         #expect(fields.map(\.initialValue.trimmedDescription) == ["0", "[]", "nil"])
         #expect(fields[0].type.trimmedDescription == "Int")
         #expect(fields[1].type.trimmedDescription == "[Int]")
-        #expect(fields[2].type.trimmedDescription == "(@Sendable (Int) async throws -> String)?")
+        #expect(fields[2].type.trimmedDescription == "((Int) async throws -> String)?")
         #expect(fieldNames(requirement, model: .direct) == fieldNames(requirement, model: .lockBacked))
     }
 
@@ -61,7 +61,7 @@ struct TrackingRequirementTests {
             func run(_ body: () throws -> Void) rethrows
         }
         """).first)
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (() throws -> Void) -> Void)?")
+        #expect(requirement.handlerType?.trimmedDescription == "((() throws -> Void) -> Void)?")
     }
 
     @Test("Generic parameters are erased in the tracked types")
@@ -73,7 +73,7 @@ struct TrackingRequirementTests {
         """).first)
         let fields = requirement.trackingFields(model: .lockBacked)
         #expect(fields[1].type.trimmedDescription == "[Any]")
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Any) -> Any)?")
+        #expect(requirement.handlerType?.trimmedDescription == "((Any) -> Any)?")
     }
 
     @Test("A static function is a type member")
@@ -181,7 +181,7 @@ struct TrackingRequirementTests {
             let fields = requirement.trackingFields(model: model)
             #expect(fields.map(\.name) == ["tokenCallCount", "tokenHandler"])
         }
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable () async throws -> String)?")
+        #expect(requirement.handlerType?.trimmedDescription == "(() async throws -> String)?")
     }
 
     @Test("A typed-throws accessor drops the error type from the handler")
@@ -191,7 +191,7 @@ struct TrackingRequirementTests {
             var config: Config { get throws(ConfigError) }
         }
         """).first)
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable () throws -> Config)?")
+        #expect(requirement.handlerType?.trimmedDescription == "(() throws -> Config)?")
     }
 
     // MARK: - Subscripts
@@ -223,8 +223,8 @@ struct TrackingRequirementTests {
         ])
         // Subscript closure types keep the return type's source trivia (the space
         // before the accessor block); the expansion tests pin the same spelling.
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Int) -> String )?")
-        #expect(requirement.setHandlerType?.trimmedDescription == "(@Sendable (Int, String ) -> Void)?")
+        #expect(requirement.handlerType?.trimmedDescription == "((Int) -> String )?")
+        #expect(requirement.setHandlerType?.trimmedDescription == "((Int, String ) -> Void)?")
     }
 
     @Test("An effectful subscript getter carries its effects in the handler type")
@@ -234,7 +234,7 @@ struct TrackingRequirementTests {
             subscript(id: Int) -> User { get async throws }
         }
         """).first)
-        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Int) async throws -> User )?")
+        #expect(requirement.handlerType?.trimmedDescription == "((Int) async throws -> User )?")
     }
 
     // MARK: - Non-tracking members
@@ -248,6 +248,60 @@ struct TrackingRequirementTests {
         }
         """)
         #expect(all.isEmpty)
+    }
+
+    // MARK: - Handler sendability
+
+    /// The handler types of every requirement, in declaration order.
+    private func handlerTypes(ofProtocol source: String) -> [String] {
+        requirements(ofProtocol: source).compactMap { $0.handlerType?.trimmedDescription }
+    }
+
+    @Test("A plain mock's handlers are ordinary closures")
+    func plainMockHandlersAreNotSendable() {
+        #expect(handlerTypes(ofProtocol: """
+        protocol Service {
+            func log(_ message: String)
+            var token: String { get async }
+        }
+        """) == ["((String) -> Void)?", "(() async -> String)?"])
+    }
+
+    @Test(
+        "A mock whose state is shared across isolation domains has Sendable handlers",
+        arguments: [
+            "protocol Service: Sendable",
+            "protocol Service: Actor",
+            "@MainActor protocol Service",
+        ]
+    )
+    func sharedStateHandlersAreSendable(declaration: String) {
+        #expect(handlerTypes(ofProtocol: """
+        \(declaration) {
+            func log(_ message: String)
+        }
+        """) == ["(@Sendable (String) -> Void)?"])
+    }
+
+    @Test("A static requirement's handler is Sendable even on a plain mock")
+    func staticHandlerIsSendable() {
+        #expect(handlerTypes(ofProtocol: """
+        protocol Service {
+            static func make() -> Int
+            func log(_ message: String)
+        }
+        """) == ["(@Sendable () -> Int)?", "((String) -> Void)?"])
+    }
+
+    @Test("A Sendable mock's subscript handlers are Sendable")
+    func sendableSubscriptHandlers() throws {
+        let requirement = try #require(requirements(ofProtocol: """
+        protocol Service: Sendable {
+            subscript(index: Int) -> String { get set }
+        }
+        """).first)
+        #expect(requirement.handlerType?.trimmedDescription == "(@Sendable (Int) -> String )?")
+        #expect(requirement.setHandlerType?.trimmedDescription == "(@Sendable (Int, String ) -> Void)?")
     }
 
     // MARK: - Identifier uniqueness across requirements

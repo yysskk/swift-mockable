@@ -28,7 +28,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var getCallCount: Int = 0
                 var getCallArguments: [String] = []
-                var getHandler: (@Sendable (String) -> Any)? = nil
+                var getHandler: ((String) -> Any)? = nil
                 func get<T>(_ key: String) -> T {
                     getCallCount += 1
                     getCallArguments.append(key)
@@ -69,7 +69,7 @@ struct GenericMacroTests {
             class StorageMock: Storage {
                 var saveCallCount: Int = 0
                 var saveCallArguments: [(value: Any, key: String)] = []
-                var saveHandler: (@Sendable (Any, String) -> Void)? = nil
+                var saveHandler: ((Any, String) -> Void)? = nil
                 func save<T>(_ value: T, forKey key: String) {
                     saveCallCount += 1
                     saveCallArguments.append((value: value, key: key))
@@ -111,7 +111,7 @@ struct GenericMacroTests {
             class UserDefaultsClientMock: UserDefaultsClient {
                 var getCallCount: Int = 0
                 var getCallArguments: [Any] = []
-                var getHandler: (@Sendable (Any) -> Any)? = nil
+                var getHandler: ((Any) -> Any)? = nil
                 func get<T>(_ key: UserDefaultsKey<T>) -> T {
                     getCallCount += 1
                     getCallArguments.append(key)
@@ -122,7 +122,7 @@ struct GenericMacroTests {
                 }
                 var setCallCount: Int = 0
                 var setCallArguments: [(value: Any, key: Any)] = []
-                var setHandler: (@Sendable (Any, Any) -> Void)? = nil
+                var setHandler: ((Any, Any) -> Void)? = nil
                 func set<T>(_ value: T, forKey key: UserDefaultsKey<T>) {
                     setCallCount += 1
                     setCallArguments.append((value: value, key: key))
@@ -167,7 +167,7 @@ struct GenericMacroTests {
             class UserDefaultsClientMock: UserDefaultsClient {
                 var integerCallCount: Int = 0
                 var integerCallArguments: [UserDefaultsKey<Int>] = []
-                var integerHandler: (@Sendable (UserDefaultsKey<Int>) -> Int)? = nil
+                var integerHandler: ((UserDefaultsKey<Int>) -> Int)? = nil
                 func integer(forKey key: UserDefaultsKey<Int>) -> Int {
                     integerCallCount += 1
                     integerCallArguments.append(key)
@@ -178,7 +178,7 @@ struct GenericMacroTests {
                 }
                 var setIntegerCallCount: Int = 0
                 var setIntegerCallArguments: [(value: Int, key: UserDefaultsKey<Int>)] = []
-                var setIntegerHandler: (@Sendable (Int, UserDefaultsKey<Int>) -> Void)? = nil
+                var setIntegerHandler: ((Int, UserDefaultsKey<Int>) -> Void)? = nil
                 func setInteger(_ value: Int, forKey key: UserDefaultsKey<Int>) {
                     setIntegerCallCount += 1
                     setIntegerCallArguments.append((value: value, key: key))
@@ -221,7 +221,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var getCallCount: Int = 0
                 var getCallArguments: [String] = []
-                var getHandler: (@Sendable (String) -> Any?)? = nil
+                var getHandler: ((String) -> Any?)? = nil
                 func get<T>(_ key: String) -> T? {
                     getCallCount += 1
                     getCallArguments.append(key)
@@ -262,7 +262,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var rewrapCallCount: Int = 0
                 var rewrapCallArguments: [Any] = []
-                var rewrapHandler: (@Sendable (Any) -> Any)? = nil
+                var rewrapHandler: ((Any) -> Any)? = nil
                 func rewrap<T>(_ box: Box<[T]>) -> Box<[T]> {
                     rewrapCallCount += 1
                     rewrapCallArguments.append(box)
@@ -303,7 +303,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var storeCallCount: Int = 0
                 var storeCallArguments: [(box: Any, container: MyModule.Container)] = []
-                var storeHandler: (@Sendable (Any, MyModule.Container) -> Void)? = nil
+                var storeHandler: ((Any, MyModule.Container) -> Void)? = nil
                 func store<T>(_ box: MyModule.Box<T>, in container: MyModule.Container) {
                     storeCallCount += 1
                     storeCallArguments.append((box: box, container: container))
@@ -343,7 +343,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var firstElementCallCount: Int = 0
                 var firstElementCallArguments: [Any] = []
-                var firstElementHandler: (@Sendable (Any) -> Any)? = nil
+                var firstElementHandler: ((Any) -> Any)? = nil
                 func firstElement<T: Collection>(_ collection: T) -> T.Element {
                     firstElementCallCount += 1
                     firstElementCallArguments.append(collection)
@@ -384,7 +384,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var decodeCallCount: Int = 0
                 var decodeCallArguments: [Any] = []
-                var decodeHandler: (@Sendable (Any) -> Any)? = nil
+                var decodeHandler: ((Any) -> Any)? = nil
                 func decode<T>(_ type: T.Type) -> any Sequence<T> {
                     decodeCallCount += 1
                     decodeCallArguments.append(type)
@@ -425,7 +425,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var pairCallCount: Int = 0
                 var pairCallArguments: [String] = []
-                var pairHandler: (@Sendable (String) -> (Any, String))? = nil
+                var pairHandler: ((String) -> (Any, String))? = nil
                 func pair<T>(_ key: String) -> (T, String) {
                     pairCallCount += 1
                     pairCallArguments.append(key)
@@ -466,7 +466,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var getCallCount: Int = 0
                 var getCallArguments: [String] = []
-                var getHandler: (@Sendable (String) -> Any?)? = nil
+                var getHandler: ((String) -> Any?)? = nil
                 func get<T>(_ key: String) -> T! {
                     getCallCount += 1
                     getCallArguments.append(key)
@@ -537,7 +537,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [(() -> Any)?] = []
-                var loadHandler: (@Sendable ((() -> Any)?) -> Void)? = nil
+                var loadHandler: (((() -> Any)?) -> Void)? = nil
                 func load<T>(_ make: (() -> T)?) {
                     loadCallCount += 1
                     loadCallArguments.append(make)
@@ -577,7 +577,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [(make: (@Sendable () -> Any)?, fallback: (@Sendable () -> Int)?)] = []
-                var loadHandler: (@Sendable ((@Sendable () -> Any)?, (@Sendable () -> Int)?) -> Void)? = nil
+                var loadHandler: (((@Sendable () -> Any)?, (@Sendable () -> Int)?) -> Void)? = nil
                 func load<T>(_ make: (@Sendable () -> T)?, fallback: (@Sendable () -> Int)?) {
                     loadCallCount += 1
                     loadCallArguments.append((make: make, fallback: fallback))
@@ -647,7 +647,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var transformCallCount: Int = 0
                 var transformCallArguments: [[String: Any]] = []
-                var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+                var transformHandler: (([String: Any]) -> [String: Any])? = nil
                 func transform<T>(_ map: [String: T]) -> [String: T] {
                     transformCallCount += 1
                     transformCallArguments.append(map)
@@ -688,7 +688,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var indexCallCount: Int = 0
                 var indexCallArguments: [Any] = []
-                var indexHandler: (@Sendable (Any) -> Any)? = nil
+                var indexHandler: ((Any) -> Any)? = nil
                 func index<T: Hashable>(_ map: [T: String]) -> [T: String] {
                     indexCallCount += 1
                     indexCallArguments.append(map)
@@ -729,7 +729,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var lookupCallCount: Int = 0
                 var lookupCallArguments: [[String: [Any]]?] = []
-                var lookupHandler: (@Sendable ([String: [Any]]?) -> [String: Any]?)? = nil
+                var lookupHandler: (([String: [Any]]?) -> [String: Any]?)? = nil
                 func lookup<T>(_ map: [String: [T]]?) -> [String: T]? {
                     lookupCallCount += 1
                     lookupCallArguments.append(map)
@@ -770,7 +770,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var storeCallCount: Int = 0
                 var storeCallArguments: [(value: Any, metadata: [String: Int])] = []
-                var storeHandler: (@Sendable (Any, [String: Int]) -> Void)? = nil
+                var storeHandler: ((Any, [String: Int]) -> Void)? = nil
                 func store<T>(_ value: T, metadata: [String: Int]) {
                     storeCallCount += 1
                     storeCallArguments.append((value: value, metadata: metadata))
@@ -810,7 +810,7 @@ struct GenericMacroTests {
             class CacheMock: Cache {
                 var getCallCount: Int = 0
                 var getCallArguments: [String] = []
-                var getHandler: (@Sendable (String) -> [Any])? = nil
+                var getHandler: ((String) -> [Any])? = nil
                 func get<T>(_ key: String) -> [T] {
                     getCallCount += 1
                     getCallArguments.append(key)

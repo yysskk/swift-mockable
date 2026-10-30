@@ -36,7 +36,7 @@ struct InitializerMacroTests {
                 }
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () -> Int)? = nil
+                var fetchHandler: (() -> Int)? = nil
                 func fetch() -> Int {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -542,7 +542,7 @@ struct InitializerMacroTests {
             open class ChildOfInitBaseMock: InitBaseMock, ChildOfInitBase {
                 public var childMethodCallCount: Int = 0
                 public var childMethodCallArguments: [()] = []
-                public var childMethodHandler: (@Sendable () -> Void)? = nil
+                public var childMethodHandler: (() -> Void)? = nil
                 public func childMethod() {
                     childMethodCallCount += 1
                     childMethodCallArguments.append(())

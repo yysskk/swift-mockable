@@ -64,7 +64,7 @@ extension MockGenerator {
             returnType: returnType,
             hasGenericReturn: hasGenericReturn,
             identifier: identifier,
-            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
+            handlerType: requirement.handlerType ?? TrackingRequirement.fallbackHandlerType,
             invokePrefix: invokePrefix,
             errorType: errorType,
             access: access,

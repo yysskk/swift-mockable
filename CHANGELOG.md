@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A plain mock's handlers are ordinary closures instead of `@Sendable` ones, so a test can install a handler that captures and mutates its local state — `mock.logHandler = { messages.append($0) }` — without a `nonisolated(unsafe)` variable. Making every handler `@Sendable` added no safety to a mock that is not shared across isolation domains, and it rejected the most common way to observe calls. Handlers stay `@Sendable` where the mock does share them: on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements. Existing tests keep compiling, since a `@Sendable` closure converts to an ordinary one.
+
 ## [3.0.0] - 2026-10-25
 
 This release renames and reshapes generated members to follow the Swift API Design Guidelines. See [Migrating to 3.0](docs/migrating-to-3.0.md) for before-and-after code for each breaking change.

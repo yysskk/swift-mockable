@@ -28,7 +28,7 @@ struct BasicMacroTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -69,7 +69,7 @@ struct BasicMacroTests {
             class DataServiceMock: DataService {
                 var loadDataCallCount: Int = 0
                 var loadDataCallArguments: [String] = []
-                var loadDataHandler: (@Sendable (String) async throws -> Data)? = nil
+                var loadDataHandler: ((String) async throws -> Data)? = nil
                 func loadData(from url: String) async throws -> Data {
                     loadDataCallCount += 1
                     loadDataCallArguments.append(url)
@@ -110,7 +110,7 @@ struct BasicMacroTests {
             class CalculatorMock: Calculator {
                 var addCallCount: Int = 0
                 var addCallArguments: [(a: Int, b: Int)] = []
-                var addHandler: (@Sendable (Int, Int) -> Int)? = nil
+                var addHandler: ((Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArguments.append((a: a, b: b))
@@ -151,7 +151,7 @@ struct BasicMacroTests {
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
                 var logCallArguments: [String] = []
-                var logHandler: (@Sendable (String) -> Void)? = nil
+                var logHandler: ((String) -> Void)? = nil
                 func log(message: String) {
                     logCallCount += 1
                     logCallArguments.append(message)
@@ -191,7 +191,7 @@ struct BasicMacroTests {
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
                 var logCallArguments: [[String]] = []
-                var logHandler: (@Sendable ([String]) -> Void)? = nil
+                var logHandler: (([String]) -> Void)? = nil
                 func log(_ messages: String...) {
                     logCallCount += 1
                     logCallArguments.append(messages)
@@ -672,7 +672,7 @@ struct BasicMacroTests {
             class EventHandlerMock: EventHandler {
                 var subscribeCallCount: Int = 0
                 var subscribeCallArguments: [(String) -> Void] = []
-                var subscribeHandler: (@Sendable ((String) -> Void) -> Void)? = nil
+                var subscribeHandler: (((String) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping (String) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArguments.append(handler)
@@ -712,7 +712,7 @@ struct BasicMacroTests {
             class EventHandlerMock: EventHandler {
                 var subscribeCallCount: Int = 0
                 var subscribeCallArguments: [@Sendable (String) -> Void] = []
-                var subscribeHandler: (@Sendable (@Sendable (String) -> Void) -> Void)? = nil
+                var subscribeHandler: ((@Sendable (String) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping @Sendable (String) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArguments.append(handler)
@@ -752,7 +752,7 @@ struct BasicMacroTests {
             class CompletionHandlerMock: CompletionHandler {
                 var doSomethingCallCount: Int = 0
                 var doSomethingCallArguments: [(Error?) -> Void] = []
-                var doSomethingHandler: (@Sendable ((Error?) -> Void) -> Void)? = nil
+                var doSomethingHandler: (((Error?) -> Void) -> Void)? = nil
                 func doSomething(completion: (@escaping (Error?) -> Void)) {
                     doSomethingCallCount += 1
                     doSomethingCallArguments.append(completion)
@@ -792,7 +792,7 @@ struct BasicMacroTests {
             class CompletionHandlerMock: CompletionHandler {
                 var doSomethingCallCount: Int = 0
                 var doSomethingCallArguments: [@Sendable (Error?) -> Void] = []
-                var doSomethingHandler: (@Sendable (@Sendable (Error?) -> Void) -> Void)? = nil
+                var doSomethingHandler: ((@Sendable (Error?) -> Void) -> Void)? = nil
                 func doSomething(completion: (@escaping @Sendable (Error?) -> Void)) {
                     doSomethingCallCount += 1
                     doSomethingCallArguments.append(completion)
@@ -832,7 +832,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () -> String?)? = nil
+                var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String? {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -873,7 +873,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var itemsCallCount: Int = 0
                 var itemsCallArguments: [()] = []
-                var itemsHandler: (@Sendable () -> [String])? = nil
+                var itemsHandler: (() -> [String])? = nil
                 func items() -> [String] {
                     itemsCallCount += 1
                     itemsCallArguments.append(())
@@ -914,7 +914,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var tagsCallCount: Int = 0
                 var tagsCallArguments: [()] = []
-                var tagsHandler: (@Sendable () -> Set<String>)? = nil
+                var tagsHandler: (() -> Set<String>)? = nil
                 func tags() -> Set<String> {
                     tagsCallCount += 1
                     tagsCallArguments.append(())
@@ -955,7 +955,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var mappingCallCount: Int = 0
                 var mappingCallArguments: [()] = []
-                var mappingHandler: (@Sendable () -> [String: Int])? = nil
+                var mappingHandler: (() -> [String: Int])? = nil
                 func mapping() -> [String: Int] {
                     mappingCallCount += 1
                     mappingCallArguments.append(())
@@ -1000,7 +1000,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var optionalValueCallCount: Int = 0
                 var optionalValueCallArguments: [()] = []
-                var optionalValueHandler: (@Sendable () -> Optional<String>)? = nil
+                var optionalValueHandler: (() -> Optional<String>)? = nil
                 func optionalValue() -> Optional<String> {
                     optionalValueCallCount += 1
                     optionalValueCallArguments.append(())
@@ -1011,7 +1011,7 @@ struct BasicMacroTests {
                 }
                 var arrayValueCallCount: Int = 0
                 var arrayValueCallArguments: [()] = []
-                var arrayValueHandler: (@Sendable () -> Array<String>)? = nil
+                var arrayValueHandler: (() -> Array<String>)? = nil
                 func arrayValue() -> Array<String> {
                     arrayValueCallCount += 1
                     arrayValueCallArguments.append(())
@@ -1022,7 +1022,7 @@ struct BasicMacroTests {
                 }
                 var dictionaryValueCallCount: Int = 0
                 var dictionaryValueCallArguments: [()] = []
-                var dictionaryValueHandler: (@Sendable () -> Dictionary<String, Int>)? = nil
+                var dictionaryValueHandler: (() -> Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
                     dictionaryValueCallArguments.append(())
@@ -1075,7 +1075,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var optionalValueCallCount: Int = 0
                 var optionalValueCallArguments: [()] = []
-                var optionalValueHandler: (@Sendable () -> Swift.Optional<String>)? = nil
+                var optionalValueHandler: (() -> Swift.Optional<String>)? = nil
                 func optionalValue() -> Swift.Optional<String> {
                     optionalValueCallCount += 1
                     optionalValueCallArguments.append(())
@@ -1086,7 +1086,7 @@ struct BasicMacroTests {
                 }
                 var arrayValueCallCount: Int = 0
                 var arrayValueCallArguments: [()] = []
-                var arrayValueHandler: (@Sendable () -> Swift.Array<String>)? = nil
+                var arrayValueHandler: (() -> Swift.Array<String>)? = nil
                 func arrayValue() -> Swift.Array<String> {
                     arrayValueCallCount += 1
                     arrayValueCallArguments.append(())
@@ -1097,7 +1097,7 @@ struct BasicMacroTests {
                 }
                 var setValueCallCount: Int = 0
                 var setValueCallArguments: [()] = []
-                var setValueHandler: (@Sendable () -> Swift.Set<String>)? = nil
+                var setValueHandler: (() -> Swift.Set<String>)? = nil
                 func setValue() -> Swift.Set<String> {
                     setValueCallCount += 1
                     setValueCallArguments.append(())
@@ -1108,7 +1108,7 @@ struct BasicMacroTests {
                 }
                 var dictionaryValueCallCount: Int = 0
                 var dictionaryValueCallArguments: [()] = []
-                var dictionaryValueHandler: (@Sendable () -> Swift.Dictionary<String, Int>)? = nil
+                var dictionaryValueHandler: (() -> Swift.Dictionary<String, Int>)? = nil
                 func dictionaryValue() -> Swift.Dictionary<String, Int> {
                     dictionaryValueCallCount += 1
                     dictionaryValueCallArguments.append(())
@@ -1158,7 +1158,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () -> String?)? = nil
+                var fetchHandler: (() -> String?)? = nil
                 func fetch() -> String! {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -1201,7 +1201,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 var optionalArrayCallCount: Int = 0
                 var optionalArrayCallArguments: [()] = []
-                var optionalArrayHandler: (@Sendable () -> [String]?)? = nil
+                var optionalArrayHandler: (() -> [String]?)? = nil
                 func optionalArray() -> [String]? {
                     optionalArrayCallCount += 1
                     optionalArrayCallArguments.append(())
@@ -1212,7 +1212,7 @@ struct BasicMacroTests {
                 }
                 var arrayOfOptionalCallCount: Int = 0
                 var arrayOfOptionalCallArguments: [()] = []
-                var arrayOfOptionalHandler: (@Sendable () -> [String?])? = nil
+                var arrayOfOptionalHandler: (() -> [String?])? = nil
                 func arrayOfOptional() -> [String?] {
                     arrayOfOptionalCallCount += 1
                     arrayOfOptionalCallArguments.append(())

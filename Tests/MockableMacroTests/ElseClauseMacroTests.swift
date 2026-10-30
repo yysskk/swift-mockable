@@ -49,7 +49,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 var alphaCallCount: Int = 0
                 var alphaCallArguments: [()] = []
-                var alphaHandler: (@Sendable () -> Void)? = nil
+                var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
                     alphaCallArguments.append(())
@@ -160,7 +160,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 var alphaCallCount: Int = 0
                 var alphaCallArguments: [()] = []
-                var alphaHandler: (@Sendable () -> Void)? = nil
+                var alphaHandler: (() -> Void)? = nil
                 func alpha() {
                     alphaCallCount += 1
                     alphaCallArguments.append(())
@@ -171,7 +171,7 @@ struct ElseClauseMacroTests {
                 #else
                 var fetchIntCallCount: Int = 0
                 var fetchIntCallArguments: [Int] = []
-                var fetchIntHandler: (@Sendable (Int) -> Int)? = nil
+                var fetchIntHandler: ((Int) -> Int)? = nil
                 func fetch(id: Int) -> Int {
                     fetchIntCallCount += 1
                     fetchIntCallArguments.append(id)
@@ -182,7 +182,7 @@ struct ElseClauseMacroTests {
                 }
                 var fetchStringCallCount: Int = 0
                 var fetchStringCallArguments: [String] = []
-                var fetchStringHandler: (@Sendable (String) -> Int)? = nil
+                var fetchStringHandler: ((String) -> Int)? = nil
                 func fetch(name: String) -> Int {
                     fetchStringCallCount += 1
                     fetchStringCallArguments.append(name)
@@ -242,7 +242,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 public var alphaCallCount: Int = 0
                 public var alphaCallArguments: [()] = []
-                public var alphaHandler: (@Sendable () -> Void)? = nil
+                public var alphaHandler: (() -> Void)? = nil
                 public func alpha() {
                     alphaCallCount += 1
                     alphaCallArguments.append(())

@@ -28,7 +28,7 @@ struct AccessLevelMacroTests {
             class InternalServiceMock: InternalService {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () -> String)? = nil
+                var fetchHandler: (() -> String)? = nil
                 func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -71,7 +71,7 @@ struct AccessLevelMacroTests {
                 }
                 public var fetchCallCount: Int = 0
                 public var fetchCallArguments: [()] = []
-                public var fetchHandler: (@Sendable () -> String)? = nil
+                public var fetchHandler: (() -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -114,7 +114,7 @@ struct AccessLevelMacroTests {
                 }
                 package var fetchCallCount: Int = 0
                 package var fetchCallArguments: [()] = []
-                package var fetchHandler: (@Sendable () -> String)? = nil
+                package var fetchHandler: (() -> String)? = nil
                 package func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -235,7 +235,7 @@ struct AccessLevelMacroTests {
             fileprivate class FileprivateServiceMock: FileprivateService {
                 fileprivate var fetchCallCount: Int = 0
                 fileprivate var fetchCallArguments: [()] = []
-                fileprivate var fetchHandler: (@Sendable () -> String)? = nil
+                fileprivate var fetchHandler: (() -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -280,7 +280,7 @@ struct AccessLevelMacroTests {
             private class PrivateServiceMock: PrivateService {
                 fileprivate var fetchCallCount: Int = 0
                 fileprivate var fetchCallArguments: [()] = []
-                fileprivate var fetchHandler: (@Sendable () -> String)? = nil
+                fileprivate var fetchHandler: (() -> String)? = nil
                 fileprivate func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())

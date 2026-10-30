@@ -28,7 +28,7 @@ struct SubscriptMacroTests {
             class CacheMock: Cache {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
+                var subscriptStringHandler: ((String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptStringCallCount += 1
                     subscriptStringCallArguments.append(key)
@@ -69,7 +69,7 @@ struct SubscriptMacroTests {
             class CacheMock: Cache {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) -> Int? )? = nil
+                var subscriptStringHandler: ((String) -> Int? )? = nil
                 subscript(key: String) -> Int? {
                     subscriptStringCallCount += 1
                     subscriptStringCallArguments.append(key)
@@ -110,7 +110,7 @@ struct SubscriptMacroTests {
             class CacheMock: Cache {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) -> [Int] )? = nil
+                var subscriptStringHandler: ((String) -> [Int] )? = nil
                 subscript(key: String) -> [Int] {
                     subscriptStringCallCount += 1
                     subscriptStringCallArguments.append(key)
@@ -151,8 +151,8 @@ struct SubscriptMacroTests {
             class StorageMock: Storage {
                 var subscriptIntCallCount: Int = 0
                 var subscriptIntCallArguments: [Int] = []
-                var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
-                var subscriptIntSetHandler: (@Sendable (Int, String ) -> Void)? = nil
+                var subscriptIntHandler: ((Int) -> String )? = nil
+                var subscriptIntSetHandler: ((Int, String ) -> Void)? = nil
                 subscript(index: Int) -> String {
                     get {
                         subscriptIntCallCount += 1
@@ -201,8 +201,8 @@ struct SubscriptMacroTests {
             class MatrixMock: Matrix {
                 var subscriptIntIntCallCount: Int = 0
                 var subscriptIntIntCallArguments: [(row: Int, column: Int)] = []
-                var subscriptIntIntHandler: (@Sendable (Int, Int) -> Double )? = nil
-                var subscriptIntIntSetHandler: (@Sendable (Int, Int, Double ) -> Void)? = nil
+                var subscriptIntIntHandler: ((Int, Int) -> Double )? = nil
+                var subscriptIntIntSetHandler: ((Int, Int, Double ) -> Void)? = nil
                 subscript(row: Int, column: Int) -> Double {
                     get {
                         subscriptIntIntCallCount += 1
@@ -253,7 +253,7 @@ struct SubscriptMacroTests {
             class CollectionMock: Collection {
                 var subscriptIntCallCount: Int = 0
                 var subscriptIntCallArguments: [Int] = []
-                var subscriptIntHandler: (@Sendable (Int) -> String )? = nil
+                var subscriptIntHandler: ((Int) -> String )? = nil
                 subscript(index: Int) -> String {
                     subscriptIntCallCount += 1
                     subscriptIntCallArguments.append(index)
@@ -264,8 +264,8 @@ struct SubscriptMacroTests {
                 }
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) -> Int )? = nil
-                var subscriptStringSetHandler: (@Sendable (String, Int ) -> Void)? = nil
+                var subscriptStringHandler: ((String) -> Int )? = nil
+                var subscriptStringSetHandler: ((String, Int ) -> Void)? = nil
                 subscript(key: String) -> Int {
                     get {
                         subscriptStringCallCount += 1

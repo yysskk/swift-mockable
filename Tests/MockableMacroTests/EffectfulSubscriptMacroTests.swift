@@ -28,7 +28,7 @@ struct EffectfulSubscriptMacroTests {
             class StoreMock: Store {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) async throws -> Int )? = nil
+                var subscriptStringHandler: ((String) async throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get async throws {
                         subscriptStringCallCount += 1
@@ -71,7 +71,7 @@ struct EffectfulSubscriptMacroTests {
             class StoreMock: Store {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [String] = []
-                var subscriptStringHandler: (@Sendable (String) throws -> Int )? = nil
+                var subscriptStringHandler: ((String) throws -> Int )? = nil
                 subscript(key: String) -> Int {
                     get throws {
                         subscriptStringCallCount += 1

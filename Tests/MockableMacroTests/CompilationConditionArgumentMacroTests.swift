@@ -28,7 +28,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -68,7 +68,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -108,7 +108,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -149,7 +149,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -190,7 +190,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 var pingCallCount: Int = 0
                 var pingCallArguments: [()] = []
-                var pingHandler: (@Sendable () -> Void)? = nil
+                var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
                     pingCallArguments.append(())
@@ -280,7 +280,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
                 var clearCallArguments: [()] = []
-                var clearHandler: (@Sendable () -> Void)? = nil
+                var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
                     clearCallArguments.append(())
@@ -332,7 +332,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
                 var clearCallArguments: [()] = []
-                var clearHandler: (@Sendable () -> Void)? = nil
+                var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
                     clearCallArguments.append(())
@@ -372,7 +372,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 var clearCallCount: Int = 0
                 var clearCallArguments: [()] = []
-                var clearHandler: (@Sendable () -> Void)? = nil
+                var clearHandler: (() -> Void)? = nil
                 func clear() {
                     clearCallCount += 1
                     clearCallArguments.append(())
@@ -411,7 +411,7 @@ struct CompilationConditionArgumentMacroTests {
             class PingServiceMock: PingService {
                 var pingCallCount: Int = 0
                 var pingCallArguments: [()] = []
-                var pingHandler: (@Sendable () -> Bool)? = nil
+                var pingHandler: (() -> Bool)? = nil
                 func ping() -> Bool {
                     pingCallCount += 1
                     pingCallArguments.append(())
@@ -452,7 +452,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 public var fetchCallCount: Int = 0
                 public var fetchCallArguments: [()] = []
-                public var fetchHandler: (@Sendable () -> String)? = nil
+                public var fetchHandler: (() -> String)? = nil
                 public func fetch() -> String {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -492,7 +492,7 @@ struct CompilationConditionArgumentMacroTests {
             class PingServiceMock: PingService {
                 var pingCallCount: Int = 0
                 var pingCallArguments: [()] = []
-                var pingHandler: (@Sendable () -> Void)? = nil
+                var pingHandler: (() -> Void)? = nil
                 func ping() {
                     pingCallCount += 1
                     pingCallArguments.append(())

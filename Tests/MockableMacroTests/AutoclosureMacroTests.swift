@@ -28,7 +28,7 @@ struct AutoclosureMacroTests {
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
                 var logCallArguments: [String] = []
-                var logHandler: (@Sendable (String) -> Void)? = nil
+                var logHandler: ((String) -> Void)? = nil
                 func log(_ message: @autoclosure () -> String) {
                     let message = message()
                     logCallCount += 1
@@ -69,7 +69,7 @@ struct AutoclosureMacroTests {
             class CalculatorMock: Calculator {
                 var computeCallCount: Int = 0
                 var computeCallArguments: [Int] = []
-                var computeHandler: (@Sendable (Int) throws -> Int)? = nil
+                var computeHandler: ((Int) throws -> Int)? = nil
                 func compute(_ value: @autoclosure () throws -> Int) throws -> Int {
                     let value = try value()
                     computeCallCount += 1
@@ -111,7 +111,7 @@ struct AutoclosureMacroTests {
             class SchedulerMock: Scheduler {
                 var scheduleCallCount: Int = 0
                 var scheduleCallArguments: [Int] = []
-                var scheduleHandler: (@Sendable (Int) -> Void)? = nil
+                var scheduleHandler: ((Int) -> Void)? = nil
                 func schedule(_ work: @autoclosure @escaping () -> Int) {
                     let work = work()
                     scheduleCallCount += 1
@@ -152,7 +152,7 @@ struct AutoclosureMacroTests {
             class RecorderMock: Recorder {
                 var recordCallCount: Int = 0
                 var recordCallArguments: [(name: String, value: Int)] = []
-                var recordHandler: (@Sendable (String, Int) -> Void)? = nil
+                var recordHandler: ((String, Int) -> Void)? = nil
                 func record(name: String, value: @autoclosure () -> Int) {
                     let value = value()
                     recordCallCount += 1
@@ -278,7 +278,7 @@ struct AutoclosureMacroTests {
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
                 var logCallArguments: [String] = []
-                var logHandler: (@Sendable (String) -> Void)? = nil
+                var logHandler: ((String) -> Void)? = nil
                 func log(_ message: @autoclosure () throws(Never) -> String) {
                     let message = message()
                     logCallCount += 1

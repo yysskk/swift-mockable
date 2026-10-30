@@ -34,7 +34,7 @@ struct TrackingIdentifierCollisionMacroTests {
             class ServiceMock: Service {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [()] = []
-                var loadHandler: (@Sendable () -> Void)? = nil
+                var loadHandler: (() -> Void)? = nil
                 func load() {
                     loadCallCount += 1
                     loadCallArguments.append(())
@@ -44,7 +44,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 var loadItem2CallCount: Int = 0
                 var loadItem2CallArguments: [Item] = []
-                var loadItem2Handler: (@Sendable (Item) -> Void)? = nil
+                var loadItem2Handler: ((Item) -> Void)? = nil
                 func load(_ item: Item) {
                     loadItem2CallCount += 1
                     loadItem2CallArguments.append(item)
@@ -54,7 +54,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 var loadItemCallCount: Int = 0
                 var loadItemCallArguments: [()] = []
-                var loadItemHandler: (@Sendable () -> Void)? = nil
+                var loadItemHandler: (() -> Void)? = nil
                 func loadItem() {
                     loadItemCallCount += 1
                     loadItemCallArguments.append(())
@@ -294,7 +294,7 @@ struct TrackingIdentifierCollisionMacroTests {
             class ServiceMock: Service {
                 var subscriptStringCallCount: Int = 0
                 var subscriptStringCallArguments: [()] = []
-                var subscriptStringHandler: (@Sendable () -> Void)? = nil
+                var subscriptStringHandler: (() -> Void)? = nil
                 func subscriptString() {
                     subscriptStringCallCount += 1
                     subscriptStringCallArguments.append(())
@@ -304,7 +304,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 var subscriptString2CallCount: Int = 0
                 var subscriptString2CallArguments: [String] = []
-                var subscriptString2Handler: (@Sendable (String) -> Int )? = nil
+                var subscriptString2Handler: ((String) -> Int )? = nil
                 subscript(key: String) -> Int {
                     subscriptString2CallCount += 1
                     subscriptString2CallArguments.append(key)

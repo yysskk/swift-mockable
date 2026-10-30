@@ -40,7 +40,7 @@ struct ConditionalCompilationMacroTests {
             class KeychainManagerMock: KeychainManager {
                 var getDeviceIdCallCount: Int = 0
                 var getDeviceIdCallArguments: [()] = []
-                var getDeviceIdHandler: (@Sendable () -> String?)? = nil
+                var getDeviceIdHandler: (() -> String?)? = nil
                 func getDeviceId() -> String? {
                     getDeviceIdCallCount += 1
                     getDeviceIdCallArguments.append(())
@@ -51,7 +51,7 @@ struct ConditionalCompilationMacroTests {
                 }
                 var saveAccessIdCallCount: Int = 0
                 var saveAccessIdCallArguments: [String] = []
-                var saveAccessIdHandler: (@Sendable (String) -> Void)? = nil
+                var saveAccessIdHandler: ((String) -> Void)? = nil
                 func saveAccessId(_ accessId: String) {
                     saveAccessIdCallCount += 1
                     saveAccessIdCallArguments.append(accessId)
@@ -62,7 +62,7 @@ struct ConditionalCompilationMacroTests {
                 #if DEBUG
                 var deleteDeviceIdCallCount: Int = 0
                 var deleteDeviceIdCallArguments: [()] = []
-                var deleteDeviceIdHandler: (@Sendable () -> Void)? = nil
+                var deleteDeviceIdHandler: (() -> Void)? = nil
                 func deleteDeviceId() {
                     deleteDeviceIdCallCount += 1
                     deleteDeviceIdCallArguments.append(())
@@ -72,7 +72,7 @@ struct ConditionalCompilationMacroTests {
                 }
                 var getAllObjectsCallCount: Int = 0
                 var getAllObjectsCallArguments: [()] = []
-                var getAllObjectsHandler: (@Sendable () -> [AnyObject])? = nil
+                var getAllObjectsHandler: (() -> [AnyObject])? = nil
                 func getAllObjects() -> [AnyObject] {
                     getAllObjectsCallCount += 1
                     getAllObjectsCallArguments.append(())
@@ -197,7 +197,7 @@ struct ConditionalCompilationMacroTests {
                 #if os(iOS)
                 var logToConsoleCallCount: Int = 0
                 var logToConsoleCallArguments: [()] = []
-                var logToConsoleHandler: (@Sendable () -> Void)? = nil
+                var logToConsoleHandler: (() -> Void)? = nil
                 func logToConsole() {
                     logToConsoleCallCount += 1
                     logToConsoleCallArguments.append(())
@@ -208,7 +208,7 @@ struct ConditionalCompilationMacroTests {
                 #elseif os(macOS)
                 var logToFileCallCount: Int = 0
                 var logToFileCallArguments: [()] = []
-                var logToFileHandler: (@Sendable () -> Void)? = nil
+                var logToFileHandler: (() -> Void)? = nil
                 func logToFile() {
                     logToFileCallCount += 1
                     logToFileCallArguments.append(())
@@ -219,7 +219,7 @@ struct ConditionalCompilationMacroTests {
                 #else
                 var logToFallbackCallCount: Int = 0
                 var logToFallbackCallArguments: [()] = []
-                var logToFallbackHandler: (@Sendable () -> Void)? = nil
+                var logToFallbackHandler: (() -> Void)? = nil
                 func logToFallback() {
                     logToFallbackCallCount += 1
                     logToFallbackCallArguments.append(())

@@ -102,7 +102,7 @@ extension MockGenerator {
             hasGenericReturn: hasGenericReturn,
             genericParamNames: genericParamNames,
             throwsErrorType: throwsErrorType,
-            handlerType: requirement.handlerType ?? TrackingRequirement.handlerType(forClosure: "() -> Void"),
+            handlerType: requirement.handlerType ?? TrackingRequirement.fallbackHandlerType,
             access: access,
             names: WitnessNames(
                 parameters: parameters,

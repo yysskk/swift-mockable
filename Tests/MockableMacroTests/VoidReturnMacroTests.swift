@@ -32,7 +32,7 @@ struct VoidReturnMacroTests {
             class ServiceMock: Service {
                 var qualifiedCallCount: Int = 0
                 var qualifiedCallArguments: [()] = []
-                var qualifiedHandler: (@Sendable () -> Swift.Void)? = nil
+                var qualifiedHandler: (() -> Swift.Void)? = nil
                 func qualified() -> Swift.Void {
                     qualifiedCallCount += 1
                     qualifiedCallArguments.append(())
@@ -42,7 +42,7 @@ struct VoidReturnMacroTests {
                 }
                 var parenthesizedCallCount: Int = 0
                 var parenthesizedCallArguments: [()] = []
-                var parenthesizedHandler: (@Sendable () -> Void)? = nil
+                var parenthesizedHandler: (() -> Void)? = nil
                 func parenthesized() -> (Void) {
                     parenthesizedCallCount += 1
                     parenthesizedCallArguments.append(())
@@ -87,7 +87,7 @@ struct VoidReturnMacroTests {
             class ServiceMock: Service {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable () -> Swift.Void)? = nil
+                var runHandler: (() -> Swift.Void)? = nil
                 func run() -> Swift.Void {
                     runCallCount += 1
                     runCallArguments.append(())
@@ -97,7 +97,7 @@ struct VoidReturnMacroTests {
                 }
                 var runIntCallCount: Int = 0
                 var runIntCallArguments: [()] = []
-                var runIntHandler: (@Sendable () -> Int)? = nil
+                var runIntHandler: (() -> Int)? = nil
                 func run() -> Int {
                     runIntCallCount += 1
                     runIntCallArguments.append(())

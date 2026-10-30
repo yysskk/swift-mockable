@@ -33,7 +33,7 @@ struct AssociatedTypeMacroTests {
                 typealias Model = Any
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () -> Model)? = nil
+                var fetchHandler: (() -> Model)? = nil
                 func fetch() -> Model {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -44,7 +44,7 @@ struct AssociatedTypeMacroTests {
                 }
                 var saveCallCount: Int = 0
                 var saveCallArguments: [Model] = []
-                var saveHandler: (@Sendable (Model) -> Void)? = nil
+                var saveHandler: ((Model) -> Void)? = nil
                 func save(_ model: Model) {
                     saveCallCount += 1
                     saveCallArguments.append(model)
@@ -90,7 +90,7 @@ struct AssociatedTypeMacroTests {
                 typealias Element = String
                 var getCallCount: Int = 0
                 var getCallArguments: [()] = []
-                var getHandler: (@Sendable () -> Element)? = nil
+                var getHandler: (() -> Element)? = nil
                 func get() -> Element {
                     getCallCount += 1
                     getCallArguments.append(())
@@ -139,7 +139,7 @@ struct AssociatedTypeMacroTests {
                 typealias ID = String
                 var findCallCount: Int = 0
                 var findCallArguments: [ID] = []
-                var findHandler: (@Sendable (ID) -> Entity?)? = nil
+                var findHandler: ((ID) -> Entity?)? = nil
                 func find(by id: ID) -> Entity? {
                     findCallCount += 1
                     findCallArguments.append(id)
@@ -150,7 +150,7 @@ struct AssociatedTypeMacroTests {
                 }
                 var saveCallCount: Int = 0
                 var saveCallArguments: [Entity] = []
-                var saveHandler: (@Sendable (Entity) -> ID)? = nil
+                var saveHandler: ((Entity) -> ID)? = nil
                 func save(_ entity: Entity) -> ID {
                     saveCallCount += 1
                     saveCallArguments.append(entity)
@@ -460,7 +460,7 @@ struct AssociatedTypeMacroTests {
                 typealias Item = Data
                 var decodeCallCount: Int = 0
                 var decodeCallArguments: [Data] = []
-                var decodeHandler: (@Sendable (Data) -> Item)? = nil
+                var decodeHandler: ((Data) -> Item)? = nil
                 func decode(from data: Data) -> Item {
                     decodeCallCount += 1
                     decodeCallArguments.append(data)
@@ -504,7 +504,7 @@ struct AssociatedTypeMacroTests {
                 typealias Pair<T> = (T, T)
                 var makeCallCount: Int = 0
                 var makeCallArguments: [()] = []
-                var makeHandler: (@Sendable () -> Int)? = nil
+                var makeHandler: (() -> Int)? = nil
                 func make() -> Int {
                     makeCallCount += 1
                     makeCallArguments.append(())
@@ -592,7 +592,7 @@ struct AssociatedTypeMacroTests {
                 typealias Element = [String: Int]
                 var getAllCallCount: Int = 0
                 var getAllCallArguments: [()] = []
-                var getAllHandler: (@Sendable () -> Element)? = nil
+                var getAllHandler: (() -> Element)? = nil
                 func getAll() -> Element {
                     getAllCallCount += 1
                     getAllCallArguments.append(())
@@ -636,7 +636,7 @@ struct AssociatedTypeMacroTests {
                 typealias Result = Any
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [String] = []
-                var fetchHandler: (@Sendable (String) -> Result?)? = nil
+                var fetchHandler: ((String) -> Result?)? = nil
                 func fetch(id: String) -> Result? {
                     fetchCallCount += 1
                     fetchCallArguments.append(id)
@@ -680,7 +680,7 @@ struct AssociatedTypeMacroTests {
                 typealias Item = Int
                 var processCallCount: Int = 0
                 var processCallArguments: [[Item]] = []
-                var processHandler: (@Sendable ([Item]) -> Int)? = nil
+                var processHandler: (([Item]) -> Int)? = nil
                 func process(items: [Item]) -> Int {
                     processCallCount += 1
                     processCallArguments.append(items)
@@ -726,7 +726,7 @@ struct AssociatedTypeMacroTests {
                 typealias Entity = Any
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [String] = []
-                var fetchHandler: (@Sendable (String) async throws -> Entity)? = nil
+                var fetchHandler: ((String) async throws -> Entity)? = nil
                 func fetch(id: String) async throws -> Entity {
                     fetchCallCount += 1
                     fetchCallArguments.append(id)
@@ -737,7 +737,7 @@ struct AssociatedTypeMacroTests {
                 }
                 var saveCallCount: Int = 0
                 var saveCallArguments: [Entity] = []
-                var saveHandler: (@Sendable (Entity) async throws -> Void)? = nil
+                var saveHandler: ((Entity) async throws -> Void)? = nil
                 func save(_ entity: Entity) async throws {
                     saveCallCount += 1
                     saveCallArguments.append(entity)
@@ -874,7 +874,7 @@ struct AssociatedTypeMacroTests {
                 typealias Event = String
                 var subscribeCallCount: Int = 0
                 var subscribeCallArguments: [(Event) -> Void] = []
-                var subscribeHandler: (@Sendable ((Event) -> Void) -> Void)? = nil
+                var subscribeHandler: (((Event) -> Void) -> Void)? = nil
                 func subscribe(handler: @escaping (Event) -> Void) {
                     subscribeCallCount += 1
                     subscribeCallArguments.append(handler)

@@ -28,7 +28,7 @@ struct TypedThrowsMacroTests {
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [Int] = []
-                var loadHandler: (@Sendable (Int) throws -> String)? = nil
+                var loadHandler: ((Int) throws -> String)? = nil
                 func load(id: Int) throws(LoadError) -> String {
                     loadCallCount += 1
                     loadCallArguments.append(id)
@@ -73,7 +73,7 @@ struct TypedThrowsMacroTests {
             class FetcherMock: Fetcher {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () async throws -> Data)? = nil
+                var fetchHandler: (() async throws -> Data)? = nil
                 func fetch() async throws(NetworkError) -> Data {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -118,7 +118,7 @@ struct TypedThrowsMacroTests {
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
                 var runCallArguments: [()] = []
-                var runHandler: (@Sendable (() throws -> Void) throws -> Void)? = nil
+                var runHandler: ((() throws -> Void) throws -> Void)? = nil
                 func run<E: Error>(_ body: () throws(E) -> Void) throws(E) {
                     runCallCount += 1
                     runCallArguments.append(())
@@ -162,7 +162,7 @@ struct TypedThrowsMacroTests {
             class RunnerMock: Runner {
                 var runCallCount: Int = 0
                 var runCallArguments: [() throws -> Void] = []
-                var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
+                var runHandler: ((() throws -> Void) -> Void)? = nil
                 func run(_ body: @escaping () throws(RunError) -> Void) {
                     runCallCount += 1
                     runCallArguments.append(body)
@@ -202,7 +202,7 @@ struct TypedThrowsMacroTests {
             class CalculatorMock: Calculator {
                 var computeCallCount: Int = 0
                 var computeCallArguments: [Int] = []
-                var computeHandler: (@Sendable (Int) throws -> Int)? = nil
+                var computeHandler: ((Int) throws -> Int)? = nil
                 func compute(_ value: @autoclosure () throws -> Int) throws(ComputeError) -> Int {
                     do {
                         let value = try value()
@@ -378,7 +378,7 @@ struct TypedThrowsMacroTests {
             class CatalogMock: Catalog {
                 var subscriptIntCallCount: Int = 0
                 var subscriptIntCallArguments: [Int] = []
-                var subscriptIntHandler: (@Sendable (Int) throws -> String )? = nil
+                var subscriptIntHandler: ((Int) throws -> String )? = nil
                 subscript(id: Int) -> String {
                     get throws(LookupError) {
                         subscriptIntCallCount += 1
@@ -460,7 +460,7 @@ struct TypedThrowsMacroTests {
             class ParserMock: Parser {
                 var parseCallCount: Int = 0
                 var parseCallArguments: [[UInt8]] = []
-                var parseHandler: (@Sendable ([UInt8]) throws -> (returnValue: String, inoutArgs: [UInt8]))? = nil
+                var parseHandler: (([UInt8]) throws -> (returnValue: String, inoutArgs: [UInt8]))? = nil
                 func parse(_ buffer: inout [UInt8]) throws(ParseError) -> String {
                     parseCallCount += 1
                     parseCallArguments.append(buffer)
@@ -596,7 +596,7 @@ struct TypedThrowsMacroTests {
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [Int] = []
-                var loadHandler: (@Sendable (Int) -> String)? = nil
+                var loadHandler: ((Int) -> String)? = nil
                 func load(id: Int) throws(Never) -> String {
                     loadCallCount += 1
                     loadCallArguments.append(id)
@@ -637,7 +637,7 @@ struct TypedThrowsMacroTests {
             class FetcherMock: Fetcher {
                 var fetchCallCount: Int = 0
                 var fetchCallArguments: [()] = []
-                var fetchHandler: (@Sendable () async -> Data)? = nil
+                var fetchHandler: (() async -> Data)? = nil
                 func fetch() async throws(Never) -> Data {
                     fetchCallCount += 1
                     fetchCallArguments.append(())
@@ -678,7 +678,7 @@ struct TypedThrowsMacroTests {
             class PingerMock: Pinger {
                 var pingCallCount: Int = 0
                 var pingCallArguments: [()] = []
-                var pingHandler: (@Sendable () -> Void)? = nil
+                var pingHandler: (() -> Void)? = nil
                 func ping() throws(Never) {
                     pingCallCount += 1
                     pingCallArguments.append(())
@@ -718,7 +718,7 @@ struct TypedThrowsMacroTests {
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [Int] = []
-                var loadHandler: (@Sendable (Int) throws -> String)? = nil
+                var loadHandler: ((Int) throws -> String)? = nil
                 func load(id: Int) throws(any Error) -> String {
                     loadCallCount += 1
                     loadCallArguments.append(id)
@@ -759,7 +759,7 @@ struct TypedThrowsMacroTests {
             class LoaderMock: Loader {
                 var loadCallCount: Int = 0
                 var loadCallArguments: [Int] = []
-                var loadHandler: (@Sendable (Int) throws -> String)? = nil
+                var loadHandler: ((Int) throws -> String)? = nil
                 func load(id: Int) throws(Error) -> String {
                     loadCallCount += 1
                     loadCallArguments.append(id)
@@ -799,7 +799,7 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class ConfigProviderMock: ConfigProvider {
                 var settingCallCount: Int = 0
-                var settingHandler: (@Sendable () -> Int)? = nil
+                var settingHandler: (() -> Int)? = nil
                 var setting: Int {
                     get throws(Never) {
                         settingCallCount += 1
@@ -839,7 +839,7 @@ struct TypedThrowsMacroTests {
             #if DEBUG
             class ConfigProviderMock: ConfigProvider {
                 var settingCallCount: Int = 0
-                var settingHandler: (@Sendable () throws -> Int)? = nil
+                var settingHandler: (() throws -> Int)? = nil
                 var setting: Int {
                     get throws(ConfigError) {
                         settingCallCount += 1

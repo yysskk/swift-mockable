@@ -52,7 +52,7 @@ A generic parameter nested in a collection is erased in place, so the erased typ
 func transform<T>(_ map: [String: T]) -> [String: T]
 // generates:
 // var transformCallArguments: [[String: Any]] = []
-// var transformHandler: (@Sendable ([String: Any]) -> [String: Any])? = nil
+// var transformHandler: (([String: Any]) -> [String: Any])? = nil
 ```
 
 A dictionary whose *key* mentions a generic parameter is erased as a whole (`[T: String]` becomes `Any`), because `Any` is not `Hashable`.
@@ -80,7 +80,7 @@ associatedtype Value         // -> typealias Value = Any
 func log(_ message: @autoclosure () -> String)
 // generates:
 // var logCallArguments: [String] = []
-// var logHandler: (@Sendable (String) -> Void)? = nil
+// var logHandler: ((String) -> Void)? = nil
 ```
 
 The argument is evaluated even when no handler is set. If evaluating a throwing autoclosure throws, the error propagates before the call is recorded. An autoclosure's own effects must be covered by the requirement (`throws`/`async`); effectful autoclosures are not supported in subscript requirements.
@@ -93,7 +93,7 @@ A non-escaping closure parameter cannot be stored, so it is excluded from `CallA
 func run(label: String, _ body: () -> Void)
 // generates:
 // var runCallArguments: [String] = []                         // only the storable `label`
-// var runHandler: (@Sendable (String, () -> Void) -> Void)? = nil
+// var runHandler: ((String, () -> Void) -> Void)? = nil
 ```
 
 Escaping (`@escaping`), optional, and variadic closures are storable and remain in `CallArguments` as before.
@@ -104,7 +104,7 @@ A stored handler cannot satisfy a `rethrows` requirement on its own, so the mock
 
 ```swift
 func run(_ body: () throws -> Void) rethrows
-// generates: var runHandler: (@Sendable (() throws -> Void) -> Void)? = nil
+// generates: var runHandler: ((() throws -> Void) -> Void)? = nil
 ```
 
 The handler decides whether to invoke those closures; because it is non-throwing, the mock does not itself re-throw their errors — verify behavior through the handler and the call count.
@@ -116,7 +116,7 @@ Typed throws (`throws(MyError)`) on methods, effectful properties, and effectful
 ```swift
 func load(id: Int) throws(LoadError) -> String
 // generates:
-// var loadHandler: (@Sendable (Int) throws -> String)? = nil
+// var loadHandler: ((Int) throws -> String)? = nil
 // do { return try _handler(id) } catch { throw error as! LoadError }
 ```
 
@@ -127,7 +127,7 @@ Two error types need no re-throw. `throws(Never)` keeps its signature but is moc
 ```swift
 func load(id: Int) throws(Never) -> String
 // generates:
-// var loadHandler: (@Sendable (Int) -> String)? = nil
+// var loadHandler: ((Int) -> String)? = nil
 // return _handler(id)
 ```
 
@@ -168,7 +168,7 @@ Read-only properties with `get async`, `get throws`, or `get async throws` are m
 var token: String { get async throws }
 // generates:
 // var tokenCallCount: Int = 0
-// var tokenHandler: (@Sendable () async throws -> String)? = nil
+// var tokenHandler: (() async throws -> String)? = nil
 ```
 
 Configure it in tests like a method handler (`mock.tokenHandler = { "secret" }` or `{ throw AuthError.expired }`). If the handler is unset, the same defaults as methods apply (Optionals return `nil`, collections return empty values, other types call `fatalError`).
@@ -180,6 +180,13 @@ Read-only subscripts with the same effects (`subscript(key: K) -> V { get async 
 ### `Sendable`
 
 If a protocol inherits from `Sendable`, generated mocks conform to `@unchecked Sendable` and store mutable state behind `MockableLock`.
+
+Handlers are `@Sendable` closures wherever the mock shares them across isolation domains: on `Sendable`, `actor`, and global-actor-isolated mocks, and for `static` requirements. A plain mock owns its handlers like any other stored property, so they are ordinary closures there, and a handler can capture and mutate a test's local state:
+
+```swift
+var messages: [String] = []
+mock.logHandler = { messages.append($0) }
+```
 
 ### `Actor`
 

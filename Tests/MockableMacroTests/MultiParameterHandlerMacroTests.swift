@@ -28,7 +28,7 @@ struct MultiParameterHandlerTests {
             class CalculatorMock: Calculator {
                 var addCallCount: Int = 0
                 var addCallArguments: [(a: Int, b: Int)] = []
-                var addHandler: (@Sendable (Int, Int) -> Int)? = nil
+                var addHandler: ((Int, Int) -> Int)? = nil
                 func add(a: Int, b: Int) -> Int {
                     addCallCount += 1
                     addCallArguments.append((a: a, b: b))
@@ -69,7 +69,7 @@ struct MultiParameterHandlerTests {
             class UserServiceMock: UserService {
                 var fetchUserCallCount: Int = 0
                 var fetchUserCallArguments: [Int] = []
-                var fetchUserHandler: (@Sendable (Int) -> String)? = nil
+                var fetchUserHandler: ((Int) -> String)? = nil
                 func fetchUser(id: Int) -> String {
                     fetchUserCallCount += 1
                     fetchUserCallArguments.append(id)
@@ -110,7 +110,7 @@ struct MultiParameterHandlerTests {
             class LoggerMock: Logger {
                 var logCallCount: Int = 0
                 var logCallArguments: [(tag: String, messages: [String])] = []
-                var logHandler: (@Sendable (String, [String]) -> Void)? = nil
+                var logHandler: ((String, [String]) -> Void)? = nil
                 func log(_ tag: String, _ messages: String...) {
                     logCallCount += 1
                     logCallArguments.append((tag: tag, messages: messages))
@@ -235,8 +235,8 @@ struct MultiParameterHandlerTests {
             class GridMock: Grid {
                 var subscriptIntIntCallCount: Int = 0
                 var subscriptIntIntCallArguments: [(row: Int, col: Int)] = []
-                var subscriptIntIntHandler: (@Sendable (Int, Int) -> Int )? = nil
-                var subscriptIntIntSetHandler: (@Sendable (Int, Int, Int ) -> Void)? = nil
+                var subscriptIntIntHandler: ((Int, Int) -> Int )? = nil
+                var subscriptIntIntSetHandler: ((Int, Int, Int ) -> Void)? = nil
                 subscript(row: Int, col: Int) -> Int {
                     get {
                         subscriptIntIntCallCount += 1
