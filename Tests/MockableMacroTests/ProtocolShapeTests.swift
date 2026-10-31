@@ -99,6 +99,31 @@ struct ProtocolShapeTests {
         #expect(shape.parentMockClassName == "AlphaMock")
     }
 
+    @Test("A module-qualified protocol is a conformance, not a parent")
+    func qualifiedProtocolIsConformance() throws {
+        let shape = try #require(makeShape(of: "protocol UserRepository: Shared.UserRepository {}"))
+        #expect(shape.parentProtocolNames.isEmpty)
+        #expect(shape.parentMockClassName == nil)
+        #expect(shape.unsupportedInheritedTypes.isEmpty)
+    }
+
+    @Test("An unqualified parent still names the mock superclass next to a qualified conformance")
+    func unqualifiedParentBesideQualifiedConformance() throws {
+        let shape = try #require(makeShape(of: "protocol Admin: Shared.Admin, UserRepository {}"))
+        #expect(shape.parentProtocolNames == ["UserRepository"])
+        #expect(shape.parentMockClassName == "UserRepositoryMock")
+    }
+
+    @Test("A Swift-qualified protocol is classified by its unqualified name")
+    func swiftQualifiedProtocol() throws {
+        let marker = try #require(makeShape(of: "protocol Service: Swift.Sendable {}"))
+        #expect(marker.parentProtocolNames.isEmpty)
+        #expect(marker.isSendable)
+
+        let unwitnessable = try #require(makeShape(of: "protocol Service: Swift.Hashable {}"))
+        #expect(unwitnessable.unsupportedInheritedTypes.map(\.name) == ["Swift.Hashable"])
+    }
+
     @Test("The declared access level is read from the modifiers")
     func accessLevelExtraction() throws {
         let publicShape = try #require(makeShape(of: "public protocol Service {}"))

@@ -211,6 +211,49 @@ struct InheritedTypeMacroTests {
         )
     }
 
+    // MARK: - Qualified conformances
+
+    @Test("A module-qualified protocol is a conformance the mock does not subclass")
+    func qualifiedProtocolConformance() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol UserRepository: Shared.UserRepository {
+                func run()
+            }
+            """,
+            expandedSource: """
+            protocol UserRepository: Shared.UserRepository {
+                func run()
+            }
+
+            #if DEBUG
+            class UserRepositoryMock: UserRepository {
+                private(set) var runCallCount: Int = 0
+                @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
+                var runCallArguments: [()] {
+                    Array(repeating: (), count: runCallCount)
+                }
+                var runHandler: (() -> Void)? = nil
+                func run() {
+                    runCallCount += 1
+                    if let _handler = runHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    runCallCount = 0
+                    runHandler = nil
+                }
+                class func resetStaticMock() {
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
     // MARK: - Naming
 
     @Test("An escaped protocol name produces a plain mock type name")

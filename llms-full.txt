@@ -528,6 +528,19 @@ Child `resetMock()` calls `super.resetMock()` first. A global-actor-isolated chi
 
 For multiple parent protocols, the first parent is used as the mock superclass.
 
+A parent named with a module qualifier other than `Swift.` (`Shared.UserRepository`) is a conformance instead: the mock does not subclass a mock for it, and witnesses the requirements the protocol restates in its own body. This is how a protocol imported from another module — such as one exported from Kotlin Multiplatform — is restated so that `@Mockable` can see its requirements; name a parent without a qualifier to subclass its mock.
+
+```swift
+import Shared
+
+@Mockable
+protocol UserRepository: Shared.UserRepository {
+    func fetchUser(id: Int32) async throws -> Shared.User
+}
+
+// UserRepositoryMock conforms to Shared.UserRepository and subclasses nothing
+```
+
 ### Conditional Compilation
 
 Protocol members inside `#if` / `#elseif` / `#else` are preserved in the generated mock. `resetMock()` includes matching conditional branches:
@@ -612,7 +625,7 @@ Protocols annotated with `@MainActor` or a custom global actor (`@DataActor`, `@
 - `init` requirements are supported for standalone protocols (including `Sendable` and `actor` mocks) and are inherited by child mocks; declaring a new `init` requirement directly on an inheriting protocol emits a diagnostic (not yet supported).
 - Static/class subscripts are not supported.
 - Operator requirements (e.g. `static func == (lhs: Self, rhs: Self) -> Bool`) and method or property names that need backtick escaping (e.g. a member named `repeat`) emit a diagnostic: generated members are named after the requirement (`fetch` -> `fetchCallCount`, `fetchHandler`), so such names cannot produce legal identifiers.
-- For protocols with multiple parent protocols, the first parent is used as the mock superclass.
+- For protocols with multiple parent protocols, the first unqualified parent is used as the mock superclass. A parent qualified with a module other than `Swift` is a conformance only.
 
 ## Requirements
 
