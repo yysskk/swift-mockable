@@ -602,6 +602,8 @@ protocol UserRepository: Shared.UserRepository {
 // UserRepositoryMock conforms to Shared.UserRepository and subclasses nothing
 ```
 
+[kmp-swift-mockable](https://github.com/yysskk/kmp-swift-mockable) writes these restated protocols for Kotlin Multiplatform projects: annotate a Kotlin interface with `@SwiftMockable`, and its Gradle plugin generates the `@Mockable` protocol each time the Apple framework links, so iOS tests get a `<Name>Mock` that Kotlin code accepts.
+
 ## Conditional Compilation
 
 Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated mocks.
