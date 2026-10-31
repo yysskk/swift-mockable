@@ -31,7 +31,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - `Sendable` protocol support (`@unchecked Sendable` + `_MockableLock`)
 - `Actor` protocol support (actor mock with `nonisolated` helpers)
 - `@MainActor` and custom global actor protocol support
-- Protocol inheritance (child mock inherits parent mock; a module-qualified parent such as `Shared.UserRepository` is a conformance only)
+- Protocol inheritance (child mock inherits parent mock; a module-qualified parent such as `Shared.UserRepository` is a conformance only, which is how [kmp-swift-mockable](https://github.com/yysskk/kmp-swift-mockable) mocks Kotlin Multiplatform interfaces)
 - `#if` / `#elseif` / `#else` conditional compilation
 - Configurable compilation condition for the generated mock (`@Mockable(condition:)` — `.debug` default, a string literal such as `"MOCKING"` / `"DEBUG || UITESTS"` (also spelled `.custom("...")`), or `.always`)
 
@@ -52,3 +52,4 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 
 - [GitHub Repository](https://github.com/yysskk/swift-mockable): Source code, issues, contributions
 - [API Reference](https://yysskk.github.io/swift-mockable/documentation/mockable): DocC-generated API documentation
+- [kmp-swift-mockable](https://github.com/yysskk/kmp-swift-mockable): Generates `@Mockable` protocols for Kotlin Multiplatform interfaces

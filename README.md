@@ -225,6 +225,23 @@ the macro expands at compile time and cannot read runtime values.
   return type, annotate the result (e.g. `let value: String = mock.get(...)`) so
   Swift selects the right overload.
 
+## Kotlin Multiplatform
+
+To mock Kotlin interfaces in iOS tests, use [kmp-swift-mockable](https://github.com/yysskk/kmp-swift-mockable). Annotate an interface with `@SwiftMockable`, and its Gradle plugin writes a `@Mockable` protocol mirroring it each time the Apple framework links. swift-mockable then generates a `<Name>Mock` that Kotlin code accepts:
+
+```kotlin
+@SwiftMockable
+interface UserRepository {
+    suspend fun fetchUser(id: Int): User
+}
+```
+
+```swift
+let repository = UserRepositoryMock()
+repository.fetchUserHandler = { id in User(id: id, name: "Alice") }
+let viewModel = UserViewModel(repository: repository)  // Kotlin code
+```
+
 ## Documentation
 
 - [Docs index](docs/README.md)
