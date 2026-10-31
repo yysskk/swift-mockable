@@ -31,7 +31,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - `Sendable` protocol support (`@unchecked Sendable` + `_MockableLock`)
 - `Actor` protocol support (actor mock with `nonisolated` helpers)
 - `@MainActor` and custom global actor protocol support
-- Protocol inheritance (child mock inherits parent mock)
+- Protocol inheritance (child mock inherits parent mock; a module-qualified parent such as `Shared.UserRepository` is a conformance only)
 - `#if` / `#elseif` / `#else` conditional compilation
 - Configurable compilation condition for the generated mock (`@Mockable(condition:)` — `.debug` default, a string literal such as `"MOCKING"` / `"DEBUG || UITESTS"` (also spelled `.custom("...")`), or `.always`)
 

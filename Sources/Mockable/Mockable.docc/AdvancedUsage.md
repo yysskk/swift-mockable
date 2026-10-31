@@ -224,6 +224,19 @@ If a protocol inherits from another protocol and a parent mock exists, the child
 
 For multiple parent protocols, the first parent is used as the superclass target.
 
+A parent named with a module qualifier other than `Swift.` (`Shared.UserRepository`) is a conformance instead: the mock does not subclass a mock for it, and witnesses the requirements the protocol restates in its own body. This is how a protocol imported from another module — such as one exported from Kotlin Multiplatform — is restated so that `@Mockable` can see its requirements; name a parent without a qualifier to subclass its mock.
+
+```swift
+import Shared
+
+@Mockable
+protocol UserRepository: Shared.UserRepository {
+    func fetchUser(id: Int32) async throws -> Shared.User
+}
+
+// UserRepositoryMock conforms to Shared.UserRepository and subclasses nothing
+```
+
 ## Conditional Compilation
 
 Protocol members inside `#if` / `#elseif` / `#else` are preserved in generated mocks. `resetMock()` includes matching conditional branches so reset behavior stays aligned with active compilation conditions.

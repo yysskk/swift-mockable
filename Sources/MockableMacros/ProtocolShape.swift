@@ -62,7 +62,7 @@ struct ProtocolShape {
 
         for inherited in inheritedTypes {
             switch InheritedTypeKind(inherited.type) {
-            case .marker:
+            case .marker, .external:
                 continue
             case .parent(let name):
                 parentProtocolNames.append(name)
@@ -114,6 +114,10 @@ private enum InheritedTypeKind {
     case marker
     /// A protocol whose own `@Mockable` mock the generated mock subclasses.
     case parent(String)
+    /// A protocol named with a qualifier other than `Swift.`, usually one declared in
+    /// another module. The mock only declares the conformance: the requirements it has
+    /// to witness are the ones the annotated protocol restates in its own body.
+    case external
     /// A protocol the mock cannot be made to conform to.
     case unsupported(String, UnsupportedInheritedType.Reason)
 
@@ -150,9 +154,19 @@ private enum InheritedTypeKind {
             self = .marker
         } else if Self.unwitnessable.contains(name) {
             self = .unsupported(type.trimmedDescription, .requirementsCannotBeWitnessed)
+        } else if type.is(MemberTypeSyntax.self) && !Self.isSwiftQualified(type) {
+            // `Shared.UserRepository` names a protocol whose mock, if there is one at
+            // all, is not `Shared.UserRepositoryMock`. This is how a protocol restates
+            // an imported one so that `@Mockable` can see its requirements.
+            self = .external
         } else {
             self = .parent(name)
         }
+    }
+
+    /// Whether the type is qualified with the `Swift` module, as in `Swift.Sendable`.
+    private static func isSwiftQualified(_ type: TypeSyntax) -> Bool {
+        type.trimmedDescription.hasPrefix("Swift.")
     }
 
     /// Whether the type is written with generic arguments, in either the plain
