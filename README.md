@@ -247,6 +247,7 @@ let viewModel = UserViewModel(repository: repository)  // Kotlin code
 - [Docs index](docs/README.md)
 - [Advanced usage and naming rules](docs/advanced-usage.md)
 - [Migrating to 3.0](docs/migrating-to-3.0.md)
+- [Migrating to 3.1](docs/migrating-to-3.1.md)
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 

@@ -74,7 +74,8 @@ overrides its parent's and calls `super.resetStaticMock()` first, as the instanc
 does. An actor mock declares it only when the protocol has `static` requirements.
 
 `resetStaticMock()` was spelled `resetMock()` in 3.0.0 itself, sharing the instance
-method's name; it was renamed so that the two resets cannot be mistaken for each other.
+method's name; it was renamed in 3.1 so that the two resets cannot be mistaken for each
+other. See [Migrating to 3.1](migrating-to-3.1.md) for the changes after 3.0.
 
 
 ## Import `Synchronization` Yourself
