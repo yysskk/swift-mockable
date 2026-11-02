@@ -47,6 +47,7 @@ swift-mockable provides a single `@Mockable` macro that you attach to any Swift 
 - [Getting Started](https://yysskk.github.io/swift-mockable/documentation/mockable/gettingstarted): Installation and basic usage
 - [Advanced Usage](https://yysskk.github.io/swift-mockable/documentation/mockable/advancedusage): Naming rules, generics, inout, Sendable, Actor, inheritance
 - [Migrating to 3.0](https://yysskk.github.io/swift-mockable/documentation/mockable/migratingto3): Updating tests written against Mockable 2.x
+- [Migrating to 3.1](https://yysskk.github.io/swift-mockable/documentation/mockable/migratingto3_1): Updating tests written against Mockable 3.0
 
 ## Optional
 
