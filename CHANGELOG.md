@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-02
+
+This release continues the naming work of 3.0 and includes source-breaking changes. See [Migrating to 3.1](docs/migrating-to-3.1.md) for before-and-after code for each of them.
+
 ### Changed
 
 - **Breaking:** A parent protocol named with a module qualifier other than `Swift.` is a conformance, not a parent: `protocol UserRepository: Shared.UserRepository` produces a mock that conforms to `Shared.UserRepository` and subclasses nothing, instead of one that subclasses a nonexistent `Shared.UserRepositoryMock`. A macro cannot read the requirements of a protocol declared elsewhere, so restating them under a qualified refinement is how an imported protocol — such as one exported from Kotlin Multiplatform — becomes mockable. A protocol that named a parent with a qualifier to subclass that parent's mock names it without one instead.
@@ -228,7 +232,8 @@ This release renames and reshapes generated members to follow the Swift API Desi
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/3.0.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/3.1.0...HEAD
+[3.1.0]: https://github.com/yysskk/swift-mockable/compare/3.0.0...3.1.0
 [3.0.0]: https://github.com/yysskk/swift-mockable/compare/2.1.0...3.0.0
 [2.1.0]: https://github.com/yysskk/swift-mockable/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/yysskk/swift-mockable/compare/1.12.0...2.0.0
