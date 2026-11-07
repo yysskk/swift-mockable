@@ -33,7 +33,7 @@ struct AssociatedTypeMacroTests {
                 typealias Model = Any
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() -> Model)? = nil
@@ -91,7 +91,7 @@ struct AssociatedTypeMacroTests {
                 typealias Element = String
                 private(set) var getCallCount: Int = 0
                 @available(*, deprecated, message: "get records no arguments; use getCallCount instead.")
-                var getCallArguments: [()] {
+                final var getCallArguments: [()] {
                     Array(repeating: (), count: getCallCount)
                 }
                 var getHandler: (() -> Element)? = nil
@@ -208,7 +208,7 @@ struct AssociatedTypeMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (@Sendable () async -> Item)? {
@@ -458,7 +458,7 @@ struct AssociatedTypeMacroTests {
                 typealias Pair<T> = (T, T)
                 private(set) var makeCallCount: Int = 0
                 @available(*, deprecated, message: "make records no arguments; use makeCallCount instead.")
-                var makeCallArguments: [()] {
+                final var makeCallArguments: [()] {
                     Array(repeating: (), count: makeCallCount)
                 }
                 var makeHandler: (() -> Int)? = nil
@@ -547,7 +547,7 @@ struct AssociatedTypeMacroTests {
                 typealias Element = [String: Int]
                 private(set) var getAllCallCount: Int = 0
                 @available(*, deprecated, message: "getAll records no arguments; use getAllCallCount instead.")
-                var getAllCallArguments: [()] {
+                final var getAllCallArguments: [()] {
                     Array(repeating: (), count: getAllCallCount)
                 }
                 var getAllHandler: (() -> Element)? = nil

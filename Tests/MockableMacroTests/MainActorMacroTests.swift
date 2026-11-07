@@ -32,7 +32,7 @@ struct MainActorMacroTests {
             @MainActor class PresenterMock: Presenter {
                 private(set) var loadDataCallCount: Int = 0
                 @available(*, deprecated, message: "loadData records no arguments; use loadDataCallCount instead.")
-                var loadDataCallArguments: [()] {
+                final var loadDataCallArguments: [()] {
                     Array(repeating: (), count: loadDataCallCount)
                 }
                 var loadDataHandler: (@Sendable () -> Void)? = nil
@@ -85,7 +85,7 @@ struct MainActorMacroTests {
             @MainActor class AsyncPresenterMock: AsyncPresenter {
                 private(set) var fetchItemsCallCount: Int = 0
                 @available(*, deprecated, message: "fetchItems records no arguments; use fetchItemsCallCount instead.")
-                var fetchItemsCallArguments: [()] {
+                final var fetchItemsCallArguments: [()] {
                     Array(repeating: (), count: fetchItemsCallCount)
                 }
                 var fetchItemsHandler: (@Sendable () async -> [String])? = nil
@@ -233,7 +233,7 @@ struct MainActorMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
-                var loadCallArguments: [()] {
+                final var loadCallArguments: [()] {
                     Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (@Sendable () -> Void)? {
@@ -338,7 +338,7 @@ struct MainActorMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "track records no arguments; use trackCallCount instead.")
-                nonisolated var trackCallArguments: [()] {
+                final nonisolated var trackCallArguments: [()] {
                     Array(repeating: (), count: trackCallCount)
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {
@@ -445,7 +445,7 @@ struct MainActorMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
-                var loadCallArguments: [()] {
+                final var loadCallArguments: [()] {
                     Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (@Sendable () -> Void)? {

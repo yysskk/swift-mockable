@@ -190,7 +190,7 @@ struct CompilationConditionArgumentMacroTests {
             class UserServiceMock: UserService {
                 private(set) var pingCallCount: Int = 0
                 @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
-                var pingCallArguments: [()] {
+                final var pingCallArguments: [()] {
                     Array(repeating: (), count: pingCallCount)
                 }
                 var pingHandler: (() -> Void)? = nil
@@ -281,7 +281,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
                 @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
-                var clearCallArguments: [()] {
+                final var clearCallArguments: [()] {
                     Array(repeating: (), count: clearCallCount)
                 }
                 var clearHandler: (() -> Void)? = nil
@@ -334,7 +334,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
                 @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
-                var clearCallArguments: [()] {
+                final var clearCallArguments: [()] {
                     Array(repeating: (), count: clearCallCount)
                 }
                 var clearHandler: (() -> Void)? = nil
@@ -375,7 +375,7 @@ struct CompilationConditionArgumentMacroTests {
             class CacheServiceMock: CacheService {
                 private(set) var clearCallCount: Int = 0
                 @available(*, deprecated, message: "clear records no arguments; use clearCallCount instead.")
-                var clearCallArguments: [()] {
+                final var clearCallArguments: [()] {
                     Array(repeating: (), count: clearCallCount)
                 }
                 var clearHandler: (() -> Void)? = nil
@@ -415,7 +415,7 @@ struct CompilationConditionArgumentMacroTests {
             class PingServiceMock: PingService {
                 private(set) var pingCallCount: Int = 0
                 @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
-                var pingCallArguments: [()] {
+                final var pingCallArguments: [()] {
                     Array(repeating: (), count: pingCallCount)
                 }
                 var pingHandler: (() -> Bool)? = nil
@@ -457,7 +457,7 @@ struct CompilationConditionArgumentMacroTests {
                 }
                 public private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                public var fetchCallArguments: [()] {
+                public final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 public var fetchHandler: (() -> String)? = nil
@@ -498,7 +498,7 @@ struct CompilationConditionArgumentMacroTests {
             class PingServiceMock: PingService {
                 private(set) var pingCallCount: Int = 0
                 @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
-                var pingCallArguments: [()] {
+                final var pingCallArguments: [()] {
                     Array(repeating: (), count: pingCallCount)
                 }
                 var pingHandler: (() -> Void)? = nil

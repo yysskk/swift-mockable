@@ -42,7 +42,7 @@ struct InheritedTypeMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (@Sendable () -> Void)? {
@@ -99,7 +99,7 @@ struct InheritedTypeMacroTests {
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Void)? = nil
@@ -231,7 +231,7 @@ struct InheritedTypeMacroTests {
             class UserRepositoryMock: UserRepository {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Void)? = nil
@@ -274,7 +274,7 @@ struct InheritedTypeMacroTests {
             class TypeMock: `Type` {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Void)? = nil

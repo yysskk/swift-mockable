@@ -28,7 +28,7 @@ struct RethrowsMacroTests {
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: ((() throws -> Void) -> Void)? = nil
@@ -69,7 +69,7 @@ struct RethrowsMacroTests {
             class TransformerMock: Transformer {
                 private(set) var transformCallCount: Int = 0
                 @available(*, deprecated, message: "transform records no arguments; use transformCallCount instead.")
-                var transformCallArguments: [()] {
+                final var transformCallArguments: [()] {
                     Array(repeating: (), count: transformCallCount)
                 }
                 var transformHandler: (((Int) throws -> Int) -> Int)? = nil
@@ -120,7 +120,7 @@ struct RethrowsMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (@Sendable (@Sendable () throws -> Void) -> Void)? {

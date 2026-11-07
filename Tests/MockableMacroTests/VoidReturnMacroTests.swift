@@ -32,7 +32,7 @@ struct VoidReturnMacroTests {
             class ServiceMock: Service {
                 private(set) var qualifiedCallCount: Int = 0
                 @available(*, deprecated, message: "qualified records no arguments; use qualifiedCallCount instead.")
-                var qualifiedCallArguments: [()] {
+                final var qualifiedCallArguments: [()] {
                     Array(repeating: (), count: qualifiedCallCount)
                 }
                 var qualifiedHandler: (() -> Swift.Void)? = nil
@@ -44,7 +44,7 @@ struct VoidReturnMacroTests {
                 }
                 private(set) var parenthesizedCallCount: Int = 0
                 @available(*, deprecated, message: "parenthesized records no arguments; use parenthesizedCallCount instead.")
-                var parenthesizedCallArguments: [()] {
+                final var parenthesizedCallArguments: [()] {
                     Array(repeating: (), count: parenthesizedCallCount)
                 }
                 var parenthesizedHandler: (() -> Void)? = nil
@@ -89,7 +89,7 @@ struct VoidReturnMacroTests {
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Swift.Void)? = nil
@@ -101,7 +101,7 @@ struct VoidReturnMacroTests {
                 }
                 private(set) var runIntCallCount: Int = 0
                 @available(*, deprecated, message: "runInt records no arguments; use runIntCallCount instead.")
-                var runIntCallArguments: [()] {
+                final var runIntCallArguments: [()] {
                     Array(repeating: (), count: runIntCallCount)
                 }
                 var runIntHandler: (() -> Int)? = nil

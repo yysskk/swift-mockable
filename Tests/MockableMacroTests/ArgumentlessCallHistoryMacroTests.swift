@@ -94,4 +94,109 @@ struct ArgumentlessCallHistoryMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("A class mock declares its deprecated CallArguments final, so it takes no vtable slot")
+    func classMockDeclaresDeprecatedCallArgumentsFinal() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol Door {
+                func open()
+            }
+            """,
+            expandedSource: """
+            protocol Door {
+                func open()
+            }
+
+            #if DEBUG
+            class DoorMock: Door {
+                private(set) var openCallCount: Int = 0
+                @available(*, deprecated, message: "open records no arguments; use openCallCount instead.")
+                final var openCallArguments: [()] {
+                    Array(repeating: (), count: openCallCount)
+                }
+                var openHandler: (() -> Void)? = nil
+                func open() {
+                    openCallCount += 1
+                    if let _handler = openHandler {
+                        _handler()
+                    }
+                }
+                func resetMock() {
+                    openCallCount = 0
+                    openHandler = nil
+                }
+                class func resetStaticMock() {
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
+
+    @Test("An actor mock leaves its deprecated CallArguments without final, since it cannot be subclassed")
+    func actorMockLeavesDeprecatedCallArgumentsUnmarked() {
+        assertMacroExpansionForTesting(
+            """
+            @Mockable
+            protocol DoorActor: Actor {
+                func open()
+            }
+            """,
+            expandedSource: """
+            protocol DoorActor: Actor {
+                func open()
+            }
+
+            #if DEBUG
+            actor DoorActorMock: DoorActor {
+                private struct Storage {
+                    var openCallCount: Int = 0
+                    var openHandler: (@Sendable () -> Void)? = nil
+                }
+                private let _storage = _MockableLock<Storage>(Storage())
+                nonisolated var openCallCount: Int {
+                    _storage.withLock {
+                        $0.openCallCount
+                    }
+                }
+                @available(*, deprecated, message: "open records no arguments; use openCallCount instead.")
+                nonisolated var openCallArguments: [()] {
+                    Array(repeating: (), count: openCallCount)
+                }
+                nonisolated var openHandler: (@Sendable () -> Void)? {
+                    get {
+                        _storage.withLock {
+                            $0.openHandler
+                        }
+                    }
+                    set {
+                        _storage.withLock {
+                            $0.openHandler = newValue
+                        }
+                    }
+                }
+                func open() {
+                    let _handler = _storage.withLock { storage -> (@Sendable () -> Void)? in
+                        storage.openCallCount += 1
+                        return storage.openHandler
+                    }
+                    if let _handler {
+                        _handler()
+                    }
+                }
+                nonisolated func resetMock() {
+                    _storage.withLock { storage in
+                        storage.openCallCount = 0
+                        storage.openHandler = nil
+                    }
+                }
+            }
+            #endif
+            """,
+            macros: testMacros
+        )
+    }
 }

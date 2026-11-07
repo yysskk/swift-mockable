@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A class mock declares the deprecated `<name>CallArguments` of a requirement without arguments `final`, so it takes no vtable slot. With Swift 6.2, a test target reaching a mock in another module through `@testable import` could read every member declared after that property from the wrong slot: call counts came back wrong, handlers set by the test were ignored, and the test process could crash.
+
 ## [3.1.0] - 2026-11-02
 
 This release continues the naming work of 3.0 and includes source-breaking changes. See [Migrating to 3.1](docs/migrating-to-3.1.md) for before-and-after code for each of them.

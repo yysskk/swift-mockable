@@ -28,7 +28,7 @@ struct InheritanceMacroTests {
             class ChildMock: BaseMock, Child {
                 private(set) var childMethodCallCount: Int = 0
                 @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
-                var childMethodCallArguments: [()] {
+                final var childMethodCallArguments: [()] {
                     Array(repeating: (), count: childMethodCallCount)
                 }
                 var childMethodHandler: (() -> Void)? = nil
@@ -71,7 +71,7 @@ struct InheritanceMacroTests {
             class MyProtocolMock: MyProtocol {
                 private(set) var doSomethingCallCount: Int = 0
                 @available(*, deprecated, message: "doSomething records no arguments; use doSomethingCallCount instead.")
-                var doSomethingCallArguments: [()] {
+                final var doSomethingCallArguments: [()] {
                     Array(repeating: (), count: doSomethingCallCount)
                 }
                 var doSomethingHandler: (() -> Void)? = nil
@@ -112,7 +112,7 @@ struct InheritanceMacroTests {
             class ChildMock: ParentAMock, Child {
                 private(set) var childMethodCallCount: Int = 0
                 @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
-                var childMethodCallArguments: [()] {
+                final var childMethodCallArguments: [()] {
                     Array(repeating: (), count: childMethodCallCount)
                 }
                 var childMethodHandler: (() -> Void)? = nil
@@ -250,7 +250,7 @@ struct InheritanceMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
-                var childMethodCallArguments: [()] {
+                final var childMethodCallArguments: [()] {
                     Array(repeating: (), count: childMethodCallCount)
                 }
                 var childMethodHandler: (@Sendable () -> String)? {
@@ -310,7 +310,7 @@ struct InheritanceMacroTests {
             class ChildMock: SendableBaseMock, Child {
                 private(set) var childMethodCallCount: Int = 0
                 @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
-                var childMethodCallArguments: [()] {
+                final var childMethodCallArguments: [()] {
                     Array(repeating: (), count: childMethodCallCount)
                 }
                 var childMethodHandler: (() -> Int)? = nil
