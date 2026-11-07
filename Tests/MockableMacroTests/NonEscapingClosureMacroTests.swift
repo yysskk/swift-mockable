@@ -28,7 +28,7 @@ struct NonEscapingClosureMacroTests {
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: ((() -> Void) -> Void)? = nil

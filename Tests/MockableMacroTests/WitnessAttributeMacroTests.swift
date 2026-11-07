@@ -32,7 +32,7 @@ struct WitnessAttributeMacroTests {
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Int)? = nil
@@ -77,7 +77,7 @@ struct WitnessAttributeMacroTests {
             class ServiceMock: Service {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: (() -> Int)? = nil

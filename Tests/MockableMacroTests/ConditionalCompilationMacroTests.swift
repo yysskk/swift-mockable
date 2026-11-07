@@ -40,7 +40,7 @@ struct ConditionalCompilationMacroTests {
             class KeychainManagerMock: KeychainManager {
                 private(set) var getDeviceIdCallCount: Int = 0
                 @available(*, deprecated, message: "getDeviceId records no arguments; use getDeviceIdCallCount instead.")
-                var getDeviceIdCallArguments: [()] {
+                final var getDeviceIdCallArguments: [()] {
                     Array(repeating: (), count: getDeviceIdCallCount)
                 }
                 var getDeviceIdHandler: (() -> String?)? = nil
@@ -64,7 +64,7 @@ struct ConditionalCompilationMacroTests {
                 #if DEBUG
                 private(set) var deleteDeviceIdCallCount: Int = 0
                 @available(*, deprecated, message: "deleteDeviceId records no arguments; use deleteDeviceIdCallCount instead.")
-                var deleteDeviceIdCallArguments: [()] {
+                final var deleteDeviceIdCallArguments: [()] {
                     Array(repeating: (), count: deleteDeviceIdCallCount)
                 }
                 var deleteDeviceIdHandler: (() -> Void)? = nil
@@ -76,7 +76,7 @@ struct ConditionalCompilationMacroTests {
                 }
                 private(set) var getAllObjectsCallCount: Int = 0
                 @available(*, deprecated, message: "getAllObjects records no arguments; use getAllObjectsCallCount instead.")
-                var getAllObjectsCallArguments: [()] {
+                final var getAllObjectsCallArguments: [()] {
                     Array(repeating: (), count: getAllObjectsCallCount)
                 }
                 var getAllObjectsHandler: (() -> [AnyObject])? = nil
@@ -200,7 +200,7 @@ struct ConditionalCompilationMacroTests {
                 #if os(iOS)
                 private(set) var logToConsoleCallCount: Int = 0
                 @available(*, deprecated, message: "logToConsole records no arguments; use logToConsoleCallCount instead.")
-                var logToConsoleCallArguments: [()] {
+                final var logToConsoleCallArguments: [()] {
                     Array(repeating: (), count: logToConsoleCallCount)
                 }
                 var logToConsoleHandler: (() -> Void)? = nil
@@ -213,7 +213,7 @@ struct ConditionalCompilationMacroTests {
                 #elseif os(macOS)
                 private(set) var logToFileCallCount: Int = 0
                 @available(*, deprecated, message: "logToFile records no arguments; use logToFileCallCount instead.")
-                var logToFileCallArguments: [()] {
+                final var logToFileCallArguments: [()] {
                     Array(repeating: (), count: logToFileCallCount)
                 }
                 var logToFileHandler: (() -> Void)? = nil
@@ -226,7 +226,7 @@ struct ConditionalCompilationMacroTests {
                 #else
                 private(set) var logToFallbackCallCount: Int = 0
                 @available(*, deprecated, message: "logToFallback records no arguments; use logToFallbackCallCount instead.")
-                var logToFallbackCallArguments: [()] {
+                final var logToFallbackCallArguments: [()] {
                     Array(repeating: (), count: logToFallbackCallCount)
                 }
                 var logToFallbackHandler: (() -> Void)? = nil
@@ -306,7 +306,7 @@ struct ConditionalCompilationMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "logToConsole records no arguments; use logToConsoleCallCount instead.")
-                var logToConsoleCallArguments: [()] {
+                final var logToConsoleCallArguments: [()] {
                     Array(repeating: (), count: logToConsoleCallCount)
                 }
                 var logToConsoleHandler: (@Sendable () -> Void)? {
@@ -337,7 +337,7 @@ struct ConditionalCompilationMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "logToFile records no arguments; use logToFileCallCount instead.")
-                var logToFileCallArguments: [()] {
+                final var logToFileCallArguments: [()] {
                     Array(repeating: (), count: logToFileCallCount)
                 }
                 var logToFileHandler: (@Sendable () -> Void)? {
@@ -368,7 +368,7 @@ struct ConditionalCompilationMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "logToFallback records no arguments; use logToFallbackCallCount instead.")
-                var logToFallbackCallArguments: [()] {
+                final var logToFallbackCallArguments: [()] {
                     Array(repeating: (), count: logToFallbackCallCount)
                 }
                 var logToFallbackHandler: (@Sendable () -> Void)? {

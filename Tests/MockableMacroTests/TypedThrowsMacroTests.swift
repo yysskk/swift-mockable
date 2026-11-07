@@ -73,7 +73,7 @@ struct TypedThrowsMacroTests {
             class FetcherMock: Fetcher {
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() async throws -> Data)? = nil
@@ -119,7 +119,7 @@ struct TypedThrowsMacroTests {
             class RunnerMock: Runner {
                 private(set) var runCallCount: Int = 0
                 @available(*, deprecated, message: "run records no arguments; use runCallCount instead.")
-                var runCallArguments: [()] {
+                final var runCallArguments: [()] {
                     Array(repeating: (), count: runCallCount)
                 }
                 var runHandler: ((() throws -> Void) throws -> Void)? = nil
@@ -504,7 +504,7 @@ struct TypedThrowsMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "value records no arguments; use valueCallCount instead.")
-                var valueCallArguments: [()] {
+                final var valueCallArguments: [()] {
                     Array(repeating: (), count: valueCallCount)
                 }
                 var valueHandler: (@Sendable () throws -> Int)? {
@@ -607,7 +607,7 @@ struct TypedThrowsMacroTests {
             class FetcherMock: Fetcher {
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() async -> Data)? = nil
@@ -649,7 +649,7 @@ struct TypedThrowsMacroTests {
             class PingerMock: Pinger {
                 private(set) var pingCallCount: Int = 0
                 @available(*, deprecated, message: "ping records no arguments; use pingCallCount instead.")
-                var pingCallArguments: [()] {
+                final var pingCallArguments: [()] {
                     Array(repeating: (), count: pingCallCount)
                 }
                 var pingHandler: (() -> Void)? = nil

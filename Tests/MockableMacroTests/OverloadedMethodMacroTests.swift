@@ -64,7 +64,7 @@ struct OverloadedMethodMacroTests {
                 }
                 private(set) var getValueCallCount: Int = 0
                 @available(*, deprecated, message: "getValue records no arguments; use getValueCallCount instead.")
-                var getValueCallArguments: [()] {
+                final var getValueCallArguments: [()] {
                     Array(repeating: (), count: getValueCallCount)
                 }
                 var getValueHandler: (() -> String)? = nil

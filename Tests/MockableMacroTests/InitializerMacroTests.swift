@@ -36,7 +36,7 @@ struct InitializerMacroTests {
                 }
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() -> Int)? = nil
@@ -80,7 +80,7 @@ struct InitializerMacroTests {
             class ServiceMock: Service {
                 private(set) var initCallCount: Int = 0
                 @available(*, deprecated, message: "init records no arguments; use initCallCount instead.")
-                var initCallArguments: [()] {
+                final var initCallArguments: [()] {
                     Array(repeating: (), count: initCallCount)
                 }
                 required init() {
@@ -514,7 +514,7 @@ struct InitializerMacroTests {
             open class ChildOfInitBaseMock: InitBaseMock, ChildOfInitBase {
                 public private(set) var childMethodCallCount: Int = 0
                 @available(*, deprecated, message: "childMethod records no arguments; use childMethodCallCount instead.")
-                public var childMethodCallArguments: [()] {
+                public final var childMethodCallArguments: [()] {
                     Array(repeating: (), count: childMethodCallCount)
                 }
                 public var childMethodHandler: (() -> Void)? = nil

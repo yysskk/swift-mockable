@@ -44,9 +44,18 @@ extension MockGenerator {
     /// a computed array of one empty tuple per call, derived from the call count, so it
     /// reads exactly as the stored array it replaces did while warning that the call
     /// count says the same thing.
+    ///
+    /// An instance property of a class mock is `final`, so it takes no vtable slot. Swift
+    /// 6.2 can disagree across modules about the slots of a class whose overridable
+    /// members include this one: a test target reaching the mock through `@testable
+    /// import` then reads every member declared after it from the wrong slot. A type
+    /// property is already `static`, and an actor mock cannot be subclassed.
     private func generateDeprecatedCallArguments(for requirement: TrackingRequirement) -> VariableDeclSyntax {
         let callCount = MockNaming.callCount(requirement.identifier)
         var additionalModifiers = requirement.scope.modifiers
+        if requirement.scope == .instance && !shape.isActor {
+            additionalModifiers.append(DeclModifierSyntax(name: .keyword(.final)))
+        }
         if usesLockBasedStorage(for: requirement.scope) {
             additionalModifiers += storageBackedMemberModifiers(
                 leavesMockIsolation: requirement.leavesMockIsolation,
@@ -121,9 +130,24 @@ extension MockGenerator {
     /// The `private(set)` modifier.
     static var privateSetModifier: DeclModifierSyntax {
         DeclModifierSyntax(
-            name: .keyword(.private),
+            name: privateSetModifierName,
             detail: DeclModifierDetailSyntax(detail: .identifier("set"))
         )
+    }
+
+    /// The `private` token of `private(set)`.
+    ///
+    /// The macro's expansion is formatted by `BasicFormat`, which in swift-syntax 509 and
+    /// 510 separates a keyword from a following `(` and prints `private (set)`, which the
+    /// compiler rejects. An identifier token prints the same text and is never separated
+    /// from `(`. swift-syntax 600 and later keep the modifier together, so they get the
+    /// keyword the syntax node expects.
+    private static var privateSetModifierName: TokenSyntax {
+        #if canImport(SwiftSyntax600)
+        return .keyword(.private)
+        #else
+        return .identifier("private")
+        #endif
     }
 
     /// Builds the method witness: the requirement's own signature (generics, effects,

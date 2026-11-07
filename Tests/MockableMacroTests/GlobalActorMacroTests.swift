@@ -118,7 +118,7 @@ struct GlobalActorMacroTests {
             @Persistence.DataActor class StoreMock: Store {
                 private(set) var saveCallCount: Int = 0
                 @available(*, deprecated, message: "save records no arguments; use saveCallCount instead.")
-                var saveCallArguments: [()] {
+                final var saveCallArguments: [()] {
                     Array(repeating: (), count: saveCallCount)
                 }
                 var saveHandler: (@Sendable () -> Void)? = nil
@@ -168,7 +168,7 @@ struct GlobalActorMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "track records no arguments; use trackCallCount instead.")
-                nonisolated var trackCallArguments: [()] {
+                final nonisolated var trackCallArguments: [()] {
                     Array(repeating: (), count: trackCallCount)
                 }
                 nonisolated var trackHandler: (@Sendable () -> Void)? {

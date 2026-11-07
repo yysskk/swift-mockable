@@ -818,7 +818,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() -> String?)? = nil
@@ -860,7 +860,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var itemsCallCount: Int = 0
                 @available(*, deprecated, message: "items records no arguments; use itemsCallCount instead.")
-                var itemsCallArguments: [()] {
+                final var itemsCallArguments: [()] {
                     Array(repeating: (), count: itemsCallCount)
                 }
                 var itemsHandler: (() -> [String])? = nil
@@ -902,7 +902,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var tagsCallCount: Int = 0
                 @available(*, deprecated, message: "tags records no arguments; use tagsCallCount instead.")
-                var tagsCallArguments: [()] {
+                final var tagsCallArguments: [()] {
                     Array(repeating: (), count: tagsCallCount)
                 }
                 var tagsHandler: (() -> Set<String>)? = nil
@@ -944,7 +944,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var mappingCallCount: Int = 0
                 @available(*, deprecated, message: "mapping records no arguments; use mappingCallCount instead.")
-                var mappingCallArguments: [()] {
+                final var mappingCallArguments: [()] {
                     Array(repeating: (), count: mappingCallCount)
                 }
                 var mappingHandler: (() -> [String: Int])? = nil
@@ -990,7 +990,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var optionalValueCallCount: Int = 0
                 @available(*, deprecated, message: "optionalValue records no arguments; use optionalValueCallCount instead.")
-                var optionalValueCallArguments: [()] {
+                final var optionalValueCallArguments: [()] {
                     Array(repeating: (), count: optionalValueCallCount)
                 }
                 var optionalValueHandler: (() -> Optional<String>)? = nil
@@ -1003,7 +1003,7 @@ struct BasicMacroTests {
                 }
                 private(set) var arrayValueCallCount: Int = 0
                 @available(*, deprecated, message: "arrayValue records no arguments; use arrayValueCallCount instead.")
-                var arrayValueCallArguments: [()] {
+                final var arrayValueCallArguments: [()] {
                     Array(repeating: (), count: arrayValueCallCount)
                 }
                 var arrayValueHandler: (() -> Array<String>)? = nil
@@ -1016,7 +1016,7 @@ struct BasicMacroTests {
                 }
                 private(set) var dictionaryValueCallCount: Int = 0
                 @available(*, deprecated, message: "dictionaryValue records no arguments; use dictionaryValueCallCount instead.")
-                var dictionaryValueCallArguments: [()] {
+                final var dictionaryValueCallArguments: [()] {
                     Array(repeating: (), count: dictionaryValueCallCount)
                 }
                 var dictionaryValueHandler: (() -> Dictionary<String, Int>)? = nil
@@ -1068,7 +1068,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var optionalValueCallCount: Int = 0
                 @available(*, deprecated, message: "optionalValue records no arguments; use optionalValueCallCount instead.")
-                var optionalValueCallArguments: [()] {
+                final var optionalValueCallArguments: [()] {
                     Array(repeating: (), count: optionalValueCallCount)
                 }
                 var optionalValueHandler: (() -> Swift.Optional<String>)? = nil
@@ -1081,7 +1081,7 @@ struct BasicMacroTests {
                 }
                 private(set) var arrayValueCallCount: Int = 0
                 @available(*, deprecated, message: "arrayValue records no arguments; use arrayValueCallCount instead.")
-                var arrayValueCallArguments: [()] {
+                final var arrayValueCallArguments: [()] {
                     Array(repeating: (), count: arrayValueCallCount)
                 }
                 var arrayValueHandler: (() -> Swift.Array<String>)? = nil
@@ -1094,7 +1094,7 @@ struct BasicMacroTests {
                 }
                 private(set) var setValueCallCount: Int = 0
                 @available(*, deprecated, message: "setValue records no arguments; use setValueCallCount instead.")
-                var setValueCallArguments: [()] {
+                final var setValueCallArguments: [()] {
                     Array(repeating: (), count: setValueCallCount)
                 }
                 var setValueHandler: (() -> Swift.Set<String>)? = nil
@@ -1107,7 +1107,7 @@ struct BasicMacroTests {
                 }
                 private(set) var dictionaryValueCallCount: Int = 0
                 @available(*, deprecated, message: "dictionaryValue records no arguments; use dictionaryValueCallCount instead.")
-                var dictionaryValueCallArguments: [()] {
+                final var dictionaryValueCallArguments: [()] {
                     Array(repeating: (), count: dictionaryValueCallCount)
                 }
                 var dictionaryValueHandler: (() -> Swift.Dictionary<String, Int>)? = nil
@@ -1155,7 +1155,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() -> String?)? = nil
@@ -1199,7 +1199,7 @@ struct BasicMacroTests {
             class RepositoryMock: Repository {
                 private(set) var optionalArrayCallCount: Int = 0
                 @available(*, deprecated, message: "optionalArray records no arguments; use optionalArrayCallCount instead.")
-                var optionalArrayCallArguments: [()] {
+                final var optionalArrayCallArguments: [()] {
                     Array(repeating: (), count: optionalArrayCallCount)
                 }
                 var optionalArrayHandler: (() -> [String]?)? = nil
@@ -1212,7 +1212,7 @@ struct BasicMacroTests {
                 }
                 private(set) var arrayOfOptionalCallCount: Int = 0
                 @available(*, deprecated, message: "arrayOfOptional records no arguments; use arrayOfOptionalCallCount instead.")
-                var arrayOfOptionalCallArguments: [()] {
+                final var arrayOfOptionalCallArguments: [()] {
                     Array(repeating: (), count: arrayOfOptionalCallCount)
                 }
                 var arrayOfOptionalHandler: (() -> [String?])? = nil
