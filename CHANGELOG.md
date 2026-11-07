@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - A class mock declares the deprecated `<name>CallArguments` of a requirement without arguments `final`, so it takes no vtable slot. With Swift 6.2, a test target reaching a mock in another module through `@testable import` could read every member declared after that property from the wrong slot: call counts came back wrong, handlers set by the test were ignored, and the test process could crash.
+- A plain mock compiles again with swift-syntax 509 and 510. Its read-only call history was spelled `private (set)`, which the compiler rejects, because those versions' formatter separates a keyword from a following `(`.
 
 ## [3.1.0] - 2026-11-02
 

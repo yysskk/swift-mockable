@@ -130,9 +130,24 @@ extension MockGenerator {
     /// The `private(set)` modifier.
     static var privateSetModifier: DeclModifierSyntax {
         DeclModifierSyntax(
-            name: .keyword(.private),
+            name: privateSetModifierName,
             detail: DeclModifierDetailSyntax(detail: .identifier("set"))
         )
+    }
+
+    /// The `private` token of `private(set)`.
+    ///
+    /// The macro's expansion is formatted by `BasicFormat`, which in swift-syntax 509 and
+    /// 510 separates a keyword from a following `(` and prints `private (set)`, which the
+    /// compiler rejects. An identifier token prints the same text and is never separated
+    /// from `(`. swift-syntax 600 and later keep the modifier together, so they get the
+    /// keyword the syntax node expects.
+    private static var privateSetModifierName: TokenSyntax {
+        #if canImport(SwiftSyntax600)
+        return .keyword(.private)
+        #else
+        return .identifier("private")
+        #endif
     }
 
     /// Builds the method witness: the requirement's own signature (generics, effects,
