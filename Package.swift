@@ -39,9 +39,16 @@ let package = Package(
             name: "Mockable",
             dependencies: ["MockableMacros"]
         ),
+        // Mocks compiled in their own module, so the runtime tests can reach them
+        // through `@testable import` the way an app's tests reach its mocks.
+        .target(
+            name: "MockableTestFixtures",
+            dependencies: ["Mockable"],
+            path: "Tests/MockableTestFixtures"
+        ),
         .testTarget(
             name: "MockableTests",
-            dependencies: ["Mockable"],
+            dependencies: ["Mockable", "MockableTestFixtures"],
             swiftSettings: [
                 // Exercises @Mockable(condition: .custom(...)) end to end; the runtime
                 // tests reference a mock that only exists when this flag is defined.
