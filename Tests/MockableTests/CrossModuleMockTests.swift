@@ -85,4 +85,39 @@ struct CrossModuleMockTests {
         #expect(store.clearCacheCallArguments.count == 2)
         #expect(store.fetchCallArguments.isEmpty)
     }
+
+    @Test("Production code in the mock's module records calls a test reads from another module")
+    @MainActor
+    func presenterRecordsCallsReadFromAnotherModule() {
+        let view = CrossModuleViewMock()
+        let wireframe = CrossModuleWireframeMock()
+        let presenter = CrossModulePresenter(view: view, wireframe: wireframe)
+
+        presenter.didAppear()
+        presenter.didTapClose()
+
+        #expect(view.showLoadingCallCount == 1)
+        #expect(view.showCallArguments == ["Title"])
+        #expect(wireframe.skipCallCount == 1)
+        #expect(wireframe.completeCallCount == 0)
+    }
+
+    @Test("Handlers a test sets are used by production code in the mock's module")
+    func interactorUsesHandlersSetFromAnotherModule() async {
+        let gate = CrossModuleGateMock()
+        let asyncGate = CrossModuleAsyncGateMock()
+        let store = CrossModuleStoreMock()
+        gate.callAsFunctionHandler = { true }
+        asyncGate.callAsFunctionHandler = { true }
+        store.entriesHandler = { ["a"] }
+        store.getHandler = { .active }
+        let interactor = CrossModuleInteractor(gate: gate, asyncGate: asyncGate, store: store)
+
+        #expect(interactor.isOpen())
+        #expect(await interactor.isOpenAsync())
+        #expect(interactor.refresh() == ["a"])
+        #expect(interactor.status() == .active)
+        #expect(store.fetchCallCount == 1)
+        #expect(store.clearCacheCallCount == 1)
+    }
 }
