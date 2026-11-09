@@ -53,6 +53,11 @@ jobs:
           open('Package.swift', 'w').write(manifest)
           PY
 
+      # Other runtime tests need a newer deployment target than the package's iOS 13, and
+      # only the cross-module tests matter here.
+      - name: Keep only the cross-module tests
+        run: find Tests/MockableTests -name '*.swift' ! -name 'CrossModuleMockTests.swift' -delete
+
       - name: Remove final from the generator
         if: matrix.variant == 'without-final'
         run: |
