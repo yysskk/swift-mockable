@@ -28,7 +28,7 @@ struct AccessLevelMacroTests {
             class InternalServiceMock: InternalService {
                 private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                var fetchCallArguments: [()] {
+                final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 var fetchHandler: (() -> String)? = nil
@@ -72,7 +72,7 @@ struct AccessLevelMacroTests {
                 }
                 public private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                public var fetchCallArguments: [()] {
+                public final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 public var fetchHandler: (() -> String)? = nil
@@ -116,7 +116,7 @@ struct AccessLevelMacroTests {
                 }
                 package private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                package var fetchCallArguments: [()] {
+                package final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 package var fetchHandler: (() -> String)? = nil
@@ -238,7 +238,7 @@ struct AccessLevelMacroTests {
             fileprivate class FileprivateServiceMock: FileprivateService {
                 fileprivate private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                fileprivate var fetchCallArguments: [()] {
+                fileprivate final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 fileprivate var fetchHandler: (() -> String)? = nil
@@ -284,7 +284,7 @@ struct AccessLevelMacroTests {
             private class PrivateServiceMock: PrivateService {
                 fileprivate private(set) var fetchCallCount: Int = 0
                 @available(*, deprecated, message: "fetch records no arguments; use fetchCallCount instead.")
-                fileprivate var fetchCallArguments: [()] {
+                fileprivate final var fetchCallArguments: [()] {
                     Array(repeating: (), count: fetchCallCount)
                 }
                 fileprivate var fetchHandler: (() -> String)? = nil

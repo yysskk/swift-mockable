@@ -34,7 +34,7 @@ struct TrackingIdentifierCollisionMacroTests {
             class ServiceMock: Service {
                 private(set) var loadCallCount: Int = 0
                 @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
-                var loadCallArguments: [()] {
+                final var loadCallArguments: [()] {
                     Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (() -> Void)? = nil
@@ -56,7 +56,7 @@ struct TrackingIdentifierCollisionMacroTests {
                 }
                 private(set) var loadItemCallCount: Int = 0
                 @available(*, deprecated, message: "loadItem records no arguments; use loadItemCallCount instead.")
-                var loadItemCallArguments: [()] {
+                final var loadItemCallArguments: [()] {
                     Array(repeating: (), count: loadItemCallCount)
                 }
                 var loadItemHandler: (() -> Void)? = nil
@@ -152,7 +152,7 @@ struct TrackingIdentifierCollisionMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "load records no arguments; use loadCallCount instead.")
-                var loadCallArguments: [()] {
+                final var loadCallArguments: [()] {
                     Array(repeating: (), count: loadCallCount)
                 }
                 var loadHandler: (@Sendable () -> Void)? {
@@ -182,7 +182,7 @@ struct TrackingIdentifierCollisionMacroTests {
                     }
                 }
                 @available(*, deprecated, message: "loadItem records no arguments; use loadItemCallCount instead.")
-                var loadItemCallArguments: [()] {
+                final var loadItemCallArguments: [()] {
                     Array(repeating: (), count: loadItemCallCount)
                 }
                 var loadItemHandler: (@Sendable () -> Void)? {
@@ -246,7 +246,7 @@ struct TrackingIdentifierCollisionMacroTests {
             class ServiceMock: Service {
                 private(set) var subscriptStringCallCount: Int = 0
                 @available(*, deprecated, message: "subscriptString records no arguments; use subscriptStringCallCount instead.")
-                var subscriptStringCallArguments: [()] {
+                final var subscriptStringCallArguments: [()] {
                     Array(repeating: (), count: subscriptStringCallCount)
                 }
                 var subscriptStringHandler: (() -> Void)? = nil

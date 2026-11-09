@@ -48,7 +48,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 private(set) var alphaCallCount: Int = 0
                 @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
-                var alphaCallArguments: [()] {
+                final var alphaCallArguments: [()] {
                     Array(repeating: (), count: alphaCallCount)
                 }
                 var alphaHandler: (() -> Void)? = nil
@@ -143,7 +143,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 private(set) var alphaCallCount: Int = 0
                 @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
-                var alphaCallArguments: [()] {
+                final var alphaCallArguments: [()] {
                     Array(repeating: (), count: alphaCallCount)
                 }
                 var alphaHandler: (() -> Void)? = nil
@@ -226,7 +226,7 @@ struct ElseClauseMacroTests {
                 #if CUSTOM
                 public private(set) var alphaCallCount: Int = 0
                 @available(*, deprecated, message: "alpha records no arguments; use alphaCallCount instead.")
-                public var alphaCallArguments: [()] {
+                public final var alphaCallArguments: [()] {
                     Array(repeating: (), count: alphaCallCount)
                 }
                 public var alphaHandler: (() -> Void)? = nil

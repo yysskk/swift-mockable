@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A class mock declares the deprecated `<name>CallArguments` of a requirement without arguments `final`. The property only derives its value from the call count, so nothing needs to override it, and as a final member it takes no slot in the class's dispatch table. This is a precaution for reports of class mocks reading the wrong member across modules after upgrading to 3.1 on Swift 6.2. Those failures have not been reproduced, so whether this change resolves them is not confirmed.
+
+### Fixed
+
+- A plain mock compiles again with swift-syntax 509 and 510. Its read-only call history was spelled `private (set)`, which the compiler rejects, because those versions' formatter separates a keyword from a following `(`.
+
 ## [3.1.0] - 2026-11-02
 
 This release continues the naming work of 3.0 and includes source-breaking changes. See [Migrating to 3.1](docs/migrating-to-3.1.md) for before-and-after code for each of them.
