@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-11-09
+
 ### Changed
 
 - A class mock declares the deprecated `<name>CallArguments` of a requirement without arguments `final`. The property only derives its value from the call count, so nothing needs to override it, and as a final member it takes no slot in the class's dispatch table. This is a precaution for reports of class mocks reading the wrong member across modules after upgrading to 3.1 on Swift 6.2. Those failures have not been reproduced, so whether this change resolves them is not confirmed.
@@ -240,7 +242,8 @@ This release renames and reshapes generated members to follow the Swift API Desi
 
 - Initial release of the `@Mockable` macro.
 
-[Unreleased]: https://github.com/yysskk/swift-mockable/compare/3.1.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-mockable/compare/3.1.1...HEAD
+[3.1.1]: https://github.com/yysskk/swift-mockable/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/yysskk/swift-mockable/compare/3.0.0...3.1.0
 [3.0.0]: https://github.com/yysskk/swift-mockable/compare/2.1.0...3.0.0
 [2.1.0]: https://github.com/yysskk/swift-mockable/compare/2.0.0...2.1.0
