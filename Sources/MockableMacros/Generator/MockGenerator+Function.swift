@@ -45,10 +45,8 @@ extension MockGenerator {
     /// reads exactly as the stored array it replaces did while warning that the call
     /// count says the same thing.
     ///
-    /// An instance property of a class mock is `final`, so it takes no vtable slot. Swift
-    /// 6.2 can disagree across modules about the slots of a class whose overridable
-    /// members include this one: a test target reaching the mock through `@testable
-    /// import` then reads every member declared after it from the wrong slot. A type
+    /// An instance property of a class mock is `final`: nothing needs to override a value
+    /// derived from the call count, and a final member takes no vtable slot. A type
     /// property is already `static`, and an actor mock cannot be subclassed.
     private func generateDeprecatedCallArguments(for requirement: TrackingRequirement) -> VariableDeclSyntax {
         let callCount = MockNaming.callCount(requirement.identifier)
