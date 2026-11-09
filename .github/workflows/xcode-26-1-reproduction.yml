@@ -1,0 +1,58 @@
+# Temporary: checks whether the cross-module failures reported on Xcode 26.1 reproduce
+# there, and whether a `final` deprecated CallArguments prevents them. To be removed
+# before this branch merges.
+name: Xcode 26.1 reproduction
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  cross-module:
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ['with-final', 'without-final']
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode 26.1
+        run: |
+          ls -d /Applications/Xcode*.app
+          xcode="$(ls -d /Applications/Xcode_26.1*.app | sort -V | head -1)"
+          sudo xcode-select -s "$xcode"
+          swift --version
+          xcrun simctl list devices available
+
+      - name: Remove final from the generator
+        if: matrix.variant == 'without-final'
+        run: |
+          generator=Sources/MockableMacros/Generator/MockGenerator+Function.swift
+          grep -q 'keyword(.final)' "$generator"
+          sed -i '' '/keyword(.final)/d' "$generator"
+          ! grep -q 'keyword(.final)' "$generator"
+
+      # The variant without `final` is expected to fail, so its outcome is reported in
+      # the log and the summary instead of failing the job.
+      - name: Run the cross-module tests
+        run: |
+          set +e
+          xcodebuild test \
+            -scheme swift-mockable \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -only-testing:MockableTests/CrossModuleMockTests \
+            -skipMacroValidation \
+            -skipPackagePluginValidation 2>&1 | tee xcodebuild.log
+          status=${PIPESTATUS[0]}
+          set -e
+          grep -E 'Expectation failed|Fatal error|unexpected exit|Test run with|\*\* (TEST|BUILD) ' xcodebuild.log \
+            | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo "${{ matrix.variant }}: xcodebuild exited with $status" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "${{ matrix.variant }}" = 'with-final' ]; then
+            exit "$status"
+          fi
