@@ -18,15 +18,23 @@ jobs:
       fail-fast: false
       matrix:
         variant: ['with-final', 'without-final']
+        destination:
+          - 'platform=macOS'
+          - 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
     steps:
       - uses: actions/checkout@v7
 
       - name: Select Xcode 26.1
         run: |
           ls -d /Applications/Xcode*.app
-          xcode="$(ls -d /Applications/Xcode_26.1*.app | sort -V | head -1)"
-          sudo xcode-select -s "$xcode"
+          sudo xcode-select -s /Applications/Xcode_26.1.app
           swift --version
+
+      # The runner has no iOS 26.1 runtime, so install the one Xcode 26.1 ships for.
+      - name: Install the iOS 26.1 simulator runtime
+        if: startsWith(matrix.destination, 'platform=iOS')
+        run: |
+          xcodebuild -downloadPlatform iOS
           xcrun simctl list devices available
 
       - name: Remove final from the generator
@@ -37,14 +45,15 @@ jobs:
           sed -i '' '/keyword(.final)/d' "$generator"
           ! grep -q 'keyword(.final)' "$generator"
 
-      # The variant without `final` is expected to fail, so its outcome is reported in
-      # the log and the summary instead of failing the job.
+      # The variant without `final` is expected to fail its tests, so that outcome is
+      # reported in the log and the summary instead of failing the job. Failing to reach
+      # the tests at all fails the job in either variant.
       - name: Run the cross-module tests
         run: |
           set +e
           xcodebuild test \
             -scheme swift-mockable \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -destination '${{ matrix.destination }}' \
             -only-testing:MockableTests/CrossModuleMockTests \
             -skipMacroValidation \
             -skipPackagePluginValidation 2>&1 | tee xcodebuild.log
@@ -53,6 +62,6 @@ jobs:
           grep -E 'Expectation failed|Fatal error|unexpected exit|Test run with|\*\* (TEST|BUILD) ' xcodebuild.log \
             | tee -a "$GITHUB_STEP_SUMMARY" || true
           echo "${{ matrix.variant }}: xcodebuild exited with $status" | tee -a "$GITHUB_STEP_SUMMARY"
-          if [ "${{ matrix.variant }}" = 'with-final' ]; then
+          if [ "${{ matrix.variant }}" = 'with-final' ] || ! grep -q 'Test run\|\*\* TEST ' xcodebuild.log; then
             exit "$status"
           fi
