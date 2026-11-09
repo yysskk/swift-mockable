@@ -19,7 +19,6 @@ jobs:
       matrix:
         variant: ['with-final', 'without-final']
         destination:
-          - 'platform=macOS'
           - 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
     steps:
       - uses: actions/checkout@v7
@@ -36,6 +35,23 @@ jobs:
         run: |
           xcodebuild -downloadPlatform iOS
           xcrun simctl list devices available
+
+      # The macro tests import the host-only macro target, which Xcode 26.1 cannot build
+      # for iOS even though -only-testing leaves them out of the run.
+      - name: Remove the macro test target
+        run: |
+          python3 -I - <<'PY'
+          import re
+          manifest = open('Package.swift').read()
+          manifest, count = re.subn(
+              r'\s*\.testTarget\(\s*name: "MockableMacroTests".*?\n        \),',
+              '',
+              manifest,
+              flags=re.S,
+          )
+          assert count == 1
+          open('Package.swift', 'w').write(manifest)
+          PY
 
       - name: Remove final from the generator
         if: matrix.variant == 'without-final'
@@ -62,6 +78,6 @@ jobs:
           grep -E 'Expectation failed|Fatal error|unexpected exit|Test run with|\*\* (TEST|BUILD) ' xcodebuild.log \
             | tee -a "$GITHUB_STEP_SUMMARY" || true
           echo "${{ matrix.variant }}: xcodebuild exited with $status" | tee -a "$GITHUB_STEP_SUMMARY"
-          if [ "${{ matrix.variant }}" = 'with-final' ] || ! grep -q 'Test run\|\*\* TEST ' xcodebuild.log; then
+          if [ "${{ matrix.variant }}" = 'with-final' ] || ! grep -Eq "Test run started|Test Suite 'Selected tests' started" xcodebuild.log; then
             exit "$status"
           fi
